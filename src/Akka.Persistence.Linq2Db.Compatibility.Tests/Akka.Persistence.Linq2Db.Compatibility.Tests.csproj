@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="..\common.props" />
+
+    <PropertyGroup>
+        <TargetFrameworks>$(TestsNetCoreFramework)</TargetFrameworks>
+        <IsPackable>false</IsPackable>
+        <RootNamespace>Akka.Persistence.Linq2Db.CompatibilityTests</RootNamespace>
+
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Akka" Version="1.4.10" />
+        <PackageReference Include="Akka.Persistence.PostgreSql" Version="1.3.9" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
+        <PackageReference Include="xunit" Version="2.4.1" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" />
+        <PackageReference Include="coverlet.collector" Version="1.2.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Akka.Persistence.Sql.Linq2Db.Tests\Akka.Persistence.Sql.Linq2Db.Tests.csproj" />
+    </ItemGroup>
+    
+
+</Project>
