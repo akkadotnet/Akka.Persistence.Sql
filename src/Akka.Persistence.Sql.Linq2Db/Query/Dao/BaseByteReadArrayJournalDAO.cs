@@ -69,7 +69,26 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
 
             return maxTake;
         }
+        
+        public Source<
+            Akka.Util.Try<(IPersistentRepresentation, IImmutableSet<string>, long)>,
+            NotUsed> Events(long offset, long maxOffset,
+            long max)
+        {
+            var separator = _readJournalConfig.PluginConfig.TagSeparator;
+            var maxTake = MaxTake(max);
+            using (var conn = _connectionFactory.GetConnection())
+            {
+                return Source.From(conn.GetTable<JournalRow>()
+                        .OrderBy(r => r.ordering)
+                        .Where(r =>
+                            r.ordering > offset && r.ordering <= maxOffset)
+                        .Take(maxTake).ToList())
+                    .Via(_serializer.DeserializeFlow());
 
+            }
+        }
+        
         public Source<
             Akka.Util.Try<(IPersistentRepresentation, IImmutableSet<string>, long)>,
             NotUsed> EventsByTag(string tag, long offset, long maxOffset,

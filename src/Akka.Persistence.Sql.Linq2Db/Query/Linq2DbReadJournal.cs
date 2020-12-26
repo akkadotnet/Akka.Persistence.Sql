@@ -26,7 +26,9 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
         IEventsByPersistenceIdQuery,
         ICurrentEventsByPersistenceIdQuery,
         IEventsByTagQuery,
-        ICurrentEventsByTagQuery
+        ICurrentEventsByTagQuery,
+        IAllEventsQuery,
+        ICurrentAllEventsQuery
     {
         public static string Identifier
         {
@@ -161,7 +163,29 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
         {
             return _currentEventsByTag(tag, (offset as Sequence)?.Value ?? 0);
         }
+        private Source<EventEnvelope, NotUsed> _currentJournalEvents(long offset, long max, MaxOrderingId latestOrdering)
+        {
+            if (latestOrdering.Max < offset)
+            {
+                return Source.Empty<EventEnvelope>();
+            }
 
+            return readJournalDao
+                .Events(offset, latestOrdering.Max, max).SelectAsync(
+                    1,
+                    r =>
+                        Task.FromResult(r.Get())
+                ).SelectMany<(IPersistentRepresentation,
+                    IImmutableSet<string>, long), EventEnvelope, NotUsed>(
+                    (a)
+                        =>
+                    {
+                        return _adaptEvents(a.Item1).Select(r =>
+                            new EventEnvelope(new Sequence(a.Item3),
+                                r.PersistenceId,
+                                r.SequenceNr, r.Payload));
+                    });
+        }
         private Source<EventEnvelope, NotUsed> _currentJournalEventsByTag(
             string tag, long offset, long max, MaxOrderingId latestOrdering)
         {
@@ -280,6 +304,89 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
                         return _eventsByTag(tag, offset, Some.Create(maxInDb));
                     });
         }
+        
+        private Source<EventEnvelope, NotUsed> _events(
+            long offset, long? terminateAfterOffset)
+        {
+            var askTimeout = readJournalConfig
+                .JournalSequenceRetrievalConfiguration.AskTimeout;
+            var batchSize = readJournalConfig.MaxBufferSize;
+            return Source
+                .UnfoldAsync<(long, FlowControl), IImmutableList<EventEnvelope>
+                >((offset, FlowControl.Continue.Instance),
+                    uf =>
+                    {
+                        async Task<Akka.Util.Option<((long, FlowControl),
+                            IImmutableList<EventEnvelope>)>> retrieveNextBatch()
+                        {
+                            var queryUntil =
+                                await journalSequenceActor.Ask<MaxOrderingId>(
+                                    new GetMaxOrderingId(), askTimeout);
+                            var xs =
+                                await _currentJournalEvents(uf.Item1,
+                                    batchSize,
+                                    queryUntil).RunWith(
+                                    Sink.Seq<EventEnvelope>(),
+                                    _mat);
+                            var hasMoreEvents = xs.Count == batchSize;
+                            FlowControl nextControl = null;
+                            if (terminateAfterOffset.HasValue)
+                            {
+                                if (!hasMoreEvents &&
+                                    terminateAfterOffset.Value <=
+                                    queryUntil.Max)
+                                    nextControl = FlowControl.Stop.Instance;
+                                if (xs.Exists(r =>
+                                    (r.Offset is Sequence s) &&
+                                    s.Value >= terminateAfterOffset.Value))
+                                    nextControl = FlowControl.Stop.Instance;
+                            }
+
+                            if (nextControl == null)
+                            {
+                                nextControl = hasMoreEvents
+                                    ? (FlowControl) FlowControl.Continue
+                                        .Instance
+                                    : FlowControl.ContinueDelayed.Instance;
+                            }
+
+                            var nextStartingOffset = (xs.Count == 0)
+                                ? Math.Max(uf.Item1, queryUntil.Max)
+                                : xs.Select(r => r.Offset as Sequence)
+                                    .Where(r => r != null).Max(t => t.Value);
+                            return new
+                                Akka.Util.Option<((long nextStartingOffset,
+                                    FlowControl
+                                    nextControl), IImmutableList<EventEnvelope>
+                                    xs)
+                                >((
+                                    (nextStartingOffset, nextControl), xs));
+                        }
+
+                        switch (uf.Item2)
+                        {
+                            case FlowControl.Stop _:
+                                return
+                                    Task.FromResult(Akka.Util
+                                        .Option<((long, FlowControl),
+                                            IImmutableList<EventEnvelope>)>
+                                        .None);
+                            case FlowControl.Continue _:
+                                return retrieveNextBatch();
+                            case FlowControl.ContinueDelayed _:
+                                return Akka.Pattern.FutureTimeoutSupport.After(
+                                    readJournalConfig.RefreshInterval,
+                                    system.Scheduler,
+                                    retrieveNextBatch);
+                            default:
+                                return
+                                    Task.FromResult(Akka.Util
+                                        .Option<((long, FlowControl),
+                                            IImmutableList<EventEnvelope>)>
+                                        .None);
+                        }
+                    }).SelectMany(r => r);
+        }
 
         public Source<EventEnvelope, NotUsed> EventsByTag(string tag,
             Offset offset)
@@ -291,6 +398,34 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
             }
 
             return _eventsByTag(tag, theOffset, null);
+        }
+
+        public Source<EventEnvelope, NotUsed> AllEvents(Offset offset)
+        {
+            long theOffset = 0;
+            if (offset is Sequence s)
+            {
+                theOffset = s.Value;
+            }
+
+            return _events(theOffset, null);
+        }
+
+        public Source<EventEnvelope, NotUsed> CurrentAllEvents(Offset offset)
+        {
+            long theOffset = 0;
+            if (offset is Sequence s)
+            {
+                theOffset = s.Value;
+            }
+
+            return Source.FromTask(readJournalDao.MaxJournalSequence())
+                .ConcatMany(
+                    maxInDb =>
+                    {
+                        return _events(theOffset, Some.Create(maxInDb));
+                    });
+            
         }
     }
 }
