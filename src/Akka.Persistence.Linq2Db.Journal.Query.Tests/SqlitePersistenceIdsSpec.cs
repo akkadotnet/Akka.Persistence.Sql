@@ -50,15 +50,15 @@ namespace Akka.Persistence.Sqlite.Tests.Query
                     linq2db = {{
                         provider-name = ""{ProviderName.SQLiteMS}""
                         plugin-dispatcher = ""akka.actor.default-dispatcher""
-                        table-name = event_journal
-                        metadata-table-name = journal_metadata
                         auto-initialize = on
                         connection-string = ""{journalString}""
                         refresh-interval = 200ms
-                tables{{
-                  journal{{
-                       auto-init = true
-                  }}
+                tables {{
+                   journal {{
+                     table-name = event_journal
+                     metadata-table-name = journal_metadata
+                     auto-init = true 
+                   }} 
                 }}
                     }}
                 }}
@@ -77,8 +77,12 @@ namespace Akka.Persistence.Sqlite.Tests.Query
             {{
                 provider-name = ""{ProviderName.SQLiteMS}""
                 connection-string = ""{journalString}""
-                table-name = event_journal
-                metadata-table-name = journal_metadata
+                tables {{
+                   journal {{
+                     table-name = event_journal
+                     metadata-table-name = journal_metadata 
+                   }} 
+                }}
                 write-plugin = ""akka.persistence.journal.linq2db""
             }}
             akka.test.single-expect-default = 10s")
