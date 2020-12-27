@@ -179,13 +179,22 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             }
         }
 
-        public Task<long> MaxJournalSequence()
+        public Task<long> MaxJournalSequenceAsync()
         {
             using (var db = _connectionFactory.GetConnection())
             {
                 return Task.FromResult(db.GetTable<JournalRow>()
                     .Select<JournalRow, long>(r => r.ordering)
                     .FirstOrDefault());
+            }
+        }
+        public long MaxJournalSequence()
+        {
+            using (var db = _connectionFactory.GetConnection())
+            {
+                return db.GetTable<JournalRow>()
+                    .Select<JournalRow, long>(r => r.ordering)
+                    .FirstOrDefault();
             }
         }
     }

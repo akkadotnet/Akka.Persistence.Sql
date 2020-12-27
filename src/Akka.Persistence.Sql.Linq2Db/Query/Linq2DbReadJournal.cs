@@ -297,8 +297,10 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
         private Source<EventEnvelope, NotUsed> _currentEventsByTag(string tag,
             long offset)
         {
-            return Source.FromTask(readJournalDao.MaxJournalSequence())
-                .ConcatMany(
+            return FactoryEnumerable.StreamSource(() =>
+            {
+                return new[]{ readJournalDao.MaxJournalSequence()};
+            }).ConcatMany(
                     maxInDb =>
                     {
                         return _eventsByTag(tag, offset, Some.Create(maxInDb));
@@ -418,13 +420,15 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
             {
                 theOffset = s.Value;
             }
-            return Source.FromTask(readJournalDao.MaxJournalSequence())
-                .ConcatMany(
-                    maxInDb =>
-                    {
-                        return _events(theOffset, Some.Create(maxInDb));
-                    });
-            
+
+            return FactoryEnumerable.StreamSource(() =>
+            {
+                return new[] {readJournalDao.MaxJournalSequence()};
+            }).ConcatMany(
+                maxInDb =>
+                {
+                    return _events(theOffset, Some.Create(maxInDb));
+                });
         }
     }
 }
