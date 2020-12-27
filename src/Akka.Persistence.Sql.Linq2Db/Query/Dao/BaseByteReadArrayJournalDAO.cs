@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
@@ -45,14 +46,18 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
 
         public Source<string, NotUsed> AllPersistenceIdsSource(long max)
         {
-            using (var db = _connectionFactory.GetConnection())
-            {
+            
                 var maxTake = MaxTake(max);
-                return Source.From(baseQuery(db)
-                    .Select(r => r.persistenceId).Distinct()
-                    .Take(maxTake).ToList());
-            }
-
+                return FactoryEnumerable.StreamSource(() =>
+                {
+                    using (var db = _connectionFactory.GetConnection())
+                    {
+                        return baseQuery(db)
+                            .Select(r => r.persistenceId)
+                            .Distinct()
+                            .Take(maxTake).ToList();
+                    }
+                });
         }
 
         private static int MaxTake(long max)
@@ -77,16 +82,21 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
         {
             var separator = _readJournalConfig.PluginConfig.TagSeparator;
             var maxTake = MaxTake(max);
-            using (var conn = _connectionFactory.GetConnection())
-            {
-                return Source.From(conn.GetTable<JournalRow>()
-                        .OrderBy(r => r.ordering)
-                        .Where(r =>
-                            r.ordering > offset && r.ordering <= maxOffset)
-                        .Take(maxTake).ToList())
-                    .Via(_serializer.DeserializeFlow());
-
-            }
+            
+                return FactoryEnumerable.StreamSource(() =>
+                    {
+                        using (var conn = _connectionFactory.GetConnection())
+                        {
+                            return conn.GetTable<JournalRow>()
+                                .OrderBy(r => r.ordering)
+                                .Where(r =>
+                                    r.ordering > offset &&
+                                    r.ordering <= maxOffset)
+                                .Take(maxTake).ToList();
+                        }
+                    }
+                ).Via(_serializer.DeserializeFlow());
+            
         }
         
         public Source<
@@ -96,17 +106,21 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
         {
             var separator = _readJournalConfig.PluginConfig.TagSeparator;
             var maxTake = MaxTake(max);
-            using (var conn = _connectionFactory.GetConnection())
-            {
-                return Source.From(Queryable.Where<JournalRow>(conn.GetTable<JournalRow>(), r => r.tags.Contains(tag))
-                        .OrderBy(r => r.ordering)
-                        .Where(r =>
-                            r.ordering > offset && r.ordering <= maxOffset)
-                        .Take(maxTake).ToList())
-                    .Via(perfectlyMatchTag(tag, separator))
-                    .Via(_serializer.DeserializeFlow());
+            return FactoryEnumerable.StreamSource(() =>
+                {
+                    using (var conn = _connectionFactory.GetConnection())
+                    {
+                        return conn.GetTable<JournalRow>()
+                            .Where<JournalRow>(r => r.tags.Contains(tag))
+                            .OrderBy(r => r.ordering)
+                            .Where(r =>
+                                r.ordering > offset && r.ordering <= maxOffset)
+                            .Take(maxTake).ToList();
 
-            }
+                    }
+                }).Via(perfectlyMatchTag(tag, separator))
+                    .Via(_serializer.DeserializeFlow());
+            
         }
 
         private Flow<JournalRow, JournalRow, NotUsed> perfectlyMatchTag(
@@ -125,9 +139,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             long toSequenceNr, long max)
         {
             var toTake = MaxTake(max);
-            //using (var conn = _connectionFactory.GetConnection())
-            //{
-                return Source.From(
+            return Source.From(
                         await baseQuery(dc)
                             .Where(r => r.persistenceId == persistenceId
                                         && r.sequenceNumber >= fromSequenceNr
@@ -153,7 +165,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                             }
                         });
 
-            //}
 
         }
 
@@ -162,7 +173,8 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             var maxTake = MaxTake(limit);
             using (var conn = _connectionFactory.GetConnection())
             {
-                return Source.From(Queryable.Where<JournalRow>(conn.GetTable<JournalRow>(), r => r.ordering > offset).Select(r => r.ordering)
+                return Source.From(conn.GetTable<JournalRow>()
+                    .Where<JournalRow>(r => r.ordering > offset).Select(r => r.ordering)
                     .OrderBy(r => r).Take(maxTake).ToList());
             }
         }
@@ -171,7 +183,9 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
         {
             using (var db = _connectionFactory.GetConnection())
             {
-                return Task.FromResult(Queryable.Select<JournalRow, long>(db.GetTable<JournalRow>(), r => r.ordering).FirstOrDefault());
+                return Task.FromResult(db.GetTable<JournalRow>()
+                    .Select<JournalRow, long>(r => r.ordering)
+                    .FirstOrDefault());
             }
         }
     }

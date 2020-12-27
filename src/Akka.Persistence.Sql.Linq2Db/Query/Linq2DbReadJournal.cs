@@ -418,7 +418,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
             {
                 theOffset = s.Value;
             }
-
             return Source.FromTask(readJournalDao.MaxJournalSequence())
                 .ConcatMany(
                     maxInDb =>

@@ -69,7 +69,8 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
             {
                 _readJournalDao
                     .JournalSequence(currentMaxOrdering, _config.BatchSize)
-                    .RunWith(Sink.Seq<long>(), _mat).PipeTo(Self, sender: Self,
+                    .RunWith(Sink.Seq<long>(), _mat)
+                    .PipeTo(Self, sender: Self,
                         success: res =>
                             new NewOrderingIds(currentMaxOrdering, res));
             }
