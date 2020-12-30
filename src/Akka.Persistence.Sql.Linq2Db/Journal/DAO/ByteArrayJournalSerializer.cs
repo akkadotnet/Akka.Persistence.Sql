@@ -59,7 +59,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                     tags = tTags.Any()?  tTags.Aggregate((tl, tr) => tl + _separator + tr) : "",
                     Identifier = serializer.Identifier,
                     sequenceNumber = persistentRepr.SequenceNr,
-                    Timestamp = timeStamp
+                    Timestamp = persistentRepr.Timestamp==0?  timeStamp: persistentRepr.Timestamp
                 });
             }
             catch (Exception e)
@@ -96,7 +96,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                     return (
                         new Persistent(deserialized, t.sequenceNumber,
                             t.persistenceId,
-                            t.manifest, t.deleted, ActorRefs.NoSender, null),
+                            t.manifest, t.deleted, ActorRefs.NoSender, null, t.Timestamp),
                         t.tags?.Split(new[] {_separator},
                                 StringSplitOptions.RemoveEmptyEntries)
                             .ToImmutableHashSet() ?? ImmutableHashSet<string>.Empty,
