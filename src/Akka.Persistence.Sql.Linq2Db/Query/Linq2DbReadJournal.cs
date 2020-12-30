@@ -298,7 +298,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
             long offset)
         {
             
-            //return FactoryEnumerable.StreamSource(() =>
+            
             return AsyncStreamSource.FromEnumerable<long>(async ()=>
             {
                 return new[]{ await readJournalDao.MaxJournalSequenceAsync()};
@@ -423,7 +423,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
                 theOffset = s.Value;
             }
 
-            //return FactoryEnumerable.StreamSource(() =>
+            
             return AsyncStreamSource.FromEnumerable<long>(async ()=>
             {
                 return new[] {await readJournalDao.MaxJournalSequenceAsync()};

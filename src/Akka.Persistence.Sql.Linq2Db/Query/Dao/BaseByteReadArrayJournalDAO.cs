@@ -51,7 +51,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
         {
             
                 var maxTake = MaxTake(max);
-                //return FactoryEnumerable.StreamSource(() =>
+                
                 return AsyncStreamSource.FromEnumerable<string>(async () =>
                 {
                     using (var db = _connectionFactory.GetConnection())
@@ -87,7 +87,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             var separator = _readJournalConfig.PluginConfig.TagSeparator;
             var maxTake = MaxTake(max);
             
-                //return FactoryEnumerable.StreamSource(() =>
+                
                 return AsyncStreamSource.FromEnumerable<JournalRow>(async ()=>
                     {
                         using (var conn = _connectionFactory.GetConnection())
@@ -111,7 +111,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
         {
             var separator = _readJournalConfig.PluginConfig.TagSeparator;
             var maxTake = MaxTake(max);
-            //return FactoryEnumerable.StreamSource(() =>
+            
             return AsyncStreamSource.FromEnumerable<JournalRow>(async ()=>
                 {
                     using (var conn = _connectionFactory.GetConnection())
@@ -189,22 +189,13 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             });
         }
 
-        public Task<long> MaxJournalSequenceAsync()
+        public async Task<long> MaxJournalSequenceAsync()
         {
             using (var db = _connectionFactory.GetConnection())
             {
-                return Task.FromResult(db.GetTable<JournalRow>()
+                return await db.GetTable<JournalRow>()
                     .Select<JournalRow, long>(r => r.ordering)
-                    .FirstOrDefault());
-            }
-        }
-        public long MaxJournalSequence()
-        {
-            using (var db = _connectionFactory.GetConnection())
-            {
-                return db.GetTable<JournalRow>()
-                    .Select<JournalRow, long>(r => r.ordering)
-                    .FirstOrDefault();
+                    .FirstOrDefaultAsync();
             }
         }
     }
