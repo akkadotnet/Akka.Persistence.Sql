@@ -9,13 +9,16 @@ using Akka.Persistence.Sql.Linq2Db.Db;
 using Akka.Persistence.Sql.Linq2Db.Journal.DAO;
 using Akka.Persistence.Sql.Linq2Db.Journal.Types;
 using Akka.Persistence.Sql.Linq2Db.Serialization;
+using Akka.Persistence.Sql.Linq2Db.Utility;
 using Akka.Streams;
 using Akka.Streams.Dsl;
+using Akka.Util;
 using LinqToDB;
 using LinqToDB.Data;
 
 namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
 {
+    
     public abstract class
         BaseByteReadArrayJournalDAO : BaseJournalDaoWithReadMessages,
             IReadJournalDAO
@@ -48,14 +51,15 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
         {
             
                 var maxTake = MaxTake(max);
-                return FactoryEnumerable.StreamSource(() =>
+                //return FactoryEnumerable.StreamSource(() =>
+                return AsyncStreamSource.FromEnumerable<string>(async () =>
                 {
                     using (var db = _connectionFactory.GetConnection())
                     {
-                        return baseQuery(db)
+                        return await baseQuery(db)
                             .Select(r => r.persistenceId)
                             .Distinct()
-                            .Take(maxTake).ToList();
+                            .Take(maxTake).ToListAsync();
                     }
                 });
         }
@@ -83,16 +87,17 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             var separator = _readJournalConfig.PluginConfig.TagSeparator;
             var maxTake = MaxTake(max);
             
-                return FactoryEnumerable.StreamSource(() =>
+                //return FactoryEnumerable.StreamSource(() =>
+                return AsyncStreamSource.FromEnumerable<JournalRow>(async ()=>
                     {
                         using (var conn = _connectionFactory.GetConnection())
                         {
-                            return conn.GetTable<JournalRow>()
+                            return await conn.GetTable<JournalRow>()
                                 .OrderBy(r => r.ordering)
                                 .Where(r =>
                                     r.ordering > offset &&
                                     r.ordering <= maxOffset)
-                                .Take(maxTake).ToList();
+                                .Take(maxTake).ToListAsync();
                         }
                     }
                 ).Via(_serializer.DeserializeFlow());
@@ -106,16 +111,17 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
         {
             var separator = _readJournalConfig.PluginConfig.TagSeparator;
             var maxTake = MaxTake(max);
-            return FactoryEnumerable.StreamSource(() =>
+            //return FactoryEnumerable.StreamSource(() =>
+            return AsyncStreamSource.FromEnumerable<JournalRow>(async ()=>
                 {
                     using (var conn = _connectionFactory.GetConnection())
                     {
-                        return conn.GetTable<JournalRow>()
+                        return await conn.GetTable<JournalRow>()
                             .Where<JournalRow>(r => r.tags.Contains(tag))
                             .OrderBy(r => r.ordering)
                             .Where(r =>
                                 r.ordering > offset && r.ordering <= maxOffset)
-                            .Take(maxTake).ToList();
+                            .Take(maxTake).ToListAsync();
 
                     }
                 }).Via(perfectlyMatchTag(tag, separator))
@@ -171,12 +177,16 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
         public Source<long, NotUsed> JournalSequence(long offset, long limit)
         {
             var maxTake = MaxTake(limit);
-            using (var conn = _connectionFactory.GetConnection())
+            return AsyncStreamSource.FromEnumerable<long>(async () =>
             {
-                return Source.From(conn.GetTable<JournalRow>()
-                    .Where<JournalRow>(r => r.ordering > offset).Select(r => r.ordering)
-                    .OrderBy(r => r).Take(maxTake).ToList());
-            }
+                using (var conn = _connectionFactory.GetConnection())
+                {
+                    return await conn.GetTable<JournalRow>()
+                        .Where<JournalRow>(r => r.ordering > offset)
+                        .Select(r => r.ordering)
+                        .OrderBy(r => r).Take(maxTake).ToListAsync();
+                }
+            });
         }
 
         public Task<long> MaxJournalSequenceAsync()
