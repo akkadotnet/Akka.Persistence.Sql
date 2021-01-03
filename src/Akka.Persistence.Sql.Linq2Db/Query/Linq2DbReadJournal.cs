@@ -300,16 +300,15 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
             long offset)
         {
             
-            
-            return AsyncStreamSource.FromEnumerable<long>(async ()=>
+            return AsyncSource<long>.FromEnumerable(new{readJournalDao},async (input)=>
             {
-                return new[]{ await readJournalDao.MaxJournalSequenceAsync()};
+                return new[]{ await input.readJournalDao.MaxJournalSequenceAsync()};
             }).ConcatMany(
-                    maxInDb =>
-                    {
-                        return _eventsByTag(tag, offset, Some.Create(maxInDb));
-                    });
-        }
+                maxInDb =>
+                {
+                    return _eventsByTag(tag, offset, Some.Create(maxInDb));
+                });
+        }   
         
         private Source<EventEnvelope, NotUsed> _events(
             long offset, long? terminateAfterOffset)
@@ -416,7 +415,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
 
             return _events(theOffset, null);
         }
-
+        
         public Source<EventEnvelope, NotUsed> CurrentAllEvents(Offset offset)
         {
             long theOffset = 0;
@@ -424,16 +423,24 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
             {
                 theOffset = s.Value;
             }
-
             
-            return AsyncStreamSource.FromEnumerable<long>(async ()=>
-            {
-                return new[] {await readJournalDao.MaxJournalSequenceAsync()};
-            }).ConcatMany(
-                maxInDb =>
-                {
-                    return _events(theOffset, Some.Create(maxInDb));
-                });
+            return AsyncSource<long>.FromEnumerable(readJournalDao, async input=>          
+            {                                                                 
+                return new[] {await input.MaxJournalSequenceAsync()};
+            }).ConcatMany(                                                    
+                maxInDb =>                                                    
+                {                                                             
+                    return _events(theOffset, Some.Create(maxInDb));          
+                });                                                           
+
+            //return AsyncSource.FromEnumerable<long>(async ()=>
+            //{
+            //    return new[] {await readJournalDao.MaxJournalSequenceAsync()};
+            //}).ConcatMany(
+            //    maxInDb =>
+            //    {
+            //        return _events(theOffset, Some.Create(maxInDb));
+            //    });
         }
     }
 }

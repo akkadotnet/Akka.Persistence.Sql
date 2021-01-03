@@ -10,6 +10,7 @@ using Akka.Persistence.Sql.Linq2Db.Config;
 using Akka.Persistence.Sql.Linq2Db.Db;
 using Akka.Persistence.Sql.Linq2Db.Journal.Types;
 using Akka.Persistence.Sql.Linq2Db.Serialization;
+using Akka.Persistence.Sql.Linq2Db.Utility;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using LanguageExt;
@@ -35,6 +36,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
 
         public bool logicalDelete;
         protected readonly ILoggingAdapter _logger;
+        private Flow<JournalRow, Util.Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, NotUsed> deserializeFlow;
 
         protected BaseByteArrayJournalDao(IAdvancedScheduler sched,
             IMaterializer materializerr,
@@ -46,6 +48,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
             _journalConfig = config;
             logicalDelete = _journalConfig.DaoConfig.LogicalDelete;
             Serializer = serializer;
+            deserializeFlow = Serializer.DeserializeFlow();
             //Due to C# rules we have to initialize WriteQueue here
             //Keeping it here vs init function prevents accidental moving of init
             //to where variables aren't set yet.
@@ -370,12 +373,11 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
         
 
         public override
-            async Task<Source<Util.Try<ReplayCompletion>, NotUsed>>
+            Source<Util.Try<ReplayCompletion>, NotUsed>
             Messages(DataConnection db, string persistenceId,
                 long fromSequenceNr, long toSequenceNr,
                 long max)
         {
-
             {
                 IQueryable<JournalRow> query = db.GetTable<JournalRow>()
                     .Where(r =>
@@ -390,32 +392,34 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                 }
 
                 
-                //TODO: Is there a better way to do this async?
-                //return Source
-                //    .FromObservable(query.AsAsyncEnumerable().ToObservable())
-                
-                return Source.From(await query.ToListAsync())
+                return AsyncSource<JournalRow>.FromEnumerable(query,async q=>await q.ToListAsync())
                     .Via(
-                        Serializer.DeserializeFlow()).Select(sertry =>
-                    {
-                        if (sertry.IsSuccess)
-                        {
-                            return new
-                                Util.Try<ReplayCompletion>(
-                                    new ReplayCompletion()
-                                    {
-                                        repr = sertry.Success.Value.Item1,
-                                        Ordering = sertry.Success.Value.Item3
-                                    });
-                        }
-                        else
-                        {
-                            return new
-                                Util.Try<ReplayCompletion>(
-                                    sertry.Failure.Value);
-                        }
-                    });
+                        deserializeFlow).Select(MessageWithBatchMapper());
             }
+        }
+
+        private static Func<Util.Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, Util.Try<ReplayCompletion>> MessageWithBatchMapper()
+        {
+            return sertry =>
+            {
+                if (sertry.IsSuccess)
+                {
+                    var success = sertry.Success.Value;
+                    return new
+                        Util.Try<ReplayCompletion>(
+                            new ReplayCompletion()
+                            {
+                                repr = success.Item1,
+                                Ordering = success.Item3
+                            });
+                }
+                else
+                {
+                    return new
+                        Util.Try<ReplayCompletion>(
+                            sertry.Failure.Value);
+                }
+            };
         }
     }
 }

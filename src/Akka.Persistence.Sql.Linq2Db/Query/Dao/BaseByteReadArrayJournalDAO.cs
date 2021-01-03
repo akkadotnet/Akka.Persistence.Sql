@@ -26,6 +26,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
         private bool includeDeleted;
         private ReadJournalConfig _readJournalConfig;
         private FlowPersistentReprSerializer<JournalRow> _serializer;
+        private Flow<JournalRow, Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, NotUsed> deserializeFlow;
 
         protected BaseByteReadArrayJournalDAO(IAdvancedScheduler ec,
             IMaterializer mat,
@@ -38,9 +39,17 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             _readJournalConfig = readJournalConfig;
             includeDeleted = readJournalConfig.IncludeDeleted;
             _serializer = serializer;
+            deserializeFlow = _serializer.DeserializeFlow();
         }
 
         protected IQueryable<JournalRow> baseQuery(DataConnection connection)
+        {
+            return connection.GetTable<JournalRow>()
+                .Where(jr =>
+                    includeDeleted == false || (jr.deleted == false));
+        }
+        
+        protected static IQueryable<JournalRow> baseQueryStatic(DataConnection connection, bool includeDeleted)
         {
             return connection.GetTable<JournalRow>()
                 .Where(jr =>
@@ -51,17 +60,21 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
         {
             
                 var maxTake = MaxTake(max);
-                
-                return AsyncStreamSource.FromEnumerable<string>(async () =>
-                {
-                    using (var db = _connectionFactory.GetConnection())
+
+                return AsyncSource<string>.FromEnumerable(
+                    new {_connectionFactory, maxTake, includeDeleted},
+                    async (input) =>
                     {
-                        return await baseQuery(db)
-                            .Select(r => r.persistenceId)
-                            .Distinct()
-                            .Take(maxTake).ToListAsync();
-                    }
-                });
+                        using (var db =
+                            input._connectionFactory.GetConnection())
+                        {
+                            return await baseQueryStatic(db,
+                                    input.includeDeleted)
+                                .Select(r => r.persistenceId)
+                                .Distinct()
+                                .Take(input.maxTake).ToListAsync();
+                        }
+                    });
         }
 
         private static int MaxTake(long max)
@@ -84,23 +97,23 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             NotUsed> Events(long offset, long maxOffset,
             long max)
         {
-            var separator = _readJournalConfig.PluginConfig.TagSeparator;
+            
             var maxTake = MaxTake(max);
             
-                
-                return AsyncStreamSource.FromEnumerable<JournalRow>(async ()=>
+            return AsyncSource<JournalRow>.FromEnumerable(new {_connectionFactory,maxTake,maxOffset,offset},async(input)=>
+                {
+                    using (var conn = input._connectionFactory.GetConnection())
                     {
-                        using (var conn = _connectionFactory.GetConnection())
-                        {
-                            return await conn.GetTable<JournalRow>()
-                                .OrderBy(r => r.ordering)
-                                .Where(r =>
-                                    r.ordering > offset &&
-                                    r.ordering <= maxOffset)
-                                .Take(maxTake).ToListAsync();
-                        }
+                        return await conn.GetTable<JournalRow>()
+                            .OrderBy(r => r.ordering)
+                            .Where(r =>
+                                r.ordering > input.offset &&
+                                r.ordering <= input.maxOffset)
+                            .Take(input.maxTake).ToListAsync();
                     }
-                ).Via(_serializer.DeserializeFlow());
+                }
+            ).Via(deserializeFlow);
+             
             
         }
         
@@ -111,22 +124,21 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
         {
             var separator = _readJournalConfig.PluginConfig.TagSeparator;
             var maxTake = MaxTake(max);
-            
-            return AsyncStreamSource.FromEnumerable<JournalRow>(async ()=>
+            return AsyncSource<JournalRow>.FromEnumerable(new{separator,tag,offset,maxOffset,maxTake,_connectionFactory},
+                    async(input)=>
                 {
-                    using (var conn = _connectionFactory.GetConnection())
+                    using (var conn = input._connectionFactory.GetConnection())
                     {
                         return await conn.GetTable<JournalRow>()
-                            .Where<JournalRow>(r => r.tags.Contains(tag))
+                            .Where<JournalRow>(r => r.tags.Contains(input.tag))
                             .OrderBy(r => r.ordering)
                             .Where(r =>
-                                r.ordering > offset && r.ordering <= maxOffset)
-                            .Take(maxTake).ToListAsync();
-
+                                r.ordering > input.offset && r.ordering <= input.maxOffset)
+                            .Take(input.maxTake).ToListAsync();
                     }
                 }).Via(perfectlyMatchTag(tag, separator))
-                    .Via(_serializer.DeserializeFlow());
-            
+                .Via(deserializeFlow);
+
         }
 
         private Flow<JournalRow, JournalRow, NotUsed> perfectlyMatchTag(
@@ -140,36 +152,44 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                 .Any(t => t.Contains(tag)));
         }
 
-        public override async Task<Source<Akka.Util.Try<ReplayCompletion>, NotUsed>> Messages(
+        public override Source<Akka.Util.Try<ReplayCompletion>, NotUsed> Messages(
             DataConnection dc, string persistenceId, long fromSequenceNr,
             long toSequenceNr, long max)
         {
             var toTake = MaxTake(max);
-            return Source.From(
-                        await baseQuery(dc)
-                            .Where(r => r.persistenceId == persistenceId
-                                        && r.sequenceNumber >= fromSequenceNr
-                                        && r.sequenceNumber <= toSequenceNr)
+            return AsyncSource<JournalRow>.FromEnumerable(
+                    new
+                    {
+                        dc, persistenceId, fromSequenceNr, toSequenceNr, toTake,
+                        includeDeleted
+                    }, async (state) =>
+
+                        await baseQueryStatic(state.dc, state.includeDeleted)
+                            .Where(r => r.persistenceId == state.persistenceId
+                                        && r.sequenceNumber >=
+                                        state.fromSequenceNr
+                                        && r.sequenceNumber <=
+                                        state.toSequenceNr)
                             .OrderBy(r => r.sequenceNumber)
-                            .Take(toTake).ToListAsync())
-                    .Via(_serializer.DeserializeFlow())
-                    .Select(
-                        t =>
+                            .Take(state.toTake).ToListAsync())
+                .Via(deserializeFlow)
+                .Select(
+                    t =>
+                    {
+                        try
                         {
-                            try
-                            {
-                                var val = t.Get();
-                                return new Akka.Util.Try<ReplayCompletion>(
-                                    new ReplayCompletion()
-                                    {
-                                        repr = val.Item1, Ordering = val.Item3
-                                    });
-                            }
-                            catch (Exception e)
-                            {
-                                return new Akka.Util.Try<ReplayCompletion>(e);
-                            }
-                        });
+                            var val = t.Get();
+                            return new Akka.Util.Try<ReplayCompletion>(
+                                new ReplayCompletion()
+                                {
+                                    repr = val.Item1, Ordering = val.Item3
+                                });
+                        }
+                        catch (Exception e)
+                        {
+                            return new Akka.Util.Try<ReplayCompletion>(e);
+                        }
+                    });
 
 
         }
@@ -177,16 +197,18 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
         public Source<long, NotUsed> JournalSequence(long offset, long limit)
         {
             var maxTake = MaxTake(limit);
-            return AsyncStreamSource.FromEnumerable<long>(async () =>
-            {
-                using (var conn = _connectionFactory.GetConnection())
+            return AsyncSource<long>.FromEnumerable(new {maxTake, offset, _connectionFactory},
+                async (input) =>
                 {
-                    return await conn.GetTable<JournalRow>()
-                        .Where<JournalRow>(r => r.ordering > offset)
-                        .Select(r => r.ordering)
-                        .OrderBy(r => r).Take(maxTake).ToListAsync();
-                }
-            });
+                    
+                    using (var conn = input._connectionFactory.GetConnection())
+                    {
+                        return await conn.GetTable<JournalRow>()
+                            .Where<JournalRow>(r => r.ordering > input.offset)
+                            .Select(r => r.ordering)
+                            .OrderBy(r => r).Take(input.maxTake).ToListAsync();
+                    }
+                });
         }
 
         public async Task<long> MaxJournalSequenceAsync()

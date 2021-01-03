@@ -10,7 +10,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
 {
     public interface IJournalDaoWithReadMessages
     {
-        Task<Source<Try<ReplayCompletion>, NotUsed>> Messages(DataConnection dc,
+        Source<Try<ReplayCompletion>, NotUsed> Messages(DataConnection dc,
             string persistenceId, long fromSequenceNr, long toSequenceNr,
             long max);
         Source<Try<ReplayCompletion>,NotUsed> MessagesWithBatch(

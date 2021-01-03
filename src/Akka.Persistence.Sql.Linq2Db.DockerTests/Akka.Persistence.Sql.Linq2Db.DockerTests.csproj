@@ -12,6 +12,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Akka" Version="1.4.14" />
         <PackageReference Include="Akka.Persistence.Sqlite" Version="1.4.14" />
         <PackageReference Include="Akka.Persistence.SqlServer" Version="1.4.13" />
         <PackageReference Include="Akka.Persistence.TCK" Version="1.4.14" />
