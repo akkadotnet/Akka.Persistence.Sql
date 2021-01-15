@@ -372,6 +372,16 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
 
         
 
+        /// <summary>
+        /// This override is greedy since it is always called
+        /// from within <see cref="BaseJournalDaoWithReadMessages.MessagesWithBatch"/>
+        /// </summary>
+        /// <param name="db"></param>
+        /// <param name="persistenceId"></param>
+        /// <param name="fromSequenceNr"></param>
+        /// <param name="toSequenceNr"></param>
+        /// <param name="max"></param>
+        /// <returns></returns>
         public override
             Source<Util.Try<ReplayCompletion>, NotUsed>
             Messages(DataConnection db, string persistenceId,
@@ -391,10 +401,12 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                     query = query.Take((int) max);
                 }
 
-                
-                return AsyncSource<JournalRow>.FromEnumerable(query,async q=>await q.ToListAsync())
-                    .Via(
-                        deserializeFlow).Select(MessageWithBatchMapper());
+                var runninng = query.ToListAsync();
+                return Source.FromTask(runninng).SelectMany(r => r)
+                    .Via(deserializeFlow.Select(MessageWithBatchMapper()));
+                //return AsyncSource<JournalRow>.FromEnumerable(query,async q=>await q.ToListAsync())
+                //    .Via(
+                //        deserializeFlow).Select(MessageWithBatchMapper());
             }
         }
 
