@@ -45,14 +45,14 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             InitializeLogger(sys1);
             var persistRef = sys1.ActorOf(Props.Create(() =>
                 new JournalCompatActor(OldJournal,
-                    "p-1")), "test");
+                    "p-1")), "test-recover-1");
             var ourGuid = Guid.NewGuid();
             persistRef.Tell(new SomeEvent(){EventName = "rec-test", Guid = ourGuid, Number = 1});
             Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid}, TimeSpan.FromSeconds(5)).Result);
             await persistRef.GracefulStop(TimeSpan.FromSeconds(5));
             persistRef =  sys1.ActorOf(Props.Create(() =>
                 new JournalCompatActor(NewJournal,
-                    "p-1")), "test");
+                    "p-1")), "test-recover-1");
             Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid},TimeSpan.FromSeconds(5)).Result);
         }
         [Fact]
@@ -63,14 +63,14 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             InitializeLogger(sys1);
             var persistRef = sys1.ActorOf(Props.Create(() =>
                 new JournalCompatActor(OldJournal,
-                    "p-2")), "test");
+                    "p-2")), "test-persist-1");
             var ourGuid = Guid.NewGuid();
             persistRef.Tell(new SomeEvent(){EventName = "rec-test", Guid = ourGuid, Number = 1});
             Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid}, TimeSpan.FromSeconds(5)).Result);
             await persistRef.GracefulStop(TimeSpan.FromSeconds(5));
             persistRef =  sys1.ActorOf(Props.Create(() =>
                 new JournalCompatActor(NewJournal,
-                    "p-2")), "test");
+                    "p-2")), "test-persist-1");
             Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid},TimeSpan.FromSeconds(10)).Result);
             var ourSecondGuid = Guid.NewGuid();
             persistRef.Tell(new SomeEvent(){EventName = "rec-test", Guid = ourSecondGuid, Number = 2});
@@ -85,14 +85,14 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             InitializeLogger(sys1);
             var persistRef = sys1.ActorOf(Props.Create(() =>
                 new JournalCompatActor(NewJournal,
-                    "p-3")), "test");
+                    "p-3")), "test-recover-2");
             var ourGuid = Guid.NewGuid();
             persistRef.Tell(new SomeEvent(){EventName = "rec-test", Guid = ourGuid, Number = 1});
             Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid}, TimeSpan.FromSeconds(5)).Result);
             await persistRef.GracefulStop(TimeSpan.FromSeconds(5));
             persistRef = sys1.ActorOf(Props.Create(() =>
                 new JournalCompatActor(OldJournal,
-                    "p-3")), "test");
+                    "p-3")), "test-recover-2");
             Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid},TimeSpan.FromSeconds(5)).Result);
         }
         [Fact]
@@ -103,14 +103,14 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             InitializeLogger(sys1);
             var persistRef = sys1.ActorOf(Props.Create(() =>
                 new JournalCompatActor(NewJournal,
-                    "p-4")), "test");
+                    "p-4")), "test-persist-2");
             var ourGuid = Guid.NewGuid();
             persistRef.Tell(new SomeEvent(){EventName = "rec-test", Guid = ourGuid, Number = 1});
             Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid}, TimeSpan.FromSeconds(5)).Result);
             await persistRef.GracefulStop(TimeSpan.FromSeconds(5));
             persistRef =  sys1.ActorOf(Props.Create(() =>
                 new JournalCompatActor(OldJournal,
-                    "p-4")), "test");
+                    "p-4")), "test-persist-2");
             Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid},TimeSpan.FromSeconds(10)).Result);
             var ourSecondGuid = Guid.NewGuid();
             persistRef.Tell(new SomeEvent(){EventName = "rec-test", Guid = ourSecondGuid, Number = 2});
@@ -126,7 +126,7 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             var persistenceId = "d-1";
             var persistRef = sys1.ActorOf(Props.Create(() =>
                 new JournalCompatActor(NewJournal,
-                    persistenceId)), "test");
+                    persistenceId)), "test-compat-delete-seqno");
             var ourGuid1 = Guid.NewGuid();
             var ourGuid2 = Guid.NewGuid();
             var ourGuid3 = Guid.NewGuid();
@@ -146,14 +146,14 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             await persistRef.GracefulStop(TimeSpan.FromSeconds(5));
             persistRef = sys1.ActorOf(Props.Create(() =>
                 new JournalCompatActor(NewJournal,
-                    persistenceId)), "test");
+                    persistenceId)), "test-compat-delete-seqno");
             var reIncaranatedSequenceNrNewJournal = await persistRef.Ask<CurrentSequenceNr>(new GetSequenceNr(),TimeSpan.FromSeconds(5));
             Output.WriteLine($"oldSeq : {currentSequenceNr.SequenceNumber} - newSeq : {reIncaranatedSequenceNrNewJournal.SequenceNumber}");
             Assert.Equal(currentSequenceNr.SequenceNumber,reIncaranatedSequenceNrNewJournal.SequenceNumber);
             await persistRef.GracefulStop(TimeSpan.FromSeconds(5));
             persistRef = sys1.ActorOf(Props.Create(() =>
                 new JournalCompatActor(OldJournal,
-                    persistenceId)), "test");
+                    persistenceId)), "test-compat-delete-seqno");
             var reIncaranatedSequenceNr = await persistRef.Ask<CurrentSequenceNr>(new GetSequenceNr(),TimeSpan.FromSeconds(5));
             Output.WriteLine($"oldSeq : {currentSequenceNr.SequenceNumber} - newSeq : {reIncaranatedSequenceNr.SequenceNumber}");
             Assert.Equal(currentSequenceNr.SequenceNumber,reIncaranatedSequenceNr.SequenceNumber);
