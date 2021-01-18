@@ -2,9 +2,9 @@
     <Import Project="..\common.props" />
 
     <PropertyGroup>
-        <TargetFrameworks>$(TestsNetCoreFramework)</TargetFrameworks>
         <IsPackable>false</IsPackable>
         <RootNamespace>Akka.Persistence.Linq2Db.CompatibilityTests</RootNamespace>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
 
     </PropertyGroup>
 

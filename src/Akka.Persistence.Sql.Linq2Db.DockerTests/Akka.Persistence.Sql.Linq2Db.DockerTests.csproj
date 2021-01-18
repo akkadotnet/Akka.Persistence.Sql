@@ -2,9 +2,9 @@
     <Import Project="..\common.props" />
 
     <PropertyGroup>
-        <TargetFrameworks>$(TestsNetCoreFramework)</TargetFrameworks>
         <IsPackable>false</IsPackable>
         <RootNamespace>Akka.Persistence.Sql.Linq2Db.Tests.Docker</RootNamespace>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
