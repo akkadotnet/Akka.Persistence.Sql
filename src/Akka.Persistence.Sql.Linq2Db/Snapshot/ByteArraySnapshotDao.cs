@@ -29,7 +29,10 @@ namespace Akka.Persistence.Sql.Linq2Db.Snapshot
                 }
                 catch (Exception e)
                 {
-                    _logger.Warning(e,$"Could not Create Snapshot Table {_snapshotConfig.TableConfig.TableName} as requested by config.");
+                    if (_snapshotConfig.TableConfig.WarnOnAutoInitializeFail)
+                    {
+                        _logger.Warning(e,$"Could not Create Snapshot Table {_snapshotConfig.TableConfig.TableName} as requested by config.");    
+                    }
                 }
             }
         }

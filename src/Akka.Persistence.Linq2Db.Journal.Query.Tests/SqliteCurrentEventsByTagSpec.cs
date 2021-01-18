@@ -51,6 +51,7 @@ namespace Akka.Persistence.Sqlite.Tests.Query
                 tables {{
                    journal {{
                      table-name = event_journal
+                           warn-on-auto-init-fail = false
                      metadata-table-name = journal_metadata
                      auto-init = true 
                    }} 
@@ -65,6 +66,7 @@ namespace Akka.Persistence.Sqlite.Tests.Query
                    journal {{
                      table-name = event_journal
                      metadata-table-name = journal_metadata
+                           warn-on-auto-init-fail = false
                    }} 
                 }}
             }}

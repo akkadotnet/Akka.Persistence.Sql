@@ -32,7 +32,11 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                 }
                 catch (Exception e)
                 {
-                    _logger.Warning(e,$"Could not Create Journal Table {_journalConfig.TableConfig.TableName} as requested by config.");
+                    if (_journalConfig.TableConfig.WarnOnAutoInitializeFail)
+                    {
+                        _logger.Warning(e,$"Could not Create Journal Table {_journalConfig.TableConfig.TableName} as requested by config.");    
+                    }
+                    
                 }
 
                 if (_journalConfig.DaoConfig.SqlCommonCompatibilityMode)
@@ -43,7 +47,10 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                     }
                     catch (Exception e)
                     {
-                        _logger.Warning(e,$"Could not Create Journal Metadata Table {_journalConfig.TableConfig.TableName} as requested by config.");
+                        if (_journalConfig.TableConfig.WarnOnAutoInitializeFail)
+                        {
+                            _logger.Warning(e,$"Could not Create Journal Metadata Table {_journalConfig.TableConfig.TableName} as requested by config.");    
+                        }
                     }
                 }
             }

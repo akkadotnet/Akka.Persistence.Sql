@@ -54,6 +54,7 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests.Docker.SqlServer
                         {{
                         snapshot {{ 
                            auto-init = true
+                           warn-on-auto-init-fail = false
                            table-name = ""{tablename}""    
                           }}
                         }}
@@ -94,6 +95,7 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests.Docker.SqlServer
                         table-compatibility-mode = ""sqlserver""
                         tables.journal {{ 
                            auto-init = true
+                           warn-on-auto-init-fail = false
                            table-name = ""{tablename}"" 
                            metadata-table-name = ""{metadatatablename}""
                            

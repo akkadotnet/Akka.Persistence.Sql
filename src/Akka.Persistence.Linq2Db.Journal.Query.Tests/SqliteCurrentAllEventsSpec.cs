@@ -36,6 +36,7 @@ namespace Akka.Persistence.Sqlite.Tests.Query
                      table-name = event_journal
                      metadata-table-name = journal_metadata
                      auto-init = true 
+                           warn-on-auto-init-fail = false
                    }} 
                 }}
                 connection-string = ""{connString}""
@@ -49,6 +50,7 @@ namespace Akka.Persistence.Sqlite.Tests.Query
                    journal {{
                      table-name = event_journal
                      metadata-table-name = journal_metadata 
+                           warn-on-auto-init-fail = false
                    }} 
                 }}
             }}

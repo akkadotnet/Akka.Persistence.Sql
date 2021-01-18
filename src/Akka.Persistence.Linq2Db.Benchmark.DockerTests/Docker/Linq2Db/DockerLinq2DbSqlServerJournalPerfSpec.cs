@@ -35,6 +35,7 @@ namespace Akka.Persistence.Linq2Db.BenchmarkTests.Docker.Linq2Db
                         use-clone-connection = true
                         tables.journal {{ 
                            auto-init = true
+                           warn-on-auto-init-fail = false
                            table-name = ""{2}"" 
                            }}
                     }}
