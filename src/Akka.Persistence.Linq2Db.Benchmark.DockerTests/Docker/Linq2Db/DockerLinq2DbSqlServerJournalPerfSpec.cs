@@ -26,8 +26,8 @@ namespace Akka.Persistence.Linq2Db.BenchmarkTests.Docker.Linq2Db
                     plugin = ""akka.persistence.journal.testspec""
                     testspec {{
                         class = ""{0}""
-                        plugin-dispatcher = ""akka.actor.default-dispatcher""
-                        #plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
+                        #plugin-dispatcher = ""akka.actor.default-dispatcher""
+                        plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
                         parallelism = 2
                         connection-string = ""{1}""
 #connection-string = ""FullUri=file:test.db&cache=shared""

@@ -15,17 +15,17 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Sql.Linq2D
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Sql.Linq2Db", "src\Akka.Persistence.Sql.Linq2Db\Akka.Persistence.Sql.Linq2Db.csproj", "{D10C2941-AD62-4E17-8C2C-4917D4C82B07}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Sql.Linq2Db.Docker.Tests", "src\Akka.Persistence.Sql.Linq2Db.Docker.Tests\Akka.Persistence.Sql.Linq2Db.Docker.Tests.csproj", "{4D749F93-F57E-405F-94F7-EECF87299CC8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Sql.Linq2Db.DockerTests", "src\Akka.Persistence.Sql.Linq2Db.DockerTests\Akka.Persistence.Sql.Linq2Db.DockerTests.csproj", "{4D749F93-F57E-405F-94F7-EECF87299CC8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.Journal.Query.Tests", "src\Akka.Persistence.Linq2Db.Journal.Query.Tests\Akka.Persistence.Linq2Db.Journal.Query.Tests.csproj", "{FA174DBA-14FB-418F-85C5-A1B89198796F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.Benchmark.Tests", "src\Akka.Persistence.Linq2Db.Benchmark.Tests\Akka.Persistence.Linq2Db.Benchmark.Tests.csproj", "{6AE959E1-440C-4407-B080-64B1018A96A3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.Benchmark.Docker.Tests", "src\Akka.Persistence.Linq2Db.Benchmark.Docker.Tests\Akka.Persistence.Linq2Db.Benchmark.Docker.Tests.csproj", "{46F25C80-8610-4C54-875F-8C1FE2055129}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.Benchmark.DockerTests", "src\Akka.Persistence.Linq2Db.Benchmark.DockerTests\Akka.Persistence.Linq2Db.Benchmark.DockerTests.csproj", "{46F25C80-8610-4C54-875F-8C1FE2055129}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.Compatibility.Tests", "src\Akka.Persistence.Linq2Db.Compatibility.Tests\Akka.Persistence.Linq2Db.Compatibility.Tests.csproj", "{29571BB6-CE0F-4614-8465-A876CFF0242F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.Compatibility.Docker.Tests", "src\Akka.Persistence.Linq2Db.Compatibility.Docker.Tests\Akka.Persistence.Linq2Db.Compatibility.Docker.Tests.csproj", "{095E392C-C439-4EBC-ABCB-6AA87FCBD9E9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.Compatibility.DockerTests", "src\Akka.Persistence.Linq2Db.Compatibility.DockerTests\Akka.Persistence.Linq2Db.Compatibility.DockerTests.csproj", "{095E392C-C439-4EBC-ABCB-6AA87FCBD9E9}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_", "_", "{20C26B2D-59EA-421C-9F64-BFFCE3D96260}"
 ProjectSection(SolutionItems) = preProject

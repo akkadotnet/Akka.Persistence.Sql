@@ -26,12 +26,11 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Akka.Persistence.Linq2Db.Benchmark.Tests\Akka.Persistence.Linq2Db.Benchmark.Tests.csproj" />
-        <ProjectReference Include="..\Akka.Persistence.Sql.Linq2Db.Docker.Tests\Akka.Persistence.Sql.Linq2Db.Docker.Tests.csproj" />
+        <ProjectReference Include="..\Akka.Persistence.Sql.Linq2Db.DockerTests\Akka.Persistence.Sql.Linq2Db.DockerTests.csproj" />
         <ProjectReference Include="..\Akka.Persistence.Sql.Linq2Db.Tests\Akka.Persistence.Sql.Linq2Db.Tests.csproj" />
     </ItemGroup>
 
     <ItemGroup>
       <Compile Remove="Docker\SqlCommon\DockerPostgreSQLJournalPerfSpec.cs" />
     </ItemGroup>
-
 </Project>
