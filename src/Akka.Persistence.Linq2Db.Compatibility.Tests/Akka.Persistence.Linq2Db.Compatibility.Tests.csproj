@@ -2,14 +2,14 @@
     <Import Project="..\common.props" />
 
     <PropertyGroup>
-        <TargetFrameworks>$(TestsNetCoreFramework)</TargetFrameworks>
         <IsPackable>false</IsPackable>
         <RootNamespace>Akka.Persistence.Linq2Db.CompatibilityTests</RootNamespace>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
 
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Akka" Version="1.4.10" />
+        <PackageReference Include="Akka" Version="1.4.14" />
         <PackageReference Include="Akka.Persistence.PostgreSql" Version="1.3.9" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
         <PackageReference Include="xunit" Version="2.4.1" />

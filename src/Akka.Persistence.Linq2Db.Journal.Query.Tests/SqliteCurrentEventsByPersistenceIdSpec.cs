@@ -40,17 +40,17 @@ namespace Akka.Persistence.Sqlite.Tests.Query
                 {{
                   class = ""{typeof(Linq2DbWriteJournal).AssemblyQualifiedName}""
                   plugin-dispatcher = ""akka.actor.default-dispatcher""
-                  table-name = event_journal
-                  metadata-table-name = journal_metadata
                   auto-initialize = on
                   provider-name = ""{ProviderName.SQLiteMS}""
                   connection-string = ""{connString}""
                   refresh-interval = 1s
-                  tables{{
-                    journal{{
-                         auto-init = true
-                    }}
-                  }}
+                  tables {{
+                   journal {{
+                     table-name = event_journal
+                     metadata-table-name = journal_metadata
+                     auto-init = true 
+                   }} 
+                }}
                 }}
             }}
             query
@@ -61,8 +61,13 @@ namespace Akka.Persistence.Sqlite.Tests.Query
                   {{
                     provider-name = ""{ProviderName.SQLiteMS}""
                     connection-string = ""Filename=file:memdb-l2db-journal-currenteventsbypersistenceid-{id}.db;Mode=Memory;Cache=Shared""
-                    table-name = event_journal
-                    metadata-table-name = journal_metadata
+                    tables {{
+                       journal {{
+                         table-name = event_journal
+                         metadata-table-name = journal_metadata
+                         auto-init = true 
+                       }} 
+                    }}
                   }}
                }}
             }}

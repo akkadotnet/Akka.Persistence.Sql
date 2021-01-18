@@ -11,9 +11,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Serialization
             Flow<T, Try<(IPersistentRepresentation, IImmutableSet<string>, long)>
                 , NotUsed> DeserializeFlow()
         {
-            return Flow.Create<T, NotUsed>().Select(t => Deserialize(t));
-            //.Select(t => );
-
-        }
+            return Flow.Create<T, NotUsed>().Select(Deserialize);
+         }
     }
 }

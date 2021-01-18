@@ -15,6 +15,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
         Source<long, NotUsed> JournalSequence(long offset,
             long limit);
 
-        Task<long> MaxJournalSequence();
+        Task<long> MaxJournalSequenceAsync();
     }
 }

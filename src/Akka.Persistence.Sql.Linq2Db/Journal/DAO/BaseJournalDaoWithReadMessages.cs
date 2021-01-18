@@ -25,7 +25,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
         protected IAdvancedScheduler ec;
         protected IMaterializer mat;
 
-        public abstract Task<Source<Util.Try<ReplayCompletion>, NotUsed>> Messages(DataConnection db, string persistenceId, long fromSequenceNr, long toSequenceNr,
+        public abstract Source<Util.Try<ReplayCompletion>, NotUsed> Messages(DataConnection db, string persistenceId, long fromSequenceNr, long toSequenceNr,
             long max);
         
 
@@ -48,7 +48,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                             using (var conn =
                                 _connectionFactory.GetConnection())
                             {
-                                var waited = await Messages(conn, persistenceId,
+                                var waited = Messages(conn, persistenceId,
                                     opt.Item1,
                                     toSequenceNr, batchSize);
                                 msg = await waited

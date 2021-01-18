@@ -163,7 +163,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal
             WriteMessagesAsync(IEnumerable<AtomicWrite> messages)
         {
             //TODO: CurrentTimeMillis;
-            var currentTime = DateTimeHelpers.UnixEpochMillis();
+            var currentTime = DateTime.UtcNow.Ticks;
             var persistenceId = messages.Head().PersistenceId;
             var future = _journal.AsyncWriteMessages(messages,currentTime);
             

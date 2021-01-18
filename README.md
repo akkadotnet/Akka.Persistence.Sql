@@ -16,6 +16,8 @@ Please read the documentation carefully. Some features may be specific to use ca
     - ICurrentEventsByPersistenceIdQuery
     - IEventsByTagQuery
     - ICurrentEventsByTagQuery
+    - IAllEventsQuery
+    - ICurrentAllEventsQuery
 - Snapshot Store Support
 
 #### This is still a WORK IN PROGRESS

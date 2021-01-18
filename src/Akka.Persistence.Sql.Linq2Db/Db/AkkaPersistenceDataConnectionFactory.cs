@@ -123,7 +123,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                 .Member(r => r.deleted).HasColumnName(tableConfig.ColumnNames.Deleted)
                 .Member(r => r.manifest).HasColumnName(tableConfig.ColumnNames.Manifest)
                 .HasLength(500)
-                .Member(r => r.message).HasColumnName(tableConfig.ColumnNames.Message)
+                .Member(r => r.message).HasColumnName(tableConfig.ColumnNames.Message).IsNullable(false)
                 .Member(r => r.ordering).HasColumnName(tableConfig.ColumnNames.Ordering)
                 .Member(r => r.tags).HasLength(100)
                 .HasColumnName(tableConfig.ColumnNames.Tags)

@@ -1,11 +1,4 @@
-﻿//-----------------------------------------------------------------------
-// <copyright file="SqliteEventsByPersistenceIdSpec.cs" company="Akka.NET Project">
-//     Copyright (C) 2009-2020 Lightbend Inc. <http://www.lightbend.com>
-//     Copyright (C) 2013-2020 .NET Foundation <https://github.com/akkadotnet/akka.net>
-// </copyright>
-//-----------------------------------------------------------------------
-
-using Akka.Configuration;
+﻿using Akka.Configuration;
 using Akka.Persistence.Linq2Db.Journal.Query.Tests;
 using Akka.Persistence.Query;
 using Akka.Persistence.Sql.Linq2Db.Journal;
@@ -17,24 +10,27 @@ using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sqlite.Tests.Query
 {
-    public class SqliteEventsByPersistenceIdSpec : EventsByPersistenceIdSpec
+    public class SqliteCurrentAllEventsSpec : CurrentAllEventsSpec
     {
         public static readonly AtomicCounter Counter = new AtomicCounter(0);
+        
         public static Config Config(int id)
         {
-            var connectionString = $"Filename=file:memdb-l2db-journal-eventsbypersistenceid-{id}.db;Mode=Memory;Cache=Shared";
-            ConnectionContext.Remember(connectionString);
+            var connString = $"Filename=file:memdb-l2db-journal-currentallevents-{id}.db;Mode=Memory;Cache=Shared";
+            ConnectionContext.Remember(connString);
             return ConfigurationFactory.ParseString($@"
             akka.loglevel = INFO
             akka.persistence.journal.plugin = ""akka.persistence.journal.linq2db""
             akka.persistence.journal.linq2db {{
+                event-adapters {{
+                  color-tagger  = ""Akka.Persistence.TCK.Query.ColorFruitTagger, Akka.Persistence.TCK""
+                }}
+                event-adapter-bindings = {{
+                  ""System.String"" = color-tagger
+                }}
                 plugin-dispatcher = ""akka.actor.default-dispatcher""
-                table-name = event_journal
-                metadata-table-name = journal_metadata
                 auto-initialize = on
                 provider-name = ""{ProviderName.SQLiteMS}""
-                connection-string = ""{connectionString}""
-                refresh-interval = 1s
                 tables {{
                    journal {{
                      table-name = event_journal
@@ -42,11 +38,13 @@ namespace Akka.Persistence.Sqlite.Tests.Query
                      auto-init = true 
                    }} 
                 }}
+                connection-string = ""{connString}""
+                refresh-interval = 1s
             }}
             akka.persistence.query.journal.linq2db
             {{
                 provider-name = ""{ProviderName.SQLiteMS}""
-                connection-string = ""{connectionString}""
+                connection-string = ""{connString}""
                 tables {{
                    journal {{
                      table-name = event_journal
@@ -58,8 +56,7 @@ namespace Akka.Persistence.Sqlite.Tests.Query
                 .WithFallback(Linq2DbReadJournal.DefaultConfiguration)
                 .WithFallback(Linq2DbWriteJournal.DefaultConfiguration);
         }
-
-        public SqliteEventsByPersistenceIdSpec(ITestOutputHelper output) : base(Config(Counter.GetAndIncrement()), nameof(SqliteEventsByPersistenceIdSpec), output)
+        public SqliteCurrentAllEventsSpec(ITestOutputHelper output) : base(Config(Counter.GetAndIncrement()), nameof(SqliteCurrentAllEventsSpec), output)
         {
             ReadJournal = Sys.ReadJournalFor<Linq2DbReadJournal>(Linq2DbReadJournal.Identifier);
         }

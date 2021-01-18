@@ -69,7 +69,8 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
             {
                 _readJournalDao
                     .JournalSequence(currentMaxOrdering, _config.BatchSize)
-                    .RunWith(Sink.Seq<long>(), _mat).PipeTo(Self, sender: Self,
+                    .RunWith(Sink.Seq<long>(), _mat)
+                    .PipeTo(Self, sender: Self,
                         success: res =>
                             new NewOrderingIds(currentMaxOrdering, res));
             }
@@ -183,7 +184,11 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
         {
             var self = Self;
             self.Tell(new QueryOrderingIds());
-            _readJournalDao.MaxJournalSequence().ContinueWith(t =>
+            try
+            {
+
+            
+            _readJournalDao.MaxJournalSequenceAsync().ContinueWith(t =>
             {
                 if (t.IsFaulted)
                 {
@@ -196,6 +201,11 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
                     self.Tell(new ScheduleAssumeMaxOrderingId(t.Result));
                 }
             });
+            }
+            catch
+            {
+                //Leaving empty because we log above on failure.
+            }
             base.PreStart();
         }
     }
