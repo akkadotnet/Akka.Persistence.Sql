@@ -37,12 +37,12 @@ namespace Akka.Persistence.Sqlite.Tests.Query
                   ""System.String"" = color-tagger
                 }}
                 plugin-dispatcher = ""akka.actor.default-dispatcher""
-                table-name = event_journal
-                metadata-table-name = journal_metadata
                 auto-initialize = on
                 provider-name = ""{ProviderName.SQLiteMS}""
                 tables {{
                    journal {{
+                     table-name = event_journal
+                     metadata-table-name = journal_metadata
                      auto-init = true 
                    }} 
                 }}
@@ -53,8 +53,12 @@ namespace Akka.Persistence.Sqlite.Tests.Query
             {{
                 provider-name = ""{ProviderName.SQLiteMS}""
                 connection-string = ""{connString}""
-                table-name = event_journal
-                metadata-table-name = journal_metadata
+                tables {{
+                   journal {{
+                     table-name = event_journal
+                     metadata-table-name = journal_metadata 
+                   }} 
+                }}
             }}
             akka.test.single-expect-default = 10s")
                 .WithFallback(Linq2DbReadJournal.DefaultConfiguration)

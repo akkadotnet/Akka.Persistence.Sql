@@ -19,12 +19,14 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
         private Akka.Serialization.Serialization _serializer;
         private string _separator;
         private IProviderConfig<JournalTableConfig> _journalConfig;
+        private readonly string[] _separatorArray;
 
         public ByteArrayJournalSerializer(IProviderConfig<JournalTableConfig> journalConfig, Akka.Serialization.Serialization serializer, string separator)
         {
             _journalConfig = journalConfig;
             _serializer = serializer;
             _separator = separator;
+            _separatorArray = new[] {_separator};
         }
         protected override Try<JournalRow> Serialize(IPersistentRepresentation persistentRepr, IImmutableSet<string> tTags, long timeStamp = 0)
         {
@@ -59,7 +61,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                     tags = tTags.Any()?  tTags.Aggregate((tl, tr) => tl + _separator + tr) : "",
                     Identifier = serializer.Identifier,
                     sequenceNumber = persistentRepr.SequenceNr,
-                    Timestamp = timeStamp
+                    Timestamp = persistentRepr.Timestamp==0?  timeStamp: persistentRepr.Timestamp
                 });
             }
             catch (Exception e)
@@ -70,83 +72,43 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
 
         protected override Try<(IPersistentRepresentation, IImmutableSet<string>, long)> Deserialize(JournalRow t)
         {
-            return Try<(IPersistentRepresentation, IImmutableSet<string>, long)>.From(
-                () =>
+            try
+            {
+                object deserialized = null;
+                if (t.Identifier.HasValue == false)
                 {
-                    object deserialized = null;
-                    if (t.Identifier.HasValue == false)
-                    {
-                        var type = System.Type.GetType(t.manifest, true);
-                        var deserializer =
-                            _serializer.FindSerializerForType(type, null);
-                        // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
-                        deserialized =
-                            Akka.Serialization.Serialization.WithTransport(
-                                _serializer.System,
-                                () => deserializer.FromBinary(t.message, type));
-                    }
-                    else
-                    {
-                        var serializerId = t.Identifier.Value;
-                        // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
-                        deserialized = _serializer.Deserialize(t.message,
-                            serializerId,t.manifest);
-                    }
-
-                    return (
-                        new Persistent(deserialized, t.sequenceNumber,
-                            t.persistenceId,
-                            t.manifest, t.deleted, ActorRefs.NoSender, null),
-                        t.tags?.Split(new[] {_separator},
-                                StringSplitOptions.RemoveEmptyEntries)
-                            .ToImmutableHashSet() ?? ImmutableHashSet<string>.Empty,
-                        t.ordering);
+                    var type = System.Type.GetType(t.manifest, true);
+                    var deserializer =
+                        _serializer.FindSerializerForType(type, null);
+                    // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
+                    deserialized =
+                        Akka.Serialization.Serialization.WithTransport(
+                            _serializer.System,
+                            () => deserializer.FromBinary(t.message, type));
                 }
-            );
-        }
-        public
-            Flow<JournalRow, Try<ReplayCompletion>
-                , NotUsed> DeserializeFlowCompletion()
-        {
-            return Flow.Create<JournalRow, NotUsed>().Select(DeserializeReplayCompletion);
-
-        }
-        public  Try<ReplayCompletion> DeserializeReplayCompletion(JournalRow t)
-        {
-            return Try<ReplayCompletion>.From(
-                () =>
+                else
                 {
-                    object deserialized = null;
-                    if (t.Identifier.HasValue == false)
-                    {
-                        var type = System.Type.GetType(t.manifest, true);
-                        var deserializer =
-                            _serializer.FindSerializerForType(type, null);
-                        // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
-                        deserialized =
-                            Akka.Serialization.Serialization.WithTransport(
-                                _serializer.System,
-                                () => deserializer.FromBinary(t.message, type));
-                    }
-                    else
-                    {
-                        var serializerId = t.Identifier.Value;
-                        // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
-                        deserialized = _serializer.Deserialize(t.message,
-                            serializerId,t.manifest);
-                    }
-
-                    return new ReplayCompletion()
-                    {
-                        repr =
-                            new Persistent(deserialized, t.sequenceNumber,
-                                t.persistenceId,
-                                t.manifest, t.deleted, ActorRefs.NoSender,
-                                null),
-                        Ordering = t.ordering
-                    };
+                    var serializerId = t.Identifier.Value;
+                    // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
+                    deserialized = _serializer.Deserialize(t.message,
+                        serializerId,t.manifest);
                 }
-            );
+
+                return (
+                    new Persistent(deserialized, t.sequenceNumber,
+                        t.persistenceId,
+                        t.manifest, t.deleted, ActorRefs.NoSender, null, t.Timestamp),
+                    t.tags?.Split(_separatorArray,
+                            StringSplitOptions.RemoveEmptyEntries)
+                        .ToImmutableHashSet() ?? ImmutableHashSet<string>.Empty,
+                    t.ordering);
+            }
+            catch (Exception e)
+            {
+                return new Try<(IPersistentRepresentation, IImmutableSet<string>
+                    , long)>(e);
+            }
+            
         }
     }
 }

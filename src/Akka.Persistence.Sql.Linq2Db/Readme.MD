@@ -144,13 +144,13 @@ Please note that you -must- provide a Connection String and Provider name.
    - Note: For best performance, one should use the most specific provider name possible. i.e. `LinqToDB.ProviderName.SqlServer2012` instead of `LinqToDB.ProviderName.SqlServer`. Otherwise certain provider detections have to run more frequently which may impair performance slightly. 
 
  - `parallelism` controls the number of Akka.Streams Queues used to write to the DB.
-   - Default in JVM is `8`. We use `2`
-     - For SQL Server, Based on testing `2` is a fairly optimal number in .NET and thusly chosen as the default. You may wish to adjust up if you are dealing with a large number of actors.
+   - Default in JVM is `8`. We use `3`
+     - For SQL Server, Based on testing `3` is a fairly optimal number in .NET and thusly chosen as the default. You may wish to adjust up if you are dealing with a large number of actors.
        - Testing indicates that `2` will provide performance on par or better than both batching and non-batching journal.
      - For SQLite, you may want to just put `1` here, because SQLite allows at most a single writer at a time even in WAL mode.
        - Keep in mind there may be some latency/throughput trade-offs if your write-set gets large.
    - Note that these run on the threadpool, not on dedicated threads. Setting this number too high may steal work from other actors.
-     - It's worth noting that LinqToDb's Bulk Copy implementations are -very- efficient here, since under many DBs the batch can be done in a single round-trip.
+     - It's worth noting that LinqToDb's Bulk Copy implementations are -very- efficient here, since under many DBs the batch can be done in a single async round-trip.
  - `logical-delete` if `true` will only set the deleted flag for items, i.e. will not actually delete records from DB.
    - if `false` all records are set as deleted, and then all but the top record is deleted. This top record is used for sequence number tracking in case no other records exist in the table.
  - `delete-compatibility-mode` specifies to perform deletes in a way that is compatible with Akka.Persistence.Sql.Common.
@@ -173,6 +173,10 @@ akka.persistence {
       connection-string = "" # Connection String is Required!
 
       # This dispatcher will be used for the Stream Materializers
+      # Note that while all calls will be Async to Linq2Db,
+      # If your provider for some reason does not support async,
+      # or you are a very heavily loaded system,
+      # You may wish to provide a dedicated dispatcher instead
       materializer-dispatcher = "akka.actor.default-dispatcher"
       
       # Provider name is required.
@@ -190,7 +194,8 @@ akka.persistence {
       # If true, journal_metadata is created
       delete-compatibility-mode = true 
 
-      # If "sqlite" or "sqlserver", and column names are compatible with
+      # If "sqlite", "sqlserver", or "postgres"
+      # column names are compatible with
       # Akka.Persistence.Sql Default Column names.
       # You still -MUST- Set your appropriate table names!                       
       table-compatibility-mode = null
@@ -279,12 +284,31 @@ akka.persistence {
           "identifier" = "serializer_id"
           "manifest" = "manifest"
         }
+        postgres-compat-column-names {
+          "ordering" = "ordering"
+          "deleted" = "is_deleted"
+          "persistenceId" = "persistence_id"
+          "sequenceNumber" = "sequence_nr"
+          "created" = "created_at"
+          "tags" = "tags"
+          "message" = "payload"
+          "identifier" = "serializer_id"
+          "manifest" = "manifest"
+        }
         metadata-column-names {
+          "persistenceId" = "persistenceId"
+          "sequenceNumber" = "sequenceNr"
+        }
+        sqlserver-compat-metadata-column-names {
           "persistenceId" = "persistenceId"
           "sequenceNumber" = "sequenceNr"
         }
         sqlite-compat-metadata-column-names {
           "persistenceId" = "persistence_Id"
+          "sequenceNumber" = "sequence_nr"
+        }
+        postgres-compat-metadata-column-names {
+          "persistenceId" = "persistence_id"
           "sequenceNumber" = "sequence_nr"
         }
       }

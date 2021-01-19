@@ -20,6 +20,14 @@ namespace Akka.Persistence.Sql.Linq2Db.Utility
 
             throw new ArgumentException($"ActorRefFactory context must be a ActorSystem or ActorContext, got [{context.GetType()}]");
         }
+        /// <summary>
+        /// Creates a Materializer under the /system/ hierarchy instead of /user/
+        /// This ensures that we don't accidentally get torn down before the rest of the system.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="settings"></param>
+        /// <param name="namePrefix"></param>
+        /// <returns></returns>
         public static ActorMaterializer CreateSystemMaterializer(ExtendedActorSystem context, ActorMaterializerSettings settings = null, string namePrefix = null)
         {
             var haveShutDown = new AtomicBoolean();
