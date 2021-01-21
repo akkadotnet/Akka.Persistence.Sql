@@ -21,7 +21,10 @@ plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
                         provider-name = ""{2}""
                         parallelism = 1
                         max-row-by-row-size = 100
-                        tables.journal {{ auto-init = true }}
+                        tables.snapshot {{ 
+                          auto-init = true 
+                          warn-on-auto-init-fail = false
+                        }}
                         use-clone-connection = ""{3}""
                     }}
                 }}
@@ -52,7 +55,10 @@ plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
                         provider-name = ""{2}""
                         parallelism = 1
                         max-row-by-row-size = 100
-                        tables.journal {{ auto-init = true }}
+                        tables.journal {{ 
+                          auto-init = true
+                          warn-on-auto-init-fail = false 
+                        }}
                         use-clone-connection = ""{3}""
                     }}
                 }}
