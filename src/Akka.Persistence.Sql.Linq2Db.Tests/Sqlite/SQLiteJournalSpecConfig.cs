@@ -21,7 +21,7 @@ plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
                         provider-name = ""{2}""
                         parallelism = 1
                         max-row-by-row-size = 100
-                        tables.journal {{ 
+                        tables.snapshot {{ 
                           auto-init = true 
                           warn-on-auto-init-fail = false
                         }}
