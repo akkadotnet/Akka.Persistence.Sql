@@ -1,8 +1,8 @@
-#### 1.4.16 January 20 2021 ####
+#### 0.90.2 January 29 2021 ####
 **Placeholder for nightlies**
 
 
-#### 0.90.1 January 21 2021 ####
+#### 0.90.1 Feb 1 2021 ####
 **Preview Release for Akka.Persistence.Linq2Db**
 
 Akka.Persistence.Linq2Db is an Akka.Net Persistence plug-in that is designed for both high performance as well as easy cross-database compatibility.
