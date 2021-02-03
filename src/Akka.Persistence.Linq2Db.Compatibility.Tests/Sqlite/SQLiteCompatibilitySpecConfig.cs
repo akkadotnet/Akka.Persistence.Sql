@@ -55,6 +55,7 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
                         {{
                         snapshot {{ 
                            auto-init = true
+                           warn-on-auto-init-fail = false
                            table-name = ""{tablename}""    
                           }}
                         }}
@@ -94,6 +95,7 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
                         table-compatibility-mode = ""sqlite""
                         tables.journal {{ 
                            auto-init = true
+                           warn-on-auto-init-fail = false
                            table-name = ""{tablename}"" 
                            metadata-table-name = ""{metadatatablename}""
                            

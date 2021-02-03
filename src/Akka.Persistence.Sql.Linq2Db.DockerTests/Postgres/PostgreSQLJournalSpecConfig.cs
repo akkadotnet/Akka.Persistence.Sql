@@ -18,7 +18,10 @@ plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
 #connection-string = ""FullUri=file:test.db&cache=shared""
                         provider-name = ""{2}""
                         use-clone-connection = false
-                        tables.journal {{ auto-init = true }}
+                        tables.journal {{ 
+                           auto-init = true 
+                           warn-on-auto-init-fail = false
+                        }}
                     }}
                 }}
             }}

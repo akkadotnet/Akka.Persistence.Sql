@@ -23,6 +23,7 @@ akka.persistence {{
                         #use-clone-connection = true
                         tables.journal {{ 
                            auto-init = true
+                           warn-on-auto-init-fail = false
                            table-name = ""{2}"" 
                            }}
                     }}
@@ -40,7 +41,7 @@ akka.persistence {{
     
     public static class SQLServerSnapshotSpecConfig
     {
-        public static string _journalBaseConfig = @"
+        public static string _snapshotBaseConfig = @"
 akka.persistence {{
                 publish-plugin-commands = on
                 snapshot-store {{
@@ -57,6 +58,7 @@ akka.persistence {{
                         #use-clone-connection = true
                         tables.snapshot {{ 
                            auto-init = true
+                           warn-on-auto-init-fail = false
                            table-name = ""{2}""
                            column-names {{
                            }} 
@@ -68,7 +70,7 @@ akka.persistence {{
         public static Configuration.Config Create(string connString, string tableName, int batchSize = 100, int parallelism = 2)
         {
             return ConfigurationFactory.ParseString(
-                string.Format(_journalBaseConfig,
+                string.Format(_snapshotBaseConfig,
                     typeof(Linq2DbSnapshotStore).AssemblyQualifiedName,
                     connString,tableName,batchSize, parallelism));
         }

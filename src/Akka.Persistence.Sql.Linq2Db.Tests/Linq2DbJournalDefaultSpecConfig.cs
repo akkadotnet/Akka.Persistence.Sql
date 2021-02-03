@@ -16,6 +16,7 @@ akka.persistence.journal.linq2db{{
  tables{{
   journal{{
     auto-init = true
+    warn-on-auto-init-fail = false
     table-name = ""{journalTableName}""
     metadata-table-name = ""{metadatatablename}""
   }}
@@ -32,6 +33,7 @@ akka.persistence.journal.linq2db {{
  tables{{
   journal{{
     auto-init = true
+    warn-on-auto-init-fail = false
     table-name = ""{tablename}""
     metadata-table-name = ""{metadatatablename}""
   }}

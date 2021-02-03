@@ -34,6 +34,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.Postgres
                         use-clone-connection = true
                         tables.snapshot {{ 
                            auto-init = true
+                           warn-on-auto-init-fail = false
                            table-name = ""{2}"" 
                            }}
                     }}
@@ -91,6 +92,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.Postgres
                         use-clone-connection = true
                         tables.journal {{ 
                            auto-init = true
+                           warn-on-auto-init-fail = false
                            table-name = ""{2}"" 
                            }}
                     }}

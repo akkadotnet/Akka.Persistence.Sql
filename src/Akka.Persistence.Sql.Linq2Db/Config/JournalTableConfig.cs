@@ -12,6 +12,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
         public bool AutoInitialize { get; protected set; }
         public string MetadataTableName { get; protected set; }
         public MetadataTableColumnNames MetadataColumnNames { get; protected set; }
+        public bool WarnOnAutoInitializeFail { get; }
         public JournalTableConfig(Configuration.Config config)
         {
             
@@ -25,7 +26,12 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
                 "journal_metadata");
             SchemaName = localcfg.GetString("schema-name", null);
             AutoInitialize = localcfg.GetBoolean("auto-init", false);
+            WarnOnAutoInitializeFail =
+                localcfg.GetBoolean("warn-on-auto-init-fail", true);
         }
+
+        
+
         protected bool Equals(JournalTableConfig other)
         {
             return Equals(ColumnNames, other.ColumnNames) &&
@@ -33,6 +39,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
                    SchemaName == other.SchemaName &&
                    AutoInitialize == other.AutoInitialize &&
                    MetadataTableName == other.MetadataTableName &&
+                   WarnOnAutoInitializeFail == other.WarnOnAutoInitializeFail &&
                    Equals(MetadataColumnNames, other.MetadataColumnNames);
         }
 
