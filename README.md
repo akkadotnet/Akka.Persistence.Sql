@@ -20,9 +20,9 @@ Please read the documentation carefully. Some features may be specific to use ca
     - ICurrentAllEventsQuery
 - Snapshot Store Support
 
-#### This is still a WORK IN PROGRESS
+#### This project is Prerelease
 
-**Pull Requests are Welcome** but please note this is still considered 'work in progress' and only used if one understands the risks. While the TCK Specs pass you should still test in a 'safe' non-production environment carefully before deciding to fully deploy.
+**Pull Requests are Welcome** but please note this is still considered prerelease and only used if one understands the risks. You should still test in a 'safe' non-production environment carefully before deciding to fully deploy. Please provide feedback if you encounter any issues!
 
 Working:
 
@@ -74,16 +74,15 @@ Working:
 ## Incomplete:
 
 - Tests for Schema Usage
-- Some Akka.NET specfic Journal Queries (those not mentioned above)
 - Cleanup of Configuration classes/fallbacks.
-    - Should still be usable in most common scenarios including multiple configuration instances: see `SqlServerCustomConfigSpec` for test and examples.
+    - Usable in most common scenarios including multiple configuration instances: see `SqlServerCustomConfigSpec` for test and examples.
 
 DB Compatibility:
 
 - SQL Server: Tests Pass
 - MS SQLite: Tests Pass
 - System.Data.SQLite: Functional tests pass, perf tests partially fail.
-- For whatever reason SDS doesn't cope well here.
+  - For whatever reason SDS doesn't cope well here.
 - Postgres: Tests pass
 - MySql: Not Tested Yet
 - Firebird: Not Tested Yet
