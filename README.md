@@ -1,14 +1,14 @@
 # Akka.Persistence.Linq2Db
 
-A Cross-SQL-DB Engine Akka.Persistence plugin with broad database compatibility thanks to Linq2Db.
+A High Performance, Cross-SQL-DB Engine Akka.Persistence plugin with broad database compatibility thanks to [Linq2Db](https://linq2db.github.io/), a fast Micro-ORM that provides a type-safe DSL for SQL Databases.
 
-This is a Fairly-Naive port of the amazing akka-persistence-jdbc package from Scala to C#.
+This is a port of the amazing akka-persistence-jdbc package from Scala to C#.
 
 Please read the documentation carefully. Some features may be specific to use case and have trade-offs (namely, compatibility modes)
 
 ## Status
 
-- Usable for basic Read/Writes
+- Journal Support
 - Implements the following for `Akka.Persistence.Query`:
     - IPersistenceIdsQuery
     - ICurrentPersistenceIdsQuery
@@ -22,7 +22,7 @@ Please read the documentation carefully. Some features may be specific to use ca
 
 #### This project is Prerelease
 
-**Pull Requests are Welcome** but please note this is still considered prerelease and only used if one understands the risks. You should still test in a 'safe' non-production environment carefully before deciding to fully deploy. Please provide feedback if you encounter any issues!
+**Pull Requests are Welcome** Please note this is still considered prerelease. You should test in a safe non-production environment carefully before deciding to fully deploy. Please provide feedback if you encounter any issues!
 
 Working:
 
@@ -71,7 +71,7 @@ Working:
     - Only Functional tests at this time.
     - Custom provider configurations are supported.
 
-## Incomplete:
+## Help Wanted:
 
 - Tests for Schema Usage
 - Cleanup of Configuration classes/fallbacks.
@@ -81,8 +81,6 @@ DB Compatibility:
 
 - SQL Server: Tests Pass
 - MS SQLite: Tests Pass
-- System.Data.SQLite: Functional tests pass, perf tests partially fail.
-  - For whatever reason SDS doesn't cope well here.
 - Postgres: Tests pass
 - MySql: Not Tested Yet
 - Firebird: Not Tested Yet
