@@ -37,6 +37,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
         public bool logicalDelete;
         protected readonly ILoggingAdapter _logger;
         private Flow<JournalRow, Util.Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, NotUsed> deserializeFlow;
+        private Flow<JournalRow, Util.Try<ReplayCompletion>, NotUsed> deserializeFlowMapped;
 
         protected BaseByteArrayJournalDao(IAdvancedScheduler sched,
             IMaterializer materializerr,
@@ -49,6 +50,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
             logicalDelete = _journalConfig.DaoConfig.LogicalDelete;
             Serializer = serializer;
             deserializeFlow = Serializer.DeserializeFlow();
+            deserializeFlowMapped = Serializer.DeserializeFlow().Select(MessageWithBatchMapper());
             //Due to C# rules we have to initialize WriteQueue here
             //Keeping it here vs init function prevents accidental moving of init
             //to where variables aren't set yet.
@@ -162,16 +164,25 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
         public async Task<IImmutableList<Exception>> AsyncWriteMessages(
             IEnumerable<AtomicWrite> messages, long timeStamp = 0)
         {
-
+            new Either<Exception,List<JournalRow>>()
+            Either<Exception,System.Collections.Generic.List<JournalRow>>.Bottom
             var serializedTries = Serializer.Serialize(messages, timeStamp);
 
             //Just a little bit of magic here;
             //.ToList() keeps it all working later for whatever reason
             //while still keeping our allocations in check.
+            
+            /*var trySet = new List<JournalRow>();
+            foreach (var serializedTry in serializedTries)
+            {
+                trySet.AddRange(serializedTry.Success.GetOrElse(new List<JournalRow>(0)));
+            }
+
+            var rows = Seq(trySet);*/
             var rows = Seq(serializedTries.SelectMany(serializedTry =>
                     serializedTry.Success.GetOrElse(new List<JournalRow>(0)))
                 .ToList());
-
+            //
         
             
             return await QueueWriteJournalRows(rows).ContinueWith(task =>
@@ -403,27 +414,22 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
 
                 var runninng = query.ToListAsync();
                 return Source.FromTask(runninng).SelectMany(r => r)
-                    .Via(deserializeFlow.Select(MessageWithBatchMapper()));
+                    .Via(deserializeFlowMapped);
                 //return AsyncSource<JournalRow>.FromEnumerable(query,async q=>await q.ToListAsync())
                 //    .Via(
                 //        deserializeFlow).Select(MessageWithBatchMapper());
             }
         }
 
-        private static Func<Util.Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, Util.Try<ReplayCompletion>> MessageWithBatchMapper()
-        {
-            return sertry =>
+        private static Func<Util.Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, Util.Try<ReplayCompletion>> MessageWithBatchMapper() =>
+            sertry =>
             {
                 if (sertry.IsSuccess)
                 {
-                    var success = sertry.Success.Value;
                     return new
                         Util.Try<ReplayCompletion>(
-                            new ReplayCompletion()
-                            {
-                                repr = success.Item1,
-                                Ordering = success.Item3
-                            });
+                            new ReplayCompletion( sertry.Success.Value
+                            ));
                 }
                 else
                 {
@@ -432,6 +438,5 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                             sertry.Failure.Value);
                 }
             };
-        }
     }
 }

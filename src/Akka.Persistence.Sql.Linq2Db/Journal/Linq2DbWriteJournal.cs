@@ -133,7 +133,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal
                             t.Failure.Value))
                 .RunForeach(r =>
                 {
-                    recoveryCallback(r.repr);
+                    recoveryCallback(r.Repr);
                 }, _mat);
             
         }

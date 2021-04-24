@@ -44,6 +44,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Serialization
                         if (opt.HasValue)
                         {
                             retList.Add(opt.Value);    
+                            return new Util.Try<List<T>>(retList);
                         }
                         else
                         {
@@ -65,40 +66,13 @@ namespace Akka.Persistence.Sql.Linq2Db.Serialization
                             return new Util.Try<List<T>>(ser.Failure.Value);
                         }
                     }
+
+                    return new Util.Try<List<T>>(retList);
                 }
 
-                return new Util.Try<List<T>>(retList);
+                //return new Util.Try<List<T>>(retList);
                 
             }).ToList();
-        }
-
-
-        public Seq<Akka.Util.Try<Seq<T>>> SerializeSeq(
-            IEnumerable<AtomicWrite> messages)
-        {
-            return messages.Select(aw =>
-                {
-                    return Util.Try<Seq<T>>.From(() =>
-                    {
-                        var serialized =
-                            (aw.Payload as IEnumerable<IPersistentRepresentation>)
-                            .Select(p=> Serialize(p).Get());
-                        return serialized.ToSeq();
-                    });
-                }).ToSeq();
-            
-            //return messages.Select(aw =>
-            //{
-            //    var serialized = (aw.Payload as IEnumerable<IPersistentRepresentation>)
-            //        .Select(Serialize).
-            //})
-            //return Seq(messages.Select(aw =>
-            //{
-            //    var serialized =
-            //        (aw.Payload as IEnumerable<IPersistentRepresentation>)
-            //        .Select(Serialize);
-            //    return TrySeq.SequenceSeq(serialized);
-            //}));
         }
 
 
