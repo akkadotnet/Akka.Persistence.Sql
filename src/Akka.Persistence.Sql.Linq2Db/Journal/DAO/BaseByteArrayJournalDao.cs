@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -134,13 +135,38 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
 
         private async Task WriteJournalRows(Seq<JournalRow> xs)
         {
-            using (var db = _connectionFactory.GetConnection())
             {
                 //hot path:
                 //If we only have one row, penalty for BulkCopy
                 //Isn't worth it due to insert caching/etc.
                 if (xs.Count > 1)
                 {
+                    await InsertMultiple(xs);
+                }
+                else if (xs.Count > 0)
+                {
+                    await InsertSingle(xs);
+                }
+            }
+
+        }
+
+        private async Task InsertSingle(Seq<JournalRow> xs)
+        {
+            using (var db = _connectionFactory.GetConnection())
+            {
+                await db.InsertAsync(xs.Head);
+            }
+        }
+
+        private async Task InsertMultiple(Seq<JournalRow> xs)
+        {
+            using (var db = _connectionFactory.GetConnection())
+            {
+                try
+                {
+                    await db.BeginTransactionAsync(IsolationLevel
+                        .ReadCommitted);
                     await db.GetTable<JournalRow>()
                         .BulkCopyAsync(
                             new BulkCopyOptions()
@@ -150,22 +176,32 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                                         .MaxRowByRowSize
                                         ? BulkCopyType.Default
                                         : BulkCopyType.MultipleRows,
-                                UseInternalTransaction = true 
+                                //TODO: When Parameters are allowed,
+                                //Make a Config Option
+                                //Or default to true
+                                //UseParameters = false
                             }, xs);
+                    await db.CommitTransactionAsync();
                 }
-                else if (xs.Count > 0)
+                catch (Exception e)
                 {
-                    await db.InsertAsync(xs.Head);
+                    try
+                    {
+                        await db.RollbackTransactionAsync();
+                    }
+                    catch (Exception exception)
+                    {
+                        throw e;
+                    }
+
+                    throw;
                 }
             }
-
         }
-        
+
         public async Task<IImmutableList<Exception>> AsyncWriteMessages(
             IEnumerable<AtomicWrite> messages, long timeStamp = 0)
         {
-            new Either<Exception,List<JournalRow>>()
-            Either<Exception,System.Collections.Generic.List<JournalRow>>.Bottom
             var serializedTries = Serializer.Serialize(messages, timeStamp);
 
             //Just a little bit of magic here;

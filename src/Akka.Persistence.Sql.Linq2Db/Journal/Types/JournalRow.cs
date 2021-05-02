@@ -9,11 +9,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Types
         {
             
         }
-
-        public JournalRow(long ordering)
-        {
-            this.ordering = ordering;
-        }
         public long ordering { get; set; }
         
         public long Timestamp { get; set; } = 0;

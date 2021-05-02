@@ -25,23 +25,10 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
 
         public IEnumerable<long> ToEnumerable()
         {
-            var itemCount = until - from;
-            List<long> returnList;
-            if (itemCount < Int32.MaxValue)
-            {
-                returnList = new List<long>();
-            }
-            else
-            {
-                returnList = new List<long>();
-            }
-            
             for (long i = from; i < until; i++)
             {
-                returnList.Add(i);
+                yield return i;
             }
-
-            return returnList;
         }
 
         public IEnumerator<long> GetEnumerator()
