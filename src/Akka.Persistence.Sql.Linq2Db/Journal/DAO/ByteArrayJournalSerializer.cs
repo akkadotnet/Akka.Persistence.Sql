@@ -58,7 +58,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                             StringSep(tTags,_separator),
                             timeStamp
                             ),
-                        static state =>
+                        state =>
                         {
                             var (_persistentRepr, serializer,tags,ts) = state;
                             string thisManifest = "";
