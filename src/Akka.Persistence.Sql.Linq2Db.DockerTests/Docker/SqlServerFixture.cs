@@ -31,34 +31,35 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.Docker
             Client = config.CreateClient();
         }
 
-        protected string SqlServerImageName
-        {
-            get
-            {
-                //if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                //    return "microsoft/mssql-server-windows-express";
-                return "mcr.microsoft.com/mssql/server";
-            }
-        }
-
-        protected string SqlServerImageTag
-        {
-            get
-            {
-                //if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                //    return "2017-latest";
-                return "2017-latest-ubuntu";
-            }
-        }
+        protected string ImageName =>
+            //RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            //    ? "microsoft/mssql-server-windows-express"
+            //    : 
+                "mcr.microsoft.com/mssql/server";
+        protected string Tag => "2017-latest";
+        protected string SqlServerImageName => $"{ImageName}:{Tag}";
 
         public string ConnectionString { get; private set; }
 
         public async Task InitializeAsync()
         {
-            var images = await Client.Images.ListImagesAsync(new ImagesListParameters {MatchName = SqlServerImageName});
+            var images = await Client.Images.ListImagesAsync(new ImagesListParameters
+            {
+                Filters = new Dictionary<string, IDictionary<string, bool>>
+                {
+                    {
+                        "reference",
+                        new Dictionary<string, bool>
+                        {
+                            {SqlServerImageName, true}
+                        }
+                    }
+                }
+            }); 
+
             if (images.Count == 0)
                 await Client.Images.CreateImageAsync(
-                    new ImagesCreateParameters {FromImage = SqlServerImageName, Tag = "latest"}, null,
+                    new ImagesCreateParameters {FromImage = ImageName, Tag = Tag}, null,
                     new Progress<JSONMessage>(message =>
                     {
                         Console.WriteLine(!string.IsNullOrEmpty(message.ErrorMessage)
@@ -107,7 +108,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.Docker
             var connectionString = new DbConnectionStringBuilder
             {
                 ConnectionString =
-                    "data source=.;database=akka_persistence_tests;user id=sa;password=l0lTh1sIsOpenSource;"
+                    "data source=.;database=akka_persistence_tests;user id=sa;password=l0lTh1sIsOpenSource"
             };
             connectionString["Data Source"] = $"localhost,{sqlServerHostPort}";
 
