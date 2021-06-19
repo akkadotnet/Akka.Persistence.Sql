@@ -179,7 +179,8 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                                 //TODO: When Parameters are allowed,
                                 //Make a Config Option
                                 //Or default to true
-                                //UseParameters = false
+                                UseParameters = _journalConfig.DaoConfig.PreferParametersOnMultiRowInsert,
+                                MaxBatchSize = _journalConfig.DaoConfig.DbRoundTripBatchSize
                             }, xs);
                     await db.CommitTransactionAsync();
                 }
@@ -447,9 +448,11 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                 {
                     query = query.Take((int) max);
                 }
-
-                var runninng = query.ToListAsync();
-                return Source.FromTask(runninng).SelectMany(r => r)
+                
+                
+                return 
+                    Source.FromTask(query.ToListAsync())
+                    .SelectMany(r => r)
                     .Via(deserializeFlowMapped);
                 //return AsyncSource<JournalRow>.FromEnumerable(query,async q=>await q.ToListAsync())
                 //    .Via(
