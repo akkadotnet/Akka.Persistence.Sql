@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,6 +38,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
         public bool logicalDelete;
         protected readonly ILoggingAdapter _logger;
         private Flow<JournalRow, Util.Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, NotUsed> deserializeFlow;
+        private Flow<JournalRow, Util.Try<ReplayCompletion>, NotUsed> deserializeFlowMapped;
 
         protected BaseByteArrayJournalDao(IAdvancedScheduler sched,
             IMaterializer materializerr,
@@ -49,6 +51,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
             logicalDelete = _journalConfig.DaoConfig.LogicalDelete;
             Serializer = serializer;
             deserializeFlow = Serializer.DeserializeFlow();
+            deserializeFlowMapped = Serializer.DeserializeFlow().Select(MessageWithBatchMapper());
             //Due to C# rules we have to initialize WriteQueue here
             //Keeping it here vs init function prevents accidental moving of init
             //to where variables aren't set yet.
@@ -132,13 +135,38 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
 
         private async Task WriteJournalRows(Seq<JournalRow> xs)
         {
-            using (var db = _connectionFactory.GetConnection())
             {
                 //hot path:
                 //If we only have one row, penalty for BulkCopy
                 //Isn't worth it due to insert caching/etc.
                 if (xs.Count > 1)
                 {
+                    await InsertMultiple(xs);
+                }
+                else if (xs.Count > 0)
+                {
+                    await InsertSingle(xs);
+                }
+            }
+
+        }
+
+        private async Task InsertSingle(Seq<JournalRow> xs)
+        {
+            using (var db = _connectionFactory.GetConnection())
+            {
+                await db.InsertAsync(xs.Head);
+            }
+        }
+
+        private async Task InsertMultiple(Seq<JournalRow> xs)
+        {
+            using (var db = _connectionFactory.GetConnection())
+            {
+                try
+                {
+                    await db.BeginTransactionAsync(IsolationLevel
+                        .ReadCommitted);
                     await db.GetTable<JournalRow>()
                         .BulkCopyAsync(
                             new BulkCopyOptions()
@@ -148,30 +176,50 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                                         .MaxRowByRowSize
                                         ? BulkCopyType.Default
                                         : BulkCopyType.MultipleRows,
-                                UseInternalTransaction = true 
+                                //TODO: When Parameters are allowed,
+                                //Make a Config Option
+                                //Or default to true
+                                UseParameters = _journalConfig.DaoConfig.PreferParametersOnMultiRowInsert,
+                                MaxBatchSize = _journalConfig.DaoConfig.DbRoundTripBatchSize
                             }, xs);
+                    await db.CommitTransactionAsync();
                 }
-                else if (xs.Count > 0)
+                catch (Exception e)
                 {
-                    await db.InsertAsync(xs.Head);
+                    try
+                    {
+                        await db.RollbackTransactionAsync();
+                    }
+                    catch (Exception exception)
+                    {
+                        throw e;
+                    }
+
+                    throw;
                 }
             }
-
         }
-        
+
         public async Task<IImmutableList<Exception>> AsyncWriteMessages(
             IEnumerable<AtomicWrite> messages, long timeStamp = 0)
         {
-
             var serializedTries = Serializer.Serialize(messages, timeStamp);
 
             //Just a little bit of magic here;
             //.ToList() keeps it all working later for whatever reason
             //while still keeping our allocations in check.
+            
+            /*var trySet = new List<JournalRow>();
+            foreach (var serializedTry in serializedTries)
+            {
+                trySet.AddRange(serializedTry.Success.GetOrElse(new List<JournalRow>(0)));
+            }
+
+            var rows = Seq(trySet);*/
             var rows = Seq(serializedTries.SelectMany(serializedTry =>
                     serializedTry.Success.GetOrElse(new List<JournalRow>(0)))
                 .ToList());
-
+            //
         
             
             return await QueueWriteJournalRows(rows).ContinueWith(task =>
@@ -400,30 +448,27 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                 {
                     query = query.Take((int) max);
                 }
-
-                var runninng = query.ToListAsync();
-                return Source.FromTask(runninng).SelectMany(r => r)
-                    .Via(deserializeFlow.Select(MessageWithBatchMapper()));
+                
+                
+                return 
+                    Source.FromTask(query.ToListAsync())
+                    .SelectMany(r => r)
+                    .Via(deserializeFlowMapped);
                 //return AsyncSource<JournalRow>.FromEnumerable(query,async q=>await q.ToListAsync())
                 //    .Via(
                 //        deserializeFlow).Select(MessageWithBatchMapper());
             }
         }
 
-        private static Func<Util.Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, Util.Try<ReplayCompletion>> MessageWithBatchMapper()
-        {
-            return sertry =>
+        private static Func<Util.Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, Util.Try<ReplayCompletion>> MessageWithBatchMapper() =>
+            sertry =>
             {
                 if (sertry.IsSuccess)
                 {
-                    var success = sertry.Success.Value;
                     return new
                         Util.Try<ReplayCompletion>(
-                            new ReplayCompletion()
-                            {
-                                repr = success.Item1,
-                                Ordering = success.Item3
-                            });
+                            new ReplayCompletion( sertry.Success.Value
+                            ));
                 }
                 else
                 {
@@ -432,6 +477,5 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                             sertry.Failure.Value);
                 }
             };
-        }
     }
 }

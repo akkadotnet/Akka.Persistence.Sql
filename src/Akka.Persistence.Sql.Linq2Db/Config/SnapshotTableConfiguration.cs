@@ -9,12 +9,11 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
     {
         public SnapshotTableConfiguration(Configuration.Config config)
         {
-            config =
-                config.SafeWithFallback(Linq2DbSnapshotStore
-                    .DefaultConfiguration);
-            var localcfg = config.GetConfig("tables.snapshot");
+            
+            var localcfg = config.GetConfig("tables.snapshot")
+                .SafeWithFallback(config).SafeWithFallback(Configuration.Config.Empty);
             ColumnNames= new SnapshotTableColumnNames(config);
-            TableName = localcfg.GetString("table-name", "snapshot");
+            TableName = config.GetString("table-name", localcfg.GetString("table-name", "snapshot"));
             SchemaName = localcfg.GetString("schema-name", null);
             AutoInitialize = localcfg.GetBoolean("auto-init", false);
             WarnOnAutoInitializeFail =

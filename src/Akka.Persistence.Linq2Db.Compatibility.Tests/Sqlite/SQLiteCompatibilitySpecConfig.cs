@@ -51,12 +51,13 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
                         provider-name = """ + LinqToDB.ProviderName.SQLiteMS + $@"""
                         #use-clone-connection = true
                         table-compatibility-mode = sqlite
+                        table-name = ""{tablename}""
                         tables
                         {{
                         snapshot {{ 
                            auto-init = true
                            warn-on-auto-init-fail = false
-                           table-name = ""{tablename}""    
+                           #table-name = ""{tablename}""    
                           }}
                         }}
                       }}
@@ -92,11 +93,12 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
 #connection-string = ""FullUri=file:test.db&cache=shared""
                         provider-name = ""{LinqToDB.ProviderName.SQLiteMS}""
                         parallelism = 3
+                        table-name = ""{tablename}""
                         table-compatibility-mode = ""sqlite""
                         tables.journal {{ 
                            auto-init = true
                            warn-on-auto-init-fail = false
-                           table-name = ""{tablename}"" 
+                           #table-name = ""{tablename}"" 
                            metadata-table-name = ""{metadatatablename}""
                            
                            }}

@@ -2,13 +2,13 @@
 
 A Cross-SQL-DB Engine Akka.Persistence plugin with broad database compatibility thanks to Linq2Db.
 
-This is a Fairly-Naive port of the amazing akka-persistence-jdbc package from Scala to C#.
+This is a port of the amazing akka-persistence-jdbc package from Scala, with a few improvements based on C# as well as our choice of data library.
 
 Please read the documentation carefully. Some features may be specific to use case and have trade-offs (namely, compatibility modes)
 
 ## Status
 
-- Usable for basic Read/Writes
+
 - Implements the following for `Akka.Persistence.Query`:
     - IPersistenceIdsQuery
     - ICurrentPersistenceIdsQuery
@@ -20,9 +20,7 @@ Please read the documentation carefully. Some features may be specific to use ca
     - ICurrentAllEventsQuery
 - Snapshot Store Support
 
-#### This is still a WORK IN PROGRESS
-
-**Pull Requests are Welcome** but please note this is still considered 'work in progress' and only used if one understands the risks. While the TCK Specs pass you should still test in a 'safe' non-production environment carefully before deciding to fully deploy.
+See something you want to add or improve? **Pull Requests are Welcome!**
 
 Working:
 
@@ -102,27 +100,8 @@ Compatibility with existing Providers is partially implemented via `table-compat
 
 # Performance
 
-Tests based on i-7 8750H, 32GB Ram, 2TB SSD, Windows 10 version Version 10.0.19041.630.
-Databases running on Docker WSL2.
+Updated Performance numbers pending.
 
-All numbers are in msg/sec.
-
-|Test |SqlServer (normal)       |  SqlServer Batching     | Linq2Db     |vs Normal| vs Batching| 
-|:-------------  |:------------- | :----------: | -----------: | -----------: | -----------: |
-|Persist |  164|427| 235|143.29%|55.04%|
-|PersistAll |  782|875| 5609|717.26%|641.03%|
-|PersistAsync |  630|846| 16099|2555.40%|1902.96%|
-|PersistAllAsync |  2095|902| 15681|748.50%|1738.47%|
-|PersistGroup10 |  590|680| 1069|181.19%|157.21%|
-|PersistGroup100 |  607|965| 5537|912.19%|573.78%|
-|PersistGroup200 |  628|1356| 7966|1268.47%|587.46%|
-|PersistGroup25 |  629|675| 2189|348.01%|324.30%|
-|PersistGroup400 |  612|1011| 7237|1182.52%|715.83%|
-|PersistGroup50 |  612|654| 3867|631.86%|591.28%|
-|Recovering |  41903|38766| 42592|101.64%|109.87%|
-|Recovering8 |  75466|65515| 63960|84.75%|97.63%|
-|RecoveringFour |  59259|51355| 58437|98.61%|113.79%|
-|RecoveringTwo |  41745|35512| 41108|98.47%|115.76%|
 ## Sql.Common Compatibility modes
 
 - Delete Compatibility mode is available.

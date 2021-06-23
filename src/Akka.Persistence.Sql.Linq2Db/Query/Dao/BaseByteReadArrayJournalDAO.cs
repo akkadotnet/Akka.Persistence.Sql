@@ -156,11 +156,10 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             DataConnection dc, string persistenceId, long fromSequenceNr,
             long toSequenceNr, long max)
         {
-            var toTake = MaxTake(max);
             return AsyncSource<JournalRow>.FromEnumerable(
                     new
                     {
-                        dc, persistenceId, fromSequenceNr, toSequenceNr, toTake,
+                        dc, persistenceId, fromSequenceNr, toSequenceNr,toTake= MaxTake(max),
                         includeDeleted
                     }, async (state) =>
 
@@ -180,10 +179,8 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                         {
                             var val = t.Get();
                             return new Akka.Util.Try<ReplayCompletion>(
-                                new ReplayCompletion()
-                                {
-                                    repr = val.Item1, Ordering = val.Item3
-                                });
+                                new ReplayCompletion(val.Item1,val.Item3)
+                                );
                         }
                         catch (Exception e)
                         {
