@@ -1,35 +1,34 @@
 ﻿using Akka.Configuration;
-using Akka.Persistence.Sql.Linq2Db.Tests.Docker;
+using Akka.Persistence.Linq2Db.BenchmarkTests;
 using Akka.Persistence.Sql.Linq2Db.Tests.Docker.Docker;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Linq2Db.BenchmarkTests.Docker.SqlCommon
+namespace Akka.Persistence.Linq2Db.Benchmark.DockerComparisonTests.SqlCommon
 {
-    [Collection("PostgreSQLSpec")]
-    public class DockerPostgreSQLJournalPerfSpec : L2dbJournalPerfSpec
+    [Collection("SqlServerSpec")]
+    public class DockerBatchingSqlServerJournalPerfSpec : L2dbJournalPerfSpec
     {
-        public DockerPostgreSQLJournalPerfSpec(ITestOutputHelper output, PostgreSQLFixture fixture) : base(InitConfig(fixture),"sqlserverperfspec", output,40, TestConstants.DockerNumMessages)
+        public DockerBatchingSqlServerJournalPerfSpec(ITestOutputHelper output, SqlServerFixture fixture) : base(InitConfig(fixture),"sqlserverperfspec", output,40, TestConstants.DockerNumMessages)
         {
         }
-        public static Config InitConfig(PostgreSQLFixture fixture)
+        public static Config InitConfig(SqlServerFixture fixture)
         {
             //need to make sure db is created before the tests start
-            //DockerDbUtils.Initialize(fixture.ConnectionString);
+            DockerDbUtils.Initialize(fixture.ConnectionString);
             var specString = $@"
                     akka.persistence {{
                         publish-plugin-commands = on
                         journal {{
-                            plugin = ""akka.persistence.journal.postgresql""
-                            postgresql {{
-                                class = ""Akka.Persistence.PostgreSql.Journal.PostgreSqlJournal, Akka.Persistence.PostgreSql""
+                            plugin = ""akka.persistence.journal.sql-server""
+                            sql-server {{
+                                class = ""Akka.Persistence.SqlServer.Journal.BatchingSqlServerJournal, Akka.Persistence.SqlServer""
                                 #plugin-dispatcher = ""akka.actor.default-dispatcher""
                                 plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
                                 table-name = EventJournal
-                                metadata-table-name = metadata
-                                schema-name = public
+                                schema-name = dbo
                                 auto-initialize = on
-                                connection-string = ""{fixture.ConnectionString}""
+                                connection-string = ""{DockerDbUtils.ConnectionString}""
                             }}
                         }}
                     }}";

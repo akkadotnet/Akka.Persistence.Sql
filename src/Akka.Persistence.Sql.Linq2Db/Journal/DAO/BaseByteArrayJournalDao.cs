@@ -287,8 +287,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                                     },
                                     jmd => new JournalMetaData()
                                     {
-                                        PersistenceId = persistenceId,
-                                        SequenceNumber = maxMarkedDeletion
+                                        
                                     },
                                     () => new JournalMetaData()
                                     {
