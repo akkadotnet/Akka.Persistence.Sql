@@ -119,19 +119,21 @@ Updated Performance numbers pending.
 
 ### Journal:
 
-Please note that you -must- provide a Connection String and Provider name.
+Please note that you -must- provide a Connection String (`connection-string`) and Provider name (`provider-name`).
 
 - Refer to the Members of `LinqToDb.ProviderName` for included providers.
     - Note: For best performance, one should use the most specific provider name possible. i.e. `LinqToDB.ProviderName.SqlServer2012` instead of `LinqToDB.ProviderName.SqlServer`. Otherwise certain provider detections have to run more frequently which may impair performance slightly.
 
 - `parallelism` controls the number of Akka.Streams Queues used to write to the DB.
-    - Default in JVM is `8`. We use `2`
-        - For SQL Server, Based on testing `2` is a fairly optimal number in .NET and thusly chosen as the default. You may wish to adjust up if you are dealing with a large number of actors.
+    - Default in JVM is `8`. We use `3`
+        - For SQL Server, Based on testing `3` is a fairly optimal number in .NET and thusly chosen as the default. You may wish to adjust up if you are dealing with a large number of actors.
             - Testing indicates that `2` will provide performance on par or better than both batching and non-batching journal.
         - For SQLite, you may want to just put `1` here, because SQLite allows at most a single writer at a time even in WAL mode.
             - Keep in mind there may be some latency/throughput trade-offs if your write-set gets large.
-    - Note that these run on the threadpool, not on dedicated threads. Setting this number too high may steal work from other actors.
-        - It's worth noting that LinqToDb's Bulk Copy implementations are -very- efficient here, since under many DBs the batch can be done in a single round-trip.
+    - Note that unless `materializer-dispatcher` is changed, by default these run on the threadpool, not on dedicated threads. Setting this number too high may steal work from other actors.
+        - It's worth noting that LinqToDb's Bulk Copy implementations are very efficient here, since under many DBs the batch can be done in a single async round-trip.
+- `materializer-dispatcher` may be used to change the dispatcher that the Akka.Streams Queues use for scheduling.
+    - You can define a different dispatcher here if worried about stealing from the thread-pool, for instance a Dedicated thread-pool dispatcher.
 - `logical-delete` if `true` will only set the deleted flag for items, i.e. will not actually delete records from DB.
     - if `false` all records are set as deleted, and then all but the top record is deleted. This top record is used for sequence number tracking in case no other records exist in the table.
 - `delete-compatibility-mode` specifies to perform deletes in a way that is compatible with Akka.Persistence.Sql.Common.
@@ -140,6 +142,14 @@ Please note that you -must- provide a Connection String and Provider name.
 - `use-clone-connection` is a bit of a hack. Currently Linq2Db has a performance penalty for custom mapping schemas. Cloning the connection is faster but may not work for all scenarios.
     - tl;dr - If a password or similar is in the connection string, leave `use-clone-connection` set to `false`.
     - If you don't have a password or similar, run some tests with it set to `true`. You'll see improved write and read performance.
+- Batching options:
+    - `batch-size` controls the maximum size of the batch used in the Akka.Streams Batch. A single batch is written to the DB in a transaction, with 1 or more round trips.
+        - If more than `batch-size` is in a single `AtomicWrite`, That atomic write will still be atomic, just treated as it's own batch.
+    - `db-round-trip-max-batch-size` tries to hint to Linq2Db multirow insert the maximum number of rows to send in a round-trip to the DB.
+        - multiple round-trips will still be contained in a single transaction.
+        - You will want to Keep this number higher than `batch-size`, if you are persisting lots of events with `PersistAll/(Async)`.
+    - `prefer-parameters-on-multirow-insert` controls whether Linq2Db will try to use parameters instead of building raw strings for inserts.
+        - Linq2Db is incredibly speed and memory efficent at building binary strings. In most cases, this will be faster than the cost of parsing/marshalling parameters by ADO and the DB.    
 - For Table Configuration:
     - Note that Tables/Columns will be created with the casing provided, and selected in the same way (i.e. if using a DB with case sensitive columns, be careful!)
 
@@ -187,6 +197,18 @@ akka.persistence {
       #100 is better for overall latency. That said,
       #larger batches may be better if you have A fast/local DB.
       batch-size = 100
+
+      #This batch size controls the maximum number of rows that will be sent
+      #In a single round trip to the DB. This is different than the -actual- batch size,
+      #And intentionally set larger than batch-size,
+      #to help atomicwrites be faster
+      #Note that Linq2Db may use a lower number per round-trip in some cases. 
+      db-round-trip-max-batch-size = 1000
+
+      #Linq2Db by default will use a built string for multi-row inserts
+      #Somewhat counterintuitively, this is faster than using parameters in most cases,
+      #But if you would prefer parameters, you can set this to true.
+      prefer-parameters-on-multirow-insert = true
 
       # Denotes the number of messages retrieved
       # Per round-trip to DB on recovery.
