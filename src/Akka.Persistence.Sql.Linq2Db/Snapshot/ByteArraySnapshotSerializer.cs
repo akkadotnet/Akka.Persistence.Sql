@@ -45,8 +45,11 @@ namespace Akka.Persistence.Sql.Linq2Db.Snapshot
             {
                 var type = Type.GetType(manifest, true);
                 // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
-                var serializer = _serialization.FindSerializerForType(type, _config.DefaultSerializer);
-                obj = Akka.Serialization.Serialization.WithTransport(_serialization.System, () => serializer.FromBinary(binary, type));
+                obj = Akka.Serialization.Serialization.WithTransport(
+                    _serialization.System,
+                     (serializer: _serialization.FindSerializerForType(type, _config.DefaultSerializer),
+                        binary, type),
+                    (state) => state.serializer.FromBinary(state.binary, state.type));
             }
             else
             {
@@ -60,8 +63,8 @@ namespace Akka.Persistence.Sql.Linq2Db.Snapshot
         {
             var snapshotType = snapshot.GetType();
             var serializer = _serialization.FindSerializerForType(snapshotType, _config.DefaultSerializer);
-            var binary  = Akka.Serialization.Serialization.WithTransport(_serialization.System,
-                () => serializer.ToBinary(snapshot));
+            var binary  = Akka.Serialization.Serialization.WithTransport(_serialization.System,(serializer, snapshot),
+                (state ) => state.serializer.ToBinary(state.snapshot));
             string manifest = "";
             if (serializer is SerializerWithStringManifest)
             {

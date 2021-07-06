@@ -154,8 +154,8 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
                     toSequenceNr, batchSize, refreshInterval)
                 .SelectAsync<Akka.Util.Try<ReplayCompletion>, ReplayCompletion, NotUsed>(1,
                     reprAndOrdNr => Task.FromResult<ReplayCompletion>(reprAndOrdNr.Get()))
-                .SelectMany((ReplayCompletion r) => _adaptEvents(r.repr)
-                    .Select(p => new {repr = r.repr, ordNr = r.Ordering}))
+                .SelectMany((ReplayCompletion r) => _adaptEvents(r.Repr)
+                    .Select(p => new {repr = r.Repr, ordNr = r.Ordering}))
                 .Select(r => new EventEnvelope(new Sequence(r.ordNr),
                     r.repr.PersistenceId, r.repr.SequenceNr, r.repr.Payload,r.repr.Timestamp));
         }

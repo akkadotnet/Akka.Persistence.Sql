@@ -50,6 +50,7 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             persistRef.Tell(new SomeEvent(){EventName = "rec-test", Guid = ourGuid, Number = 1});
             Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid}, TimeSpan.FromSeconds(5)).Result);
             await persistRef.GracefulStop(TimeSpan.FromSeconds(5));
+            await Task.Delay(1000);
             persistRef =  sys1.ActorOf(Props.Create(() =>
                 new JournalCompatActor(NewJournal,
                     "p-1")), "test-recover-1");
@@ -90,6 +91,7 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             persistRef.Tell(new SomeEvent(){EventName = "rec-test", Guid = ourGuid, Number = 1});
             Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid}, TimeSpan.FromSeconds(5)).Result);
             await persistRef.GracefulStop(TimeSpan.FromSeconds(5));
+            await Task.Delay(1000);
             persistRef = sys1.ActorOf(Props.Create(() =>
                 new JournalCompatActor(OldJournal,
                     "p-3")), "test-recover-2");

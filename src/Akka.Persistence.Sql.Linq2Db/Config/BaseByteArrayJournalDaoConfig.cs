@@ -9,6 +9,10 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
             
             BufferSize = config.GetInt("buffer-size", 5000);
             BatchSize = config.GetInt("batch-size", 100);
+            DbRoundTripBatchSize = config.GetInt("db-round-trip-max-batch-size", 1000);
+            PreferParametersOnMultiRowInsert =
+                config.GetBoolean("prefer-parameters-on-multirow-insert",
+                    false);
             ReplayBatchSize = config.GetInt("replay-batch-size", 1000);
             Parallelism = config.GetInt("parallelism", 2);
             LogicalDelete = config.GetBoolean("logical-delete", false);
@@ -16,6 +20,10 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
             SqlCommonCompatibilityMode =
                 config.GetBoolean("delete-compatibility-mode", true);
         }
+
+        public bool PreferParametersOnMultiRowInsert { get; set; }
+
+        public int DbRoundTripBatchSize { get; set; }
 
         /// <summary>
         /// Specifies the batch size at which point <see cref="BulkCopyType"/>

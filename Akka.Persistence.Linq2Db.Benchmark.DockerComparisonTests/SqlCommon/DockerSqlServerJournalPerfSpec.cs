@@ -1,10 +1,10 @@
 ﻿using Akka.Configuration;
-using Akka.Persistence.Sql.Linq2Db.Tests.Docker;
+using Akka.Persistence.Linq2Db.BenchmarkTests;
 using Akka.Persistence.Sql.Linq2Db.Tests.Docker.Docker;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Linq2Db.BenchmarkTests.Docker.SqlCommon
+namespace Akka.Persistence.Linq2Db.Benchmark.DockerComparisonTests.SqlCommon
 {
     [Collection("SqlServerSpec")]
     public class DockerSqlServerJournalPerfSpec : L2dbJournalPerfSpec

@@ -136,6 +136,7 @@ namespace Akka.Persistence.Linq2Db.BenchmarkTests
         {
             var measurements = new List<TimeSpan>(MeasurementIterations);
 
+            block();
             block(); //warm-up
 
             int i = 0;
@@ -550,7 +551,7 @@ namespace Akka.Persistence.Linq2Db.BenchmarkTests
             FeedAndExpectLastSpecific(p6, "p", Commands);
             FeedAndExpectLastSpecific(p7, "p", Commands);
             FeedAndExpectLastSpecific(p8, "p", Commands);
-            MeasureGroup(d => $"Recovering {EventsCount} took {d.TotalMilliseconds} ms", () =>
+            MeasureGroup(d => $"Recovering {EventsCount} took {d.TotalMilliseconds} ms , {(EventsCount*8 / d.TotalMilliseconds) * 1000} total msg/sec", () =>
             {
                 var task1 = Task.Run(()=>
                 {

@@ -31,7 +31,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_", "_", "{20C26B2D-59EA-42
 ProjectSection(SolutionItems) = preProject
 	src\common.props = src\common.props
 	README.md = README.md
+	RELEASE_NOTES.md = RELEASE_NOTES.md
 EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.Benchmark.DockerComparisonTests", "Akka.Persistence.Linq2Db.Benchmark.DockerComparisonTests\Akka.Persistence.Linq2Db.Benchmark.DockerComparisonTests.csproj", "{170698FA-DA1E-40BC-896D-AFA67976C0EB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -71,6 +74,10 @@ Global
 		{095E392C-C439-4EBC-ABCB-6AA87FCBD9E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{095E392C-C439-4EBC-ABCB-6AA87FCBD9E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{095E392C-C439-4EBC-ABCB-6AA87FCBD9E9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{170698FA-DA1E-40BC-896D-AFA67976C0EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{170698FA-DA1E-40BC-896D-AFA67976C0EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{170698FA-DA1E-40BC-896D-AFA67976C0EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{170698FA-DA1E-40BC-896D-AFA67976C0EB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -44,6 +44,7 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid}, TimeSpan.FromSeconds(5)).Result);
             await Task.Delay(TimeSpan.FromSeconds(2));
             await persistRef.GracefulStop(TimeSpan.FromSeconds(5));
+            await Task.Delay(TimeSpan.FromSeconds(2));
             persistRef =  sys1.ActorOf(Props.Create(() =>
                 new SnapshotCompatActor(NewSnapshot,
                     "p-1")), "test-snap-recover-1");
@@ -63,6 +64,7 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid}, TimeSpan.FromSeconds(5)).Result);
             await Task.Delay(TimeSpan.FromSeconds(2));
             await persistRef.GracefulStop(TimeSpan.FromSeconds(5));
+            await Task.Delay(TimeSpan.FromSeconds(2));
             persistRef =  sys1.ActorOf(Props.Create(() =>
                 new SnapshotCompatActor(NewSnapshot,
                     "p-2")), "test-snap-persist-1");
@@ -86,6 +88,7 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid}, TimeSpan.FromSeconds(5)).Result);
             await Task.Delay(TimeSpan.FromSeconds(2));
             await persistRef.GracefulStop(TimeSpan.FromSeconds(5));
+            await Task.Delay(TimeSpan.FromSeconds(2));
             persistRef = sys1.ActorOf(Props.Create(() =>
                 new SnapshotCompatActor(OldSnapshot,
                     "p-3")), "test-snap-recover-2");
@@ -105,6 +108,7 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid}, TimeSpan.FromSeconds(5)).Result);
             await Task.Delay(TimeSpan.FromSeconds(2));
             await persistRef.GracefulStop(TimeSpan.FromSeconds(5));
+            await Task.Delay(TimeSpan.FromSeconds(2));
             persistRef =  sys1.ActorOf(Props.Create(() =>
                 new SnapshotCompatActor(OldSnapshot,
                     "p-4")), "test-snap-persist-2");

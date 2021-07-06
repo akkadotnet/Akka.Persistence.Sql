@@ -33,6 +33,7 @@ namespace Akka.Persistence.Linq2Db.BenchmarkTests.Docker.Linq2Db
 #connection-string = ""FullUri=file:test.db&cache=shared""
                         provider-name = """ + LinqToDB.ProviderName.SqlServer2017 + @"""
                         use-clone-connection = true
+                        #prefer-parameters-on-multirow-insert = true
                         tables.journal {{ 
                            auto-init = true
                            warn-on-auto-init-fail = false

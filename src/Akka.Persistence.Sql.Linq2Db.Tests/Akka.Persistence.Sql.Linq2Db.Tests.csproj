@@ -11,16 +11,16 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Akka" Version="1.4.14" />
-        <PackageReference Include="Akka.Persistence.Sqlite" Version="1.4.14" />
-        <PackageReference Include="Akka.Persistence.SqlServer" Version="1.4.13" />
-        <PackageReference Include="Akka.Persistence.TCK" Version="1.4.14" />
-        <PackageReference Include="Akka.Persistence.TestKit" Version="1.4.14" />
-        <PackageReference Include="Akka.Serialization.Hyperion" Version="1.4.14" />
+        <PackageReference Include="Akka" Version="1.4.21" />
+        <PackageReference Include="Akka.Persistence.Sqlite" Version="1.4.21" />
+        <PackageReference Include="Akka.Persistence.SqlServer" Version="1.4.18" />
+        <PackageReference Include="Akka.Persistence.TCK" Version="1.4.21" />
+        <PackageReference Include="Akka.Persistence.TestKit" Version="1.4.21" />
+        <PackageReference Include="Akka.Serialization.Hyperion" Version="1.4.21" />
         <PackageReference Include="Docker.DotNet" Version="3.125.4" />
-        <PackageReference Include="Hyperion" Version="0.9.16" />
+        <PackageReference Include="Hyperion" Version="0.10.1" />
         <PackageReference Include="JetBrains.dotMemoryUnit" Version="3.1.20200127.214830" />
-        <PackageReference Include="Microsoft.Data.Sqlite" Version="5.0.1" />
+        <PackageReference Include="Microsoft.Data.Sqlite" Version="5.0.7" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
         <PackageReference Include="Npgsql" Version="4.1.4" />
         <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />

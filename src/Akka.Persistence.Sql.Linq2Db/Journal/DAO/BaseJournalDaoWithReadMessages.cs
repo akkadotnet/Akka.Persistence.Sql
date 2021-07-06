@@ -61,7 +61,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                             Util.Option<long> lastSeq = Util.Option<long>.None;
                             if (lastMsg != null && lastMsg.IsSuccess)
                             {
-                                lastSeq = lastMsg.Success.Select(r => r.repr.SequenceNr);
+                                lastSeq = lastMsg.Success.Select(r => r.Repr.SequenceNr);
                             }
                             else if (lastMsg != null &&  lastMsg.Failure.HasValue)
                             {

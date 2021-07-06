@@ -15,7 +15,8 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.Docker
     /// </summary>
     public class PostgreSQLFixture : IAsyncLifetime
     {
-        protected readonly string PostgreSqlImageName = $"PostgreSQL-{Guid.NewGuid():N}";
+        protected readonly string PostgresContainerName = $"postgresSqlServer-{Guid.NewGuid():N}";
+        //protected readonly string PostgreSqlImageName = $"PostgreSQL-{Guid.NewGuid():N}";
         protected DockerClient Client;
 
         public PostgreSQLFixture()
@@ -31,34 +32,33 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.Docker
             Client = config.CreateClient();
         }
 
-        protected string PostgreSQLImageName
-        {
-            get
-            {
-                //if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                //    return "microsoft/mssql-server-windows-express";
-                return "postgres";
-            }
-        }
+        
+        protected string ImageName => "postgres";
+        protected string Tag => "latest";
 
-        protected string SqlServerImageTag
-        {
-            get
-            {
-                //if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                //    return "2017-latest";
-                return "latest";
-            }
-        }
+        protected string PostgresImageName => $"{ImageName}:{Tag}";
 
         public string ConnectionString { get; private set; }
 
         public async Task InitializeAsync()
         {
-            var images = await Client.Images.ListImagesAsync(new ImagesListParameters {MatchName = PostgreSQLImageName});
+           var images = await Client.Images.ListImagesAsync(new ImagesListParameters
+            {
+                Filters = new Dictionary<string, IDictionary<string, bool>>
+                {
+                    {
+                        "reference",
+                        new Dictionary<string, bool>
+                        {
+                            {PostgresImageName, true}
+                        }
+                    }
+                }
+            });
+
             if (images.Count == 0)
                 await Client.Images.CreateImageAsync(
-                    new ImagesCreateParameters {FromImage = PostgreSQLImageName, Tag = "latest"}, null,
+                    new ImagesCreateParameters { FromImage = ImageName, Tag = Tag }, null,
                     new Progress<JSONMessage>(message =>
                     {
                         Console.WriteLine(!string.IsNullOrEmpty(message.ErrorMessage)
@@ -66,13 +66,13 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.Docker
                             : $"{message.ID} {message.Status} {message.ProgressMessage}");
                     }));
 
-            var postgresPort = ThreadLocalRandom.Current.Next(9000, 10000);
+            var sqlServerHostPort = ThreadLocalRandom.Current.Next(9000, 10000);
 
             // create the container
             await Client.Containers.CreateContainerAsync(new CreateContainerParameters
             {
-                Image = PostgreSQLImageName,
-                Name = PostgreSqlImageName,
+                Image = PostgresImageName,
+                Name = PostgresContainerName,
                 Tty = true,
                 ExposedPorts = new Dictionary<string, EmptyStruct>
                 {
@@ -88,37 +88,44 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.Docker
                             {
                                 new PortBinding
                                 {
-                                    HostPort = $"{postgresPort}"
+                                    HostPort = $"{sqlServerHostPort}"
                                 }
                             }
                         }
                     }
                 },
-                Env = new[] {"POSTGRES_PASSWORD=l0lTh1sIsOpenSource"}
+                Env = new[]
+                {
+                    "POSTGRES_PASSWORD=postgres",
+                    "POSTGRES_USER=postgres"
+                }
             });
 
             // start the container
-            await Client.Containers.StartContainerAsync(PostgreSqlImageName, new ContainerStartParameters());
+            await Client.Containers.StartContainerAsync(PostgresContainerName, new ContainerStartParameters());
 
-            // Provide a 30 second startup delay
-            await Task.Delay(TimeSpan.FromSeconds(30));
+            // Provide a 10 second startup delay
+            await Task.Delay(TimeSpan.FromSeconds(10));
 
-            var connectionString = new NpgsqlConnectionStringBuilder()
-            {
-                Host = "localhost", Password = "l0lTh1sIsOpenSource",
-                Username = "postgres", Database = "postgres",
-                Port = postgresPort
-            };
+            ConnectionString = $"Server=127.0.0.1;Port={sqlServerHostPort};" +
+                               "Database=postgres;User Id=postgres;Password=postgres";
 
-            ConnectionString = connectionString.ToString();
+            //var connectionString = new NpgsqlConnectionStringBuilder()
+            //{
+            //    Host = "localhost", Password = "l0lTh1sIsOpenSource",
+            //    Username = "postgres", Database = "postgres",
+            //    Port = sqlServerHostPort
+            //};
+            //
+            //ConnectionString = connectionString.ToString();
         }
 
         public async Task DisposeAsync()
         {
             if (Client != null)
             {
-                await Client.Containers.StopContainerAsync(PostgreSqlImageName, new ContainerStopParameters());
-                await Client.Containers.RemoveContainerAsync(PostgreSqlImageName,
+                await Client.Containers.StopContainerAsync(PostgresContainerName, new ContainerStopParameters());
+                await Client.Containers.RemoveContainerAsync(PostgresContainerName,
                     new ContainerRemoveParameters {Force = true});
                 Client.Dispose();
             }
