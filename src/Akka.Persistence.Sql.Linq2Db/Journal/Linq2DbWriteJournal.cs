@@ -147,11 +147,12 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal
 
         public override async Task<long> ReadHighestSequenceNrAsync(string persistenceId, long fromSequenceNr)
         {
-            if (writeInProgress.ContainsKey(persistenceId))
+            
+            if (writeInProgress.TryGetValue(persistenceId, out Task wip))
             {
                 //We don't care whether the write succeeded or failed
                 //We just want it to finish.
-                await new NoThrowAwaiter(writeInProgress[persistenceId]);
+                await new NoThrowAwaiter(wip);
             }
             return await _journal.HighestSequenceNr(persistenceId, fromSequenceNr);
         }
@@ -170,8 +171,10 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal
             
             //When we are done, we want to send a 'WriteFinished' so that
             //Sequence Number reads won't block/await/etc.
+#pragma warning disable 4014
             future.ContinueWith((p) =>
-                    self.Tell(new WriteFinished(persistenceId, future)),
+#pragma warning restore 4014
+                    self.Tell(new WriteFinished(persistenceId, p)),
                 CancellationToken.None,
                 TaskContinuationOptions.ExecuteSynchronously,
                 TaskScheduler.Default);

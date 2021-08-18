@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Data;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
@@ -138,21 +139,19 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
             {
                 //hot path:
                 //If we only have one row, penalty for BulkCopy
-                //Isn't worth it due to insert caching/etc.
-                if (xs.Count > 1)
-                {
+                //Isn't worth it due to insert caching/transaction/etc.
+                var count = xs.Count;
+                if (count is > 1)
                     await InsertMultiple(xs);
-                }
-                else if (xs.Count > 0)
-                {
-                    await InsertSingle(xs);
-                }
+                else if (count == 1) await InsertSingle(xs);
             }
 
         }
 
         private async Task InsertSingle(Seq<JournalRow> xs)
         {
+            //If we are writing a single row,
+            //we don't need to worry about transactions.
             using (var db = _connectionFactory.GetConnection())
             {
                 await db.InsertAsync(xs.Head);
@@ -176,9 +175,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                                         .MaxRowByRowSize
                                         ? BulkCopyType.Default
                                         : BulkCopyType.MultipleRows,
-                                //TODO: When Parameters are allowed,
-                                //Make a Config Option
-                                //Or default to true
                                 UseParameters = _journalConfig.DaoConfig.PreferParametersOnMultiRowInsert,
                                 MaxBatchSize = _journalConfig.DaoConfig.DbRoundTripBatchSize
                             }, xs);
@@ -200,45 +196,61 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
             }
         }
 
+        //By using a custom flatten here, we avoid an Enumerable/LINQ allocation
+        //And are able to have a little more control over default capacity of array.
+        static List<JournalRow> FlattenListOfListsToList(List<Akka.Util.Try<List<JournalRow>>> source) {
+            
+            //List<JournalRow> ResultSet(
+            //    Akka.Util.Try<List<JournalRow>> item)
+            //{
+            //    return item.Success.GetOrElse(new List<JournalRow>(0));
+            //}
+
+            List<JournalRow> rows = new List<JournalRow>(source.Count > 4 ? source.Count:4);
+            for (var index = 0; index < source.Count; index++)
+            {
+                var item = source[index].Success.Value;
+                if (item != null)
+                {
+                    rows.AddRange(item);
+                }
+                //rows.AddRange(ResultSet(source[index]));
+            }
+
+            return rows;
+        }
+        
         public async Task<IImmutableList<Exception>> AsyncWriteMessages(
             IEnumerable<AtomicWrite> messages, long timeStamp = 0)
         {
             var serializedTries = Serializer.Serialize(messages, timeStamp);
-
-            //Just a little bit of magic here;
-            //.ToList() keeps it all working later for whatever reason
-            //while still keeping our allocations in check.
             
-            /*var trySet = new List<JournalRow>();
-            foreach (var serializedTry in serializedTries)
-            {
-                trySet.AddRange(serializedTry.Success.GetOrElse(new List<JournalRow>(0)));
-            }
-
-            var rows = Seq(trySet);*/
-            var rows = Seq(serializedTries.SelectMany(serializedTry =>
-                    serializedTry.Success.GetOrElse(new List<JournalRow>(0)))
-                .ToList());
-            //
-        
-            
-            return await QueueWriteJournalRows(rows).ContinueWith(task =>
-                {
-                    //We actually are trying to interleave our tasks here...
-                    //Basically, if serialization failed our task will likely
-                    //Show success
-                    //But we instead should display the serialization failure
-                    return serializedTries.Select(r =>
-                        r.IsSuccess
-                            ? (task.IsFaulted
-                                ? TryUnwrapException(task.Exception)
-                                : null)
-                            : r.Failure.Value).ToImmutableList();
-                }, CancellationToken.None,
-                TaskContinuationOptions.ExecuteSynchronously,
-                TaskScheduler.Default);
+            //Fold our List of Lists into a single sequence
+            var rows = Seq(FlattenListOfListsToList(serializedTries));
+            //Wait for the write to go through. If Task fails, write will be captured
+            //As WriteMessagesFailure.
+            await QueueWriteJournalRows(rows);
+            //If we get here, we build an ImmutableList containing our rejections.
+            //These will be captured as WriteMessagesRejected
+            return BaseByteArrayJournalDao
+                .BuildWriteRejections(serializedTries);
         }
 
+        protected static ImmutableList<Exception> BuildWriteRejections(
+            List<Akka.Util.Try<List<JournalRow>>> serializedTries)
+        {
+            Exception[] builderEx =
+                new Exception[serializedTries.Count];
+            for (int i = 0; i < serializedTries.Count; i++)
+            {
+                builderEx[i] = (serializedTries[i].Failure.Value);
+            }
+            return ImmutableList.CreateRange<Exception>(builderEx);
+        }
+        protected static ImmutableList<Exception> FailWriteThrowHelper(Exception e)
+        {
+            throw TryUnwrapException(e);
+        }
         protected static Exception TryUnwrapException(Exception e)
         {
             var aggregateException = e as AggregateException;
@@ -346,18 +358,31 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                     .OrderByDescending(r => r.sequenceNumber)
                     .Select(r => r.sequenceNumber).Take(1);
         }
+        
+        static readonly Expression<Func<JournalMetaData, PersistenceIdAndSequenceNumber>> metaDataSelector = 
+            
+            md =>
+                new PersistenceIdAndSequenceNumber()
+                {
+                    SequenceNumber = md.SequenceNumber,
+                    PersistenceId = md.PersistenceId
+                };
 
+        static readonly Expression<Func<JournalRow, PersistenceIdAndSequenceNumber>> rowDataSelector =
+            md =>
+                new PersistenceIdAndSequenceNumber()
+                {
+                    SequenceNumber = md.sequenceNumber,
+                    PersistenceId = md.persistenceId
+                };
         private IQueryable<long> MaxSeqNumberForPersistenceIdQuery(
             DataConnection db, string persistenceId, long minSequenceNumber = 0)
         {
+            
+            
 
             var queryable = db.GetTable<JournalRow>()
-                .Where(r => r.persistenceId == persistenceId).Select(r =>
-                    new
-                    {
-                        SequenceNumber = r.sequenceNumber,
-                        PersistenceId = r.persistenceId
-                    });
+                .Where(r => r.persistenceId == persistenceId).Select(rowDataSelector);
             if (minSequenceNumber != 0)
             {
                 queryable = queryable.Where(r =>
@@ -370,17 +395,18 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                     .Where(r =>
                         r.SequenceNumber > minSequenceNumber &&
                         r.PersistenceId == persistenceId);
-                queryable = queryable.Union(nextQuery.Select(md =>
-                        new
-                        {
-                            SequenceNumber = md.SequenceNumber,
-                            PersistenceId = md.PersistenceId
-                        }));
+                queryable = queryable.Union(nextQuery.Select(metaDataSelector));
             }
 
-            return queryable.OrderByDescending(r => r.SequenceNumber)
-                .Select(r => r.SequenceNumber).Take(1);
+            return queryable.OrderByDescending(sequenceNumberSelector)
+                .Select(sequenceNumberSelector).Take(1);
         }
+
+        private static readonly
+            Expression<Func<PersistenceIdAndSequenceNumber, long>>
+            sequenceNumberSelector =
+                r => r.SequenceNumber;
+        
 
         public async Task<Done> Update(string persistenceId, long sequenceNr,
             object payload)
@@ -476,5 +502,11 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                             sertry.Failure.Value);
                 }
             };
+    }
+
+    public class PersistenceIdAndSequenceNumber
+    {
+        public long SequenceNumber { get; set; }
+        public string PersistenceId { get; set; }
     }
 }

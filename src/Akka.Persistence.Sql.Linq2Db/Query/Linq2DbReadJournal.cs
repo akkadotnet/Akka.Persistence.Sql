@@ -220,11 +220,11 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
                 .JournalSequenceRetrievalConfiguration.AskTimeout;
             var batchSize = readJournalConfig.MaxBufferSize;
             return Source
-                .UnfoldAsync<(long, FlowControl), IImmutableList<EventEnvelope>
-                >((offset, FlowControl.Continue.Instance),
+                .UnfoldAsync<(long, FlowControlEnum), IImmutableList<EventEnvelope>
+                >((offset, FlowControlEnum.Continue),
                     uf =>
                     {
-                        async Task<Akka.Util.Option<((long, FlowControl),
+                        async Task<Akka.Util.Option<((long, FlowControlEnum),
                             IImmutableList<EventEnvelope>)>> retrieveNextBatch()
                         {
                             var queryUntil =
@@ -237,25 +237,24 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
                                     Sink.Seq<EventEnvelope>(),
                                     _mat);
                             var hasMoreEvents = xs.Count == batchSize;
-                            FlowControl nextControl = null;
+                            FlowControlEnum nextControl = FlowControlEnum.Unknown;
                             if (terminateAfterOffset.HasValue)
                             {
                                 if (!hasMoreEvents &&
                                     terminateAfterOffset.Value <=
                                     queryUntil.Max)
-                                    nextControl = FlowControl.Stop.Instance;
+                                    nextControl = FlowControlEnum.Stop;
                                 if (xs.Exists(r =>
                                     (r.Offset is Sequence s) &&
                                     s.Value >= terminateAfterOffset.Value))
-                                    nextControl = FlowControl.Stop.Instance;
+                                    nextControl = FlowControlEnum.Stop;
                             }
 
-                            if (nextControl == null)
+                            if (nextControl == FlowControlEnum.Unknown)
                             {
                                 nextControl = hasMoreEvents
-                                    ? (FlowControl) FlowControl.Continue
-                                        .Instance
-                                    : FlowControl.ContinueDelayed.Instance;
+                                    ? FlowControlEnum.Continue
+                                    : FlowControlEnum.ContinueDelayed;
                             }
 
                             var nextStartingOffset = (xs.Count == 0)
@@ -264,7 +263,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
                                     .Where(r => r != null).Max(t => t.Value);
                             return new
                                 Akka.Util.Option<((long nextStartingOffset,
-                                    FlowControl
+                                    FlowControlEnum
                                     nextControl), IImmutableList<EventEnvelope>
                                     xs)
                                 >((
@@ -273,15 +272,15 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
 
                         switch (uf.Item2)
                         {
-                            case FlowControl.Stop _:
+                            case FlowControlEnum.Stop:
                                 return
                                     Task.FromResult(Akka.Util
-                                        .Option<((long, FlowControl),
+                                        .Option<((long, FlowControlEnum),
                                             IImmutableList<EventEnvelope>)>
                                         .None);
-                            case FlowControl.Continue _:
+                            case FlowControlEnum.Continue:
                                 return retrieveNextBatch();
-                            case FlowControl.ContinueDelayed _:
+                            case FlowControlEnum.ContinueDelayed :
                                 return Akka.Pattern.FutureTimeoutSupport.After(
                                     readJournalConfig.RefreshInterval,
                                     system.Scheduler,
@@ -289,7 +288,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
                             default:
                                 return
                                     Task.FromResult(Akka.Util
-                                        .Option<((long, FlowControl),
+                                        .Option<((long, FlowControlEnum),
                                             IImmutableList<EventEnvelope>)>
                                         .None);
                         }
@@ -317,11 +316,11 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
                 .JournalSequenceRetrievalConfiguration.AskTimeout;
             var batchSize = readJournalConfig.MaxBufferSize;
             return Source
-                .UnfoldAsync<(long, FlowControl), IImmutableList<EventEnvelope>
-                >((offset, FlowControl.Continue.Instance),
+                .UnfoldAsync<(long, FlowControlEnum), IImmutableList<EventEnvelope>
+                >((offset, FlowControlEnum.Continue),
                     uf =>
                     {
-                        async Task<Akka.Util.Option<((long, FlowControl),
+                        async Task<Akka.Util.Option<((long, FlowControlEnum),
                             IImmutableList<EventEnvelope>)>> retrieveNextBatch()
                         {
                             var queryUntil =
@@ -334,25 +333,24 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
                                     Sink.Seq<EventEnvelope>(),
                                     _mat);
                             var hasMoreEvents = xs.Count == batchSize;
-                            FlowControl nextControl = null;
+                            FlowControlEnum nextControl = FlowControlEnum.Unknown;
                             if (terminateAfterOffset.HasValue)
                             {
                                 if (!hasMoreEvents &&
                                     terminateAfterOffset.Value <=
                                     queryUntil.Max)
-                                    nextControl = FlowControl.Stop.Instance;
+                                    nextControl = FlowControlEnum.Stop;
                                 if (xs.Exists(r =>
                                     (r.Offset is Sequence s) &&
                                     s.Value >= terminateAfterOffset.Value))
-                                    nextControl = FlowControl.Stop.Instance;
+                                    nextControl = FlowControlEnum.Stop;
                             }
 
-                            if (nextControl == null)
+                            if (nextControl == FlowControlEnum.Unknown)
                             {
                                 nextControl = hasMoreEvents
-                                    ? (FlowControl) FlowControl.Continue
-                                        .Instance
-                                    : FlowControl.ContinueDelayed.Instance;
+                                    ? FlowControlEnum.Continue
+                                    : FlowControlEnum.ContinueDelayed;
                             }
 
                             var nextStartingOffset = (xs.Count == 0)
@@ -361,7 +359,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
                                     .Where(r => r != null).Max(t => t.Value);
                             return new
                                 Akka.Util.Option<((long nextStartingOffset,
-                                    FlowControl
+                                    FlowControlEnum
                                     nextControl), IImmutableList<EventEnvelope>
                                     xs)
                                 >((
@@ -370,15 +368,15 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
 
                         switch (uf.Item2)
                         {
-                            case FlowControl.Stop _:
+                            case FlowControlEnum.Stop:
                                 return
                                     Task.FromResult(Akka.Util
-                                        .Option<((long, FlowControl),
+                                        .Option<((long, FlowControlEnum),
                                             IImmutableList<EventEnvelope>)>
                                         .None);
-                            case FlowControl.Continue _:
+                            case FlowControlEnum.Continue:
                                 return retrieveNextBatch();
-                            case FlowControl.ContinueDelayed _:
+                            case FlowControlEnum.ContinueDelayed:
                                 return Akka.Pattern.FutureTimeoutSupport.After(
                                     readJournalConfig.RefreshInterval,
                                     system.Scheduler,
@@ -386,7 +384,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
                             default:
                                 return
                                     Task.FromResult(Akka.Util
-                                        .Option<((long, FlowControl),
+                                        .Option<((long, FlowControlEnum),
                                             IImmutableList<EventEnvelope>)>
                                         .None);
                         }
