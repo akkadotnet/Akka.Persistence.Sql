@@ -141,11 +141,10 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                 //If we only have one row, penalty for BulkCopy
                 //Isn't worth it due to insert caching/transaction/etc.
                 var count = xs.Count;
-                if (count is > 1)
+                if (count > 1)
                     await InsertMultiple(xs);
                 else if (count == 1) await InsertSingle(xs);
             }
-
         }
 
         private async Task InsertSingle(Seq<JournalRow> xs)
