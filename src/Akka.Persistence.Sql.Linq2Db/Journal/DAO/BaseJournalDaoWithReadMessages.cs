@@ -33,14 +33,14 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
         public Source<Util.Try<ReplayCompletion>, NotUsed> MessagesWithBatch(string persistenceId, long fromSequenceNr,
             long toSequenceNr, int batchSize, Util.Option<(TimeSpan,IScheduler)> refreshInterval)
         {
-            var src = Source
-                .UnfoldAsync<(long, FlowControl),
+            return Source
+                .UnfoldAsync<(long, FlowControlEnum),
                     Seq<Util.Try<ReplayCompletion>>>(
                     (Math.Max(1, fromSequenceNr),
-                        FlowControl.Continue.Instance),
+                        FlowControlEnum.Continue),
                     async opt =>
                     {
-                        async Task<Util.Option<((long, FlowControl), Seq<Util.Try<ReplayCompletion>>)>>
+                        async Task<Util.Option<((long, FlowControlEnum), Seq<Util.Try<ReplayCompletion>>)>>
                             RetrieveNextBatch()
                         {
                             Seq<
@@ -48,76 +48,75 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                             using (var conn =
                                 _connectionFactory.GetConnection())
                             {
-                                var waited = Messages(conn, persistenceId,
-                                    opt.Item1,
-                                    toSequenceNr, batchSize);
-                                msg = await waited
+                                msg = await Messages(conn, persistenceId,
+                                        opt.Item1,
+                                        toSequenceNr, batchSize)
                                     .RunWith(
                                             ExtSeq.Seq<Util.Try<ReplayCompletion>>(), mat);
                             }
 
                             var hasMoreEvents = msg.Count == batchSize;
-                            var lastMsg = msg.LastOrDefault();
+                            //var lastMsg = msg.IsEmpty.LastOrDefault();
                             Util.Option<long> lastSeq = Util.Option<long>.None;
-                            if (lastMsg != null && lastMsg.IsSuccess)
+                            if (msg.IsEmpty == false)
                             {
-                                lastSeq = lastMsg.Success.Select(r => r.Repr.SequenceNr);
-                            }
-                            else if (lastMsg != null &&  lastMsg.Failure.HasValue)
-                            {
-                                throw lastMsg.Failure.Value;
+                                
+                                lastSeq = msg.Last.Get().Repr.SequenceNr;
                             }
 
-                            var hasLastEvent =
-                                lastSeq.HasValue &&
-                                lastSeq.Value >= toSequenceNr;
-                            FlowControl nextControl = null;
-                            if (hasLastEvent || opt.Item1 > toSequenceNr)
+                            
+                            FlowControlEnum nextControl = FlowControlEnum.Unknown;
+                            if ((lastSeq.HasValue &&
+                                lastSeq.Value >= toSequenceNr) || opt.Item1 > toSequenceNr)
                             {
-                                nextControl = FlowControl.Stop.Instance;
+                                nextControl = FlowControlEnum.Stop;
                             }
                             else if (hasMoreEvents)
                             {
-                                nextControl = FlowControl.Continue.Instance;
+                                nextControl = FlowControlEnum.Continue;
                             }
                             else if (refreshInterval.HasValue == false)
                             {
-                                nextControl = FlowControl.Stop.Instance;
+                                nextControl = FlowControlEnum.Stop;
                             }
                             else
                             {
-                                nextControl = FlowControl.ContinueDelayed
-                                    .Instance;
+                                nextControl = FlowControlEnum.ContinueDelayed;
                             }
 
-                            long nextFrom = 0;
+                            long nextFrom = opt.Item1;
                             if (lastSeq.HasValue)
                             {
                                 nextFrom = lastSeq.Value + 1;
                             }
-                            else
-                            {
-                                nextFrom = opt.Item1;
-                            }
 
-                            return new Util.Option<((long, FlowControl), Seq<Util.Try<ReplayCompletion>>)>((
+                            return new Util.Option<((long, FlowControlEnum), Seq<Util.Try<ReplayCompletion>>)>((
                                     (nextFrom, nextControl), msg));
                         }
 
                         switch (opt.Item2)
                         {
-                            case FlowControl.Stop _:
-                                return Util.Option<((long, FlowControl), Seq<Util.Try<ReplayCompletion>>)>.None;
-                            case FlowControl.Continue _:
+                            case FlowControlEnum.Stop:
+                                return Util.Option<((long, FlowControlEnum), Seq<Util.Try<ReplayCompletion>>)>.None;
+                            case FlowControlEnum.Continue:
                                 return await RetrieveNextBatch();
-                            case FlowControl.ContinueDelayed _ when refreshInterval.HasValue:
+                            case FlowControlEnum.ContinueDelayed when refreshInterval.HasValue:
                                 return await FutureTimeoutSupport.After(refreshInterval.Value.Item1,refreshInterval.Value.Item2, RetrieveNextBatch);
                             default:
-                                throw new Exception($"Got invalid FlowControl from Queue! Type : {opt.Item2.GetType()}");
+                                return InvalidFlowThrowHelper(opt);
                         }
-                    });
+                    }).SelectMany(r => r);;
+        }
 
-            return src.SelectMany(r => r);
+        private static Util.Option<long> MessagesWithBatchThrowHelper(Util.Try<ReplayCompletion> lastMsg)
+        {
+            throw lastMsg.Failure.Value;
+        }
+
+        private static Util.Option<((long, FlowControlEnum), Seq<Util.Try<ReplayCompletion>>)> InvalidFlowThrowHelper((long, FlowControlEnum) opt)
+        {
+            throw new Exception(
+                $"Got invalid FlowControl from Queue! Type : {opt.Item2.ToString()}");
         }
     }
 }
