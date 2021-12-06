@@ -23,7 +23,7 @@
         <PackageReference Include="JetBrains.dotMemoryUnit" Version="3.1.20200127.214830" />
         <PackageReference Include="Microsoft.Data.Sqlite" Version="5.0.7" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
-        <PackageReference Include="Npgsql" Version="4.1.4" />
+        <PackageReference Include="Npgsql" Version="6.0.1" />
         <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
         <PackageReference Include="System.Data.SQLite.Core" Version="1.0.113.1" />
         <PackageReference Include="xunit" Version="2.4.1" />
