@@ -7,6 +7,12 @@ using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Linq2Db.Tests
 {
+    public class MSSQLiteNativeConfigSpec : MSSQLiteJournalSpec
+    {
+        public MSSQLiteNativeConfigSpec(ITestOutputHelper outputHelper) : base(outputHelper, true)
+        {
+        }
+    }
     public class MSSQLiteJournalSpec : Akka.Persistence.TCK.Journal.JournalSpec
     {
         private static AtomicCounter counter = new AtomicCounter(0);
@@ -17,7 +23,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests
         private static SqliteConnection heldSqliteConnection =
             new SqliteConnection(connString);
 
-        public MSSQLiteJournalSpec(ITestOutputHelper outputHelper) : base(SQLiteJournalSpecConfig.Create(connString, ProviderName.SQLiteMS),
+        public MSSQLiteJournalSpec(ITestOutputHelper outputHelper, bool nativeMode = false) : base(SQLiteJournalSpecConfig.Create(connString, ProviderName.SQLiteMS, nativeMode),
             "linq2dbJournalSpec",
             output: outputHelper)
         {
