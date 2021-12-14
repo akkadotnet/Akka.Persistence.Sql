@@ -374,46 +374,75 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                     SequenceNumber = md.sequenceNumber,
                     PersistenceId = md.persistenceId
                 };
-        private IQueryable<long> MaxSeqNumberForPersistenceIdQuery(
+        private IQueryable<long?> MaxSeqNumberForPersistenceIdQuery(
             DataConnection db, string persistenceId, long minSequenceNumber = 0)
         {
-
-            IQueryable<long> queryable = null;
             if (minSequenceNumber != 0)
             {
                 if ((_journalConfig.DaoConfig.SqlCommonCompatibilityMode))
                 {
-                    return db.GetTable<JournalRow>()
-                        .Where(r => r.persistenceId == persistenceId && r.sequenceNumber > minSequenceNumber )
-                        .Select(r =>
-                        LinqToDB.Sql.Ext.Max(r.sequenceNumber).ToValue()).Union( db.GetTable<JournalMetaData>()
-                        .Where(r =>
-                            r.SequenceNumber > minSequenceNumber &&
-                            r.PersistenceId == persistenceId).Select(r=>
-                            LinqToDB.Sql.Ext.Max(r.SequenceNumber).ToValue()));
+                    return MaxSeqForPersistenceIdQueryableCompatibilityModeWithMinId(db, persistenceId, minSequenceNumber);
                 }
                 else
                 {
-                    return db.GetTable<JournalRow>()
-                        .Where(r => r.persistenceId == persistenceId && r.sequenceNumber > minSequenceNumber )
-                        .Select(r=>r.sequenceNumber);
+                    return MaxSeqForPersistenceIdQueryableNativeModeMinId(db, persistenceId, minSequenceNumber);
                 }
             }
             else
             {
                 if (_journalConfig.DaoConfig.SqlCommonCompatibilityMode)
                 {
-                    
-                    return db.GetTable<JournalRow>()
-                        .Where(r => r.persistenceId == persistenceId).Select(r =>
-                            LinqToDB.Sql.Ext.Max(r.sequenceNumber).ToValue()).Union( db.GetTable<JournalMetaData>()
-                            .Where(r =>
-                            r.PersistenceId == persistenceId).Select(r=>
-                                LinqToDB.Sql.Ext.Max(r.SequenceNumber).ToValue()));
+                    return MaxSeqForPersistenceIdQueryableCompatibilityMode(db, persistenceId);
                 }
-                return db.GetTable<JournalRow>()
-                    .Where(r => r.persistenceId == persistenceId).Select(r=>r.sequenceNumber);
+
+                return MaxSeqForPersistenceIdQueryableNativeMode(db, persistenceId);
             }
+        }
+
+        private static IQueryable<long?> MaxSeqForPersistenceIdQueryableNativeMode(DataConnection db,
+            string persistenceId)
+        {
+            return db.GetTable<JournalRow>()
+                .Where(r => r.persistenceId == persistenceId)
+                .Select(r => (long?)r.sequenceNumber);
+        }
+
+        private static IQueryable<long?> MaxSeqForPersistenceIdQueryableNativeModeMinId(
+            DataConnection db, string persistenceId, long minSequenceNumber)
+        {
+            return db.GetTable<JournalRow>()
+                .Where(r =>
+                    r.persistenceId == persistenceId &&
+                    r.sequenceNumber > minSequenceNumber)
+                .Select(r => (long?)r.sequenceNumber);
+        }
+
+        private static IQueryable<long?> MaxSeqForPersistenceIdQueryableCompatibilityModeWithMinId(
+            DataConnection db, string persistenceId, long minSequenceNumber)
+        {
+            return db.GetTable<JournalRow>()
+                .Where(r =>
+                    r.persistenceId == persistenceId &&
+                    r.sequenceNumber > minSequenceNumber)
+                .Select(r =>
+                    LinqToDB.Sql.Ext.Max<long?>(r.sequenceNumber).ToValue()).Union(db
+                    .GetTable<JournalMetaData>()
+                    .Where(r =>
+                        r.SequenceNumber > minSequenceNumber &&
+                        r.PersistenceId == persistenceId).Select(r =>
+                        LinqToDB.Sql.Ext.Max<long?>(r.SequenceNumber).ToValue()));
+        }
+
+        private static IQueryable<long?> MaxSeqForPersistenceIdQueryableCompatibilityMode(
+            DataConnection db, string persistenceId)
+        {
+            return db.GetTable<JournalRow>()
+                .Where(r => r.persistenceId == persistenceId).Select(r =>
+                    LinqToDB.Sql.Ext.Max<long?>(r.sequenceNumber).ToValue()).Union(db
+                    .GetTable<JournalMetaData>()
+                    .Where(r =>
+                        r.PersistenceId == persistenceId).Select(r =>
+                        LinqToDB.Sql.Ext.Max<long?>(r.SequenceNumber).ToValue()));
         }
 
         private static readonly
@@ -453,7 +482,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
             {
                 return (await MaxSeqNumberForPersistenceIdQuery(db,
                     persistenceId,
-                    fromSequenceNr).MaxAsync(r=> (long?)r)).GetValueOrDefault(0);
+                    fromSequenceNr).MaxAsync()).GetValueOrDefault(0);
             }
         }
 
