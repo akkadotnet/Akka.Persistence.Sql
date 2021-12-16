@@ -1,3 +1,8 @@
+#### 1.4.28 Nov 18 2021 ####
+**Perf Enhancements and fixes to failure reporting**
+
+There was an issue found where persistence failures were being reported as rejections when they should not have. This has been fixed alongside some logic cleanup that should lead to more consistent performance.
+
 #### 1.4.21 July 6 2021 ####
 **First official Release for Akka.Persistence.Linq2Db**
 

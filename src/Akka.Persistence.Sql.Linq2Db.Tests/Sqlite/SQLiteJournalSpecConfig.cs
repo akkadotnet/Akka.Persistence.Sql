@@ -55,6 +55,7 @@ plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
                         provider-name = ""{2}""
                         parallelism = 1
                         max-row-by-row-size = 100
+                        delete-compatibility-mode = ""{4}""
                         tables.journal {{ 
                           auto-init = true
                           warn-on-auto-init-fail = false 
@@ -65,12 +66,14 @@ plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
             }}
         ";
         
-        public static Configuration.Config Create(string connString, string providerName)
+        public static Configuration.Config Create(string connString, string providerName, bool nativeMode = false)
         {
             return ConfigurationFactory.ParseString(
                 string.Format(_journalBaseConfig,
                     typeof(Linq2DbWriteJournal).AssemblyQualifiedName,
-                    connString, providerName, (providerName == ProviderName.SQLiteMS).ToString().ToLower()));
+                    connString, providerName,
+                    (providerName == ProviderName.SQLiteMS).ToString()
+                    .ToLower(), (nativeMode == false).ToString().ToLower()));
         }
     }
 }
