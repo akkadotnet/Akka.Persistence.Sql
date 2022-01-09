@@ -36,6 +36,12 @@ EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.Benchmark.DockerComparisonTests", "Akka.Persistence.Linq2Db.Benchmark.DockerComparisonTests\Akka.Persistence.Linq2Db.Benchmark.DockerComparisonTests.csproj", "{170698FA-DA1E-40BC-896D-AFA67976C0EB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.IndexHelperLib", "Akka.Persistence.Linq2Db.IndexHelperLib\Akka.Persistence.Linq2Db.IndexHelperLib.csproj", "{AACE3FBC-51FE-4A9B-B6C4-4CCA750DB22E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.IndexHelperApp", "Akka.Persistence.Linq2Db.IndexHelperApp\Akka.Persistence.Linq2Db.IndexHelperApp.csproj", "{D5C851AA-DB80-4E9F-BD2E-03E63DC3082E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Linq2Db.Sandbox", "Akka.Linq2Db.Sandbox\Akka.Linq2Db.Sandbox.csproj", "{697B9FC8-29E2-4F7D-B63B-9E4B873F6AA1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -78,6 +84,18 @@ Global
 		{170698FA-DA1E-40BC-896D-AFA67976C0EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{170698FA-DA1E-40BC-896D-AFA67976C0EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{170698FA-DA1E-40BC-896D-AFA67976C0EB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AACE3FBC-51FE-4A9B-B6C4-4CCA750DB22E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AACE3FBC-51FE-4A9B-B6C4-4CCA750DB22E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AACE3FBC-51FE-4A9B-B6C4-4CCA750DB22E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AACE3FBC-51FE-4A9B-B6C4-4CCA750DB22E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5C851AA-DB80-4E9F-BD2E-03E63DC3082E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5C851AA-DB80-4E9F-BD2E-03E63DC3082E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5C851AA-DB80-4E9F-BD2E-03E63DC3082E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5C851AA-DB80-4E9F-BD2E-03E63DC3082E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{697B9FC8-29E2-4F7D-B63B-9E4B873F6AA1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{697B9FC8-29E2-4F7D-B63B-9E4B873F6AA1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{697B9FC8-29E2-4F7D-B63B-9E4B873F6AA1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{697B9FC8-29E2-4F7D-B63B-9E4B873F6AA1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
