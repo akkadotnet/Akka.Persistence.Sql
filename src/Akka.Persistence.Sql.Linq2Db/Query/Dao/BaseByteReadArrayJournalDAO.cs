@@ -15,6 +15,7 @@ using Akka.Streams.Dsl;
 using Akka.Util;
 using LinqToDB;
 using LinqToDB.Data;
+using LinqToDB.Tools;
 
 namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
 {
@@ -104,19 +105,43 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                 {
                     using (var conn = input._connectionFactory.GetConnection())
                     {
-                        return await conn.GetTable<JournalRow>()
+                        var evts =  await conn.GetTable<JournalRow>()
                             .OrderBy(r => r.ordering)
                             .Where(r =>
                                 r.ordering > input.offset &&
                                 r.ordering <= input.maxOffset)
                             .Take(input.maxTake).ToListAsync();
+                        return await AddTagDataIfNeeded(evts, conn);
                     }
                 }
             ).Via(deserializeFlow);
              
             
         }
-        
+
+        public async Task<List<JournalRow>> AddTagDataIfNeeded(List<JournalRow> toAdd, DataConnection context)
+        {
+            if (_readJournalConfig.PluginConfig.TagReadMode ==
+                TagReadMode.TagTableOnly)
+            {
+                var tagRows = await context.GetTable<JournalTagRow>()
+                    .Where(r =>
+                        r.JournalOrderingId.In(toAdd.Select(r => r.ordering)))
+                    .OrderBy(r=>r.JournalOrderingId)
+                    .ToListAsync();
+                foreach (var journalRow in toAdd)
+                {
+                    journalRow.tagArr =
+                        tagRows.Where(r =>
+                                r.JournalOrderingId ==
+                                journalRow.ordering)
+                            .Select(r => r.TagValue)
+                            .ToArray();
+                }
+            }
+
+            return toAdd;
+        }
         public Source<
             Akka.Util.Try<(IPersistentRepresentation, IImmutableSet<string>, long)>,
             NotUsed> EventsByTag(string tag, long offset, long maxOffset,
@@ -124,29 +149,159 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
         {
             var separator = _readJournalConfig.PluginConfig.TagSeparator;
             var maxTake = MaxTake(max);
-            return AsyncSource<JournalRow>.FromEnumerable(new{separator,tag,offset,maxOffset,maxTake,_connectionFactory},
-                    async(input)=>
-                {
-                    using (var conn = input._connectionFactory.GetConnection())
-                    {
-                        return await conn.GetTable<JournalRow>()
-                            .Where<JournalRow>(r => r.tags.Contains(input.tag))
-                            .OrderBy(r => r.ordering)
-                            .Where(r =>
-                                r.ordering > input.offset && r.ordering <= input.maxOffset)
-                            .Take(input.maxTake).ToListAsync();
-                    }
-                }).Via(perfectlyMatchTag(tag, separator))
-                .Via(deserializeFlow);
+            switch (_readJournalConfig.PluginConfig.TagReadMode)
+            {
+                case TagReadMode.DefaultConcatVarchar:
+                    return AsyncSource<JournalRow>.FromEnumerable(new{separator,tag,offset,maxOffset,maxTake,_connectionFactory},
+                            async(input)=>
+                            {
+                                using (var conn = input._connectionFactory.GetConnection())
+                                {
+                                    return await conn.GetTable<JournalRow>()
+                                        .Where<JournalRow>(r => r.tags.Contains(input.tag))
+                                        .OrderBy(r => r.ordering)
+                                        .Where(r =>
+                                            r.ordering > input.offset && r.ordering <= input.maxOffset)
+                                        .Take(input.maxTake).ToListAsync();
+                                }
+                            }).Via(perfectlyMatchTag(tag, separator))
+                        .Via(deserializeFlow);
+                case TagReadMode.MigrateToTagTable:
+                    return eventByTagMigration(tag, offset, maxOffset, separator, maxTake);
+                case TagReadMode.TagTableOnly:
+                    return eventByTagTableOnly(tag, offset, maxOffset, separator, maxTake);
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+            
+            
 
+        }
+
+        private Source<
+            Try<(IPersistentRepresentation, IImmutableSet<string>, long)>,
+            NotUsed> eventByTagTableOnly(string tag, long offset,
+            long maxOffset,
+            string separator, int maxTake)
+        {
+            return AsyncSource<JournalRow>.FromEnumerable(
+                    new
+                    {
+                        separator, tag, offset, maxOffset, maxTake, _connectionFactory
+                    },
+                    async (input) =>
+                    {
+                        //TODO: Optimize Flow
+                        using (var conn = input._connectionFactory.GetConnection())
+                        {
+                            //First, Get eligible rows.
+                            var mainRows = await 
+                                    conn.GetTable<JournalRow>()
+                                        .LeftJoin(
+                                            conn.GetTable<
+                                                JournalTagRow>(),
+                                            (jr, jtr) =>
+                                                jr.ordering ==
+                                                jtr.JournalOrderingId,
+                                            (jr, jtr) =>
+                                                new { jr, jtr })
+                                        .Where(r =>
+                                            r.jtr.TagValue == input.tag)
+                                        .Select(r=>r.jr)
+                                        .Where(r =>
+                                            r.ordering > input.offset &&
+                                            r.ordering <= input.maxOffset)
+                                        .Take(input.maxTake).ToListAsync();
+                            //Then, Get the tags for the rows.
+                            var tagRows = await conn.GetTable<JournalTagRow>()
+                                .Where(r =>
+                                    r.JournalOrderingId.In(
+                                        mainRows.Select(r =>
+                                            r.ordering)))
+                                .ToListAsync();
+                            foreach (var journalRow in mainRows)
+                            {
+                                journalRow.tagArr =
+                                    tagRows.Where(r =>
+                                            r.JournalOrderingId ==
+                                            journalRow.ordering)
+                                        .Select(r => r.TagValue)
+                                        .ToArray();
+                            }
+
+                            return mainRows;
+                        }
+                    }).Via(perfectlyMatchTag(tag, separator))
+                .Via(deserializeFlow);
+        }
+
+        private Source<Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, NotUsed> eventByTagMigration(string tag, long offset, long maxOffset,
+            string separator, int maxTake)
+        {
+            return AsyncSource<JournalRow>.FromEnumerable(
+                    new
+                    {
+                        separator, tag, offset, maxOffset, maxTake, _connectionFactory
+                    },
+                    async (input) =>
+                    {
+                        //NOTE: This flow is probably not performant,
+                        //It is meant to allow for safe migration
+                        //And is not necessarily intended for long term use
+                        using (var conn = input._connectionFactory.GetConnection())
+                        {
+                            //First, fin
+                            var mainRows = await conn.GetTable<JournalRow>()
+                                .Where(r => r.ordering.In(
+                                    conn.GetTable<JournalRow>()
+                                        .LeftJoin(
+                                            conn.GetTable<
+                                                JournalTagRow>(),
+                                            (jr, jtr) =>
+                                                jr.ordering ==
+                                                jtr.JournalOrderingId,
+                                            (jr, jtr) =>
+                                                new { jr, jtr })
+                                        .Where(r =>
+                                            r.jr.tags.Contains(
+                                                input.tag) ||
+                                            r.jtr.TagValue == input.tag)
+                                        .Select(r => r.jr.ordering)
+                                        .OrderBy(r => r)
+                                        .Where(r =>
+                                            r > input.offset &&
+                                            r <= input.maxOffset)
+                                        .Take(input.maxTake))).ToListAsync();
+                            var tagRows = await conn.GetTable<JournalTagRow>()
+                                .Where(r =>
+                                    r.JournalOrderingId.In(
+                                        mainRows.Select(r =>
+                                            r.ordering)))
+                                .ToListAsync();
+                            foreach (var journalRow in mainRows)
+                            {
+                                journalRow.tagArr =
+                                    tagRows.Where(r =>
+                                            r.JournalOrderingId ==
+                                            journalRow.ordering)
+                                        .Select(r => r.TagValue)
+                                        .ToArray();
+                            }
+
+                            return mainRows;
+                        }
+                    }).Via(perfectlyMatchTag(tag, separator))
+                .Via(deserializeFlow);
         }
 
         private Flow<JournalRow, JournalRow, NotUsed> perfectlyMatchTag(
             string tag,
             string separator)
         {
-
+            //Do the tagArr check first here
+            //Since the logic is simpler.
             return Flow.Create<JournalRow>().Where(r =>
+                r.tagArr?.Contains(tag)??
                 (r.tags ?? "")
                 .Split(new[] {separator}, StringSplitOptions.RemoveEmptyEntries)
                 .Any(t => t.Contains(tag)));

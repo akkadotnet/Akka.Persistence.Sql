@@ -135,7 +135,12 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                 .HasColumnName(tableConfig.ColumnNames.SequenceNumber)
                 .Member(r => r.Timestamp)
                 .HasColumnName(tableConfig.ColumnNames.Created);
-
+            //We can skip writing tags the old way by ignoring the column in mapping.
+            if ((tableConfig.TagWriteMode &
+                TagWriteMode.CommaSeparatedArray) == 0)
+            {
+                journalRowBuilder.Member(r => r.tags).IsNotColumn();
+            }
             if (config.ProviderName.ToLower().Contains("sqlite"))
             {
                 journalRowBuilder.Member(r => r.ordering).IsPrimaryKey().HasDbType("INTEGER")

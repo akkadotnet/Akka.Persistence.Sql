@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Data;
@@ -23,6 +24,18 @@ using Seq = LanguageExt.Seq;
 
 namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
 {
+    public static class EnumerableExtensions
+    {
+        public static IEnumerable<TResult> SelectStateful<TState, T, TResult>(
+            this IEnumerable<T> enumerable, TState state,
+            Func<T,TState, TResult> selector)
+        {
+            foreach (var item in enumerable)
+            {
+                yield return selector(item,state);
+            }
+        }
+    }
     public abstract class BaseByteArrayJournalDao :
         BaseJournalDaoWithReadMessages,
         IJournalDaoWithUpdates
@@ -149,15 +162,75 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
 
         private async Task InsertSingle(Seq<JournalRow> xs)
         {
-            //If we are writing a single row,
-            //we don't need to worry about transactions.
-            using (var db = _connectionFactory.GetConnection())
+            if ((_journalConfig.TableConfig.TagWriteMode & TagWriteMode.TagTable)!=0 && xs.Head.tagArr.Length>0)
             {
-                await db.InsertAsync(xs.Head);
+                //Lazy fallback; do the InsertMultiple call here and leave it at that.
+                await InsertMultiple(xs);
             }
+            else
+            {
+                //If we are writing a single row,
+                //we don't need to worry about transactions.
+                using (var db = _connectionFactory.GetConnection())
+                {
+                    await db.InsertAsync(xs.Head);
+                }
+            }
+            
+            
+        }
+
+        private async Task BulkInsertWithTagTableTags(DataConnection dc,
+            Seq<JournalRow> xs)
+        {
+            var tagsToInsert = new List<JournalTagRow>(xs.Count);
+            foreach (var journalRow in xs)
+            {
+                var dbid = await dc.InsertWithInt64IdentityAsync(journalRow);
+                tagsToInsert.AddRange(journalRow.tagArr.SelectStateful(dbid,
+                    (tag, id) => new JournalTagRow()
+                        { JournalOrderingId = id, TagValue = tag }));
+            }
+
+            await dc.GetTable<JournalTagRow>()
+                .BulkCopyAsync(new BulkCopyOptions()
+                {
+                    BulkCopyType = BulkCopyType.MultipleRows,
+                    UseParameters = _journalConfig.DaoConfig
+                        .PreferParametersOnMultiRowInsert,
+                    MaxBatchSize = _journalConfig.DaoConfig.DbRoundTripTagBatchSize
+                }, tagsToInsert);
+        }
+        private async Task BulkInsertNoTagTableTags(DataConnection dc, Seq<JournalRow> xs)
+        {
+            await dc.GetTable<JournalRow>()
+                .BulkCopyAsync(
+                    new BulkCopyOptions()
+                    {
+                        BulkCopyType =
+                            xs.Count > _journalConfig.DaoConfig
+                                .MaxRowByRowSize
+                                ? BulkCopyType.Default
+                                : BulkCopyType.MultipleRows,
+                        UseParameters = _journalConfig.DaoConfig.PreferParametersOnMultiRowInsert,
+                        MaxBatchSize = _journalConfig.DaoConfig.DbRoundTripBatchSize
+                    }, xs);
         }
 
         private async Task InsertMultiple(Seq<JournalRow> xs)
+        {
+            if ((_journalConfig.TableConfig.TagWriteMode & TagWriteMode.TagTable) !=0)
+            {
+                await HandleTagTableInsert(xs);
+            }
+            else
+            {
+                await HandleDefaultInsert(xs);
+            }
+            
+        }
+
+        private async Task HandleDefaultInsert(Seq<JournalRow> xs)
         {
             using (var db = _connectionFactory.GetConnection())
             {
@@ -165,18 +238,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                 {
                     await db.BeginTransactionAsync(IsolationLevel
                         .ReadCommitted);
-                    await db.GetTable<JournalRow>()
-                        .BulkCopyAsync(
-                            new BulkCopyOptions()
-                            {
-                                BulkCopyType =
-                                    xs.Count > _journalConfig.DaoConfig
-                                        .MaxRowByRowSize
-                                        ? BulkCopyType.Default
-                                        : BulkCopyType.MultipleRows,
-                                UseParameters = _journalConfig.DaoConfig.PreferParametersOnMultiRowInsert,
-                                MaxBatchSize = _journalConfig.DaoConfig.DbRoundTripBatchSize
-                            }, xs);
+                    await BulkInsertNoTagTableTags(db, xs);
                     await db.CommitTransactionAsync();
                 }
                 catch (Exception e)
@@ -195,9 +257,58 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
             }
         }
 
+        private async Task HandleTagTableInsert(Seq<JournalRow> xs)
+        {
+            using (var db = _connectionFactory.GetConnection())
+            {
+                try
+                {
+                    await db.BeginTransactionAsync(IsolationLevel
+                        .ReadCommitted);
+                    await consumeSequenceForTagInsert(xs, db);
+                    await db.CommitTransactionAsync();
+                }
+                catch (Exception ex)
+                {
+                    try
+                    {
+                        await db.RollbackTransactionAsync();
+                    }
+                    catch (Exception exception)
+                    {
+                        throw ex;
+                    }
+
+                    throw;
+                }
+            }
+        }
+
+        private async Task consumeSequenceForTagInsert(Seq<JournalRow> xs, DataConnection db)
+        {
+            Seq<JournalRow> tail = xs;
+            while (tail.Count > 0)
+            {
+                Seq<JournalRow> noTags;
+                Seq<JournalRow> hasTags;
+                (noTags, tail) =
+                    tail.Span(r => r.tagArr.Length == 0);
+                if (noTags.Count > 0)
+                {
+                    await BulkInsertNoTagTableTags(db, noTags);
+                }
+
+                (hasTags, tail) =
+                    tail.Span(r => r.tagArr.Length > 0);
+                if (hasTags.Count > 0)
+                {
+                    await BulkInsertWithTagTableTags(db, hasTags);
+                }
+            }
+        }
         //By using a custom flatten here, we avoid an Enumerable/LINQ allocation
         //And are able to have a little more control over default capacity of array.
-        static List<JournalRow> FlattenListOfListsToList(List<Akka.Util.Try<List<JournalRow>>> source) {
+        static List<JournalRow> FlattenListOfListsToList(List<Akka.Util.Try<JournalRow[]>> source) {
             
             //List<JournalRow> ResultSet(
             //    Akka.Util.Try<List<JournalRow>> item)
@@ -236,7 +347,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
         }
 
         protected static ImmutableList<Exception> BuildWriteRejections(
-            List<Akka.Util.Try<List<JournalRow>>> serializedTries)
+            List<Akka.Util.Try<JournalRow[]>> serializedTries)
         {
             Exception[] builderEx =
                 new Exception[serializedTries.Count];

@@ -21,7 +21,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
             UseSharedDb = string.IsNullOrWhiteSpace(dbConf) ? null : dbConf;
             UseCloneConnection =
                 config.GetBoolean("use-clone-connection", false);
-            
         }
         
         public string MaterializerDispatcher { get; protected set; }
@@ -44,6 +43,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
         public string ProviderName { get; }
         public string ConnectionString { get; }
         public bool UseCloneConnection { get; set; }
+        
     }
 
     public interface IProviderConfig<TTable>
@@ -61,4 +61,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
         bool SqlCommonCompatibilityMode { get; }
         int Parallelism { get; }
     }
+
+    
 }
