@@ -121,8 +121,8 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
 
         public async Task<List<JournalRow>> AddTagDataIfNeeded(List<JournalRow> toAdd, DataConnection context)
         {
-            if (_readJournalConfig.PluginConfig.TagReadMode ==
-                TagReadMode.TagTableOnly)
+            if ((_readJournalConfig.PluginConfig.TagReadMode &
+                TagReadMode.TagTable) != 0)
             {
                 var tagRows = await context.GetTable<JournalTagRow>()
                     .Where(r =>
@@ -151,7 +151,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             var maxTake = MaxTake(max);
             switch (_readJournalConfig.PluginConfig.TagReadMode)
             {
-                case TagReadMode.DefaultConcatVarchar:
+                case TagReadMode.CommaSeparatedArray:
                     return AsyncSource<JournalRow>.FromEnumerable(new{separator,tag,offset,maxOffset,maxTake,_connectionFactory},
                             async(input)=>
                             {
@@ -166,9 +166,9 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                                 }
                             }).Via(perfectlyMatchTag(tag, separator))
                         .Via(deserializeFlow);
-                case TagReadMode.MigrateToTagTable:
+                case TagReadMode.CommaSeparatedArrayAndTagTable:
                     return eventByTagMigration(tag, offset, maxOffset, separator, maxTake);
-                case TagReadMode.TagTableOnly:
+                case TagReadMode.TagTable:
                     return eventByTagTableOnly(tag, offset, maxOffset, separator, maxTake);
                 default:
                     throw new ArgumentOutOfRangeException();

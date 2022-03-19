@@ -136,6 +136,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                 .Member(r => r.Timestamp)
                 .HasColumnName(tableConfig.ColumnNames.Created);
             //We can skip writing tags the old way by ignoring the column in mapping.
+            journalRowBuilder.Member(r => r.tagArr).IsNotColumn();
             if ((tableConfig.TagWriteMode &
                 TagWriteMode.CommaSeparatedArray) == 0)
             {

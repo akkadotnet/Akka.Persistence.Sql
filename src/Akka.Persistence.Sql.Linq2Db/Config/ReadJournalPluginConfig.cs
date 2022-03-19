@@ -9,18 +9,18 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
             TagSeparator = config.GetString("tag-separator", ",");
             Dao = config.GetString("dao",
                 "akka.persistence.sql.linq2db.dao.bytea.readjournal.bytearrayreadjournaldao");
-            var tagReadStr = config.GetString("tag-read-mode", "defaultconcatvarchar");
+            var tagReadStr = config.GetString("tag-read-mode", "default");
             if (Enum.TryParse<TagReadMode>(tagReadStr,true,out TagReadMode tgr))
             {
                 
             }
             else if (tagReadStr.Equals("default", StringComparison.InvariantCultureIgnoreCase))
             {
-                tgr = TagReadMode.DefaultConcatVarchar;
+                tgr = TagReadMode.CommaSeparatedArray;
             }
             else if (tagReadStr.Equals("migrate", StringComparison.InvariantCultureIgnoreCase))
             {
-                tgr = TagReadMode.MigrateToTagTable;
+                tgr = TagReadMode.CommaSeparatedArrayAndTagTable;
             }
 
             TagReadMode = tgr;
@@ -35,8 +35,8 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
     [Flags]
     public enum TagReadMode
     {
-        DefaultConcatVarchar = 1,
-        MigrateToTagTable = 3,
-        TagTableOnly = 2
+        CommaSeparatedArray = 1,
+        TagTable = 2,
+        CommaSeparatedArrayAndTagTable = 3
     }
 }

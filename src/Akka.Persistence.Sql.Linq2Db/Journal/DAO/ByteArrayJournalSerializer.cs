@@ -105,13 +105,14 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                                 row.manifest =
                                     withStringManifest.Manifest(_persistentRepr.Payload);
                             }
+                            else if (serializer.IncludeManifest)
+                            {
+                                row.manifest = _persistentRepr.Payload
+                                        .GetType().TypeQualifiedName();
+                            }
                             else
                             {
-                                if (serializer.IncludeManifest)
-                                {
-                                    row.manifest = _persistentRepr.Payload
-                                        .GetType().TypeQualifiedName();
-                                }
+                                row.manifest = "";
                             }
 
                             {
