@@ -101,11 +101,11 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             
             var maxTake = MaxTake(max);
             
-            return AsyncSource<JournalRow>.FromEnumerable(new {_connectionFactory,maxTake,maxOffset,offset},async(input)=>
+            return AsyncSource<JournalRow>.FromEnumerable(new {t=this,maxTake,maxOffset,offset},async(input)=>
                 {
-                    using (var conn = input._connectionFactory.GetConnection())
+                    using (var conn = input.t._connectionFactory.GetConnection())
                     {
-                        var evts =  await conn.GetTable<JournalRow>()
+                        var evts =  await  input.t.baseQuery(conn)
                             .OrderBy(r => r.ordering)
                             .Where(r =>
                                 r.ordering > input.offset &&
@@ -152,12 +152,12 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             switch (_readJournalConfig.PluginConfig.TagReadMode)
             {
                 case TagReadMode.CommaSeparatedArray:
-                    return AsyncSource<JournalRow>.FromEnumerable(new{separator,tag,offset,maxOffset,maxTake,_connectionFactory},
+                    return AsyncSource<JournalRow>.FromEnumerable(new{separator,tag,offset,maxOffset,maxTake,t=this},
                             async(input)=>
                             {
-                                using (var conn = input._connectionFactory.GetConnection())
+                                using (var conn = input.t._connectionFactory.GetConnection())
                                 {
-                                    return await conn.GetTable<JournalRow>()
+                                    return await input.t.baseQuery(conn)
                                         .Where<JournalRow>(r => r.tags.Contains(input.tag))
                                         .OrderBy(r => r.ordering)
                                         .Where(r =>
@@ -187,16 +187,16 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             return AsyncSource<JournalRow>.FromEnumerable(
                     new
                     {
-                        separator, tag, offset, maxOffset, maxTake, _connectionFactory
+                        separator, tag, offset, maxOffset, maxTake, t=this
                     },
                     async (input) =>
                     {
                         //TODO: Optimize Flow
-                        using (var conn = input._connectionFactory.GetConnection())
+                        using (var conn = input.t._connectionFactory.GetConnection())
                         {
                             //First, Get eligible rows.
                             var mainRows = await 
-                                    conn.GetTable<JournalRow>()
+                                    input.t.baseQuery(conn)
                                         .LeftJoin(
                                             conn.GetTable<
                                                 JournalTagRow>(),
@@ -241,37 +241,26 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             return AsyncSource<JournalRow>.FromEnumerable(
                     new
                     {
-                        separator, tag, offset, maxOffset, maxTake, _connectionFactory
+                        separator, tag, offset, maxOffset, maxTake, t =this
                     },
                     async (input) =>
                     {
                         //NOTE: This flow is probably not performant,
                         //It is meant to allow for safe migration
                         //And is not necessarily intended for long term use
-                        using (var conn = input._connectionFactory.GetConnection())
+                        using (var conn = input.t._connectionFactory.GetConnection())
                         {
                             //First, fin
-                            var mainRows = await conn.GetTable<JournalRow>()
+                            var mainRows = await input.t.baseQuery(conn)
                                 .Where(r => r.ordering.In(
-                                    conn.GetTable<JournalRow>()
-                                        .LeftJoin(
-                                            conn.GetTable<
-                                                JournalTagRow>(),
-                                            (jr, jtr) =>
-                                                jr.ordering ==
-                                                jtr.JournalOrderingId,
-                                            (jr, jtr) =>
-                                                new { jr, jtr })
+                                    conn.GetTable<JournalTagRow>().Where(r=>r.TagValue==input.tag).Select(r=>r.JournalOrderingId))
+                                    || r.tags.Contains(input.tag)
+                                        )
+                                .OrderBy(r => r.ordering)
                                         .Where(r =>
-                                            r.jr.tags.Contains(
-                                                input.tag) ||
-                                            r.jtr.TagValue == input.tag)
-                                        .Select(r => r.jr.ordering)
-                                        .OrderBy(r => r)
-                                        .Where(r =>
-                                            r > input.offset &&
-                                            r <= input.maxOffset)
-                                        .Take(input.maxTake))).ToListAsync();
+                                            r.ordering > input.offset &&
+                                            r.ordering <= input.maxOffset)
+                                        .Take(input.maxTake).ToListAsync();
                             var tagRows = await conn.GetTable<JournalTagRow>()
                                 .Where(r =>
                                     r.JournalOrderingId.In(
@@ -355,6 +344,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                     
                     using (var conn = input._connectionFactory.GetConnection())
                     {
+                        //persistence-jdbc does not filter deleted here.
                         return await conn.GetTable<JournalRow>()
                             .Where<JournalRow>(r => r.ordering > input.offset)
                             .Select(r => r.ordering)
@@ -367,6 +357,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
         {
             using (var db = _connectionFactory.GetConnection())
             {
+                //persistence-jdbc does not filter deleted here.
                 return await db.GetTable<JournalRow>()
                     .Select<JournalRow, long>(r => r.ordering)
                     .FirstOrDefaultAsync();
