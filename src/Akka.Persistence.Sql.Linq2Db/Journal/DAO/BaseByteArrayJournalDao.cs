@@ -24,16 +24,35 @@ using Seq = LanguageExt.Seq;
 
 namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
 {
-    public static class EnumerableExtensions
+    public class SequentialUUIDGenerator
     {
-        public static IEnumerable<TResult> SelectStateful<TState, T, TResult>(
-            this IEnumerable<T> enumerable, TState state,
-            Func<T,TState, TResult> selector)
+        private long _counter = DateTime.UtcNow.Ticks;
+
+        /// <summary>
+        ///     Gets a value to be assigned to a property.
+        /// </summary>
+        /// <param name="entry">The change tracking entry of the entity for which the value is being generated.</param>
+        /// <returns>The value to be assigned to a property.</returns>
+        public Guid Next()
         {
-            foreach (var item in enumerable)
+            var guidBytes = Guid.NewGuid().ToByteArray();
+            var counterBytes = BitConverter.GetBytes(Interlocked.Increment(ref _counter));
+
+            if (!BitConverter.IsLittleEndian)
             {
-                yield return selector(item,state);
+                System.Array.Reverse(counterBytes);
             }
+
+            guidBytes[08] = counterBytes[1];
+            guidBytes[09] = counterBytes[0];
+            guidBytes[10] = counterBytes[7];
+            guidBytes[11] = counterBytes[6];
+            guidBytes[12] = counterBytes[5];
+            guidBytes[13] = counterBytes[4];
+            guidBytes[14] = counterBytes[3];
+            guidBytes[15] = counterBytes[2];
+
+            return new Guid(guidBytes);
         }
     }
     public abstract class BaseByteArrayJournalDao :
@@ -66,6 +85,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
             Serializer = serializer;
             deserializeFlow = Serializer.DeserializeFlow();
             deserializeFlowMapped = Serializer.DeserializeFlow().Select(MessageWithBatchMapper());
+            _uuidGen = new SequentialUUIDGenerator();
             //Due to C# rules we have to initialize WriteQueue here
             //Keeping it here vs init function prevents accidental moving of init
             //to where variables aren't set yet.
@@ -119,6 +139,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                 new TaskCompletionSource<NotUsed>(
                     TaskCreationOptions.RunContinuationsAsynchronously
                     );
+            
             //Send promise and rows into queue. If the Queue takes it,
             //It will write the Promise state when finished writing (or failing)
             var result =
@@ -150,6 +171,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
         private async Task WriteJournalRows(Seq<JournalRow> xs)
         {
             {
+                
                 //hot path:
                 //If we only have one row, penalty for BulkCopy
                 //Isn't worth it due to insert caching/transaction/etc.
@@ -180,18 +202,18 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
             
         }
 
-        private async Task BulkInsertWithTagTableTags(DataConnection dc,
+        private async Task InsertWithOrderingAndBulkInsertTags(DataConnection dc,
             Seq<JournalRow> xs)
         {
             var tagsToInsert = new List<JournalTagRow>(xs.Count);
             foreach (var journalRow in xs)
             {
                 var dbid = await dc.InsertWithInt64IdentityAsync(journalRow);
-                tagsToInsert.AddRange(journalRow.tagArr.SelectStateful(dbid,
-                    (tag, id) => new JournalTagRow()
-                        { JournalOrderingId = id, TagValue = tag }));
+                foreach (var s1 in journalRow.tagArr)
+                {
+                    tagsToInsert.Add(new JournalTagRow(){JournalOrderingId = dbid, TagValue = s1});
+                }
             }
-
             await dc.GetTable<JournalTagRow>()
                 .BulkCopyAsync(new BulkCopyOptions()
                 {
@@ -216,18 +238,80 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                         MaxBatchSize = _journalConfig.DaoConfig.DbRoundTripBatchSize
                     }, xs);
         }
-
         private async Task InsertMultiple(Seq<JournalRow> xs)
         {
             if ((_journalConfig.TableConfig.TagWriteMode & TagWriteMode.TagTable) !=0)
             {
-                await HandleTagTableInsert(xs);
+                if (_journalConfig.TableConfig.TagTableMode ==
+                    TagTableMode.OrderingId)
+                {
+                    await HandleTagTableInsert(xs);    
+                }
+                else
+                {
+                    await HandleTagTableUUIDInsert(xs);
+                }
             }
             else
             {
                 await HandleDefaultInsert(xs);
             }
             
+        }
+
+        private async Task HandleTagTableUUIDInsert(Seq<JournalRow> xs)
+        {
+            var tagWrites = new List<JournalTagRow>();
+            foreach (var journalRow in xs)
+            {
+                if (journalRow.tagArr?.Length > 0)
+                {
+                    var uid = NextUUID();
+                    journalRow.WriteUUID = uid;
+                    foreach (var s1 in journalRow.tagArr)
+                    {
+                        tagWrites.Add(new JournalTagRow(){WriteUUID=uid, TagValue = s1});
+                    }
+                }
+            }
+
+            using (var ctx = _connectionFactory.GetConnection())
+            {
+                using (var tx = await ctx.BeginTransactionAsync())
+                {
+                    try
+                    {
+                        await ctx.BulkCopyAsync(new BulkCopyOptions()
+                    {
+                        TableName = _journalConfig.TableConfig.TableName,
+                        MaxBatchSize = _journalConfig.DaoConfig
+                            .DbRoundTripBatchSize
+                    },xs);
+                    if (tagWrites.Count > 0)
+                    {
+                        await ctx.BulkCopyAsync(new BulkCopyOptions()
+                        {
+                            TableName = _journalConfig.TableConfig.TagTableName,
+                            MaxBatchSize = _journalConfig.DaoConfig
+                                .DbRoundTripTagBatchSize,
+                            UseParameters = _journalConfig.DaoConfig
+                                .PreferParametersOnMultiRowInsert
+                        }, tagWrites);    
+                    }
+                    await ctx.CommitTransactionAsync();
+                    }
+                    catch (Exception e)
+                    {
+                        await ctx.RollbackTransactionAsync();
+                        throw;
+                    }
+                }
+            }
+        }
+
+        private Guid NextUUID()
+        {
+            return _uuidGen.Next();
         }
 
         private async Task HandleDefaultInsert(Seq<JournalRow> xs)
@@ -302,7 +386,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                     tail.Span(r => r.tagArr.Length > 0);
                 if (hasTags.Count > 0)
                 {
-                    await BulkInsertWithTagTableTags(db, hasTags);
+                    await InsertWithOrderingAndBulkInsertTags(db, hasTags);
                 }
             }
         }
@@ -560,7 +644,9 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
             Expression<Func<PersistenceIdAndSequenceNumber, long>>
             sequenceNumberSelector =
                 r => r.SequenceNumber;
-        
+
+        private readonly SequentialUUIDGenerator _uuidGen;
+
 
         public async Task<Done> Update(string persistenceId, long sequenceNr,
             object payload)

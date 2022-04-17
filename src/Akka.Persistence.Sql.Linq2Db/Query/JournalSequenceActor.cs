@@ -72,7 +72,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
                     .RunWith(Sink.Seq<long>(), _mat)
                     .PipeTo(Self, sender: Self,
                         success: res =>
-                            new NewOrderingIds(currentMaxOrdering, res));
+                            new NewOrderingIds(currentMaxOrdering, res),f=> new Status.Failure(f));
             }
             else if (message is NewOrderingIds nids)
             {
@@ -186,9 +186,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
             self.Tell(new QueryOrderingIds());
             try
             {
-
-            
-            _readJournalDao.MaxJournalSequenceAsync().ContinueWith(t =>
+                _readJournalDao.MaxJournalSequenceAsync().ContinueWith(t =>
             {
                 if (t.IsFaulted)
                 {

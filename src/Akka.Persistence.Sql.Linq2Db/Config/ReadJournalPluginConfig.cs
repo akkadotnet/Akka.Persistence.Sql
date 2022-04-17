@@ -30,6 +30,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
 
         public string TagSeparator { get; set; }
         public TagReadMode TagReadMode { get; set; }
+        public TagTableMode TagTableMode { get; }
     }
 
     [Flags]

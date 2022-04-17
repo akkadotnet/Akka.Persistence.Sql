@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Persistence.Sql.Linq2Db.Config;
@@ -45,6 +46,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
 
         protected IQueryable<JournalRow> baseQuery(DataConnection connection)
         {
+            
             return connection.GetTable<JournalRow>()
                 .Where(jr =>
                     includeDeleted == false || (jr.deleted == false));
@@ -124,23 +126,83 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             if ((_readJournalConfig.PluginConfig.TagReadMode &
                 TagReadMode.TagTable) != 0)
             {
-                var tagRows = await context.GetTable<JournalTagRow>()
-                    .Where(r =>
-                        r.JournalOrderingId.In(toAdd.Select(r => r.ordering)))
-                    .OrderBy(r=>r.JournalOrderingId)
-                    .ToListAsync();
+                await addTagDataFromTagTable(toAdd, context);
+            }
+            return toAdd;
+        }
+
+        private async Task addTagDataFromTagTable(List<JournalRow> toAdd, DataConnection context)
+        {
+            var pred = TagCheckPredicate(toAdd);
+            var tagRows = pred.HasValue
+                ? await context.GetTable<JournalTagRow>()
+                    .Where(pred.Value)
+                    .ToListAsync()
+                : new List<JournalTagRow>();
+            if (_readJournalConfig.TableConfig.TagTableMode ==
+                TagTableMode.OrderingId)
+            {
                 foreach (var journalRow in toAdd)
                 {
                     journalRow.tagArr =
                         tagRows.Where(r =>
-                                r.JournalOrderingId ==
-                                journalRow.ordering)
-                            .Select(r => r.TagValue)
-                            .ToArray();
+                            r.JournalOrderingId ==
+                            journalRow.ordering)
+                        .Select(r => r.TagValue)
+                        .ToArray();
                 }
             }
+            else
+            {
+                foreach (var journalRow in toAdd)
+                {
+                    journalRow.tagArr =
+                        tagRows.Where(r =>
+                            r.WriteUUID ==
+                            journalRow.WriteUUID)
+                        .Select(r => r.TagValue)
+                        .ToArray();
+                }
+            }
+        }
 
-            return toAdd;
+        public Option<Expression<Func<JournalTagRow, bool>>> TagCheckPredicate(
+            List<JournalRow> toAdd)
+        {
+            if (_readJournalConfig.PluginConfig.TagTableMode ==
+                TagTableMode.SequentialUUID)
+            {
+                //Check whether we have anything to query for two reasons:
+                //1: Linq2Db may choke on an empty 'in' set.
+                //2: Don't wanna make a useless round trip to the DB,
+                //   if we know nothing is tagged.
+                var set = toAdd.Where(r => r.WriteUUID.HasValue)
+                    .Select(r => r.WriteUUID.Value).ToList();
+                if (set.Count == 0)
+                {
+                    return Option<Expression<Func<JournalTagRow, bool>>>.None;
+                }
+                else
+                {
+                    return new Option<Expression<Func<JournalTagRow, bool>>>(r =>
+                        r.WriteUUID.In(set));    
+                }
+            }
+            else
+            {
+                //We can just check the count here.
+                //Alas, we won't know if there are tags
+                //Until we actually query on this one.
+                if (toAdd.Count == 0)
+                {
+                    return Option<Expression<Func<JournalTagRow, bool>>>.None;
+                }
+                else
+                {
+                    return new Option<Expression<Func<JournalTagRow, bool>>>( r =>
+                        r.JournalOrderingId.In(toAdd.Select(r => r.ordering)));    
+                }
+            }
         }
         public Source<
             Akka.Util.Try<(IPersistentRepresentation, IImmutableSet<string>, long)>,
@@ -195,43 +257,35 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                         using (var conn = input.t._connectionFactory.GetConnection())
                         {
                             //First, Get eligible rows.
-                            var mainRows = await 
-                                    input.t.baseQuery(conn)
-                                        .LeftJoin(
-                                            conn.GetTable<
-                                                JournalTagRow>(),
-                                            (jr, jtr) =>
+                            var mainRows = await
+                                input.t.baseQuery(conn)
+                                    .LeftJoin(
+                                        conn.GetTable<
+                                            JournalTagRow>(),
+                                        _readJournalConfig.TableConfig
+                                            .TagTableMode ==
+                                        TagTableMode.OrderingId
+                                            ? (jr, jtr) =>
                                                 jr.ordering ==
-                                                jtr.JournalOrderingId,
-                                            (jr, jtr) =>
-                                                new { jr, jtr })
-                                        .Where(r =>
-                                            r.jtr.TagValue == input.tag)
-                                        .Select(r=>r.jr)
-                                        .Where(r =>
-                                            r.ordering > input.offset &&
-                                            r.ordering <= input.maxOffset)
-                                        .Take(input.maxTake).ToListAsync();
-                            //Then, Get the tags for the rows.
-                            var tagRows = await conn.GetTable<JournalTagRow>()
-                                .Where(r =>
-                                    r.JournalOrderingId.In(
-                                        mainRows.Select(r =>
-                                            r.ordering)))
-                                .ToListAsync();
-                            foreach (var journalRow in mainRows)
-                            {
-                                journalRow.tagArr =
-                                    tagRows.Where(r =>
-                                            r.JournalOrderingId ==
-                                            journalRow.ordering)
-                                        .Select(r => r.TagValue)
-                                        .ToArray();
-                            }
-
+                                                jtr.JournalOrderingId
+                                            : (jr, jtr) =>
+                                                jr.WriteUUID == jtr.WriteUUID,
+                                        (jr, jtr) =>
+                                            new { jr, jtr })
+                                    .Where(r =>
+                                        r.jtr.TagValue == input.tag)
+                                    .Select(r => r.jr)
+                                    .Where(r =>
+                                        r.ordering > input.offset &&
+                                        r.ordering <= input.maxOffset)
+                                    .Take(input.maxTake).ToListAsync();
+                            await addTagDataFromTagTable(mainRows, conn);
                             return mainRows;
                         }
-                    }).Via(perfectlyMatchTag(tag, separator))
+                    })
+                //We still PerfectlyMatchTag here
+                //Because DB Collation :)
+                .Via(perfectlyMatchTag(tag, separator))
                 .Via(deserializeFlow);
         }
 
@@ -250,33 +304,40 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                         //And is not necessarily intended for long term use
                         using (var conn = input.t._connectionFactory.GetConnection())
                         {
-                            //First, fin
+                            //First, find the rows.
+                            //We use IN here instead of leftjoin
+                            //because it's safer from a
+                            //'avoid duplicate rows tripping things up later'
+                            //standpoint.
                             var mainRows = await input.t.baseQuery(conn)
-                                .Where(r => r.ordering.In(
-                                    conn.GetTable<JournalTagRow>().Where(r=>r.TagValue==input.tag).Select(r=>r.JournalOrderingId))
-                                    || r.tags.Contains(input.tag)
-                                        )
+                                .Where(
+                                    _readJournalConfig.TableConfig
+                                        .TagTableMode == TagTableMode.OrderingId
+                                        ? r => r.ordering.In(
+                                                   conn.GetTable<
+                                                           JournalTagRow>()
+                                                       .Where(r =>
+                                                           r.TagValue ==
+                                                           input.tag)
+                                                       .Select(r =>
+                                                           r.JournalOrderingId))
+                                               || r.tags.Contains(input.tag)
+                                        : r => r.WriteUUID.Value.In(
+                                                   conn.GetTable<
+                                                           JournalTagRow>()
+                                                       .Where(r =>
+                                                           r.TagValue ==
+                                                           input.tag)
+                                                       .Select(r =>
+                                                           r.WriteUUID))
+                                               || r.tags.Contains(input.tag)
+                                )
                                 .OrderBy(r => r.ordering)
-                                        .Where(r =>
-                                            r.ordering > input.offset &&
-                                            r.ordering <= input.maxOffset)
-                                        .Take(input.maxTake).ToListAsync();
-                            var tagRows = await conn.GetTable<JournalTagRow>()
                                 .Where(r =>
-                                    r.JournalOrderingId.In(
-                                        mainRows.Select(r =>
-                                            r.ordering)))
-                                .ToListAsync();
-                            foreach (var journalRow in mainRows)
-                            {
-                                journalRow.tagArr =
-                                    tagRows.Where(r =>
-                                            r.JournalOrderingId ==
-                                            journalRow.ordering)
-                                        .Select(r => r.TagValue)
-                                        .ToArray();
-                            }
-
+                                    r.ordering > input.offset &&
+                                    r.ordering <= input.maxOffset)
+                                .Take(input.maxTake).ToListAsync();
+                            await addTagDataFromTagTable(mainRows, conn);
                             return mainRows;
                         }
                     }).Via(perfectlyMatchTag(tag, separator))
@@ -360,6 +421,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                 //persistence-jdbc does not filter deleted here.
                 return await db.GetTable<JournalRow>()
                     .Select<JournalRow, long>(r => r.ordering)
+                    .OrderByDescending(r=>r)
                     .FirstOrDefaultAsync();
             }
         }

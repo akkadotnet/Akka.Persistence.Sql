@@ -10,6 +10,12 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
         TagTable = 2,
         CommaSeparatedArrayAndTagTable = 3,
     }
+
+    public enum TagTableMode
+    {
+        OrderingId,
+        SequentialUUID
+    }
     public class JournalTableConfig
     {
         
@@ -22,6 +28,9 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
         public bool WarnOnAutoInitializeFail { get; }
         
         public TagWriteMode TagWriteMode { get; }
+        public TagTableMode TagTableMode { get; }
+        public string? TagTableName { get; }
+
         public JournalTableConfig(Configuration.Config config)
         {
             

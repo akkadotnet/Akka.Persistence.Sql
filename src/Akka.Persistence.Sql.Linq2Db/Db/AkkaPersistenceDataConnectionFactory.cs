@@ -6,6 +6,7 @@ using Akka.Persistence.Sql.Linq2Db.Config;
 using Akka.Persistence.Sql.Linq2Db.Journal;
 using Akka.Persistence.Sql.Linq2Db.Journal.Types;
 using Akka.Persistence.Sql.Linq2Db.Snapshot;
+using Akka.Streams.Dsl;
 using Akka.Util;
 using LinqToDB;
 using LinqToDB.Configuration;
@@ -41,7 +42,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
             opts = new LinqToDbConnectionOptionsBuilder()
                 .UseConnectionString(providerName, connString)
                 .UseMappingSchema(mappingSchema).Build();
-            
             if (providerName.ToLower().StartsWith("sqlserver"))
             {
                 policy = new SqlServerRetryPolicy();
@@ -152,6 +152,41 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                 journalRowBuilder.Member(r => r.ordering).IsIdentity()
                     .Member(r=>r.persistenceId).IsPrimaryKey()
                     .Member(r=>r.sequenceNumber).IsPrimaryKey();
+            }
+
+            void SetJoinCol<T>(PropertyMappingBuilder<JournalTagRow, T> builder,
+                PropertyMappingBuilder<JournalRow, long> propertyMappingBuilder)
+            {
+                if (config.TableConfig.TagTableMode ==
+                    TagTableMode.SequentialUUID)
+                {
+                    builder.Member(r => r.JournalOrderingId)
+                        .IsNotColumn()
+                        .Member(r => r.WriteUUID)
+                        .IsColumn().IsPrimaryKey();
+                    journalRowBuilder.Member(r => r.WriteUUID)
+                        .IsColumn();
+                }
+                else
+                {
+                    builder.Member(r => r.WriteUUID)
+                        .IsNotColumn()
+                        .Member(r => r.JournalOrderingId)
+                        .IsColumn().IsPrimaryKey();
+                    journalRowBuilder.Member(r => r.WriteUUID)
+                        .IsNotColumn();
+                }
+            }
+            if ((config.TableConfig.TagWriteMode & TagWriteMode.TagTable) != 0)
+            {
+                var tagTableBuilder = fmb.Entity<JournalTagRow>()
+                    .HasTableName(tableConfig.TagTableName)
+                    .HasSchemaName(tableConfig.SchemaName)
+                    .Member(r => r.TagValue)
+                    .IsColumn().IsNullable(false)
+                    .HasLength(64)
+                    .IsPrimaryKey();
+                SetJoinCol(tagTableBuilder, journalRowBuilder);
             }
 
             //Probably overkill, but we only set Metadata Mapping if specified
