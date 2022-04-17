@@ -30,6 +30,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
         public TagWriteMode TagWriteMode { get; }
         public TagTableMode TagTableMode { get; }
         public string? TagTableName { get; }
+        public bool UseEventManifestColumn { get; }
 
         public JournalTableConfig(Configuration.Config config)
         {

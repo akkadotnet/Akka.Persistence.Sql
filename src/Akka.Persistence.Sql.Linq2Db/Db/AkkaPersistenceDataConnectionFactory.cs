@@ -177,6 +177,17 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                         .IsNotColumn();
                 }
             }
+
+            if (config.TableConfig.UseEventManifestColumn)
+            {
+                journalRowBuilder.Member(r => r.eventManifest)
+                    .IsColumn().HasLength(64);
+            }
+            else
+            {
+                journalRowBuilder.Member(r => r.eventManifest)
+                    .IsNotColumn();   
+            }
             if ((config.TableConfig.TagWriteMode & TagWriteMode.TagTable) != 0)
             {
                 var tagTableBuilder = fmb.Entity<JournalTagRow>()

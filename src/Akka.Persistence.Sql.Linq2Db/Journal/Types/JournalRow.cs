@@ -32,5 +32,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Types
         public int? Identifier { get; set; }
         public string[] tagArr { get; set; }
         public Guid? WriteUUID { get; set; }
+        public string eventManifest { get; set; }
     }
 }

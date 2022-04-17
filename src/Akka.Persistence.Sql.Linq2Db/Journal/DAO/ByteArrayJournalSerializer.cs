@@ -123,6 +123,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                                     _persistentRepr.PersistenceId;
                                 row.Identifier = serializer.Identifier;
                                 row.sequenceNumber = _persistentRepr.SequenceNr;
+                                row.eventManifest = _persistentRepr.Manifest;
                             }
                             return new Try<JournalRow>(row
                             );
@@ -156,7 +157,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                                         state.message, state.type);
                                 }), t.sequenceNumber,
                             t.persistenceId,
-                            t.manifest, t.deleted, ActorRefs.NoSender, null, t.Timestamp),
+                             t.eventManifest??t.manifest, t.deleted, ActorRefs.NoSender, null, t.Timestamp),
                         t.tags?.Split(_separatorArray,
                                 StringSplitOptions.RemoveEmptyEntries)
                             .ToImmutableHashSet() ?? t.tagArr?.ToImmutableHashSet()?? ImmutableHashSet<string>.Empty,
@@ -169,7 +170,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                         new Persistent(_serializer.Deserialize(t.message,
                                     identifierMaybe.Value,t.manifest), t.sequenceNumber,
                             t.persistenceId,
-                            t.manifest, t.deleted, ActorRefs.NoSender, null, t.Timestamp),
+                            t.eventManifest?? t.manifest, t.deleted, ActorRefs.NoSender, null, t.Timestamp),
                         t.tags?.Split(_separatorArray,
                                 StringSplitOptions.RemoveEmptyEntries)
                             .ToImmutableHashSet() ??t.tagArr?.ToImmutableHashSet()?? ImmutableHashSet<string>.Empty,
