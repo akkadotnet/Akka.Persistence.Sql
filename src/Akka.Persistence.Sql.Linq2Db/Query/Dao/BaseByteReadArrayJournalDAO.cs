@@ -262,14 +262,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                                     .LeftJoin(
                                         conn.GetTable<
                                             JournalTagRow>(),
-                                        _readJournalConfig.TableConfig
-                                            .TagTableMode ==
-                                        TagTableMode.OrderingId
-                                            ? (jr, jtr) =>
-                                                jr.ordering ==
-                                                jtr.JournalOrderingId
-                                            : (jr, jtr) =>
-                                                jr.WriteUUID == jtr.WriteUUID,
+                                        EventsByTagOnlyJoinPredicate,
                                         (jr, jtr) =>
                                             new { jr, jtr })
                                     .Where(r =>
@@ -288,6 +281,16 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                 .Via(perfectlyMatchTag(tag, separator))
                 .Via(deserializeFlow);
         }
+
+        private Expression<Func<JournalRow, JournalTagRow, bool>> EventsByTagOnlyJoinPredicate =>
+            _readJournalConfig.TableConfig
+                .TagTableMode ==
+            TagTableMode.OrderingId
+                ? (jr, jtr) =>
+                    jr.ordering ==
+                    jtr.JournalOrderingId
+                : (jr, jtr) =>
+                    jr.WriteUUID == jtr.WriteUUID;
 
         private Source<Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, NotUsed> eventByTagMigration(string tag, long offset, long maxOffset,
             string separator, int maxTake)
@@ -311,26 +314,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                             //standpoint.
                             var mainRows = await input.t.baseQuery(conn)
                                 .Where(
-                                    _readJournalConfig.TableConfig
-                                        .TagTableMode == TagTableMode.OrderingId
-                                        ? r => r.ordering.In(
-                                                   conn.GetTable<
-                                                           JournalTagRow>()
-                                                       .Where(r =>
-                                                           r.TagValue ==
-                                                           input.tag)
-                                                       .Select(r =>
-                                                           r.JournalOrderingId))
-                                               || r.tags.Contains(input.tag)
-                                        : r => r.WriteUUID.Value.In(
-                                                   conn.GetTable<
-                                                           JournalTagRow>()
-                                                       .Where(r =>
-                                                           r.TagValue ==
-                                                           input.tag)
-                                                       .Select(r =>
-                                                           r.WriteUUID))
-                                               || r.tags.Contains(input.tag)
+                                    eventsByTagMigrationPredicate(conn, input.tag)
                                 )
                                 .OrderBy(r => r.ordering)
                                 .Where(r =>
@@ -342,6 +326,28 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                         }
                     }).Via(perfectlyMatchTag(tag, separator))
                 .Via(deserializeFlow);
+        }
+
+        private Expression<Func<JournalRow, bool>> eventsByTagMigrationPredicate(DataConnection conn, string tagVal)
+        {
+            return _readJournalConfig.TableConfig
+                .TagTableMode == TagTableMode.OrderingId
+                ? r => r.ordering.In(
+                           Queryable.Where(conn.GetTable<
+                                   JournalTagRow>(), r =>
+                                   r.TagValue ==
+                                   tagVal)
+                               .Select(r =>
+                                   r.JournalOrderingId))
+                       || r.tags.Contains(tagVal)
+                : r => r.WriteUUID.Value.In(
+                           Queryable.Where(conn.GetTable<
+                                   JournalTagRow>(), r =>
+                                   r.TagValue ==
+                                   tagVal)
+                               .Select(r =>
+                                   r.WriteUUID))
+                       || r.tags.Contains(tagVal);
         }
 
         private Flow<JournalRow, JournalRow, NotUsed> perfectlyMatchTag(
