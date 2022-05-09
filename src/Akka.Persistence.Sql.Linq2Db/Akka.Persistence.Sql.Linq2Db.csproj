@@ -10,7 +10,7 @@
 
     <ItemGroup>
       <PackageReference Include="Akka" Version="1.4.21" />
-      <PackageReference Include="Akka.Persistence" Version="1.4.21" />
+      <PackageReference Include="Akka.Persistence" Version="1.4.38" />
       <PackageReference Include="Akka.Persistence.Query" Version="1.4.21" />
       <PackageReference Include="Akka.Streams" Version="1.4.21" />
       <PackageReference Include="LanguageExt.Core" Version="3.4.15" />
