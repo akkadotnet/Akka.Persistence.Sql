@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Akka.Util;
 using Docker.DotNet;
 using Docker.DotNet.Models;
-using Npgsql;
 using Xunit;
 
 namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.Docker
