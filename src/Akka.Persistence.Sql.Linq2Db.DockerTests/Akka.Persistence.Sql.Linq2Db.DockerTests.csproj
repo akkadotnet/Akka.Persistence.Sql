@@ -12,12 +12,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Akka" Version="$(AkkaVersion)" />
-        <PackageReference Include="Akka.Persistence.Sqlite" Version="$(AkkaVersion)" />
         <PackageReference Include="Akka.Persistence.TCK" Version="$(AkkaVersion)" />
         <PackageReference Include="Akka.Persistence.TestKit" Version="$(AkkaVersion)" />
         <PackageReference Include="Akka.Serialization.Hyperion" Version="$(AkkaVersion)" />
         <PackageReference Include="Docker.DotNet" Version="$(DockerDotNetVersion)" />
+        <PackageReference Include="Npgsql" Version="$(PostgreSqlVersion)" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
         <PackageReference Include="xunit" Version="$(XunitVersion)" />
         <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitRunnerVersion)">

@@ -25,6 +25,8 @@
     <AkkaRedisVersion>1.4.35</AkkaRedisVersion>
     <AkkaSqlServerVersion>1.4.35</AkkaSqlServerVersion>
     
+    <PostgreSqlVersion>6.0.7</PostgreSqlVersion>
+    
     <SqlClientVersion>4.8.4</SqlClientVersion>
     <DockerDotNetVersion>3.125.4</DockerDotNetVersion>
   </PropertyGroup>
