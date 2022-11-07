@@ -23,6 +23,9 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
                 case "postgres":
                     colString = "postgres-compat-metadata-column-names";
                     break;
+                case "mysql":
+                    colString = "mysql-compat-metadata-column-names";
+                    break;
                 default:
                     colString = "metadata-column-names";
                     break;
@@ -31,7 +34,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
                 .GetConfig($"tables.journal.{colString}").SafeWithFallback(
                     ConfigurationFactory.ParseString(FallBack).GetConfig($"tables.journal.{colString}"));
             //var cfg =  config.GetConfig("tables.journal.metadata-column-names").SafeWithFallback(ConfigurationFactory.ParseString(FallBack).GetConfig("tables.journal.metadata-column-names"));
-            PersistenceId =  cfg.GetString("PersistenceId", "PersistenceId");
+            PersistenceId =  cfg.GetString("persistenceId", "PersistenceId");
             SequenceNumber = cfg.GetString("sequenceNumber", "sequenceNr");
         }
         protected bool Equals(MetadataTableColumnNames other)
@@ -54,22 +57,27 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
 
         
         
-        public static readonly string FallBack = @"tables.journal{
+        public static readonly string FallBack = @"
+tables.journal {
     metadata-column-names {
-        ""PersistenceId"" = ""PersistenceId""
-        ""sequenceNumber"" = ""sequenceNr""
+        persistenceId = persistenceId
+        sequenceNumber = sequenceNr
     }
     sqlserver-compat-metadata-column-names {
-        ""PersistenceId"" = ""PersistenceId""
-        ""sequenceNumber"" = ""sequenceNr""
+        persistenceId = PersistenceId
+        sequenceNumber = SequenceNr
     }
     sqlite-compat-metadata-column-names {
-        ""PersistenceId"" = ""persistence_Id""
-        ""sequenceNumber"" = ""sequence_nr""
+        persistenceId = persistence_Id
+        sequenceNumber = sequence_nr
     }
     postgres-compat-metadata-column-names {
-        ""PersistenceId"" = ""persistence_id""
-        ""sequenceNumber"" = ""sequence_nr""
+        persistenceId = persistence_id
+        sequenceNumber = sequence_nr
+    }
+    mysql-compat-metadata-column-names {
+        persistenceId = persistence_id
+        sequenceNumber = sequence_nr
     }
 }";
     }

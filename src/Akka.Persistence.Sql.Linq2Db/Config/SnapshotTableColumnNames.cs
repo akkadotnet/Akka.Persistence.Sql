@@ -20,6 +20,9 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
                 case "postgres":
                     colString = "postgres-compat-column-names";
                     break;
+                case "mysql":
+                    colString = "mysql-compat-column-names";
+                    break;
                 default:
                     colString = "column-names";
                     break;
@@ -47,30 +50,47 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
                 Snapshot, Manifest, SerializerId);
         }
 
-        private static readonly string FallBack =
-            @"sql-server-compat-column-names {
-                  persistenceId = ""PersistenceId""
-                  sequenceNumber = ""sequencenr""
-                  created = ""timestamp""
-                  snapshot = ""snapshot""
-                  manifest = ""manifest""
-                  serializerId = ""serializerid""
-                }
+        private static readonly string FallBack = @"
+column-names {
+    persistenceId = persistence_id
+    sequenceNumber = sequence_number
+    created = created
+    snapshot = snapshot
+    manifest = manifest
+    serializerId = serializer_id
+}
+sql-server-compat-column-names {
+    persistenceId = PersistenceId
+    sequenceNumber = SequenceNr
+    created = Timestamp
+    snapshot = Snapshot
+    manifest = Manifest
+    serializerId = SerializerId
+}
 sqlite-compat-column-names {
-                  persistenceId = ""persistence_id""
-                  sequenceNumber = ""sequence_nr""
-                  snapshot = ""payload""
-                  manifest = ""manifest""
-                  created = ""created_at""
-                  serializerId = ""serializer_id""
-                }
+    persistenceId = persistence_id
+    sequenceNumber = sequence_nr
+    created = created_at
+    snapshot = payload
+    manifest = manifest
+    serializerId = serializer_id
+}
 postgres-compat-column-names {
-                  persistenceId: ""persistence_id"",
-                  sequenceNumber: ""sequence_nr"",
-                  snapshot: ""payload"",
-                  manifest: ""manifest"",
-                  created: ""created_at"",
-                  serializerId: ""serializer_id"",
-                }";
+    persistenceId: persistence_id,
+    sequenceNumber: sequence_nr,
+    created: created_at,
+    snapshot: payload,
+    manifest: manifest,
+    serializerId: serializer_id,
+}
+mysql-compat-column-names {
+    persistenceId: persistence_id,
+    sequenceNumber: sequence_nr,
+    created: created_at,
+    snapshot: snapshot,
+    manifest: manifest,
+    serializerId: serializer_id,
+}
+";
     }
 }
