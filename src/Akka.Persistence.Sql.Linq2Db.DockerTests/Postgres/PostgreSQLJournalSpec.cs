@@ -52,10 +52,13 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.Postgres
         public PostgreSQLSnapshotSpec(ITestOutputHelper outputHelper, PostgreSQLFixture fixture) :
             base(conf(fixture))
         {
+            var extension = Linq2DbPersistence.Get(Sys);
             DebuggingHelpers.SetupTraceDump(outputHelper);
             var connFactory = new AkkaPersistenceDataConnectionFactory(
                 new SnapshotConfig(
-                    conf(fixture).GetConfig("akka.persistence.snapshot-store.linq2db")));
+                    conf(fixture)
+                        .WithFallback(extension.DefaultConfig)
+                        .GetConfig("akka.persistence.snapshot-store.linq2db")));
             using (var conn = connFactory.GetConnection())
             {
                 
