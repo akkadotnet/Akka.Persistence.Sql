@@ -30,9 +30,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
                     break;
             }
             
-            var cfg = config
-                .GetConfig($"tables.journal.{colString}").SafeWithFallback(
-                    ConfigurationFactory.ParseString(FallBack).GetConfig($"tables.journal.{colString}"));
+            var cfg = config.GetConfig($"tables.journal.{colString}");
             Ordering =       cfg.GetString("ordering","ordering");
             Deleted =        cfg.GetString("deleted","deleted");
             PersistenceId =  cfg.GetString("persistenceId", "persistence_id");
@@ -86,64 +84,5 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
             hashCode.Add(Manifest);
             return hashCode.ToHashCode();
         }
-        public static readonly string FallBack = @"
-tables.journal { 
-    sqlserver-compat-column-names {
-        ordering = Ordering
-        deleted = IsDeleted
-        persistenceId = PersistenceId
-        sequenceNumber = SequenceNr
-        created = Timestamp
-        tags = Tags
-        message = Payload
-        identifier = SerializerId
-        manifest = Manifest
-    }
-    sqlite-compat-column-names {
-        ordering = ordering
-        deleted = is_deleted
-        persistenceId = persistence_id
-        sequenceNumber = sequence_nr
-        created = timestamp
-        tags = tags
-        message = payload
-        identifier = serializer_id
-        manifest = manifest
-    }
-    postgres-compat-column-names {
-        ordering = ordering
-        deleted = is_deleted
-        persistenceId = persistence_id
-        sequenceNumber = sequence_nr
-        created = created_at
-        tags = tags
-        message = payload
-        identifier = serializer_id
-        manifest = manifest
-    }
-    mysql-compat-column-names {
-        ordering = ordering
-        deleted = is_deleted
-        persistenceId = persistence_id
-        sequenceNumber = sequence_nr
-        created = created_at
-        tags = tags
-        message = payload
-        identifier = serializer_id
-        manifest = manifest
-    }
-    column-names
-    {
-        ordering = ordering
-        deleted = deleted
-        persistenceId = persistence_id
-        sequenceNumber = sequence_number
-        created = created
-        tags = tags
-        message = message
-        identifier = identifier
-        manifest = manifest
-    }
-}";
     }
 }

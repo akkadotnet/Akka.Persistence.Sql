@@ -28,8 +28,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
                     break;
             }
             var cfg = config
-                .GetConfig($"tables.snapshot.{colString}").SafeWithFallback(
-                    ConfigurationFactory.ParseString(FallBack).GetConfig($"tables.snapshot.{colString}"));
+                .GetConfig($"tables.snapshot.{colString}");
 
             PersistenceId = cfg.GetString("persistenceId", "persistence_id");
             SequenceNumber = cfg.GetString("sequenceNumber", "sequence_number");
@@ -49,48 +48,5 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
             return HashCode.Combine(PersistenceId, SequenceNumber, Created,
                 Snapshot, Manifest, SerializerId);
         }
-
-        private static readonly string FallBack = @"
-column-names {
-    persistenceId = persistence_id
-    sequenceNumber = sequence_number
-    created = created
-    snapshot = snapshot
-    manifest = manifest
-    serializerId = serializer_id
-}
-sql-server-compat-column-names {
-    persistenceId = PersistenceId
-    sequenceNumber = SequenceNr
-    created = Timestamp
-    snapshot = Snapshot
-    manifest = Manifest
-    serializerId = SerializerId
-}
-sqlite-compat-column-names {
-    persistenceId = persistence_id
-    sequenceNumber = sequence_nr
-    created = created_at
-    snapshot = payload
-    manifest = manifest
-    serializerId = serializer_id
-}
-postgres-compat-column-names {
-    persistenceId: persistence_id,
-    sequenceNumber: sequence_nr,
-    created: created_at,
-    snapshot: payload,
-    manifest: manifest,
-    serializerId: serializer_id,
-}
-mysql-compat-column-names {
-    persistenceId: persistence_id,
-    sequenceNumber: sequence_nr,
-    created: created_at,
-    snapshot: snapshot,
-    manifest: manifest,
-    serializerId: serializer_id,
-}
-";
     }
 }

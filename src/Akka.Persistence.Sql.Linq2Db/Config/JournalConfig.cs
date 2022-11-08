@@ -8,9 +8,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
     {
         public JournalConfig(Configuration.Config config)
         {
-            config =
-                config.SafeWithFallback(
-                    Linq2DbWriteJournal.DefaultConfiguration);
             MaterializerDispatcher = config.GetString("materializer-dispatcher","akka.actor.default-dispatcher");
             ConnectionString = config.GetString("connection-string");
             ProviderName = config.GetString("provider-name");
@@ -21,7 +18,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
             UseSharedDb = string.IsNullOrWhiteSpace(dbConf) ? null : dbConf;
             UseCloneConnection =
                 config.GetBoolean("use-clone-connection", false);
-            
+            DefaultSerializer = config.GetString("serializer", null);
         }
         
         public string MaterializerDispatcher { get; protected set; }

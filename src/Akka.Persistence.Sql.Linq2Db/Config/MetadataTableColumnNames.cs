@@ -31,9 +31,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
                     break;
             }
             var cfg = config
-                .GetConfig($"tables.journal.{colString}").SafeWithFallback(
-                    ConfigurationFactory.ParseString(FallBack).GetConfig($"tables.journal.{colString}"));
-            //var cfg =  config.GetConfig("tables.journal.metadata-column-names").SafeWithFallback(ConfigurationFactory.ParseString(FallBack).GetConfig("tables.journal.metadata-column-names"));
+                .GetConfig($"tables.journal.{colString}");
             PersistenceId =  cfg.GetString("persistenceId", "PersistenceId");
             SequenceNumber = cfg.GetString("sequenceNumber", "sequenceNr");
         }
@@ -54,31 +52,5 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
         {
             return HashCode.Combine(PersistenceId, SequenceNumber);
         }
-
-        
-        
-        public static readonly string FallBack = @"
-tables.journal {
-    metadata-column-names {
-        persistenceId = persistenceId
-        sequenceNumber = sequenceNr
-    }
-    sqlserver-compat-metadata-column-names {
-        persistenceId = PersistenceId
-        sequenceNumber = SequenceNr
-    }
-    sqlite-compat-metadata-column-names {
-        persistenceId = persistence_Id
-        sequenceNumber = sequence_nr
-    }
-    postgres-compat-metadata-column-names {
-        persistenceId = persistence_id
-        sequenceNumber = sequence_nr
-    }
-    mysql-compat-metadata-column-names {
-        persistenceId = persistence_id
-        sequenceNumber = sequence_nr
-    }
-}";
     }
 }
