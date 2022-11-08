@@ -22,21 +22,21 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.Postgres
             akka.persistence {{
                 publish-plugin-commands = on
                 snapshot-store {{
-                    plugin = ""akka.persistence.snapshot-store.testspec""
-                    testspec {{
+                    plugin = ""akka.persistence.snapshot-store.linq2db""
+                    linq2db {{
                         class = ""{0}""
                         #plugin-dispatcher = ""akka.actor.default-dispatcher""
                         plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
                                 
                         connection-string = ""{1}""
-#connection-string = ""FullUri=file:test.db&cache=shared""
+                        #connection-string = ""FullUri=file:test.db&cache=shared""
                         provider-name = """ + LinqToDB.ProviderName.PostgreSQL95 + @"""
                         use-clone-connection = true
                         tables.snapshot {{ 
                            auto-init = true
                            warn-on-auto-init-fail = false
                            table-name = ""{2}"" 
-                           }}
+                        }}
                     }}
                 }}
             }}
@@ -55,7 +55,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.Postgres
             DebuggingHelpers.SetupTraceDump(outputHelper);
             var connFactory = new AkkaPersistenceDataConnectionFactory(
                 new SnapshotConfig(
-                    conf(fixture).GetConfig("akka.persistence.snapshot-store.testspec")));
+                    conf(fixture).GetConfig("akka.persistence.snapshot-store.linq2db")));
             using (var conn = connFactory.GetConnection())
             {
                 
@@ -80,14 +80,14 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.Postgres
             akka.persistence {{
                 publish-plugin-commands = on
                 journal {{
-                    plugin = ""akka.persistence.journal.testspec""
-                    testspec {{
+                    plugin = ""akka.persistence.journal.linq2db""
+                    linq2db {{
                         class = ""{0}""
                         #plugin-dispatcher = ""akka.actor.default-dispatcher""
                         plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
                                 
                         connection-string = ""{1}""
-#connection-string = ""FullUri=file:test.db&cache=shared""
+                        #connection-string = ""FullUri=file:test.db&cache=shared""
                         provider-name = """ + LinqToDB.ProviderName.PostgreSQL95 + @"""
                         use-clone-connection = true
                         tables.journal {{ 
@@ -111,8 +111,11 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.Postgres
             PostgreSQLFixture fixture) : base(InitConfig(fixture),
             "postgresperf", output)
         {
-            
-            var connFactory = new AkkaPersistenceDataConnectionFactory(new JournalConfig(Create(DockerDbUtils.ConnectionString).GetConfig("akka.persistence.journal.testspec")));
+            var extension = Linq2DbPersistence.Get(Sys);
+            var config = Create(DockerDbUtils.ConnectionString)
+                .WithFallback(extension.DefaultConfig)
+                .GetConfig("akka.persistence.journal.linq2db");
+            var connFactory = new AkkaPersistenceDataConnectionFactory(new JournalConfig(config));
             using (var conn = connFactory.GetConnection())
             {
                 try

@@ -39,10 +39,14 @@ namespace Akka.Persistence.Linq2Db.BenchmarkTests.Local.Linq2Db
         public MSSQLiteLinq2DbJournalPerfSpec(ITestOutputHelper output)
             : base(SQLiteJournalSpecConfig.Create(connString, ProviderName.SQLiteMS), "SqliteJournalSpec", output,eventsCount: TestConstants.NumMessages)
         {
+            var extension = Linq2DbPersistence.Get(Sys);
+            
             heldSqliteConnection.Open();
             //InitWALForFileDb();
             var conf = new JournalConfig(
-                SQLiteJournalSpecConfig.Create(connString, ProviderName.SQLiteMS).GetConfig("akka.persistence.journal.testspec"));
+                SQLiteJournalSpecConfig.Create(connString, ProviderName.SQLiteMS)
+                    .WithFallback(extension.DefaultConfig)
+                    .GetConfig("akka.persistence.journal.linq2db"));
             
             var connFactory = new AkkaPersistenceDataConnectionFactory(conf);
             using (var conn = connFactory.GetConnection())

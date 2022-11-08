@@ -15,14 +15,20 @@ namespace Akka.Persistence.Sql.Linq2Db.Snapshot
 {
     public class Linq2DbSnapshotStore : SnapshotStore
     {
+        [Obsolete(message: "Use Linq2DbPersistence.Get(ActorSystem).DefaultConfig instead")]
         public static Configuration.Config DefaultConfiguration =>
             ConfigurationFactory.FromResource<Linq2DbSnapshotStore>(
                 "Akka.Persistence.Sql.Linq2Db.snapshot.conf");
+        
+        public readonly Linq2DbPersistence Extension = Linq2DbPersistence.Get(Context.System);
+        
         private SnapshotConfig _snapshotConfig;
         private ByteArraySnapshotDao _dao;
 
-        public Linq2DbSnapshotStore(Configuration.Config config)
+        public Linq2DbSnapshotStore(Configuration.Config snapshotConfig)
         {
+            var config = snapshotConfig.WithFallback(Extension.DefaultSnapshotConfig);
+            
             _snapshotConfig = new SnapshotConfig(config);
             _dao = new ByteArraySnapshotDao(
                 new AkkaPersistenceDataConnectionFactory(_snapshotConfig),

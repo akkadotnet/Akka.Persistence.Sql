@@ -24,9 +24,12 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.SqlServer
             base(Initialize(fixture))
         {
             DebuggingHelpers.SetupTraceDump(outputHelper);
+            var extension = Linq2DbPersistence.Get(Sys);
             var connFactory = new AkkaPersistenceDataConnectionFactory(
                 new SnapshotConfig(
-                    conf.GetConfig("akka.persistence.snapshot-store.linq2db")));
+                    conf
+                        .WithFallback(extension.DefaultConfig)
+                        .GetConfig("akka.persistence.snapshot-store.linq2db")));
             using (var conn = connFactory.GetConnection())
             {
                 

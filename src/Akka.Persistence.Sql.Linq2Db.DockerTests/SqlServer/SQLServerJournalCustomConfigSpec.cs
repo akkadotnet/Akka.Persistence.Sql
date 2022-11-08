@@ -29,7 +29,11 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.SqlServer
         public SQLServerJournalCustomConfigSpec(ITestOutputHelper outputHelper, SqlServerFixture fixture)
             : base(Initialize(fixture), "SQLServer-custom", outputHelper)
         {
-            var connFactory = new AkkaPersistenceDataConnectionFactory(new JournalConfig(conf.GetConfig("akka.persistence.journal.linq2db.customspec")));
+            var extension = Linq2DbPersistence.Get(Sys);
+            var connFactory = new AkkaPersistenceDataConnectionFactory(new JournalConfig(
+                conf
+                    .GetConfig("akka.persistence.journal.linq2db.customspec")
+                    .WithFallback(extension.DefaultJournalConfig)));
             using (var conn = connFactory.GetConnection())
             {
                 try

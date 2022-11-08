@@ -10,9 +10,7 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
     {
         private static AtomicCounter counter = new AtomicCounter(0);
         //private static string  connString = "FullUri=file:memdb"+counter.IncrementAndGet() +"?mode=memory&cache=shared";
-        private static string connString =
-            "Filename=file:memdb-journal-" + counter.IncrementAndGet() +
-            ".db;Mode=Memory;Cache=Shared";
+        private static string connString = $"Filename=file:memdb-journal-{counter.IncrementAndGet()}.db;Mode=Memory;Cache=Shared";
         private static SqliteConnection heldSqliteConnection =
             new SqliteConnection(connString);
         public SQLiteSqlCommonJournalCompatibilitySpec(ITestOutputHelper outputHelper) : base(outputHelper)
@@ -30,7 +28,7 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             "akka.persistence.journal.sqlite";
 
         protected override string NewJournal =>
-            "akka.persistence.journal.testspec";
+            "akka.persistence.journal.linq2db";
 
         protected override Configuration.Config Config =>
             SQLiteCompatibilitySpecConfig.InitJournalConfig("journal_compat",
