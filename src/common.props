@@ -15,7 +15,7 @@
     <NBenchVersion>1.2.2</NBenchVersion>
     <XunitVersion>2.4.2</XunitVersion>
     <XunitRunnerVersion>2.4.5</XunitRunnerVersion>
-    <TestSdkVersion>17.3.2</TestSdkVersion>
+    <TestSdkVersion>17.4.0</TestSdkVersion>
     <CoverletVersion>3.2.0</CoverletVersion>
     <RedisInsideVersion>3.3.0</RedisInsideVersion>
     
