@@ -48,9 +48,8 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal
     public class Linq2DbWriteJournal : AsyncWriteJournal
     {
         [Obsolete(message: "Use Linq2DbPersistence.Get(ActorSystem).DefaultConfig instead")]
-        public static Configuration.Config DefaultConfiguration =>
-            ConfigurationFactory.FromResource<Linq2DbWriteJournal>(
-                "Akka.Persistence.Sql.Linq2Db.persistence.conf");
+        public static readonly Configuration.Config DefaultConfiguration =
+            ConfigurationFactory.FromResource<Linq2DbWriteJournal>("Akka.Persistence.Sql.Linq2Db.persistence.conf");
         
         public readonly Linq2DbPersistence Extension = Linq2DbPersistence.Get(Context.System);
         

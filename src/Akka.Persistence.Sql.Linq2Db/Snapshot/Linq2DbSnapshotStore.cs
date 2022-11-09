@@ -16,9 +16,8 @@ namespace Akka.Persistence.Sql.Linq2Db.Snapshot
     public class Linq2DbSnapshotStore : SnapshotStore
     {
         [Obsolete(message: "Use Linq2DbPersistence.Get(ActorSystem).DefaultConfig instead")]
-        public static Configuration.Config DefaultConfiguration =>
-            ConfigurationFactory.FromResource<Linq2DbSnapshotStore>(
-                "Akka.Persistence.Sql.Linq2Db.snapshot.conf");
+        public static readonly Configuration.Config DefaultConfiguration =
+            ConfigurationFactory.FromResource<Linq2DbSnapshotStore>("Akka.Persistence.Sql.Linq2Db.snapshot.conf");
         
         public readonly Linq2DbPersistence Extension = Linq2DbPersistence.Get(Context.System);
         

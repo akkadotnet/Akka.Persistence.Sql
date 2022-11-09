@@ -9,6 +9,7 @@ using Akka.Persistence.Journal;
 using Akka.Persistence.Query;
 using Akka.Persistence.Sql.Linq2Db.Config;
 using Akka.Persistence.Sql.Linq2Db.Db;
+using Akka.Persistence.Sql.Linq2Db.Journal;
 using Akka.Persistence.Sql.Linq2Db.Journal.DAO;
 using Akka.Persistence.Sql.Linq2Db.Journal.Types;
 using Akka.Persistence.Sql.Linq2Db.Query.Dao;
@@ -35,9 +36,8 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
             get { return "akka.persistence.query.journal.linq2db"; }
         }
 
-        public static Configuration.Config DefaultConfiguration =>
-            ConfigurationFactory.FromResource<Linq2DbReadJournal>(
-                "Akka.Persistence.Sql.Linq2Db.persistence.conf");
+        [Obsolete(message: "Use Linq2DbPersistence.Get(ActorSystem).DefaultConfig instead")]
+        public static readonly Configuration.Config DefaultConfiguration = Linq2DbWriteJournal.DefaultConfiguration;
 
         private IActorRef journalSequenceActor;
         private ActorMaterializer _mat;
