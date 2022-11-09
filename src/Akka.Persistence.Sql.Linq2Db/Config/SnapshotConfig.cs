@@ -16,9 +16,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
     {
         public SnapshotConfig(Configuration.Config config)
         {
-            config =
-                config.SafeWithFallback(Linq2DbSnapshotStore
-                    .DefaultConfiguration.GetConfig("akka.persistence.snapshot-store.linq2db"));
             TableConfig = new SnapshotTableConfiguration(config);
             PluginConfig = new SnapshotPluginConfig(config);
             var dbConf = config.GetString(ConfigKeys.useSharedDb);

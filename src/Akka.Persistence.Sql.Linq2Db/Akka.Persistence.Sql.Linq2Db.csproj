@@ -21,10 +21,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Journal\Config" />
-    </ItemGroup>
-
-    <ItemGroup>
         <None Remove="persistence.conf" />
         <EmbeddedResource Include="persistence.conf">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>

@@ -6,6 +6,7 @@
 // //-----------------------------------------------------------------------
 
 using Akka.Configuration;
+using Akka.Persistence.Sql.Linq2Db;
 using Akka.Persistence.Sql.Linq2Db.Journal;
 using Akka.Persistence.Sql.Linq2Db.Snapshot;
 
@@ -18,9 +19,9 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             //need to make sure db is created before the tests start
             //DbUtils.Initialize(connString);
             var specString = $@"
-                    akka.persistence {{
-                        publish-plugin-commands = on
-                        snapshot-store {{
+akka.persistence {{
+	publish-plugin-commands = on
+	snapshot-store {{
 		sqlite {{
 			# qualified type name of the SQL Server persistence journal actor
 			class = ""Akka.Persistence.Sqlite.Snapshot.SqliteSnapshotStore, Akka.Persistence.Sqlite""
@@ -42,70 +43,65 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
 			# circuit-breaker.call-timeout=30s
 		}}
 	
-                        linq2db {{
-                        class = ""{typeof(Linq2DbSnapshotStore).AssemblyQualifiedName}""
-                        plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
-#plugin-dispatcher = ""akka.actor.default-dispatcher""
-                        connection-string = ""{connectionString}""
-#connection-string = ""FullUri=file:test.db&cache=shared""
-                        provider-name = """ + LinqToDB.ProviderName.SQLiteMS + $@"""
-                        #use-clone-connection = true
-                        table-compatibility-mode = sqlite
-                        table-name = ""{tablename}""
-                        tables
-                        {{
-                        snapshot {{ 
-                           auto-init = true
-                           warn-on-auto-init-fail = false
-                           #table-name = ""{tablename}""    
-                          }}
-                        }}
-                      }}
+		linq2db {{
+			class = ""{typeof(Linq2DbSnapshotStore).AssemblyQualifiedName}""
+            plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
+			#plugin-dispatcher = ""akka.actor.default-dispatcher""
+			connection-string = ""{connectionString}""
+			#connection-string = ""FullUri=file:test.db&cache=shared""
+			provider-name = """ + LinqToDB.ProviderName.SQLiteMS + $@"""
+			#use-clone-connection = true
+			table-compatibility-mode = sqlite
+			tables {{
+				snapshot {{ 
+					auto-init = true
+					warn-on-auto-init-fail = false
+					table-name = ""{tablename}""    
+				}}
+			}}
+		}}
+	}}
+}}";
 
-                    }}
-                    }}";
-
-            return ConfigurationFactory.ParseString(specString);
+            return ConfigurationFactory.ParseString(specString)
+	            .WithFallback(Linq2DbPersistence.DefaultConfiguration());
         }
         public static Config InitJournalConfig(string tablename, string metadatatablename, string connectionString)
         {
             //need to make sure db is created before the tests start
             //DbUtils.Initialize(connString);
             var specString = $@"
-                    akka.persistence {{
-                        publish-plugin-commands = on
-                        journal {{
-                            plugin = ""akka.persistence.journal.sqlite""
-                            sqlite {{
-                                class = ""Akka.Persistence.Sqlite.Journal.SqliteJournal, Akka.Persistence.Sqlite""
-                                plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
-                                table-name = ""{tablename}""
-                                metadata-table-name = ""{metadatatablename}""
-                                schema-name = dbo
-                                auto-initialize = on
-                                connection-string = ""{connectionString}""
-                            }}
-                               testspec {{
-                        class = ""{typeof(Linq2DbWriteJournal).AssemblyQualifiedName}""
-                        plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
-#plugin-dispatcher = ""akka.actor.default-dispatcher""
-                        connection-string = ""{connectionString}""
-#connection-string = ""FullUri=file:test.db&cache=shared""
-                        provider-name = ""{LinqToDB.ProviderName.SQLiteMS}""
-                        parallelism = 3
-                        table-name = ""{tablename}""
-                        table-compatibility-mode = ""sqlite""
-                        tables.journal {{ 
-                           auto-init = true
-                           warn-on-auto-init-fail = false
-                           #table-name = ""{tablename}"" 
-                           metadata-table-name = ""{metadatatablename}""
-                           
-                           }}
-                    }}
-
-                        }}
-                    }}";
+akka.persistence {{
+	publish-plugin-commands = on
+	journal {{
+		plugin = ""akka.persistence.journal.sqlite""
+		sqlite {{
+			class = ""Akka.Persistence.Sqlite.Journal.SqliteJournal, Akka.Persistence.Sqlite""
+			plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
+			table-name = ""{tablename}""
+			metadata-table-name = ""{metadatatablename}""
+			schema-name = dbo
+			auto-initialize = on
+			connection-string = ""{connectionString}""
+		}}
+		linq2db {{
+			class = ""{typeof(Linq2DbWriteJournal).AssemblyQualifiedName}""
+			plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
+			#plugin-dispatcher = ""akka.actor.default-dispatcher""
+			connection-string = ""{connectionString}""
+			#connection-string = ""FullUri=file:test.db&cache=shared""
+			provider-name = ""{LinqToDB.ProviderName.SQLiteMS}""
+			parallelism = 3
+			table-compatibility-mode = ""sqlite""
+			tables.journal {{ 
+				auto-init = true
+				warn-on-auto-init-fail = false
+				table-name = ""{tablename}"" 
+				metadata-table-name = ""{metadatatablename}""                           
+			}}
+		}}
+	}}
+}}";
 
             return ConfigurationFactory.ParseString(specString);
         }

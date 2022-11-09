@@ -22,17 +22,18 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
                 case "postgres":
                     colString = "postgres-compat-column-names";
                     break;
+                case "mysql":
+                    colString = "mysql-compat-column-names";
+                    break;
                 default:
                     colString = "column-names";
                     break;
             }
             
-            var cfg = config
-                .GetConfig($"tables.journal.{colString}").SafeWithFallback(
-                    ConfigurationFactory.ParseString(FallBack).GetConfig($"tables.journal.{colString}"));
+            var cfg = config.GetConfig($"tables.journal.{colString}");
             Ordering =       cfg.GetString("ordering","ordering");
             Deleted =        cfg.GetString("deleted","deleted");
-            PersistenceId =  cfg.GetString("PersistenceId", "persistence_id");
+            PersistenceId =  cfg.GetString("persistenceId", "persistence_id");
             SequenceNumber = cfg.GetString("sequenceNumber", "sequence_number");
             Created =        cfg.GetString("created", "created");
             Tags =           cfg.GetString("tags", "tags");
@@ -83,44 +84,5 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
             hashCode.Add(Manifest);
             return hashCode.ToHashCode();
         }
-        public static readonly string FallBack = @"tables.journal
-  { 
-    sqlserver-compat-column-names {
-          ""ordering"" = ""ordering""
-        ""deleted"" = ""isdeleted""
-        ""PersistenceId"" = ""PersistenceId""
-        ""sequenceNumber"" = ""sequenceNr""
-        ""created"" = ""Timestamp""
-        ""tags"" = ""tags""
-        ""message"" = ""payload""
-        ""identifier"" = ""serializerid""
-        ""manifest"" = ""manifest""
-    }
-    sqlite-compat-column-names {
-    ""ordering"" = ""ordering""
-    ""deleted"" = ""is_deleted""
-    ""PersistenceId"" = ""persistence_Id""
-    ""sequenceNumber"" = ""sequence_nr""
-    ""created"" = ""Timestamp""
-    ""tags"" = ""tags""
-    ""message"" = ""payload""
-    ""identifier"" = ""serializer_id""
-    ""manifest"" = ""manifest""
-    }
-postgres-compat-column-names {
-          ""ordering"" = ""ordering""
-        ""deleted"" = ""is_deleted""
-        ""PersistenceId"" = ""persistence_id""
-        ""sequenceNumber"" = ""sequence_nr""
-        ""created"" = ""created_at""
-        ""tags"" = ""tags""
-        ""message"" = ""payload""
-        ""identifier"" = ""serializer_id""
-        ""manifest"" = ""manifest""
-    }
- column-names
- { 
- }
-}";
     }
 }

@@ -27,9 +27,8 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             GC.KeepAlive(heldSqliteConnection);
         }
 
-        protected override Config Config =>
-            SQLiteCompatibilitySpecConfig.InitSnapshotConfig("snapshot_compat",
-                connString);
+        protected override Config Config { get; } =
+            SQLiteCompatibilitySpecConfig.InitSnapshotConfig("snapshot_compat", connString);
 
         protected override string OldSnapshot =>
             "akka.persistence.snapshot-store.sqlite";

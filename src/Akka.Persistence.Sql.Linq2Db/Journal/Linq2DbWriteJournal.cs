@@ -47,17 +47,20 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal
 
     public class Linq2DbWriteJournal : AsyncWriteJournal
     {
-        public static Configuration.Config DefaultConfiguration =>
-            ConfigurationFactory.FromResource<Linq2DbWriteJournal>(
-                "Akka.Persistence.Sql.Linq2Db.persistence.conf");
+        [Obsolete(message: "Use Linq2DbPersistence.Get(ActorSystem).DefaultConfig instead")]
+        public static readonly Configuration.Config DefaultConfiguration =
+            ConfigurationFactory.FromResource<Linq2DbWriteJournal>("Akka.Persistence.Sql.Linq2Db.persistence.conf");
+        
+        public readonly Linq2DbPersistence Extension = Linq2DbPersistence.Get(Context.System);
         
         private ActorMaterializer _mat;
         private JournalConfig _journalConfig;
         private ByteArrayJournalDao _journal;
-        public Linq2DbWriteJournal(Configuration.Config config)
+        public Linq2DbWriteJournal(Configuration.Config journalConfig)
         {
             try
             {
+                var config = journalConfig.WithFallback(Extension.DefaultJournalConfig);
                 _journalConfig = new JournalConfig(config);
                 _mat = Materializer.CreateSystemMaterializer((ExtendedActorSystem)Context.System,
                     ActorMaterializerSettings.Create(Context.System)

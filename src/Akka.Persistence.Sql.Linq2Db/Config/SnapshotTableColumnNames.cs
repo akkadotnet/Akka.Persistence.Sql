@@ -20,13 +20,15 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
                 case "postgres":
                     colString = "postgres-compat-column-names";
                     break;
+                case "mysql":
+                    colString = "mysql-compat-column-names";
+                    break;
                 default:
                     colString = "column-names";
                     break;
             }
             var cfg = config
-                .GetConfig($"tables.snapshot.{colString}").SafeWithFallback(
-                    ConfigurationFactory.ParseString(FallBack).GetConfig($"tables.snapshot.{colString}"));
+                .GetConfig($"tables.snapshot.{colString}");
 
             PersistenceId = cfg.GetString("persistenceId", "persistence_id");
             SequenceNumber = cfg.GetString("sequenceNumber", "sequence_number");
@@ -46,31 +48,5 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
             return HashCode.Combine(PersistenceId, SequenceNumber, Created,
                 Snapshot, Manifest, SerializerId);
         }
-
-        private static readonly string FallBack =
-            @"sql-server-compat-column-names {
-                  persistenceId = ""PersistenceId""
-                  sequenceNumber = ""sequencenr""
-                  created = ""timestamp""
-                  snapshot = ""snapshot""
-                  manifest = ""manifest""
-                  serializerId = ""serializerid""
-                }
-sqlite-compat-column-names {
-                  persistenceId = ""persistence_id""
-                  sequenceNumber = ""sequence_nr""
-                  snapshot = ""payload""
-                  manifest = ""manifest""
-                  created = ""created_at""
-                  serializerId = ""serializer_id""
-                }
-postgres-compat-column-names {
-                  persistenceId: ""persistence_id"",
-                  sequenceNumber: ""sequence_nr"",
-                  snapshot: ""payload"",
-                  manifest: ""manifest"",
-                  created: ""created_at"",
-                  serializerId: ""serializer_id"",
-                }";
     }
 }
