@@ -51,7 +51,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             query.GetInt("parallelism").Should().Be(3);
             query.GetInt("max-row-by-row-size").Should().Be(100);
             query.GetBoolean("use-clone-connection").Should().BeFalse();
-            query.GetString("tag-separator", "invalid").Should().Be(",");
+            query.GetString("tag-separator", "invalid").Should().Be(";");
             query.GetString("dao", "invalid").Should()
                 .Be("Akka.Persistence.Sql.Linq2Db.Journal.DAO.ByteArrayJournalDao, Akka.Persistence.Sql.Linq2Db");
 
@@ -245,7 +245,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             journal.IncludeDeleted.Should().BeTrue();
 
             var pluginConfig = journal.PluginConfig;
-            pluginConfig.TagSeparator.Should().Be(",");
+            pluginConfig.TagSeparator.Should().Be(";");
             var daoType = Type.GetType(pluginConfig.Dao);
             daoType.Should().Be(typeof(ByteArrayJournalDao));
 

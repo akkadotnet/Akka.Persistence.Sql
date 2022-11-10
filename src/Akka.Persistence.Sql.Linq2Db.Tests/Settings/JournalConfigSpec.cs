@@ -53,7 +53,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             journal.GetBoolean("use-clone-connection").Should().BeFalse();
             journal.GetString("materializer-dispatcher", "invalid").Should().Be("akka.actor.default-dispatcher");
             journal.GetString("serializer", "invalid").Should().BeNullOrEmpty();
-            journal.GetString("tag-separator", "invalid").Should().Be(",");
+            journal.GetString("tag-separator", "invalid").Should().Be(";");
             journal.GetString("dao", "invalid").Should()
                 .Be("Akka.Persistence.Sql.Linq2Db.Journal.DAO.ByteArrayJournalDao, Akka.Persistence.Sql.Linq2Db");
 
@@ -238,7 +238,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             journal.DefaultSerializer.Should().BeNullOrEmpty();
 
             var pluginConfig = journal.PluginConfig;
-            pluginConfig.TagSeparator.Should().Be(",");
+            pluginConfig.TagSeparator.Should().Be(";");
             var daoType = Type.GetType(pluginConfig.Dao);
             daoType.Should().Be(typeof(ByteArrayJournalDao));
 

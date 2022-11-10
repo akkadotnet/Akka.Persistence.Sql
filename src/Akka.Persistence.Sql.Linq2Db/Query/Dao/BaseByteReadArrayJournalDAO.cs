@@ -126,30 +126,20 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             var maxTake = MaxTake(max);
             return AsyncSource<JournalRow>.FromEnumerable(new{separator,tag,offset,maxOffset,maxTake,_connectionFactory},
                     async(input)=>
-                {
+                    {
+                    var tag = $"{separator}{input.tag}{separator}";
                     using (var conn = input._connectionFactory.GetConnection())
                     {
                         return await conn.GetTable<JournalRow>()
-                            .Where<JournalRow>(r => r.tags.Contains(input.tag))
+                            .Where<JournalRow>(r => r.tags.Contains(tag))
                             .OrderBy(r => r.ordering)
                             .Where(r =>
                                 r.ordering > input.offset && r.ordering <= input.maxOffset)
                             .Take(input.maxTake).ToListAsync();
                     }
-                }).Via(perfectlyMatchTag(tag, separator))
+                })
                 .Via(deserializeFlow);
 
-        }
-
-        private Flow<JournalRow, JournalRow, NotUsed> perfectlyMatchTag(
-            string tag,
-            string separator)
-        {
-
-            return Flow.Create<JournalRow>().Where(r =>
-                (r.tags ?? "")
-                .Split(new[] {separator}, StringSplitOptions.RemoveEmptyEntries)
-                .Any(t => t.Contains(tag)));
         }
 
         public override Source<Akka.Util.Try<ReplayCompletion>, NotUsed> Messages(
@@ -214,6 +204,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             {
                 return await db.GetTable<JournalRow>()
                     .Select<JournalRow, long>(r => r.ordering)
+                    .OrderByDescending(r => r)
                     .FirstOrDefaultAsync();
             }
         }

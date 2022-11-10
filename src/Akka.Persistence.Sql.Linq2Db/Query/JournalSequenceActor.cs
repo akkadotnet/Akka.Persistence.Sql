@@ -192,9 +192,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
             {
                 if (t.IsFaulted)
                 {
-                    _log.Info(
-                        "Failed to recover fast, using event-by-event recovery instead",
-                        t.Exception);
+                    _log.Info(t.Exception, "Failed to recover fast, using event-by-event recovery instead");
                 }
                 else if (t.IsCompleted)
                 {
