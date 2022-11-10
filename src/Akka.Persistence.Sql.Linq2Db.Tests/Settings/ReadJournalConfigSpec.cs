@@ -8,8 +8,7 @@
 using System;
 using Akka.Configuration;
 using Akka.Persistence.Sql.Linq2Db.Config;
-using Akka.Persistence.Sql.Linq2Db.Journal;
-using Akka.Persistence.Sql.Linq2Db.Journal.DAO;
+using Akka.Persistence.Sql.Linq2Db.Journal.Dao;
 using Akka.Persistence.Sql.Linq2Db.Query;
 using FluentAssertions;
 using LanguageExt.UnitsOfMeasure;
@@ -23,7 +22,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
         
         public ReadJournalConfigSpec()
         {
-            _defaultConfig = Linq2DbWriteJournal.DefaultConfiguration;
+            _defaultConfig = Linq2DbPersistence.DefaultConfiguration();
         }
 
         [Fact(DisplayName = "Default journal query HOCON config should contain default values")]
@@ -53,7 +52,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             query.GetBoolean("use-clone-connection").Should().BeFalse();
             query.GetString("tag-separator", "invalid").Should().Be(";");
             query.GetString("dao", "invalid").Should()
-                .Be("Akka.Persistence.Sql.Linq2Db.Journal.DAO.ByteArrayJournalDao, Akka.Persistence.Sql.Linq2Db");
+                .Be("Akka.Persistence.Sql.Linq2Db.Journal.Dao.ByteArrayJournalDao, Akka.Persistence.Sql.Linq2Db");
 
             var retrieval = query.GetConfig("journal-sequence-retrieval");
             retrieval.Should().NotBeNull();
@@ -93,7 +92,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             journalColumns.Created.Should().Be("created");
             journalColumns.Tags.Should().Be("tags");
             journalColumns.Message.Should().Be("message");
-            journalColumns.Identitifer.Should().Be("identifier");
+            journalColumns.Identifier.Should().Be("identifier");
             journalColumns.Manifest.Should().Be("manifest");
             
             // assert default metadata column names
@@ -126,7 +125,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             journalColumns.Created.Should().Be("Timestamp");
             journalColumns.Tags.Should().Be("Tags");
             journalColumns.Message.Should().Be("Payload");
-            journalColumns.Identitifer.Should().Be("SerializerId");
+            journalColumns.Identifier.Should().Be("SerializerId");
             journalColumns.Manifest.Should().Be("Manifest");
             
             // assert default metadata column names
@@ -159,7 +158,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             journalColumns.Created.Should().Be("timestamp");
             journalColumns.Tags.Should().Be("tags");
             journalColumns.Message.Should().Be("payload");
-            journalColumns.Identitifer.Should().Be("serializer_id");
+            journalColumns.Identifier.Should().Be("serializer_id");
             journalColumns.Manifest.Should().Be("manifest");
             
             // assert default metadata column names
@@ -192,7 +191,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             journalColumns.Created.Should().Be("created_at");
             journalColumns.Tags.Should().Be("tags");
             journalColumns.Message.Should().Be("payload");
-            journalColumns.Identitifer.Should().Be("serializer_id");
+            journalColumns.Identifier.Should().Be("serializer_id");
             journalColumns.Manifest.Should().Be("manifest");
             
             // assert default metadata column names
@@ -225,7 +224,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             journalColumns.Created.Should().Be("created_at");
             journalColumns.Tags.Should().Be("tags");
             journalColumns.Message.Should().Be("payload");
-            journalColumns.Identitifer.Should().Be("serializer_id");
+            journalColumns.Identifier.Should().Be("serializer_id");
             journalColumns.Manifest.Should().Be("manifest");
             
             // assert default metadata column names

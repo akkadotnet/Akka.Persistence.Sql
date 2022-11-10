@@ -16,26 +16,14 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.Docker
     public class SqlServerFixture : IAsyncLifetime
     {
         protected readonly string SqlContainerName = $"sqlserver-{Guid.NewGuid():N}";
-        protected DockerClient Client;
+        protected readonly DockerClient Client;
 
         public SqlServerFixture()
         {
-            DockerClientConfiguration config;
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                config = new DockerClientConfiguration(new Uri("unix://var/run/docker.sock"));
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                config = new DockerClientConfiguration(new Uri("npipe://./pipe/docker_engine"));
-            else
-                throw new NotSupportedException($"Unsupported OS [{RuntimeInformation.OSDescription}]");
-
-            Client = config.CreateClient();
+            Client = new DockerClientConfiguration().CreateClient();
         }
 
-        protected string ImageName =>
-            //RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-            //    ? "microsoft/mssql-server-windows-express"
-            //    : 
-                "mcr.microsoft.com/mssql/server";
+        protected string ImageName => "mcr.microsoft.com/mssql/server";
         protected string Tag => "2017-latest";
         protected string SqlServerImageName => $"{ImageName}:{Tag}";
 
@@ -47,13 +35,10 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.Docker
             {
                 Filters = new Dictionary<string, IDictionary<string, bool>>
                 {
-                    {
-                        "reference",
-                        new Dictionary<string, bool>
+                    ["reference"] = new Dictionary<string, bool>
                         {
-                            {SqlServerImageName, true}
+                            [SqlServerImageName] = true
                         }
-                    }
                 }
             }); 
 
@@ -77,21 +62,15 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.Docker
                 Tty = true,
                 ExposedPorts = new Dictionary<string, EmptyStruct>
                 {
-                    {"1433/tcp", new EmptyStruct()}
+                    ["1433/tcp"] = new EmptyStruct()
                 },
                 HostConfig = new HostConfig
                 {
                     PortBindings = new Dictionary<string, IList<PortBinding>>
                     {
+                        ["1433/tcp"] = new List<PortBinding>
                         {
-                            "1433/tcp",
-                            new List<PortBinding>
-                            {
-                                new PortBinding
-                                {
-                                    HostPort = $"{sqlServerHostPort}"
-                                }
-                            }
+                            new PortBinding { HostPort = $"{sqlServerHostPort}" }
                         }
                     }
                 },
@@ -104,26 +83,28 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.Docker
             // Provide a 30 second startup delay
             await Task.Delay(TimeSpan.FromSeconds(30));
 
-
             var connectionString = new DbConnectionStringBuilder
             {
                 ConnectionString =
-                    "data source=.;database=akka_persistence_tests;user id=sa;password=l0lTh1sIsOpenSource"
+                    "data source=.;database=akka_persistence_tests;user id=sa;password=l0lTh1sIsOpenSource",
+                ["Data Source"] = $"localhost,{sqlServerHostPort}"
             };
-            connectionString["Data Source"] = $"localhost,{sqlServerHostPort}";
 
             ConnectionString = connectionString.ToString();
         }
 
         public async Task DisposeAsync()
         {
-            if (Client != null)
+            try
             {
                 await Client.Containers.StopContainerAsync(SqlContainerName, new ContainerStopParameters());
-                await Client.Containers.RemoveContainerAsync(SqlContainerName,
-                    new ContainerRemoveParameters {Force = true});
-                Client.Dispose();
+                await Client.Containers.RemoveContainerAsync(SqlContainerName, new ContainerRemoveParameters { Force = true });
             }
+            catch
+            {
+                // no-op
+            }
+            Client.Dispose();
         }
     }
 }

@@ -11,28 +11,28 @@ using Xunit.Abstractions;
 namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.SqlServer
 {
     [Collection("SqlServerSpec")]
-    public class SQLServerJournalCustomConfigSpec : JournalSpec
+    public class SqlServerJournalCustomConfigSpec : JournalSpec
     {
-
-        
-        
         public static Configuration.Config Initialize(SqlServerFixture fixture)
         {
             DockerDbUtils.Initialize(fixture.ConnectionString);
-            return conf;
+            return Configuration;
         }
 
-        private static Configuration.Config conf =>
-            Linq2DbJournalDefaultSpecConfig.GetCustomConfig("customspec",
-                "customjournalSpec", "customjournalmetadata",
+        private static Configuration.Config Configuration =>
+            Linq2DbJournalDefaultSpecConfig.GetCustomConfig(
+                "customSpec",
+                "customJournalSpec", 
+                "customJournalMetadata",
                 ProviderName.SqlServer2017, DockerDbUtils.ConnectionString, true);
-        public SQLServerJournalCustomConfigSpec(ITestOutputHelper outputHelper, SqlServerFixture fixture)
+        
+        public SqlServerJournalCustomConfigSpec(ITestOutputHelper outputHelper, SqlServerFixture fixture)
             : base(Initialize(fixture), "SQLServer-custom", outputHelper)
         {
             var extension = Linq2DbPersistence.Get(Sys);
             var connFactory = new AkkaPersistenceDataConnectionFactory(new JournalConfig(
-                conf
-                    .GetConfig("akka.persistence.journal.linq2db.customspec")
+                Configuration
+                    .GetConfig("akka.persistence.journal.linq2db.customSpec")
                     .WithFallback(extension.DefaultJournalConfig)));
             using (var conn = connFactory.GetConnection())
             {
@@ -40,17 +40,17 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.SqlServer
                 {
                     conn.GetTable<JournalRow>().Delete();
                 }
-                catch (Exception e)
+                catch 
                 {
-                   
+                   // no-op
                 }
                 try
                 {
                     conn.GetTable<JournalMetaData>().Delete();
                 }
-                catch (Exception e)
+                catch 
                 {
-                   
+                   // no-op
                 }
             }
 

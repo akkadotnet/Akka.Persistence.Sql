@@ -6,22 +6,21 @@ using Xunit.Abstractions;
 
 namespace Akka.Persistence.Linq2Db.CompatibilityTests
 {
-    public class SQLiteSqlCommonJournalCompatibilitySpec : SqlCommonJournalCompatibilitySpec
+    public class SqliteSqlCommonJournalCompatibilitySpec : SqlCommonJournalCompatibilitySpec
     {
-        private static AtomicCounter counter = new AtomicCounter(0);
-        //private static string  connString = "FullUri=file:memdb"+counter.IncrementAndGet() +"?mode=memory&cache=shared";
-        private static string connString = $"Filename=file:memdb-journal-{counter.IncrementAndGet()}.db;Mode=Memory;Cache=Shared";
-        private static SqliteConnection heldSqliteConnection =
-            new SqliteConnection(connString);
-        public SQLiteSqlCommonJournalCompatibilitySpec(ITestOutputHelper outputHelper) : base(outputHelper)
+        private static readonly AtomicCounter Counter = new AtomicCounter(0);
+        private static readonly string ConnString = $"Filename=file:memdb-journal-{Counter.IncrementAndGet()}.db;Mode=Memory;Cache=Shared";
+        private static readonly SqliteConnection HeldSqliteConnection = new SqliteConnection(ConnString);
+        
+        public SqliteSqlCommonJournalCompatibilitySpec(ITestOutputHelper outputHelper) : base(outputHelper)
         {
             //DebuggingHelpers.SetupTraceDump(outputHelper);
             {
-                heldSqliteConnection.Open();
+                HeldSqliteConnection.Open();
             }
             //catch{}
             
-            GC.KeepAlive(heldSqliteConnection);
+            GC.KeepAlive(HeldSqliteConnection);
         }
 
         protected override string OldJournal =>
@@ -31,7 +30,6 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             "akka.persistence.journal.linq2db";
 
         protected override Configuration.Config Config =>
-            SQLiteCompatibilitySpecConfig.InitJournalConfig("journal_compat",
-                "journal_metadata_compat", connString);
+            SqliteCompatibilitySpecConfig.InitJournalConfig("journal_compat", "journal_metadata_compat", ConnString);
     }
 }

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Akka.Streams.Dsl;
-using Akka.Util;
 
 namespace Akka.Persistence.Sql.Linq2Db.Utility
 {
@@ -14,6 +13,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Utility
     /// <typeparam name="TElem"></typeparam>
     public static class AsyncSource<TElem>
     {
+        
         /// <summary>
         /// Creates a Source using an Async function's result as input
         /// The Async function is evaluated once per each materialization
@@ -34,8 +34,9 @@ namespace Akka.Persistence.Sql.Linq2Db.Utility
         public static Source<TElem, NotUsed> From<TState>(TState state,
             Func<TState, Task<TElem>> func)
         {
-            return AsyncSource.From<TState, TElem>(state, func);
+            return AsyncSource.From(state, func);
         }
+        
         /// <summary>
         /// Creates a Source using an Async function's result as input,
         /// Flattening an enumerable out to a stream of individual elements
@@ -47,6 +48,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Utility
         {
             return AsyncSource.FromEnumerable(func);
         }
+        
         /// <summary>
         /// Creates a Source using an Async function's result as input,
         /// Flattening an enumerable out to a stream of individual elements
@@ -57,9 +59,10 @@ namespace Akka.Persistence.Sql.Linq2Db.Utility
         public static Source<TElem, NotUsed> FromEnumerable<TState>(TState state,
             Func<TState,Task<IEnumerable<TElem>>> func)
         {
-            return AsyncSource.FromEnumerable<TState, TElem>(state, func);
+            return AsyncSource.FromEnumerable(state, func);
         }
     }
+    
     public static class AsyncSource
     {
         /// <summary>
@@ -71,8 +74,9 @@ namespace Akka.Persistence.Sql.Linq2Db.Utility
             Func<Task<TElem>> func)
         {
             return Source.Single(NotUsed.Instance)
-                .SelectAsync(1,  notUsed =>  func());
+                .SelectAsync(1,  _ => func());
         }
+        
         /// <summary>
         /// Creates a Source using an Async function's result as input
         /// The Async function is evaluated once per each materialization
@@ -83,7 +87,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Utility
             Func<TState,Task<TElem>> func)
         {
             return Source.Single(state)
-                .SelectAsync(1,  func);
+                .SelectAsync(1, func);
         }
         /// <summary>
         /// Creates a Source using an Async function's result as input,
@@ -95,7 +99,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Utility
             Func<Task<IEnumerable<TElem>>> func)
         {
             return Source.Single(NotUsed.Instance)
-                .SelectAsync(1, notUsed => func())
+                .SelectAsync(1, _ => func())
                 .SelectMany(r => r);
         }
         
@@ -110,7 +114,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Utility
             Func<TState,Task<IEnumerable<TElem>>> func)
         {
             return Source.Single(state)
-                .SelectAsync(1, f=> func(f))
+                .SelectAsync(1, func)
                 .SelectMany(r => r);
         }
     }

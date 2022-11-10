@@ -11,24 +11,27 @@ using Xunit.Abstractions;
 namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.SqlServer
 {
     [Collection("SqlServerSpec")]
-    public class SQLServerJournalDefaultConfigSpec : JournalSpec
+    public class SqlServerJournalDefaultConfigSpec : JournalSpec
     {
-
         public static Configuration.Config Initialize(SqlServerFixture fixture)
         {
             DockerDbUtils.Initialize(fixture.ConnectionString);
-            return conf;
+            return Configuration;
         }
-        private static  Configuration.Config conf =>
-            Linq2DbJournalDefaultSpecConfig.GetConfig("defaultjournalSpec",
-                "defaultjournalmetadata", ProviderName.SqlServer2017,
+        
+        private static Configuration.Config Configuration =>
+            Linq2DbJournalDefaultSpecConfig.GetConfig(
+                "defaultJournalSpec", 
+                "defaultJournalMetadata", 
+                ProviderName.SqlServer2017,
                 DockerDbUtils.ConnectionString);
-        public SQLServerJournalDefaultConfigSpec(ITestOutputHelper outputHelper, SqlServerFixture fixture)
+        
+        public SqlServerJournalDefaultConfigSpec(ITestOutputHelper outputHelper, SqlServerFixture fixture)
             : base(Initialize(fixture), "SQLServer-default", outputHelper)
         {
             var extension = Linq2DbPersistence.Get(Sys);
             var connFactory = new AkkaPersistenceDataConnectionFactory(new JournalConfig(
-                conf
+                Configuration
                     .WithFallback(extension.DefaultConfig)
                     .GetConfig("akka.persistence.journal.linq2db")));
             using (var conn = connFactory.GetConnection())
@@ -37,22 +40,23 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.SqlServer
                 {
                     conn.GetTable<JournalRow>().Delete();
                 }
-                catch (Exception e)
+                catch
                 {
-                   
+                   // no-op
                 }
                 try
                 {
                     conn.GetTable<JournalMetaData>().Delete();
                 }
-                catch (Exception e)
+                catch
                 {
-                   
+                   // no-op
                 }
             }
 
             Initialize();
         }
+        
         // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
         protected override bool SupportsSerialization => false;
     }

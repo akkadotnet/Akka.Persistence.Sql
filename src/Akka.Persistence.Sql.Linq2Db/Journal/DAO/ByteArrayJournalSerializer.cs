@@ -1,24 +1,22 @@
 ﻿using System;
 using System.Collections.Immutable;
-using System.Linq;
 using Akka.Actor;
 using Akka.Persistence.Sql.Linq2Db.Config;
 using Akka.Persistence.Sql.Linq2Db.Journal.Types;
 using Akka.Persistence.Sql.Linq2Db.Serialization;
 using Akka.Serialization;
-using Akka.Streams.Dsl;
 using Akka.Util;
 
-namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
+namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
 {
     /// <summary>
     /// Serializes <see cref="IPersistentRepresentation"/> 
     /// </summary>
-    public class ByteArrayJournalSerializer : FlowPersistentReprSerializer<JournalRow>
+    public sealed class ByteArrayJournalSerializer : FlowPersistentReprSerializer<JournalRow>
     {
-        private Akka.Serialization.Serialization _serializer;
-        private string _separator;
-        private IProviderConfig<JournalTableConfig> _journalConfig;
+        private readonly Akka.Serialization.Serialization _serializer;
+        private readonly string _separator;
+        private readonly IProviderConfig<JournalTableConfig> _journalConfig;
         private readonly string[] _separatorArray;
 
         public ByteArrayJournalSerializer(IProviderConfig<JournalTableConfig> journalConfig, Akka.Serialization.Serialization serializer, string separator)
@@ -35,57 +33,54 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
         /// <param name="tags"></param>
         /// <param name="separator"></param>
         /// <returns></returns>
-        private static string StringSep(IImmutableSet<string> tags,
-            string separator)
+        private static string StringSep(IImmutableSet<string> tags, string separator)
         {
-            if (tags.Count == 0)
-            {
-                return "";
-            }
-
-            return $"{separator}{string.Join(separator, tags)}{separator}";
+            return tags.Count == 0 ? "" : $"{separator}{string.Join(separator, tags)}{separator}";
         }
 
-        protected override Try<JournalRow> Serialize(IPersistentRepresentation persistentRepr, IImmutableSet<string> tTags, long timeStamp = 0)
+        protected override Try<JournalRow> Serialize(
+            IPersistentRepresentation persistentRepr,
+            IImmutableSet<string> tTags,
+            long timeStamp = 0)
         {
             try
             {
                 // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
-                return Akka.Serialization.Serialization.WithTransport(
-                        _serializer.System, (persistentRepr
-                            , _serializer.FindSerializerForType(persistentRepr.Payload.GetType(),_journalConfig.DefaultSerializer),
+                return Akka.Serialization.Serialization
+                    .WithTransport(
+                        system: _serializer.System, 
+                        state: (
+                            persistentRepr, 
+                            _serializer.FindSerializerForType(persistentRepr.Payload.GetType(), _journalConfig.DefaultSerializer),
                             StringSep(tTags,_separator),
                             timeStamp
-                            ),
-                        state =>
+                        ),
+                        action: state =>
                         {
-                            var (_persistentRepr, serializer,tags,ts) = state;
-                            string thisManifest = "";
+                            var (representation, serializer, tags, ts) = state;
+                            var thisManifest = "";
                             if (serializer is SerializerWithStringManifest withStringManifest)
                             {
-                                thisManifest =
-                                    withStringManifest.Manifest(_persistentRepr.Payload);
+                                thisManifest = withStringManifest.Manifest(representation.Payload);
                             }
                             else
                             {
                                 if (serializer.IncludeManifest)
                                 {
-                                    thisManifest = _persistentRepr.Payload
-                                        .GetType().TypeQualifiedName();
+                                    thisManifest = representation.Payload.GetType().TypeQualifiedName();
                                 }
                             }
-                            return new Try<JournalRow>(new JournalRow()
+                            return new Try<JournalRow>(new JournalRow
                             {
-                                message =
-                                    serializer.ToBinary(_persistentRepr.Payload),
-                                manifest = thisManifest,
-                                persistenceId = _persistentRepr.PersistenceId,
-                                tags = tags,
+                                Message = serializer.ToBinary(representation.Payload),
+                                Manifest = thisManifest,
+                                PersistenceId = representation.PersistenceId,
+                                Tags = tags,
                                 Identifier = serializer.Identifier,
-                                sequenceNumber = _persistentRepr.SequenceNr,
-                                Timestamp = _persistentRepr.Timestamp == 0
+                                SequenceNumber = representation.SequenceNr,
+                                Timestamp = representation.Timestamp == 0
                                     ? ts
-                                    : _persistentRepr.Timestamp
+                                    : representation.Timestamp
                             });
                         });
             }
@@ -101,47 +96,49 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
             {
                 //object deserialized = null;
                 var identifierMaybe = t.Identifier;
-                if (identifierMaybe.HasValue == false)
+                if (!identifierMaybe.HasValue)
                 {
-                    var type = System.Type.GetType(t.manifest, true);
+                    var type = Type.GetType(t.Manifest, true);
 
                     // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
-                    
-                    return new Try<(IPersistentRepresentation, IImmutableSet<string>
-                        , long)>((
-                        new Persistent(    Akka.Serialization.Serialization.WithTransport(
-                                _serializer.System, (_serializer.FindSerializerForType(type,_journalConfig.DefaultSerializer),t.message,type),
-                                (state) =>
-                                {
-                                    return state.Item1.FromBinary(
-                                        state.message, state.type);
-                                }), t.sequenceNumber,
-                            t.persistenceId,
-                            t.manifest, t.deleted, ActorRefs.NoSender, null, t.Timestamp),
-                        t.tags?.Split(_separatorArray,
-                                StringSplitOptions.RemoveEmptyEntries)
+                    return new Try<(IPersistentRepresentation, IImmutableSet<string>, long)>((
+                        new Persistent(
+                            payload: Akka.Serialization.Serialization.WithTransport(
+                                system: _serializer.System, 
+                                state: (_serializer.FindSerializerForType(type,_journalConfig.DefaultSerializer), message: t.Message, type),
+                                action: state => state.Item1.FromBinary(state.message, state.type)), 
+                            sequenceNr: t.SequenceNumber,
+                            persistenceId: t.PersistenceId,
+                            manifest: t.Manifest, 
+                            isDeleted: t.Deleted, 
+                            sender: ActorRefs.NoSender,
+                            writerGuid: null, 
+                            timestamp: t.Timestamp),
+                        t.Tags?
+                            .Split(_separatorArray, StringSplitOptions.RemoveEmptyEntries)
                             .ToImmutableHashSet() ?? ImmutableHashSet<string>.Empty,
-                        t.ordering));
+                        t.Ordering));
                 }
-                else
-                {
-                    return new Try<(IPersistentRepresentation, IImmutableSet<string>
-                        , long)>((
-                        new Persistent(_serializer.Deserialize(t.message,
-                                    identifierMaybe.Value,t.manifest), t.sequenceNumber,
-                            t.persistenceId,
-                            t.manifest, t.deleted, ActorRefs.NoSender, null, t.Timestamp),
-                        t.tags?.Split(_separatorArray,
-                                StringSplitOptions.RemoveEmptyEntries)
-                            .ToImmutableHashSet() ?? ImmutableHashSet<string>.Empty,
-                        t.ordering));
-                    // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
-                }
+                
+                // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
+                return new Try<(IPersistentRepresentation, IImmutableSet<string>, long)>((
+                    new Persistent(
+                        payload: _serializer.Deserialize(t.Message, identifierMaybe.Value, t.Manifest), 
+                        sequenceNr: t.SequenceNumber,
+                        persistenceId: t.PersistenceId,
+                        manifest: t.Manifest, 
+                        isDeleted: t.Deleted,
+                        sender: ActorRefs.NoSender,
+                        writerGuid: null,
+                        timestamp: t.Timestamp),
+                    t.Tags?
+                        .Split(_separatorArray, StringSplitOptions.RemoveEmptyEntries)
+                        .ToImmutableHashSet() ?? ImmutableHashSet<string>.Empty,
+                    t.Ordering));
             }
             catch (Exception e)
             {
-                return new Try<(IPersistentRepresentation, IImmutableSet<string>
-                    , long)>(e);
+                return new Try<(IPersistentRepresentation, IImmutableSet<string>, long)>(e);
             }
             
         }

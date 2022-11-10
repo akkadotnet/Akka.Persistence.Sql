@@ -10,41 +10,35 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
             ProviderName = config.GetString("provider-name");
             TableConfig = new JournalTableConfig(config);
             DaoConfig = new BaseByteArrayJournalDaoConfig(config);
-            var dbConf = config.GetString(ConfigKeys.useSharedDb);
-            UseCloneConnection =
-                config.GetBoolean("use-clone-connection", false);
+            UseCloneConnection = config.GetBoolean("use-clone-connection", false);
             JournalSequenceRetrievalConfiguration = new JournalSequenceRetrievalConfig(config);
             PluginConfig = new ReadJournalPluginConfig(config);
-            RefreshInterval = config.GetTimeSpan("refresh-interval",
-                TimeSpan.FromSeconds(1));
+            RefreshInterval = config.GetTimeSpan("refresh-interval", TimeSpan.FromSeconds(1));
             MaxBufferSize = config.GetInt("max-buffer-size", 500);
             AddShutdownHook = config.GetBoolean("add-shutdown-hook", true);
-            IncludeDeleted =
-                config.GetBoolean("include-logically-deleted", true);
+            IncludeDeleted = config.GetBoolean("include-logically-deleted", true);
+            DefaultSerializer = config.GetString("serializer");
         }
 
-        public BaseByteArrayJournalDaoConfig DaoConfig { get; set; }
+        public BaseByteArrayJournalDaoConfig DaoConfig { get; }
 
-        public int MaxBufferSize { get; set; }
+        public int MaxBufferSize { get; }
 
-        public bool AddShutdownHook { get; set; }
+        public bool AddShutdownHook { get; }
 
-        public ReadJournalPluginConfig PluginConfig { get; set; }
+        public ReadJournalPluginConfig PluginConfig { get; }
 
-        public TimeSpan RefreshInterval { get; set; }
+        public TimeSpan RefreshInterval { get; }
 
-        public JournalSequenceRetrievalConfig JournalSequenceRetrievalConfiguration { get; set; }
+        public JournalSequenceRetrievalConfig JournalSequenceRetrievalConfiguration { get; }
 
-        public bool IncludeDeleted { get; set; }
+        public bool IncludeDeleted { get; }
 
         public string ProviderName { get; }
         public string ConnectionString { get; }
         public JournalTableConfig TableConfig { get; }
-        public IDaoConfig IDaoConfig
-        {
-            get { return DaoConfig; }
-        }
+        public IDaoConfig IDaoConfig => DaoConfig;
         public bool UseCloneConnection { get; }
-        public string DefaultSerializer { get; set; }
+        public string DefaultSerializer { get; }
     }
 }

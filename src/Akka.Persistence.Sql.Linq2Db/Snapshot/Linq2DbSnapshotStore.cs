@@ -21,18 +21,22 @@ namespace Akka.Persistence.Sql.Linq2Db.Snapshot
         
         public readonly Linq2DbPersistence Extension = Linq2DbPersistence.Get(Context.System);
         
-        private SnapshotConfig _snapshotConfig;
-        private ByteArraySnapshotDao _dao;
+        private readonly SnapshotConfig _snapshotConfig;
+        
+        private readonly ByteArraySnapshotDao _dao;
 
         public Linq2DbSnapshotStore(Configuration.Config snapshotConfig)
         {
             var config = snapshotConfig.WithFallback(Extension.DefaultSnapshotConfig);
             
             _snapshotConfig = new SnapshotConfig(config);
+            
             _dao = new ByteArraySnapshotDao(
-                new AkkaPersistenceDataConnectionFactory(_snapshotConfig),
-                _snapshotConfig, Context.System.Serialization,
-                Materializer.CreateSystemMaterializer((ExtendedActorSystem)Context.System), Context.GetLogger());
+                connectionFactory: new AkkaPersistenceDataConnectionFactory(_snapshotConfig),
+                snapshotConfig: _snapshotConfig, serialization: Context.System.Serialization,
+                mat: Materializer.CreateSystemMaterializer((ExtendedActorSystem)Context.System), 
+                logger: Context.GetLogger());
+            
             if (_snapshotConfig.TableConfig.AutoInitialize)
             {
                 try
@@ -44,32 +48,27 @@ namespace Akka.Persistence.Sql.Linq2Db.Snapshot
                     Context.GetLogger().Warning(e,
                         "Unable to Initialize Persistence Snapshot Table!");
                 }
-
             }
         }
+        
         protected override async Task<SelectedSnapshot> LoadAsync(string persistenceId, SnapshotSelectionCriteria criteria)
         {
-            Option<SelectedSnapshot> result;
             switch (criteria.MaxSequenceNr)
             {
                 case long.MaxValue when criteria.MaxTimeStamp == DateTime.MaxValue:
-                    return (await _dao.LatestSnapshot(persistenceId)).GetOrElse(
-                        null);
+                    return (await _dao.LatestSnapshot(persistenceId)).GetOrElse(null);
                 case long.MaxValue:
-                    return (await _dao.SnapshotForMaxTimestamp(persistenceId,
-                            criteria
-                                .MaxTimeStamp))
-                        .GetOrElse(null);
+                    return (await _dao.SnapshotForMaxTimestamp(persistenceId, criteria.MaxTimeStamp)).GetOrElse(null);
                 default:
                 {
                     return criteria.MaxTimeStamp == DateTime.MaxValue
-                        ? (
-                            await _dao.SnapshotForMaxSequenceNr(persistenceId,
-                                criteria.MaxSequenceNr)).GetOrElse(null)
+                        ? (await _dao.SnapshotForMaxSequenceNr(
+                            persistenceId: persistenceId, 
+                            sequenceNr: criteria.MaxSequenceNr)).GetOrElse(null)
                         : (await _dao.SnapshotForMaxSequenceNrAndMaxTimestamp(
-                            persistenceId, criteria.MaxSequenceNr,
-                            criteria
-                                .MaxTimeStamp)).GetOrElse(null);
+                            persistenceId: persistenceId,
+                            sequenceNr: criteria.MaxSequenceNr,
+                            timestamp: criteria.MaxTimeStamp)).GetOrElse(null);
                 }
             }
         }
@@ -92,21 +91,21 @@ namespace Akka.Persistence.Sql.Linq2Db.Snapshot
                     await _dao.DeleteAllSnapshots(persistenceId);
                     break;
                 case long.MaxValue:
-                    await _dao.DeleteUpToMaxTimestamp(persistenceId,
-                        criteria
-                            .MaxTimeStamp);
+                    await _dao.DeleteUpToMaxTimestamp(persistenceId, criteria.MaxTimeStamp);
                     break;
                 default:
                 {
                     if (criteria.MaxTimeStamp == DateTime.MaxValue)
-                        await _dao.DeleteUpToMaxSequenceNr(persistenceId,
-                            criteria.MaxSequenceNr);
+                    {
+                        await _dao.DeleteUpToMaxSequenceNr(persistenceId, criteria.MaxSequenceNr);
+                    }
                     else
-                        await _dao
-                            .DeleteUpToMaxSequenceNrAndMaxTimestamp(
-                                persistenceId, criteria.MaxSequenceNr,
-                                criteria
-                                    .MaxTimeStamp);
+                    {
+                        await _dao.DeleteUpToMaxSequenceNrAndMaxTimestamp(
+                            persistenceId: persistenceId,
+                            maxSequenceNr: criteria.MaxSequenceNr,
+                            maxTimestamp: criteria.MaxTimeStamp);
+                    }
                     break;
                 }
             }

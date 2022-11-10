@@ -12,20 +12,21 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
     {
         public NumericRangeEntry(long from, long until)
         {
-            this.from = from;
-            this.until = until;
+            From = from;
+            Until = until;
         }
-        public long from { get; }
-        public long until { get;}
+        
+        public long From { get; }
+        public long Until { get;}
 
         public bool InRange(long number)
         {
-            return  from <= number && number <= until;
+            return  From <= number && number <= Until;
         }
 
         public IEnumerable<long> ToEnumerable()
         {
-            for (long i = from; i < until; i++)
+            for (var i = From; i < Until; i++)
             {
                 yield return i;
             }

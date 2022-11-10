@@ -9,25 +9,29 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
     {
         public SnapshotTableConfiguration(Configuration.Config config)
         {
-            
-            var localcfg = config.GetConfig("tables.snapshot")
+            var localCfg = config.GetConfig("tables.snapshot")
                 .SafeWithFallback(config).SafeWithFallback(Configuration.Config.Empty);
+            
             ColumnNames= new SnapshotTableColumnNames(config);
-            TableName = config.GetString("table-name", localcfg.GetString("table-name", "snapshot"));
-            SchemaName = localcfg.GetString("schema-name", null);
-            AutoInitialize = localcfg.GetBoolean("auto-init", false);
-            WarnOnAutoInitializeFail =
-                localcfg.GetBoolean("warn-on-auto-init-fail", true);
+            TableName = config.GetString("table-name", localCfg.GetString("table-name", "snapshot"));
+            SchemaName = localCfg.GetString("schema-name", null);
+            AutoInitialize = localCfg.GetBoolean("auto-init", false);
+            WarnOnAutoInitializeFail = localCfg.GetBoolean("warn-on-auto-init-fail", true);
         }
 
-        public bool WarnOnAutoInitializeFail { get; protected set; }
-        public SnapshotTableColumnNames ColumnNames { get; protected set; }
-        public string TableName { get; protected set; }
-        public string SchemaName { get; protected set; }
-        public bool AutoInitialize { get; protected set; }
+        public bool WarnOnAutoInitializeFail { get; }
+        
+        public SnapshotTableColumnNames ColumnNames { get; }
+        
+        public string TableName { get; }
+        
+        public string SchemaName { get; }
+        
+        public bool AutoInitialize { get; }
+        
         public override int GetHashCode()
         {
-            return HashCode.Combine(ColumnNames, TableName, SchemaName);
+            return HashCode.Combine(WarnOnAutoInitializeFail, ColumnNames, TableName, SchemaName, AutoInitialize);
         }
     }
 }

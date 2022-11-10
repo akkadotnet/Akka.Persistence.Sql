@@ -5,25 +5,19 @@ using LinqToDB;
 
 namespace Akka.Persistence.Sql.Linq2Db.Tests
 {
-    public static class SQLiteSnapshotSpecConfig
+    public static class SqLiteSnapshotSpecConfig
     {
-        public static string _journalBaseConfig = @"
-            
-        ";
-        
         public static Configuration.Config Create(string connString, string providerName)
         {
             return ConfigurationFactory.ParseString($@"
 akka.persistence {{
     publish-plugin-commands = on
     snapshot-store {{
-        plugin = ""akka.persistence.snapshot-store.testspec""
-        testspec {{
+        plugin = ""akka.persistence.snapshot-store.linq2db""
+        linq2db {{
             class = ""{typeof(Linq2DbSnapshotStore).AssemblyQualifiedName}""
-            #plugin-dispatcher = ""akka.actor.default-dispatcher""
             plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
             connection-string = ""{connString}""
-            #connection-string = ""FullUri=file:test.db&cache=shared""
             provider-name = ""{providerName}""
             parallelism = 1
             max-row-by-row-size = 100
@@ -37,7 +31,8 @@ akka.persistence {{
 }}");
         }
     }
-    public static class SQLiteJournalSpecConfig
+    
+    public static class SqLiteJournalSpecConfig
     {
         public static Configuration.Config Create(string connString, string providerName, bool nativeMode = false)
         {
@@ -48,10 +43,8 @@ akka.persistence {{
         plugin = ""akka.persistence.journal.linq2db""
         linq2db {{
             class = ""{typeof(Linq2DbWriteJournal).AssemblyQualifiedName}""
-            #plugin-dispatcher = ""akka.actor.default-dispatcher""
             plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
             connection-string = ""{connString}""
-            #connection-string = ""FullUri=file:test.db&cache=shared""
             provider-name = ""{providerName}""
             parallelism = 1
             max-row-by-row-size = 100

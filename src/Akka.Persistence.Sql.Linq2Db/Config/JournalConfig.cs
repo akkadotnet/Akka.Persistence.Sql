@@ -16,46 +16,50 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
             DaoConfig = new BaseByteArrayJournalDaoConfig(config);
             var dbConf = config.GetString(ConfigKeys.useSharedDb);
             UseSharedDb = string.IsNullOrWhiteSpace(dbConf) ? null : dbConf;
-            UseCloneConnection =
-                config.GetBoolean("use-clone-connection", false);
+            UseCloneConnection = config.GetBoolean("use-clone-connection", false);
             DefaultSerializer = config.GetString("serializer", null);
         }
         
-        public string MaterializerDispatcher { get; protected set; }
+        public string MaterializerDispatcher { get; }
         
-        public string UseSharedDb { get; protected set; }
+        public string UseSharedDb { get; }
 
-        public BaseByteArrayJournalDaoConfig DaoConfig { get; protected set; }
-        public IDaoConfig IDaoConfig
-        {
-            get { return DaoConfig; }
-        }
+        public BaseByteArrayJournalDaoConfig DaoConfig { get; }
+        
+        public IDaoConfig IDaoConfig => DaoConfig;
 
-        public JournalPluginConfig PluginConfig { get; protected set; }
+        public JournalPluginConfig PluginConfig { get; }
 
-        public JournalTableConfig TableConfig { get;
-            protected set;
-        }
+        public JournalTableConfig TableConfig { get; }
 
-        public string DefaultSerializer { get; set; }
+        public string DefaultSerializer { get; }
+        
         public string ProviderName { get; }
+        
         public string ConnectionString { get; }
-        public bool UseCloneConnection { get; set; }
+        
+        public bool UseCloneConnection { get; }
     }
 
     public interface IProviderConfig<TTable>
     {
         string ProviderName { get; }
+        
         string ConnectionString { get; }
+        
         TTable TableConfig { get; }
+        
         IDaoConfig IDaoConfig { get; }
+        
         bool UseCloneConnection { get; }
+        
         string DefaultSerializer { get; }
     }
 
     public interface IDaoConfig
     {
         bool SqlCommonCompatibilityMode { get; }
+        
         int Parallelism { get; }
     }
 }

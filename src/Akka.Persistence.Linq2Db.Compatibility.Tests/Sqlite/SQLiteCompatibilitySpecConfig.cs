@@ -12,9 +12,9 @@ using Akka.Persistence.Sql.Linq2Db.Snapshot;
 
 namespace Akka.Persistence.Linq2Db.CompatibilityTests
 {
-    public class SQLiteCompatibilitySpecConfig
+    public class SqliteCompatibilitySpecConfig
     {
-        public static Config InitSnapshotConfig(string tablename, string connectionString)
+        public static Config InitSnapshotConfig(string tableName, string connectionString)
         {
             //need to make sure db is created before the tests start
             //DbUtils.Initialize(connString);
@@ -23,40 +23,26 @@ akka.persistence {{
 	publish-plugin-commands = on
 	snapshot-store {{
 		sqlite {{
-			# qualified type name of the SQL Server persistence journal actor
 			class = ""Akka.Persistence.Sqlite.Snapshot.SqliteSnapshotStore, Akka.Persistence.Sqlite""
-			# dispatcher used to drive journal actor
 			plugin-dispatcher = ""akka.actor.default-dispatcher""
-			# connection string used for database access
 			connection-string = ""{connectionString}""
-			# default SQL commands timeout
 			connection-timeout = 30s
-			# SQL server schema name to table corresponding with persistent journal
 			schema-name = dbo
-			# SQL server table corresponding with persistent journal
-			table-name = ""{tablename}""
-			# should corresponding journal table be initialized automatically
+			table-name = ""{tableName}""
 			auto-initialize = on
-			
-			# Recommended: change default circuit breaker settings
-			# By uncommenting below and using Connection Timeout + Command Timeout
-			# circuit-breaker.call-timeout=30s
 		}}
 	
 		linq2db {{
 			class = ""{typeof(Linq2DbSnapshotStore).AssemblyQualifiedName}""
             plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
-			#plugin-dispatcher = ""akka.actor.default-dispatcher""
 			connection-string = ""{connectionString}""
-			#connection-string = ""FullUri=file:test.db&cache=shared""
-			provider-name = """ + LinqToDB.ProviderName.SQLiteMS + $@"""
-			#use-clone-connection = true
+			provider-name = ""{LinqToDB.ProviderName.SQLiteMS}""
 			table-compatibility-mode = sqlite
 			tables {{
 				snapshot {{ 
 					auto-init = true
 					warn-on-auto-init-fail = false
-					table-name = ""{tablename}""    
+					table-name = ""{tableName}""    
 				}}
 			}}
 		}}
@@ -66,10 +52,9 @@ akka.persistence {{
             return ConfigurationFactory.ParseString(specString)
 	            .WithFallback(Linq2DbPersistence.DefaultConfiguration());
         }
-        public static Config InitJournalConfig(string tablename, string metadatatablename, string connectionString)
+        
+        public static Config InitJournalConfig(string tableName, string metadataTableName, string connectionString)
         {
-            //need to make sure db is created before the tests start
-            //DbUtils.Initialize(connString);
             var specString = $@"
 akka.persistence {{
 	publish-plugin-commands = on
@@ -78,8 +63,8 @@ akka.persistence {{
 		sqlite {{
 			class = ""Akka.Persistence.Sqlite.Journal.SqliteJournal, Akka.Persistence.Sqlite""
 			plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
-			table-name = ""{tablename}""
-			metadata-table-name = ""{metadatatablename}""
+			table-name = ""{tableName}""
+			metadata-table-name = ""{metadataTableName}""
 			schema-name = dbo
 			auto-initialize = on
 			connection-string = ""{connectionString}""
@@ -87,17 +72,15 @@ akka.persistence {{
 		linq2db {{
 			class = ""{typeof(Linq2DbWriteJournal).AssemblyQualifiedName}""
 			plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
-			#plugin-dispatcher = ""akka.actor.default-dispatcher""
 			connection-string = ""{connectionString}""
-			#connection-string = ""FullUri=file:test.db&cache=shared""
 			provider-name = ""{LinqToDB.ProviderName.SQLiteMS}""
 			parallelism = 3
-			table-compatibility-mode = ""sqlite""
+			table-compatibility-mode = sqlite
 			tables.journal {{ 
 				auto-init = true
 				warn-on-auto-init-fail = false
-				table-name = ""{tablename}"" 
-				metadata-table-name = ""{metadatatablename}""                           
+				table-name = ""{tableName}"" 
+				metadata-table-name = ""{metadataTableName}""                           
 			}}
 		}}
 	}}

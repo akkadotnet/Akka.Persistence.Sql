@@ -5,41 +5,28 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
 {
     public class JournalTableColumnNames
     {
-        
-
         public JournalTableColumnNames(Configuration.Config config)
         {
-            var compat = (config.GetString("table-compatibility-mode", "")??"").ToLower();
-            string colString;
-            switch (compat)
+            var compat = (config.GetString("table-compatibility-mode", "") ?? "").ToLower();
+            var colString = compat switch
             {
-                case "sqlserver":
-                    colString = "sqlserver-compat-column-names";
-                    break;
-                case "sqlite":
-                    colString = "sqlite-compat-column-names";
-                    break;
-                case "postgres":
-                    colString = "postgres-compat-column-names";
-                    break;
-                case "mysql":
-                    colString = "mysql-compat-column-names";
-                    break;
-                default:
-                    colString = "column-names";
-                    break;
-            }
-            
+                "sqlserver" => "sqlserver-compat-column-names",
+                "sqlite" => "sqlite-compat-column-names",
+                "postgres" => "postgres-compat-column-names",
+                "mysql" => "mysql-compat-column-names",
+                _ => "column-names"
+            };
+
             var cfg = config.GetConfig($"tables.journal.{colString}");
-            Ordering =       cfg.GetString("ordering","ordering");
-            Deleted =        cfg.GetString("deleted","deleted");
-            PersistenceId =  cfg.GetString("persistenceId", "persistence_id");
+            Ordering = cfg.GetString("ordering","ordering");
+            Deleted = cfg.GetString("deleted","deleted");
+            PersistenceId = cfg.GetString("persistenceId", "persistence_id");
             SequenceNumber = cfg.GetString("sequenceNumber", "sequence_number");
-            Created =        cfg.GetString("created", "created");
-            Tags =           cfg.GetString("tags", "tags");
-            Message =        cfg.GetString("message", "message");
-            Identitifer =    cfg.GetString("identifier", "identifier");
-            Manifest =       cfg.GetString("manifest", "manifest");
+            Created = cfg.GetString("created", "created");
+            Tags = cfg.GetString("tags", "tags");
+            Message = cfg.GetString("message", "message");
+            Identifier = cfg.GetString("identifier", "identifier");
+            Manifest = cfg.GetString("manifest", "manifest");
         }
         public string Ordering { get; }
         public string Deleted { get; }
@@ -48,26 +35,28 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
         public string Created { get; }
         public string Tags { get; }
         public string Message { get; }
-        public string Identitifer { get; }
+        public string Identifier { get; }
         public string Manifest { get; }
         
-        protected bool Equals(JournalTableColumnNames other)
+        private bool Equals(JournalTableColumnNames other)
         {
-            return Ordering == other.Ordering && Deleted == other.Deleted &&
-                   PersistenceId == other.PersistenceId &&
-                   SequenceNumber == other.SequenceNumber &&
-                   Created == other.Created && Tags == other.Tags &&
-                   Message == other.Message &&
-                   Identitifer == other.Identitifer &&
-                   Manifest == other.Manifest;
+            return 
+                Ordering == other.Ordering && 
+                Deleted == other.Deleted &&
+                PersistenceId == other.PersistenceId &&
+                SequenceNumber == other.SequenceNumber &&
+                Created == other.Created && 
+                Tags == other.Tags &&
+                Message == other.Message &&
+                Identifier == other.Identifier &&
+                Manifest == other.Manifest;
         }
 
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            return Equals((JournalTableColumnNames) obj);
+            return obj is JournalTableColumnNames j && Equals(j);
         }
 
         public override int GetHashCode()
@@ -80,7 +69,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
             hashCode.Add(Created);
             hashCode.Add(Tags);
             hashCode.Add(Message);
-            hashCode.Add(Identitifer);
+            hashCode.Add(Identifier);
             hashCode.Add(Manifest);
             return hashCode.ToHashCode();
         }

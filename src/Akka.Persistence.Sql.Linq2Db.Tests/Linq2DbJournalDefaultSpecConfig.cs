@@ -5,64 +5,78 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests
 {
     public static class Linq2DbJournalDefaultSpecConfig
     {
-        public static string customConfig(string customJournalName,
-            string journalTableName, string metadatatablename,
-            string providername, string connectionstring) => $@"
+        public static string CustomConfig(
+            string customJournalName,
+            string journalTableName, 
+            string metadataTableName,
+            string providerName,
+            string connectionString) => $@"
 akka.persistence.journal.linq2db{{
     {customJournalName} {{
         class = ""Akka.Persistence.Sql.Linq2Db.Journal.Linq2DbWriteJournal, Akka.Persistence.Sql.Linq2Db""
-        provider-name = ""{providername}""
-        connection-string = ""{connectionstring}""
+        provider-name = ""{providerName}""
+        connection-string = ""{connectionString}""
         tables{{
             journal{{
                 auto-init = true
                 warn-on-auto-init-fail = false
                 table-name = ""{journalTableName}""
-                metadata-table-name = ""{metadatatablename}""
+                metadata-table-name = ""{metadataTableName}""
             }}
         }}
     }}
 }}";
         
-        
-        
-        public static string _journalBaseConfig(string tablename, string metadatatablename, string providername, string connectionstring) => $@"
+        public static string JournalBaseConfig(
+            string tableName,
+            string metadataTableName,
+            string providerName,
+            string connectionString) => $@"
 akka.persistence.journal.linq2db {{
-    provider-name = ""{providername}""
-    connection-string = ""{connectionstring}""
+    provider-name = ""{providerName}""
+    connection-string = ""{connectionString}""
     tables {{
         journal {{
             auto-init = true
             warn-on-auto-init-fail = false
-            table-name = ""{tablename}""
-            metadata-table-name = ""{metadatatablename}""
+            table-name = ""{tableName}""
+            metadata-table-name = ""{metadataTableName}""
         }}
     }}
 }}";
 
-        public static Configuration.Config GetCustomConfig(string configName,
+        public static Configuration.Config GetCustomConfig(
+            string configName,
             string journalTableName,
-            string metadataTableName, string providerName,
-            string connectionString, bool asDefault)
+            string metadataTableName, 
+            string providerName,
+            string connectionString, 
+            bool asDefault)
         {
-            return ConfigurationFactory.ParseString(customConfig(configName,
-                journalTableName, metadataTableName, providerName,
-                connectionString)+(asDefault?$@"
+            return ConfigurationFactory.ParseString(
+                CustomConfig(
+                    configName,
+                    journalTableName, 
+                    metadataTableName, 
+                    providerName,
+                    connectionString) + (asDefault ? $@"
 akka{{
   persistence {{
     journal {{
       plugin = akka.persistence.journal.linq2db.{configName}
     }}      
   }}
-}}":""));
+}}" : ""));
         }
 
-        public static Configuration.Config GetConfig(string tableName,
-            string metadatatablename, string providername, string connectionString)
+        public static Configuration.Config GetConfig(
+            string tableName,
+            string metadataTableName,
+            string providerName,
+            string connectionString)
         {
             return ConfigurationFactory
-                .ParseString(_journalBaseConfig(tableName, metadatatablename,
-                    providername, connectionString));
+                .ParseString(JournalBaseConfig(tableName, metadataTableName, providerName, connectionString));
         }
     }
 }
