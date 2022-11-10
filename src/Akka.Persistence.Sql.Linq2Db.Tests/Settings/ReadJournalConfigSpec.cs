@@ -245,7 +245,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             journal.IncludeDeleted.Should().BeTrue();
 
             var pluginConfig = journal.PluginConfig;
-            pluginConfig.TagSeparator.Should().Be(",");
+            pluginConfig.TagSeparator.Should().Be(";");
             var daoType = Type.GetType(pluginConfig.Dao);
             daoType.Should().Be(typeof(ByteArrayJournalDao));
 

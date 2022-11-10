@@ -238,7 +238,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             journal.DefaultSerializer.Should().BeNullOrEmpty();
 
             var pluginConfig = journal.PluginConfig;
-            pluginConfig.TagSeparator.Should().Be(",");
+            pluginConfig.TagSeparator.Should().Be(";");
             var daoType = Type.GetType(pluginConfig.Dao);
             daoType.Should().Be(typeof(ByteArrayJournalDao));
 
