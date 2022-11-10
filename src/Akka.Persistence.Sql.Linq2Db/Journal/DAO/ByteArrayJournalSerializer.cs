@@ -43,8 +43,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                 return "";
             }
 
-            return tags.Aggregate((tl, tr) =>
-                tl + separator + tr);
+            return $"{separator}{string.Join(separator, tags)}{separator}";
         }
 
         protected override Try<JournalRow> Serialize(IPersistentRepresentation persistentRepr, IImmutableSet<string> tTags, long timeStamp = 0)
