@@ -52,7 +52,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             query.GetBoolean("use-clone-connection").Should().BeFalse();
             query.GetString("tag-separator", "invalid").Should().Be(";");
             query.GetString("dao", "invalid").Should()
-                .Be("Akka.Persistence.Sql.Linq2Db.Journal.DAO.ByteArrayJournalDao, Akka.Persistence.Sql.Linq2Db");
+                .Be("Akka.Persistence.Sql.Linq2Db.Journal.Dao.ByteArrayJournalDao, Akka.Persistence.Sql.Linq2Db");
 
             var retrieval = query.GetConfig("journal-sequence-retrieval");
             retrieval.Should().NotBeNull();

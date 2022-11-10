@@ -53,7 +53,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             journal.GetString("serializer", "invalid").Should().BeNullOrEmpty();
             journal.GetString("tag-separator", "invalid").Should().Be(";");
             journal.GetString("dao", "invalid").Should()
-                .Be("Akka.Persistence.Sql.Linq2Db.Journal.DAO.ByteArrayJournalDao, Akka.Persistence.Sql.Linq2Db");
+                .Be("Akka.Persistence.Sql.Linq2Db.Journal.Dao.ByteArrayJournalDao, Akka.Persistence.Sql.Linq2Db");
 
             var journalTable = journal.GetConfig("tables.journal");
             journalTable.Should().NotBeNull();

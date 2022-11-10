@@ -42,7 +42,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             snapshot.GetString("table-compatibility-mode", "invalid").Should().BeNullOrEmpty();
             snapshot.GetString("serializer", "invalid").Should().BeNullOrEmpty();
             snapshot.GetString("dao", "invalid").Should()
-                .Be("Akka.Persistence.Sql.Linq2Db.Journal.DAO.ByteArrayJournalDao, Akka.Persistence.Sql.Linq2Db");
+                .Be("Akka.Persistence.Sql.Linq2Db.Snapshot.ByteArraySnapshotDao, Akka.Persistence.Sql.Linq2Db");
             
             var snapshotTable = snapshot.GetConfig("tables.snapshot");
             snapshotTable.Should().NotBeNull();
@@ -184,7 +184,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             
             var pluginConfig = snapshot.PluginConfig;
             var daoType = Type.GetType(pluginConfig.Dao);
-            daoType.Should().Be(typeof(ByteArrayJournalDao));
+            daoType.Should().Be(typeof(ByteArraySnapshotDao));
 
             var daoConfig = snapshot.IDaoConfig;
             daoConfig.SqlCommonCompatibilityMode.Should().BeFalse();
