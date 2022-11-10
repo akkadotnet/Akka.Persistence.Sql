@@ -12,55 +12,46 @@ using Xunit.Abstractions;
 
 namespace Akka.Persistence.Linq2Db.BenchmarkTests.Local.Linq2Db
 {
-    public class MSSQLiteLinq2DbJournalPerfSpec : L2dbJournalPerfSpec
+    public class MsSqliteLinq2DbJournalPerfSpec : L2dbJournalPerfSpec
     {
-        private static AtomicCounter counter = new AtomicCounter(0);
+        private static readonly AtomicCounter Counter = new AtomicCounter(0);
         
-        //private static string  connString = "FullUri=file:memdb"+counter.IncrementAndGet() +"?mode=memory&cache=shared";
-        private static string connString =
-            "Filename=file:test-journal-" + counter.IncrementAndGet() +
-            ".db;Mode=Memory;Cache=Shared";
+        private static readonly string ConnString = $"Filename=file:test-journal-{Counter.IncrementAndGet()}.db;Mode=Memory;Cache=Shared";
 
-        private static SqliteConnection heldSqliteConnection =
-            new SqliteConnection(connString);
+        private static readonly SqliteConnection HeldSqliteConnection = new SqliteConnection(ConnString);
 
-        public static void InitWALForFileDb()
+        public static void InitWalForFileDb()
         {
-            var c = new SqliteConnection(connString);
+            var c = new SqliteConnection(ConnString);
             c.Open();
             var walCommand = c.CreateCommand();
-            walCommand.CommandText =
-                @"
+            walCommand.CommandText = @"
     PRAGMA journal_mode = 'wal'
 ";
             walCommand.ExecuteNonQuery();
         }
             
-        public MSSQLiteLinq2DbJournalPerfSpec(ITestOutputHelper output)
-            : base(SQLiteJournalSpecConfig.Create(connString, ProviderName.SQLiteMS), "SqliteJournalSpec", output,eventsCount: TestConstants.NumMessages)
+        public MsSqliteLinq2DbJournalPerfSpec(ITestOutputHelper output)
+            : base(SqLiteJournalSpecConfig.Create(ConnString, ProviderName.SQLiteMS), "SqliteJournalSpec", output,eventsCount: TestConstants.NumMessages)
         {
             var extension = Linq2DbPersistence.Get(Sys);
             
-            heldSqliteConnection.Open();
+            HeldSqliteConnection.Open();
             //InitWALForFileDb();
             var conf = new JournalConfig(
-                SQLiteJournalSpecConfig.Create(connString, ProviderName.SQLiteMS)
+                SqLiteJournalSpecConfig.Create(ConnString, ProviderName.SQLiteMS)
                     .WithFallback(extension.DefaultConfig)
                     .GetConfig("akka.persistence.journal.linq2db"));
             
             var connFactory = new AkkaPersistenceDataConnectionFactory(conf);
-            using (var conn = connFactory.GetConnection())
+            using var conn = connFactory.GetConnection();
+            try
             {
-                try
-                {
-                    
-                    conn.GetTable<JournalRow>().Delete();
-                    
-                }
-                catch (Exception e)
-                {
-                }
-                
+                conn.GetTable<JournalRow>().Delete();
+            }
+            catch
+            {
+                // no-op
             }
         }
         

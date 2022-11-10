@@ -1,6 +1,5 @@
 ﻿using System;
 using Akka.Persistence.Sql.Linq2Db.Config;
-using Akka.Persistence.Sql.Linq2Db.Journal;
 using Akka.Serialization;
 using Akka.Util;
 
@@ -8,15 +7,14 @@ namespace Akka.Persistence.Sql.Linq2Db.Snapshot
 {
     public class ByteArraySnapshotSerializer : ISnapshotSerializer<SnapshotRow>
     {
-        private Akka.Serialization.Serialization _serialization;
-        private SnapshotConfig _config;
+        private readonly Akka.Serialization.Serialization _serialization;
+        private readonly SnapshotConfig _config;
 
         public ByteArraySnapshotSerializer(Akka.Serialization.Serialization serialization, SnapshotConfig config)
         {
             _serialization = serialization;
             _config = config;
         }
-
 
         public Try<SnapshotRow> Serialize(SnapshotMetadata metadata, object snapshot)
         {
@@ -27,6 +25,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Snapshot
         {
             return Try<SelectedSnapshot>.From(() => ReadSnapshot(t));
         }
+        
         protected SelectedSnapshot ReadSnapshot(SnapshotRow reader)
         {
             var metadata = new SnapshotMetadata(reader.PersistenceId, reader.SequenceNumber, reader.Created);
@@ -38,51 +37,49 @@ namespace Akka.Persistence.Sql.Linq2Db.Snapshot
         protected object GetSnapshot(SnapshotRow reader)
         {
             var manifest = reader.Manifest;
-            var binary = (byte[])reader.Payload;
+            var binary = reader.Payload;
 
-            object obj;
-            if (reader.SerializerId == null)
+            if (reader.SerializerId is null)
             {
                 var type = Type.GetType(manifest, true);
                 // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
-                obj = Akka.Serialization.Serialization.WithTransport(
-                    _serialization.System,
-                     (serializer: _serialization.FindSerializerForType(type, _config.DefaultSerializer),
-                        binary, type),
-                    (state) => state.serializer.FromBinary(state.binary, state.type));
+                return Akka.Serialization.Serialization.WithTransport(
+                    system: _serialization.System,
+                    state: (serializer: _serialization.FindSerializerForType(type, _config.DefaultSerializer), binary, type),
+                    action: state => state.serializer.FromBinary(state.binary, state.type));
             }
-            else
-            {
-                var serializerId = reader.SerializerId.Value;
-                obj = _serialization.Deserialize(binary, serializerId, manifest);
-            }
-
-            return obj;
+            
+            var serializerId = reader.SerializerId.Value;
+            return _serialization.Deserialize(binary, serializerId, manifest);
         }
+        
         private SnapshotRow ToSnapshotEntry(SnapshotMetadata metadata, object snapshot)
         {
             var snapshotType = snapshot.GetType();
             var serializer = _serialization.FindSerializerForType(snapshotType, _config.DefaultSerializer);
-            var binary  = Akka.Serialization.Serialization.WithTransport(_serialization.System,(serializer, snapshot),
-                (state ) => state.serializer.ToBinary(state.snapshot));
-            string manifest = "";
-            if (serializer is SerializerWithStringManifest)
+            var binary  = Akka.Serialization.Serialization.WithTransport(
+                system: _serialization.System,
+                state: (serializer, snapshot),
+                action: state => state.serializer.ToBinary(state.snapshot));
+            
+            var manifest = "";
+            if (serializer is SerializerWithStringManifest stringManifest)
             {
-                manifest = ((SerializerWithStringManifest)serializer).Manifest(snapshot);
+                manifest = stringManifest.Manifest(snapshot);
             }
-            else
+            else if (serializer.IncludeManifest)
             {
-                if (serializer.IncludeManifest)
-                {
-                    manifest = snapshotType.TypeQualifiedName();
-                }
+                manifest = snapshotType.TypeQualifiedName();
             }
-            return new SnapshotRow()
-            {PersistenceId= metadata.PersistenceId,
-                SequenceNumber= metadata.SequenceNr,
-                Created= metadata.Timestamp,
-                Manifest= manifest,
-                Payload = binary, SerializerId = serializer.Identifier};
+            
+            return new SnapshotRow
+            {
+                PersistenceId = metadata.PersistenceId,
+                SequenceNumber = metadata.SequenceNr,
+                Created = metadata.Timestamp,
+                Manifest = manifest,
+                Payload = binary, SerializerId = serializer.Identifier
+            };
         }
     }
 }

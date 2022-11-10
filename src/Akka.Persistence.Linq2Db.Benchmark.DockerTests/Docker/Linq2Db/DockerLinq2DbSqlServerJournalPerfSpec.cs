@@ -28,11 +28,9 @@ akka.persistence {{
         plugin = ""akka.persistence.journal.linq2db""
         linq2db {{
             class = ""{typeof(Linq2DbWriteJournal).AssemblyQualifiedName}""
-            #plugin-dispatcher = ""akka.actor.default-dispatcher""
             plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
 
             connection-string = ""{connString}""
-            #connection-string = ""FullUri=file:test.db&cache=shared""
             provider-name = ""{ProviderName.SqlServer2017}""
             use-clone-connection = true
             tables.journal {{ 
@@ -54,16 +52,14 @@ akka.persistence {{
                 .WithFallback(extension.DefaultConfig)
                 .GetConfig("akka.persistence.journal.linq2db");
             var connFactory = new AkkaPersistenceDataConnectionFactory(new JournalConfig(config));
-            using (var conn = connFactory.GetConnection())
+            using var conn = connFactory.GetConnection();
+            try
             {
-                try
-                {
-                    conn.GetTable<JournalRow>().Delete();
-                }
-                catch (Exception e)
-                {
-                }
-                
+                conn.GetTable<JournalRow>().Delete();
+            }
+            catch
+            {
+                // no-op
             }
         }
             
@@ -71,7 +67,6 @@ akka.persistence {{
         {
             //need to make sure db is created before the tests start
             DbUtils.Initialize(fixture.ConnectionString);
-            
 
             return Create(DbUtils.ConnectionString);
         }  

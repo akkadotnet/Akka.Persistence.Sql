@@ -1,20 +1,19 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Immutable;
 using System.Threading.Tasks;
 using LanguageExt;
 
 namespace Akka.Persistence.Sql.Linq2Db.Journal.Types
 {
-    public class WriteQueueSet
+    public sealed class WriteQueueSet
     {
-        public WriteQueueSet(List<TaskCompletionSource<NotUsed>> tcs,
-            Seq<JournalRow> rows)
+        public WriteQueueSet(ImmutableList<TaskCompletionSource<NotUsed>> tcs, Seq<JournalRow> rows)
         {
-            TCS = tcs;
+            Tcs = tcs;
             Rows = rows;
         }
 
-        public Seq<JournalRow> Rows { get; set; }
+        public Seq<JournalRow> Rows { get; }
 
-        public List<TaskCompletionSource<NotUsed>> TCS { get; }
+        public ImmutableList<TaskCompletionSource<NotUsed>> Tcs { get; }
     }
 }

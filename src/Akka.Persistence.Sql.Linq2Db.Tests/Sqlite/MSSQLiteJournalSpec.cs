@@ -7,33 +7,32 @@ using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Linq2Db.Tests
 {
-    public class MSSQLiteNativeConfigSpec : MSSQLiteJournalSpec
+    public class MsSqliteNativeConfigSpec : MsSqliteJournalSpec
     {
-        public MSSQLiteNativeConfigSpec(ITestOutputHelper outputHelper) : base(outputHelper, true)
+        public MsSqliteNativeConfigSpec(ITestOutputHelper outputHelper) : base(outputHelper, true)
         {
         }
     }
-    public class MSSQLiteJournalSpec : Akka.Persistence.TCK.Journal.JournalSpec
+    public class MsSqliteJournalSpec : Akka.Persistence.TCK.Journal.JournalSpec
     {
-        private static AtomicCounter counter = new AtomicCounter(0);
-        //private static string  connString = "FullUri=file:memdb"+counter.IncrementAndGet() +"?mode=memory&cache=shared";
-        private static string connString =
-            "Filename=file:memdb-journal-" + counter.IncrementAndGet() +
-            ".db;Mode=Memory;Cache=Shared";
-        private static SqliteConnection heldSqliteConnection =
-            new SqliteConnection(connString);
+        private static readonly AtomicCounter Counter = new AtomicCounter(0);
+        private static readonly string ConnString = $"Filename=file:memdb-journal-{Counter.IncrementAndGet()}.db;Mode=Memory;Cache=Shared";
+        private static readonly SqliteConnection HeldSqliteConnection = new SqliteConnection(ConnString);
 
-        public MSSQLiteJournalSpec(ITestOutputHelper outputHelper, bool nativeMode = false) : base(SQLiteJournalSpecConfig.Create(connString, ProviderName.SQLiteMS, nativeMode),
+        public MsSqliteJournalSpec(ITestOutputHelper outputHelper, bool nativeMode = false) : base(SqLiteJournalSpecConfig.Create(ConnString, ProviderName.SQLiteMS, nativeMode),
             "linq2dbJournalSpec",
             output: outputHelper)
         {
-            //try
+            try
             {
-                heldSqliteConnection.Open();
+                HeldSqliteConnection.Open();
             }
-            //catch{}
+            catch
+            {
+                // no-op
+            }
             Initialize();
-            GC.KeepAlive(heldSqliteConnection);
+            GC.KeepAlive(HeldSqliteConnection);
         }
         // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
         protected override bool SupportsSerialization => false;

@@ -10,8 +10,9 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
             SqlCommonCompatibilityMode = sqlCommonCompatibilityMode;
         }
         public bool SqlCommonCompatibilityMode { get; }
-        public int Parallelism { get; }
+        public int Parallelism { get; } = 0;
     }
+    
     public class SnapshotConfig : IProviderConfig<SnapshotTableConfiguration>
     {
         public SnapshotConfig(Configuration.Config config)
@@ -23,21 +24,25 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
             DefaultSerializer = config.GetString("serializer", null);
             ConnectionString = config.GetString("connection-string", null);
             ProviderName = config.GetString("provider-name", null);
-            IDaoConfig =
-                new SnapshotDaoConfig(config.GetBoolean("compatibility-mode",
-                    false));
+            IDaoConfig = new SnapshotDaoConfig(config.GetBoolean("compatibility-mode", false));
+            UseCloneConnection = config.GetBoolean("use-clone-connection", false);
         }
 
         public string ProviderName { get; }
+        
         public string ConnectionString { get; }
+        
         public SnapshotTableConfiguration TableConfig { get; }
+        
         public IDaoConfig IDaoConfig { get; }
+        
         public bool UseCloneConnection { get; }
-        public string DefaultSerializer { get; protected set; }
+        
+        public string DefaultSerializer { get; }
 
-        public string UseSharedDb { get; protected set; }
+        public string UseSharedDb { get; }
 
-        public SnapshotPluginConfig PluginConfig { get; protected set; }
+        public SnapshotPluginConfig PluginConfig { get; }
         
     }
 }

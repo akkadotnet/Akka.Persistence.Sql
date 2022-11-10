@@ -67,8 +67,8 @@ namespace Akka.Persistence.Sql.Linq2Db.Streams
         /// <summary>
         /// TBD
         /// </summary>
-        protected override Attributes InitialAttributes { get; } = SinkAttr;
-        public static readonly Attributes SinkAttr = Attributes.CreateName("languageExtSeqSink");
+        protected override Attributes InitialAttributes { get; } = Attributes.CreateName("languageExtSeqSink");
+        
         /// <summary>
         /// TBD
         /// </summary>

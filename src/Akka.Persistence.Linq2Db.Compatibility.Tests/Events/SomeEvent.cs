@@ -2,7 +2,7 @@
 
 namespace Akka.Persistence.Linq2Db.CompatibilityTests
 {
-    public class SomeEvent
+    public sealed class SomeEvent
     {
         public string EventName { get; set; }
         public int Number { get; set; }

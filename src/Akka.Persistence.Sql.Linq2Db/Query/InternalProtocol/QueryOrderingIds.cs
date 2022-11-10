@@ -1,7 +1,11 @@
 ﻿namespace Akka.Persistence.Sql.Linq2Db.Query.InternalProtocol
 {
-    public class QueryOrderingIds
+    public sealed class QueryOrderingIds
     {
-        
+        public static readonly QueryOrderingIds Instance = new ();
+
+        private QueryOrderingIds()
+        {
+        }
     }
 }

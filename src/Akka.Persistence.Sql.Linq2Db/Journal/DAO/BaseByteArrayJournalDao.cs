@@ -12,82 +12,75 @@ using Akka.Persistence.Sql.Linq2Db.Config;
 using Akka.Persistence.Sql.Linq2Db.Db;
 using Akka.Persistence.Sql.Linq2Db.Journal.Types;
 using Akka.Persistence.Sql.Linq2Db.Serialization;
-using Akka.Persistence.Sql.Linq2Db.Utility;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using LanguageExt;
 using LinqToDB;
 using LinqToDB.Data;
 using static LanguageExt.Prelude;
-using Seq = LanguageExt.Seq;
 
-namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
+namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
 {
     public abstract class BaseByteArrayJournalDao :
         BaseJournalDaoWithReadMessages,
         IJournalDaoWithUpdates
     {
+        public readonly ISourceQueueWithComplete<WriteQueueEntry> WriteQueue;
+        protected readonly JournalConfig JournalConfig;
+        protected readonly FlowPersistentReprSerializer<JournalRow> Serializer;
 
-        public ISourceQueueWithComplete<WriteQueueEntry> WriteQueue;
-        protected JournalConfig _journalConfig;
-        protected FlowPersistentReprSerializer<JournalRow> Serializer;
+        private readonly Lazy<object> _logWarnAboutLogicalDeletionDeprecation =
+            new(() => new object(), LazyThreadSafetyMode.None);
 
-        private Lazy<object> logWarnAboutLogicalDeletionDeprecation =
-            new Lazy<object>(() => { return new object(); },
-                LazyThreadSafetyMode.None);
+        public readonly bool LogicalDelete;
+        protected readonly ILoggingAdapter Logger;
+        private readonly Flow<JournalRow, Util.Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, NotUsed> _deserializeFlow;
+        private readonly Flow<JournalRow, Util.Try<ReplayCompletion>, NotUsed> _deserializeFlowMapped;
 
-        public bool logicalDelete;
-        protected readonly ILoggingAdapter _logger;
-        private Flow<JournalRow, Util.Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, NotUsed> deserializeFlow;
-        private Flow<JournalRow, Util.Try<ReplayCompletion>, NotUsed> deserializeFlowMapped;
-
-        protected BaseByteArrayJournalDao(IAdvancedScheduler sched,
-            IMaterializer materializerr,
+        protected BaseByteArrayJournalDao(
+            IAdvancedScheduler scheduler,
+            IMaterializer materializer,
             AkkaPersistenceDataConnectionFactory connectionFactory,
-            JournalConfig config, ByteArrayJournalSerializer serializer, ILoggingAdapter logger) : base(
-            sched, materializerr, connectionFactory)
+            JournalConfig config, 
+            ByteArrayJournalSerializer serializer, 
+            ILoggingAdapter logger) 
+            : base(scheduler, materializer, connectionFactory)
         {
-            _logger = logger;
-            _journalConfig = config;
-            logicalDelete = _journalConfig.DaoConfig.LogicalDelete;
+            Logger = logger;
+            JournalConfig = config;
+            LogicalDelete = JournalConfig.DaoConfig.LogicalDelete;
             Serializer = serializer;
-            deserializeFlow = Serializer.DeserializeFlow();
-            deserializeFlowMapped = Serializer.DeserializeFlow().Select(MessageWithBatchMapper());
+            _deserializeFlow = Serializer.DeserializeFlow();
+            _deserializeFlowMapped = Serializer.DeserializeFlow().Select(MessageWithBatchMapper());
+            
             //Due to C# rules we have to initialize WriteQueue here
             //Keeping it here vs init function prevents accidental moving of init
             //to where variables aren't set yet.
             WriteQueue = Source
-                .Queue<WriteQueueEntry
-                >(_journalConfig.DaoConfig.BufferSize,
-                    OverflowStrategy.DropNew)
-                .BatchWeighted(_journalConfig.DaoConfig.BatchSize,
-                    cf=>cf.Rows.Count,
-                    r => new WriteQueueSet(
-                        new List<TaskCompletionSource<NotUsed>>(new[]
-                            {r.TCS}), r.Rows),
-                    (oldRows, newRows) =>
-                    {
-                        oldRows.TCS.Add(newRows.TCS);
-                        oldRows.Rows = oldRows.Rows.Concat(newRows.Rows);
-                        return oldRows; //.Concat(newRows.Item2).ToList());
-                    })
-                .SelectAsync(_journalConfig.DaoConfig.Parallelism,
-                    async (promisesAndRows) =>
+                .Queue<WriteQueueEntry>(JournalConfig.DaoConfig.BufferSize, OverflowStrategy.DropNew)
+                .BatchWeighted(
+                    JournalConfig.DaoConfig.BatchSize,
+                    cf => cf.Rows.Count,
+                    r => new WriteQueueSet(ImmutableList.Create(new[] {r.Tcs}), r.Rows),
+                    (oldRows, newRows) => 
+                        new WriteQueueSet(
+                            oldRows.Tcs.Add(newRows.Tcs),
+                            oldRows.Rows.Concat(newRows.Rows)))
+                .SelectAsync(
+                    JournalConfig.DaoConfig.Parallelism,
+                    async promisesAndRows =>
                     {
                         try
                         {
                             await WriteJournalRows(promisesAndRows.Rows);
-                            foreach (var taskCompletionSource in promisesAndRows
-                                .TCS)
+                            foreach (var taskCompletionSource in promisesAndRows.Tcs)
                             {
-                                taskCompletionSource.TrySetResult(
-                                    NotUsed.Instance);
+                                taskCompletionSource.TrySetResult(NotUsed.Instance);
                             }
                         }
                         catch (Exception e)
                         {
-                            foreach (var taskCompletionSource in promisesAndRows
-                                .TCS)
+                            foreach (var taskCompletionSource in promisesAndRows.Tcs)
                             {
                                 taskCompletionSource.TrySetException(e);
                             }
@@ -95,55 +88,55 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
 
                         return NotUsed.Instance;
                     }).ToMaterialized(
-                    Sink.Ignore<NotUsed>(), Keep.Left).Run(mat);
+                    Sink.Ignore<NotUsed>(), Keep.Left).Run(Materializer);
         }
 
-
-
-        private async Task<NotUsed> QueueWriteJournalRows(Seq<JournalRow> xs)
+        private async Task QueueWriteJournalRows(Seq<JournalRow> xs)
         {
-            TaskCompletionSource<NotUsed> promise =
-                new TaskCompletionSource<NotUsed>(
-                    TaskCreationOptions.RunContinuationsAsynchronously
-                    );
+            var promise = new TaskCompletionSource<NotUsed>(TaskCreationOptions.RunContinuationsAsynchronously);
+            
             //Send promise and rows into queue. If the Queue takes it,
             //It will write the Promise state when finished writing (or failing)
-            var result =
-                await WriteQueue.OfferAsync(new WriteQueueEntry(promise, xs));
+            var result = await WriteQueue.OfferAsync(new WriteQueueEntry(promise, xs));
+            
+            switch (result)
             {
-                switch (result)
-                {
-                    case QueueOfferResult.Enqueued _:
-                        break;
-                    case QueueOfferResult.Failure f:
-                        promise.TrySetException(
-                            new Exception("Failed to write journal row batch",
-                                f.Cause));
-                        break;
-                    case QueueOfferResult.Dropped _:
-                        promise.TrySetException(new Exception(
-                            $"Failed to enqueue journal row batch write, the queue buffer was full ({_journalConfig.DaoConfig.BufferSize} elements)"));
-                        break;
-                    case QueueOfferResult.QueueClosed _:
-                        promise.TrySetException(new Exception(
-                            "Failed to enqueue journal row batch write, the queue was closed."));
-                        break;
-                }
-
-                return await promise.Task;
+                case QueueOfferResult.Enqueued _:
+                    break;
+                
+                case QueueOfferResult.Failure f:
+                    promise.TrySetException(new Exception("Failed to write journal row batch", f.Cause));
+                    break;
+                
+                case QueueOfferResult.Dropped _:
+                    promise.TrySetException(new Exception(
+                        $"Failed to enqueue journal row batch write, the queue buffer was full ({JournalConfig.DaoConfig.BufferSize} elements)"));
+                    break;
+                
+                case QueueOfferResult.QueueClosed _:
+                    promise.TrySetException(new Exception(
+                        "Failed to enqueue journal row batch write, the queue was closed."));
+                    break;
             }
+
+            await promise.Task;
         }
 
         private async Task WriteJournalRows(Seq<JournalRow> xs)
         {
+            //hot path:
+            //If we only have one row, penalty for BulkCopy
+            //Isn't worth it due to insert caching/transaction/etc.
+            switch (xs.Count)
             {
-                //hot path:
-                //If we only have one row, penalty for BulkCopy
-                //Isn't worth it due to insert caching/transaction/etc.
-                var count = xs.Count;
-                if (count > 1)
+                case 0:
+                    break;
+                case 1:
+                    await InsertSingle(xs);
+                    break;
+                default:
                     await InsertMultiple(xs);
-                else if (count == 1) await InsertSingle(xs);
+                    break;
             }
         }
 
@@ -151,65 +144,59 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
         {
             //If we are writing a single row,
             //we don't need to worry about transactions.
-            using (var db = _connectionFactory.GetConnection())
-            {
-                await db.InsertAsync(xs.Head);
-            }
+            await using var db = ConnectionFactory.GetConnection();
+            await db.InsertAsync(xs.Head);
         }
 
         private async Task InsertMultiple(Seq<JournalRow> xs)
         {
-            using (var db = _connectionFactory.GetConnection())
+            await using var db = ConnectionFactory.GetConnection();
+            
+            try
+            {
+                await db.BeginTransactionAsync(IsolationLevel.ReadCommitted);
+                await db.GetTable<JournalRow>()
+                    .BulkCopyAsync(
+                        new BulkCopyOptions
+                        {
+                            BulkCopyType = xs.Count > JournalConfig.DaoConfig.MaxRowByRowSize
+                                ? BulkCopyType.Default
+                                : BulkCopyType.MultipleRows,
+                            UseParameters = JournalConfig.DaoConfig.PreferParametersOnMultiRowInsert,
+                            MaxBatchSize = JournalConfig.DaoConfig.DbRoundTripBatchSize
+                        }, xs);
+                await db.CommitTransactionAsync();
+            }
+            catch (Exception e)
             {
                 try
                 {
-                    await db.BeginTransactionAsync(IsolationLevel
-                        .ReadCommitted);
-                    await db.GetTable<JournalRow>()
-                        .BulkCopyAsync(
-                            new BulkCopyOptions()
-                            {
-                                BulkCopyType =
-                                    xs.Count > _journalConfig.DaoConfig
-                                        .MaxRowByRowSize
-                                        ? BulkCopyType.Default
-                                        : BulkCopyType.MultipleRows,
-                                UseParameters = _journalConfig.DaoConfig.PreferParametersOnMultiRowInsert,
-                                MaxBatchSize = _journalConfig.DaoConfig.DbRoundTripBatchSize
-                            }, xs);
-                    await db.CommitTransactionAsync();
+                    await db.RollbackTransactionAsync();
                 }
-                catch (Exception e)
+                catch (Exception exception)
                 {
-                    try
-                    {
-                        await db.RollbackTransactionAsync();
-                    }
-                    catch (Exception exception)
-                    {
-                        throw e;
-                    }
-
-                    throw;
+                    throw new AggregateException(exception, e);
                 }
+
+                throw;
             }
         }
 
         //By using a custom flatten here, we avoid an Enumerable/LINQ allocation
         //And are able to have a little more control over default capacity of array.
-        static List<JournalRow> FlattenListOfListsToList(List<Akka.Util.Try<List<JournalRow>>> source) {
-            
+        private static List<JournalRow> FlattenListOfListsToList(List<Util.Try<List<JournalRow>>> source) 
+        {
             //List<JournalRow> ResultSet(
             //    Akka.Util.Try<List<JournalRow>> item)
             //{
             //    return item.Success.GetOrElse(new List<JournalRow>(0));
             //}
 
-            List<JournalRow> rows = new List<JournalRow>(source.Count > 4 ? source.Count:4);
-            for (var index = 0; index < source.Count; index++)
+            var rows = new List<JournalRow>(source.Count > 4 ? source.Count:4);
+            foreach (var t in source)
             {
-                var item = source[index].Success.Value;
-                if (item != null)
+                var item = t.Success.Value;
+                if (item is { })
                 {
                     rows.AddRange(item);
                 }
@@ -220,40 +207,42 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
         }
         
         public async Task<IImmutableList<Exception>> AsyncWriteMessages(
-            IEnumerable<AtomicWrite> messages, long timeStamp = 0)
+            IEnumerable<AtomicWrite> messages,
+            long timeStamp = 0)
         {
             var serializedTries = Serializer.Serialize(messages, timeStamp);
             
             //Fold our List of Lists into a single sequence
             var rows = Seq(FlattenListOfListsToList(serializedTries));
+            
             //Wait for the write to go through. If Task fails, write will be captured
             //As WriteMessagesFailure.
             await QueueWriteJournalRows(rows);
+            
             //If we get here, we build an ImmutableList containing our rejections.
             //These will be captured as WriteMessagesRejected
-            return BaseByteArrayJournalDao
-                .BuildWriteRejections(serializedTries);
+            return BuildWriteRejections(serializedTries);
         }
 
         protected static ImmutableList<Exception> BuildWriteRejections(
-            List<Akka.Util.Try<List<JournalRow>>> serializedTries)
+            List<Util.Try<List<JournalRow>>> serializedTries)
         {
-            Exception[] builderEx =
-                new Exception[serializedTries.Count];
-            for (int i = 0; i < serializedTries.Count; i++)
+            var builderEx = new Exception[serializedTries.Count];
+            for (var i = 0; i < serializedTries.Count; i++)
             {
                 builderEx[i] = (serializedTries[i].Failure.Value);
             }
-            return ImmutableList.CreateRange<Exception>(builderEx);
+            return ImmutableList.CreateRange(builderEx);
         }
+        
         protected static ImmutableList<Exception> FailWriteThrowHelper(Exception e)
         {
             throw TryUnwrapException(e);
         }
+        
         protected static Exception TryUnwrapException(Exception e)
         {
-            var aggregateException = e as AggregateException;
-            if (aggregateException != null)
+            if (e is AggregateException aggregateException)
             {
                 aggregateException = aggregateException.Flatten();
                 if (aggregateException.InnerExceptions.Count == 1)
@@ -263,196 +252,169 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
             return e;
         }
 
-
-
         public async Task Delete(string persistenceId, long maxSequenceNr)
         {
-            if (logicalDelete)
+            if (LogicalDelete)
             {
-                var obj = logWarnAboutLogicalDeletionDeprecation.Value;
+                var _ = _logWarnAboutLogicalDeletionDeprecation.Value;
             }
+
+            await using var db = ConnectionFactory.GetConnection();
             
+            var transaction = await db.BeginTransactionAsync();
+            try
             {
-                using (var db = _connectionFactory.GetConnection())
+                await db.GetTable<JournalRow>()
+                    .Where(r => r.PersistenceId == persistenceId && r.SequenceNumber <= maxSequenceNr)
+                    .Set(r => r.Deleted, true)
+                    .UpdateAsync();
+                
+                var maxMarkedDeletion =
+                    await MaxMarkedForDeletionMaxPersistenceIdQuery(db, persistenceId).FirstOrDefaultAsync();
+                
+                if (JournalConfig.DaoConfig.SqlCommonCompatibilityMode)
                 {
-                    var transaction =await db.BeginTransactionAsync();
-                    try
-                    {
-                        await db.GetTable<JournalRow>()
-                            .Where(r =>
-                                r.persistenceId == persistenceId &&
-                                (r.sequenceNumber <= maxSequenceNr))
-                            .Set(r => r.deleted, true)
-                            .UpdateAsync();
-                        var maxMarkedDeletion =
-                            await MaxMarkedForDeletionMaxPersistenceIdQuery(db,
-                                persistenceId).FirstOrDefaultAsync();
-                        if (_journalConfig.DaoConfig.SqlCommonCompatibilityMode)
-                        {
-                            await db.GetTable<JournalMetaData>()
-                                .InsertOrUpdateAsync(() => new JournalMetaData()
-                                    {
-                                        PersistenceId = persistenceId,
-                                        SequenceNumber =
-                                            maxMarkedDeletion
-                                    },
-                                    jmd => new JournalMetaData()
-                                    {
-                                        
-                                    },
-                                    () => new JournalMetaData()
-                                    {
-                                        PersistenceId = persistenceId,
-                                        SequenceNumber = maxMarkedDeletion
-                                    });
-                        }
-
-                        if (logicalDelete == false)
-                        {
-                            await db.GetTable<JournalRow>()
-                                .Where(r =>
-                                    r.persistenceId == persistenceId &&
-                                    (r.sequenceNumber <= maxSequenceNr &&
-                                     r.sequenceNumber <
-                                     maxMarkedDeletion
-                                         )).DeleteAsync();
-                        }
-
-                        if (_journalConfig.DaoConfig.SqlCommonCompatibilityMode)
-                        {
-                            await db.GetTable<JournalMetaData>()
-                                .Where(r =>
-                                    r.PersistenceId == persistenceId &&
-                                    r.SequenceNumber <
-                                    maxMarkedDeletion)
-                                .DeleteAsync();
-                        }
-
-                        await transaction.CommitAsync();
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.Error(ex,"Error on delete!");
-                        try
-                        {
-                            await transaction.RollbackAsync();
-                        }
-                        catch (Exception )
-                        {
-                            //If rollback fails, Don't throw as it will mask
-                            //original exception
-                        }
-                        
-                        throw;
-                    }
+                    await db.GetTable<JournalMetaData>()
+                        .InsertOrUpdateAsync(
+                            insertSetter: () => new JournalMetaData
+                            {
+                                PersistenceId = persistenceId,
+                                SequenceNumber = maxMarkedDeletion
+                            },
+                            onDuplicateKeyUpdateSetter: jmd => new JournalMetaData(),
+                            keySelector: () => new JournalMetaData
+                            {
+                                PersistenceId = persistenceId,
+                                SequenceNumber = maxMarkedDeletion
+                            });
                 }
+
+                if (LogicalDelete == false)
+                {
+                    await db.GetTable<JournalRow>()
+                        .Where(r =>
+                            r.PersistenceId == persistenceId &&
+                            r.SequenceNumber <= maxSequenceNr &&
+                            r.SequenceNumber < maxMarkedDeletion)
+                        .DeleteAsync();
+                }
+
+                if (JournalConfig.DaoConfig.SqlCommonCompatibilityMode)
+                {
+                    await db.GetTable<JournalMetaData>()
+                        .Where(r =>
+                            r.PersistenceId == persistenceId &&
+                            r.SequenceNumber < maxMarkedDeletion)
+                        .DeleteAsync();
+                }
+
+                await transaction.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex,"Error on delete!");
+                try
+                {
+                    await transaction.RollbackAsync();
+                }
+                catch (Exception exception)
+                {
+                    throw new AggregateException(exception, ex);
+                }
+                    
+                throw;
             }
         }
         
-        protected IQueryable<long> MaxMarkedForDeletionMaxPersistenceIdQuery(DataConnection connection,
+        protected IQueryable<long> MaxMarkedForDeletionMaxPersistenceIdQuery(
+            DataConnection connection,
             string persistenceId)
         {
             return connection.GetTable<JournalRow>()
-                    .Where(r => r.persistenceId == persistenceId && r.deleted)
-                    .OrderByDescending(r => r.sequenceNumber)
-                    .Select(r => r.sequenceNumber).Take(1);
+                    .Where(r => r.PersistenceId == persistenceId && r.Deleted)
+                    .OrderByDescending(r => r.SequenceNumber)
+                    .Select(r => r.SequenceNumber).Take(1);
         }
-        
-        static readonly Expression<Func<JournalMetaData, PersistenceIdAndSequenceNumber>> metaDataSelector = 
-            
-            md =>
-                new PersistenceIdAndSequenceNumber()
-                {
-                    SequenceNumber = md.SequenceNumber,
-                    PersistenceId = md.PersistenceId
-                };
 
-        static readonly Expression<Func<JournalRow, PersistenceIdAndSequenceNumber>> rowDataSelector =
-            md =>
-                new PersistenceIdAndSequenceNumber()
-                {
-                    SequenceNumber = md.sequenceNumber,
-                    PersistenceId = md.persistenceId
-                };
+        protected static readonly Expression<Func<JournalMetaData, PersistenceIdAndSequenceNumber>> MetaDataSelector = md =>
+            new PersistenceIdAndSequenceNumber(md.SequenceNumber, md.PersistenceId);
+
+        protected static readonly Expression<Func<JournalRow, PersistenceIdAndSequenceNumber>> RowDataSelector = md =>
+            new PersistenceIdAndSequenceNumber(md.SequenceNumber, md.PersistenceId);
+        
         private IQueryable<long?> MaxSeqNumberForPersistenceIdQuery(
-            DataConnection db, string persistenceId, long minSequenceNumber = 0)
+            DataConnection db, 
+            string persistenceId,
+            long minSequenceNumber = 0)
         {
             if (minSequenceNumber != 0)
             {
-                if ((_journalConfig.DaoConfig.SqlCommonCompatibilityMode))
-                {
-                    return MaxSeqForPersistenceIdQueryableCompatibilityModeWithMinId(db, persistenceId, minSequenceNumber);
-                }
-                else
-                {
-                    return MaxSeqForPersistenceIdQueryableNativeModeMinId(db, persistenceId, minSequenceNumber);
-                }
+                return JournalConfig.DaoConfig.SqlCommonCompatibilityMode 
+                    ? MaxSeqForPersistenceIdQueryableCompatibilityModeWithMinId(db, persistenceId, minSequenceNumber) 
+                    : MaxSeqForPersistenceIdQueryableNativeModeMinId(db, persistenceId, minSequenceNumber);
             }
-            else
-            {
-                if (_journalConfig.DaoConfig.SqlCommonCompatibilityMode)
-                {
-                    return MaxSeqForPersistenceIdQueryableCompatibilityMode(db, persistenceId);
-                }
-
-                return MaxSeqForPersistenceIdQueryableNativeMode(db, persistenceId);
-            }
+            
+            return JournalConfig.DaoConfig.SqlCommonCompatibilityMode 
+                ? MaxSeqForPersistenceIdQueryableCompatibilityMode(db, persistenceId) 
+                : MaxSeqForPersistenceIdQueryableNativeMode(db, persistenceId);
         }
 
-        private static IQueryable<long?> MaxSeqForPersistenceIdQueryableNativeMode(DataConnection db,
+        private static IQueryable<long?> MaxSeqForPersistenceIdQueryableNativeMode(
+            DataConnection db,
             string persistenceId)
         {
             return db.GetTable<JournalRow>()
-                .Where(r => r.persistenceId == persistenceId)
-                .Select(r => (long?)r.sequenceNumber);
+                .Where(r => r.PersistenceId == persistenceId)
+                .Select(r => (long?)r.SequenceNumber);
         }
 
         private static IQueryable<long?> MaxSeqForPersistenceIdQueryableNativeModeMinId(
-            DataConnection db, string persistenceId, long minSequenceNumber)
+            DataConnection db, 
+            string persistenceId, 
+            long minSequenceNumber)
         {
             return db.GetTable<JournalRow>()
                 .Where(r =>
-                    r.persistenceId == persistenceId &&
-                    r.sequenceNumber > minSequenceNumber)
-                .Select(r => (long?)r.sequenceNumber);
+                    r.PersistenceId == persistenceId &&
+                    r.SequenceNumber > minSequenceNumber)
+                .Select(r => (long?)r.SequenceNumber);
         }
 
         private static IQueryable<long?> MaxSeqForPersistenceIdQueryableCompatibilityModeWithMinId(
-            DataConnection db, string persistenceId, long minSequenceNumber)
+            DataConnection db, 
+            string persistenceId,
+            long minSequenceNumber)
         {
             return db.GetTable<JournalRow>()
                 .Where(r =>
-                    r.persistenceId == persistenceId &&
-                    r.sequenceNumber > minSequenceNumber)
-                .Select(r =>
-                    LinqToDB.Sql.Ext.Max<long?>(r.sequenceNumber).ToValue()).Union(db
+                    r.PersistenceId == persistenceId &&
+                    r.SequenceNumber > minSequenceNumber)
+                .Select(r => LinqToDB.Sql.Ext.Max<long?>(r.SequenceNumber).ToValue())
+                .Union(db
                     .GetTable<JournalMetaData>()
                     .Where(r =>
                         r.SequenceNumber > minSequenceNumber &&
-                        r.PersistenceId == persistenceId).Select(r =>
-                        LinqToDB.Sql.Ext.Max<long?>(r.SequenceNumber).ToValue()));
+                        r.PersistenceId == persistenceId)
+                    .Select(r => LinqToDB.Sql.Ext.Max<long?>(r.SequenceNumber).ToValue()));
         }
 
         private static IQueryable<long?> MaxSeqForPersistenceIdQueryableCompatibilityMode(
-            DataConnection db, string persistenceId)
+            DataConnection db, 
+            string persistenceId)
         {
             return db.GetTable<JournalRow>()
-                .Where(r => r.persistenceId == persistenceId).Select(r =>
-                    LinqToDB.Sql.Ext.Max<long?>(r.sequenceNumber).ToValue()).Union(db
+                .Where(r => r.PersistenceId == persistenceId)
+                .Select(r => LinqToDB.Sql.Ext.Max<long?>(r.SequenceNumber).ToValue())
+                .Union(db
                     .GetTable<JournalMetaData>()
-                    .Where(r =>
-                        r.PersistenceId == persistenceId).Select(r =>
-                        LinqToDB.Sql.Ext.Max<long?>(r.SequenceNumber).ToValue()));
+                    .Where(r => r.PersistenceId == persistenceId)
+                    .Select(r => LinqToDB.Sql.Ext.Max<long?>(r.SequenceNumber).ToValue()));
         }
 
-        private static readonly
-            Expression<Func<PersistenceIdAndSequenceNumber, long>>
-            sequenceNumberSelector =
-                r => r.SequenceNumber;
-        
+        private static readonly Expression<Func<PersistenceIdAndSequenceNumber, long>> SequenceNumberSelector = r => 
+            r.SequenceNumber;
 
-        public async Task<Done> Update(string persistenceId, long sequenceNr,
-            object payload)
+        public async Task<Done> Update(string persistenceId, long sequenceNr, object payload)
         {
             var write = new Persistent(payload, sequenceNr, persistenceId);
             var serialize = Serializer.Serialize(write);
@@ -463,27 +425,24 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
                     serialize.Failure.Value);
             }
 
-            using (var db = _connectionFactory.GetConnection())
-            {
-                await db.GetTable<JournalRow>()
-                    .Where(r =>
-                        r.persistenceId == persistenceId &&
-                        r.sequenceNumber == write.SequenceNr)
-                    .Set(r => r.message, serialize.Get().message)
-                    .UpdateAsync();
-                return Done.Instance;
-            }
+            await using var db = ConnectionFactory.GetConnection();
+            
+            await db.GetTable<JournalRow>()
+                .Where(r =>
+                    r.PersistenceId == persistenceId &&
+                    r.SequenceNumber == write.SequenceNr)
+                .Set(r => r.Message, serialize.Get().Message)
+                .UpdateAsync();
+            
+            return Done.Instance;
         }
 
-        public async Task<long> HighestSequenceNr(string persistenceId,
-            long fromSequenceNr)
+        public async Task<long> HighestSequenceNr(string persistenceId, long fromSequenceNr)
         {
-            using (var db = _connectionFactory.GetConnection())
-            {
-                return (await MaxSeqNumberForPersistenceIdQuery(db,
-                    persistenceId,
-                    fromSequenceNr).MaxAsync()).GetValueOrDefault(0);
-            }
+            await using var db = ConnectionFactory.GetConnection();
+            
+            return (await MaxSeqNumberForPersistenceIdQuery(db, persistenceId, fromSequenceNr).MaxAsync())
+                .GetValueOrDefault(0);
         }
 
         
@@ -498,58 +457,49 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
         /// <param name="toSequenceNr"></param>
         /// <param name="max"></param>
         /// <returns></returns>
-        public override
-            Source<Util.Try<ReplayCompletion>, NotUsed>
-            Messages(DataConnection db, string persistenceId,
-                long fromSequenceNr, long toSequenceNr,
-                long max)
+        public override Source<Util.Try<ReplayCompletion>, NotUsed> Messages(
+            DataConnection db, 
+            string persistenceId,
+            long fromSequenceNr, 
+            long toSequenceNr,
+            long max)
         {
+            IQueryable<JournalRow> query = db.GetTable<JournalRow>()
+                .Where(r =>
+                    r.PersistenceId == persistenceId &&
+                    r.SequenceNumber >= fromSequenceNr &&
+                    r.SequenceNumber <= toSequenceNr &&
+                    r.Deleted == false)
+                .OrderBy(r => r.SequenceNumber);
+            
+            if (max <= int.MaxValue)
             {
-                IQueryable<JournalRow> query = db.GetTable<JournalRow>()
-                    .Where(r =>
-                        r.persistenceId == persistenceId &&
-                        r.sequenceNumber >= fromSequenceNr &&
-                        r.sequenceNumber <= toSequenceNr &&
-                        r.deleted == false)
-                    .OrderBy(r => r.sequenceNumber);
-                if (max <= int.MaxValue)
-                {
-                    query = query.Take((int) max);
-                }
-                
-                
-                return 
-                    Source.FromTask(query.ToListAsync())
-                    .SelectMany(r => r)
-                    .Via(deserializeFlowMapped);
-                //return AsyncSource<JournalRow>.FromEnumerable(query,async q=>await q.ToListAsync())
-                //    .Via(
-                //        deserializeFlow).Select(MessageWithBatchMapper());
+                query = query.Take((int) max);
             }
+                
+            return Source.FromTask(query.ToListAsync())
+                .SelectMany(r => r)
+                .Via(_deserializeFlowMapped);
+            //return AsyncSource<JournalRow>.FromEnumerable(query,async q=>await q.ToListAsync())
+            //    .Via(
+            //        deserializeFlow).Select(MessageWithBatchMapper());
         }
 
         private static Func<Util.Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, Util.Try<ReplayCompletion>> MessageWithBatchMapper() =>
-            sertry =>
-            {
-                if (sertry.IsSuccess)
-                {
-                    return new
-                        Util.Try<ReplayCompletion>(
-                            new ReplayCompletion( sertry.Success.Value
-                            ));
-                }
-                else
-                {
-                    return new
-                        Util.Try<ReplayCompletion>(
-                            sertry.Failure.Value);
-                }
-            };
+            sertry => sertry.IsSuccess 
+                ? new Util.Try<ReplayCompletion>(new ReplayCompletion( sertry.Success.Value)) 
+                : new Util.Try<ReplayCompletion>(sertry.Failure.Value);
     }
 
-    public class PersistenceIdAndSequenceNumber
+    public sealed class PersistenceIdAndSequenceNumber
     {
-        public long SequenceNumber { get; set; }
-        public string PersistenceId { get; set; }
+        public PersistenceIdAndSequenceNumber(long sequenceNumber, string persistenceId)
+        {
+            SequenceNumber = sequenceNumber;
+            PersistenceId = persistenceId;
+        }
+        
+        public long SequenceNumber { get; }
+        public string PersistenceId { get; }
     }
 }

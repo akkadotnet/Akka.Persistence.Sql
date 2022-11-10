@@ -7,6 +7,6 @@
             Dao = config.GetString("dao", "Akka.Persistence.Sql.Linq2Db.Journal.DAO.ByteArrayJournalDao, Akka.Persistence.Sql.Linq2Db");
         }
 
-        public string Dao { get; protected set; }
+        public string Dao { get; }
     }
 }

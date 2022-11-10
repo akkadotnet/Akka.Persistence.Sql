@@ -2,32 +2,27 @@ using System;
 using System.Data.SQLite;
 using Akka.Util.Internal;
 using LinqToDB;
-using LinqToDB.Data;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Linq2Db.Tests
 {
-    public class SystemDataSQLiteJournalSpec : Akka.Persistence.TCK.Journal.JournalSpec
+    public class SystemDataSqliteJournalSpec : Akka.Persistence.TCK.Journal.JournalSpec
     {
-        private static AtomicCounter counter = new AtomicCounter(0);
-        private static string  connString = "FullUri=file:memdb"+counter.IncrementAndGet() +"?mode=memory&cache=shared";
-        //private static string connString =
-                //"Data Source=:memory:file:memdb"+ counter.IncrementAndGet() +"?mode=memory&cache=shared";
-            //"Filename=file:memdb-journal-" + counter.IncrementAndGet() +
-            //".db;Mode=Memory;Cache=Shared";
-        private static SQLiteConnection heldSqliteConnection =
-            new SQLiteConnection(connString);
+        private static readonly AtomicCounter Counter = new AtomicCounter(0);
+        private static readonly string ConnString = $"FullUri=file:memdb{Counter.IncrementAndGet()}?mode=memory&cache=shared";
+        private static readonly SQLiteConnection HeldSqliteConnection = new SQLiteConnection(ConnString);
 
-        public SystemDataSQLiteJournalSpec(ITestOutputHelper outputHelper) : base(SQLiteJournalSpecConfig.Create(connString, ProviderName.SQLiteClassic),
-            "linq2dbJournalSpec",
-            output: outputHelper)
+        public SystemDataSqliteJournalSpec(ITestOutputHelper outputHelper) 
+            : base(SqLiteJournalSpecConfig.Create(ConnString, ProviderName.SQLiteClassic), "linq2dbJournalSpec", output: outputHelper)
         {
             try
             {
-                heldSqliteConnection.Open();
+                HeldSqliteConnection.Open();
             }
-            catch{}
+            catch
+            {
+                // no-op
+            }
             //DataConnection.OnTrace = info =>
             //{
             //    outputHelper.WriteLine(info.SqlText);
@@ -42,7 +37,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests
             //    }
             //};
             Initialize();
-            GC.KeepAlive(heldSqliteConnection);
+            GC.KeepAlive(HeldSqliteConnection);
         }
         // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
         protected override bool SupportsSerialization => false;

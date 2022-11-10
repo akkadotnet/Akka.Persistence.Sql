@@ -8,7 +8,7 @@
 using System;
 using Akka.Configuration;
 using Akka.Persistence.Sql.Linq2Db.Config;
-using Akka.Persistence.Sql.Linq2Db.Journal.DAO;
+using Akka.Persistence.Sql.Linq2Db.Journal.Dao;
 using Akka.Persistence.Sql.Linq2Db.Snapshot;
 using FluentAssertions;
 using Xunit;
@@ -21,7 +21,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
         
         public SnapshotConfigSpec()
         {
-            _defaultConfig = Linq2DbSnapshotStore.DefaultConfiguration;
+            _defaultConfig = Linq2DbPersistence.DefaultConfiguration();
         }
 
         [Fact(DisplayName = "Default snapshot HOCON config should contain default values")]

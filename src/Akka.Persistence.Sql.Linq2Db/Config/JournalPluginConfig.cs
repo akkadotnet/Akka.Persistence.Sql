@@ -4,11 +4,12 @@
     {
         public JournalPluginConfig(Configuration.Config config)
         {
-            TagSeparator = config.GetString("tag-separator", ",");
-            //TODO: FILL IN SANELY
+            TagSeparator = config.GetString("tag-separator", ";");
             Dao = config.GetString("dao", "Akka.Persistence.Sql.Linq2Db.Journal.DAO.ByteArrayJournalDao, Akka.Persistence.Sql.Linq2Db");
         }
-        public string TagSeparator { get; protected set; }
-        public string Dao { get; protected set; }
+        
+        public string TagSeparator { get; }
+        
+        public string Dao { get; }
     }
 }

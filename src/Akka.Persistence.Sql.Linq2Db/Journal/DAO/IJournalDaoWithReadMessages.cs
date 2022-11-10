@@ -6,15 +6,22 @@ using Akka.Streams.Dsl;
 using Akka.Util;
 using LinqToDB.Data;
 
-namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
+namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
 {
     public interface IJournalDaoWithReadMessages
     {
-        Source<Try<ReplayCompletion>, NotUsed> Messages(DataConnection dc,
-            string persistenceId, long fromSequenceNr, long toSequenceNr,
+        Source<Try<ReplayCompletion>, NotUsed> Messages(
+            DataConnection dc,
+            string persistenceId,
+            long fromSequenceNr,
+            long toSequenceNr,
             long max);
+        
         Source<Try<ReplayCompletion>,NotUsed> MessagesWithBatch(
-            string persistenceId, long fromSequenceNr, long toSequenceNr,
-            int batchSize, Option<(TimeSpan,IScheduler)> refreshInterval);
+            string persistenceId,
+            long fromSequenceNr,
+            long toSequenceNr,
+            int batchSize,
+            Option<(TimeSpan,IScheduler)> refreshInterval);
     }
 }
