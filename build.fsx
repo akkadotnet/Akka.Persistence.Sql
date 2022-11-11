@@ -96,6 +96,7 @@ Target "RunTests" (fun _ ->
         match (isWindows) with 
         | true -> !! "./src/**/*.Tests.csproj"
                   -- "./src/**/*.Benchmark.*.csproj"
+                  -- "./src/**/*.Data.Compatibility.Tests.csproj" // All of the data docker images are Linux only
         | _ -> !! "./src/**/*.Tests.csproj"
                -- "./src/**/*.Benchmark.*.csproj"
                ++  "./src/**/*.DockerTests.csproj" // if you need to filter specs for Linux vs. Windows, do it here
