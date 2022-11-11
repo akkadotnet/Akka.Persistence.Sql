@@ -36,7 +36,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             type.Should().Be(typeof(Linq2DbReadJournalProvider));
 
             query.GetString("write-plugin", "invalid").Should().BeNullOrEmpty();
-            query.GetBoolean("include-logically-deleted").Should().BeTrue();
+            query.GetBoolean("include-logically-deleted").Should().BeFalse();
             query.GetInt("max-buffer-size").Should().Be(500);
             query.GetTimeSpan("refresh-interval").Should().Be(1.Seconds());
             query.GetString("connection-string", "invalid").Should().BeNullOrEmpty();
@@ -241,7 +241,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             journal.RefreshInterval.Should().Be(1.Seconds());
             journal.MaxBufferSize.Should().Be(500);
             journal.AddShutdownHook.Should().BeTrue();
-            journal.IncludeDeleted.Should().BeTrue();
+            journal.IncludeDeleted.Should().BeFalse();
 
             var pluginConfig = journal.PluginConfig;
             pluginConfig.TagSeparator.Should().Be(";");

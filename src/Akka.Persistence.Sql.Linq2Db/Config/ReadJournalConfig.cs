@@ -16,7 +16,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
             RefreshInterval = config.GetTimeSpan("refresh-interval", TimeSpan.FromSeconds(1));
             MaxBufferSize = config.GetInt("max-buffer-size", 500);
             AddShutdownHook = config.GetBoolean("add-shutdown-hook", true);
-            IncludeDeleted = config.GetBoolean("include-logically-deleted", true);
+            IncludeDeleted = config.GetBoolean("include-logically-deleted", false);
             DefaultSerializer = config.GetString("serializer");
         }
 
