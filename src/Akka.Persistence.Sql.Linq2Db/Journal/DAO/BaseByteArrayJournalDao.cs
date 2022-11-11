@@ -61,11 +61,13 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
                 .BatchWeighted(
                     JournalConfig.DaoConfig.BatchSize,
                     cf => cf.Rows.Count,
-                    r => new WriteQueueSet(ImmutableList.Create(new[] {r.Tcs}), r.Rows),
-                    (oldRows, newRows) => 
-                        new WriteQueueSet(
-                            oldRows.Tcs.Add(newRows.Tcs),
-                            oldRows.Rows.Concat(newRows.Rows)))
+                    r => new WriteQueueSet(new List<TaskCompletionSource<NotUsed>> { r.Tcs }, r.Rows),
+                    (oldRows, newRows) =>
+                    {
+                        oldRows.Tcs.Add(newRows.Tcs);
+                        oldRows.Rows = oldRows.Rows.Concat(newRows.Rows);
+                        return oldRows;
+                    })
                 .SelectAsync(
                     JournalConfig.DaoConfig.Parallelism,
                     async promisesAndRows =>
