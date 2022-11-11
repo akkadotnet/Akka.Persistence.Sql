@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="..\common.props" />
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+        <LangVersion>9.0</LangVersion>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="Akka.Cluster.Hosting" Version="$(AkkaHostingVersion)" />
+        <PackageReference Include="Akka.Cluster.Sharding" Version="$(AkkaVersion)" />
+        <PackageReference Include="Akka.Hosting" Version="$(AkkaHostingVersion)" />
+        <PackageReference Include="Akka.Persistence.Sql.Compat.Common" Version="0.1.0" />
+        <PackageReference Include="Docker.DotNet" Version="$(DockerDotNetVersion)" />
+        <PackageReference Include="FluentAssertions" Version="6.8.0" />
+        
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
+        
+        <PackageReference Include="MySql.Data" Version="8.0.28" />
+        
+        <PackageReference Include="Npgsql" Version="$(PostgreSqlVersion)" />
+        <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
+        <PackageReference Include="System.Data.SQLite" Version="1.0.116" />
+        <PackageReference Include="xunit" Version="$(XunitVersion)" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitRunnerVersion)">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="coverlet.collector" Version="$(CoverletVersion)">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+    </ItemGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="..\Akka.Persistence.Sql.Linq2Db\Akka.Persistence.Sql.Linq2Db.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="db/*.*">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+</Project>

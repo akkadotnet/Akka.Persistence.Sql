@@ -43,6 +43,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build-system", "build-syste
 		build-system\windows-release.yaml = build-system\windows-release.yaml
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.Data.Compatibility.Tests", "src\Akka.Persistence.Linq2Db.Data.Compatibility.Tests\Akka.Persistence.Linq2Db.Data.Compatibility.Tests.csproj", "{5240D81C-0F6C-4F4A-85A1-6442C6D6ECBF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -85,6 +87,10 @@ Global
 		{170698FA-DA1E-40BC-896D-AFA67976C0EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{170698FA-DA1E-40BC-896D-AFA67976C0EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{170698FA-DA1E-40BC-896D-AFA67976C0EB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5240D81C-0F6C-4F4A-85A1-6442C6D6ECBF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5240D81C-0F6C-4F4A-85A1-6442C6D6ECBF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5240D81C-0F6C-4F4A-85A1-6442C6D6ECBF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5240D81C-0F6C-4F4A-85A1-6442C6D6ECBF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
