@@ -30,7 +30,9 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests
 
         protected override void Setup(AkkaConfigurationBuilder builder, IServiceProvider provider)
         {
-            builder.AddHocon((Config)"akka.persistence.journal.linq2db.logical-delete = true", HoconAddMode.Prepend);
+            builder.AddHocon((Config)@"
+akka.persistence.journal.linq2db.logical-delete = true
+akka.persistence.query.journal.linq2db.include-logically-deleted = true", HoconAddMode.Prepend);
         }
 
         [Fact(DisplayName = "Linq2Db query events by tag should correctly read tags after event deletion")]
@@ -71,7 +73,7 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests
             }
 
             // Assert that events are preserved in the database (soft delete) and are still readable by the tag query
-            await ValidateTags(TestCluster!.ActorSystems[0]);
+            await ValidateTags(TestCluster!.ActorSystems[0], 2);
         }
     }
 }

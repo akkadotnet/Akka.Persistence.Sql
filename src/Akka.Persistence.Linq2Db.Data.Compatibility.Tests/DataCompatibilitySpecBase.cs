@@ -177,7 +177,7 @@ akka.persistence {{
             count.Should().Be(roundTotal * 3, "Entity {0} total should be {1}", persistentId, roundTotal * 3);
         }
 
-        protected static async Task ValidateTags(ActorSystem system)
+        protected static async Task ValidateTags(ActorSystem system, int rounds)
         {
             var readJournal = PersistenceQuery.Get(system)
                 .ReadJournalFor<Linq2DbReadJournal>(Linq2DbReadJournal.Identifier);
@@ -189,25 +189,25 @@ akka.persistence {{
             
             var events = await readJournal.CurrentEventsByTag("Tag2", Offset.NoOffset())
                 .RunAsAsyncEnumerable(system.Materializer()).ToListAsync();
-            events.Count.Should().Be(800);
+            events.Count.Should().Be(400 * rounds);
 
             var intMessages = events.Where(e => e.Event is int).Select(e => (int)e.Event).ToList();
-            intMessages.Count.Should().Be(200);
-            intMessages.Aggregate(0, (accum, val) => accum + val).Should().Be(roundTotal * 2);
+            intMessages.Count.Should().Be(100 * rounds);
+            intMessages.Aggregate(0, (accum, val) => accum + val).Should().Be(roundTotal * rounds);
             
             var strMessages = events.Where(e => e.Event is string).Select(e => int.Parse((string)e.Event)).ToList();
-            strMessages.Count.Should().Be(200);
-            strMessages.Aggregate(0, (accum, val) => accum + val).Should().Be(roundTotal * 2);
+            strMessages.Count.Should().Be(100 * rounds);
+            strMessages.Aggregate(0, (accum, val) => accum + val).Should().Be(roundTotal * rounds);
             
             var shardMessages = events.Where(e => e.Event is ShardedMessage)
                 .Select(e => ((ShardedMessage)e.Event).Message).ToList();
-            shardMessages.Count.Should().Be(200);
-            shardMessages.Aggregate(0, (accum, val) => accum + val).Should().Be(roundTotal * 2);
+            shardMessages.Count.Should().Be(100 * rounds);
+            shardMessages.Aggregate(0, (accum, val) => accum + val).Should().Be(roundTotal * rounds);
             
             var customShardMessages = events.Where(e => e.Event is CustomShardedMessage)
                 .Select(e => ((CustomShardedMessage)e.Event).Message).ToList();
-            customShardMessages.Count.Should().Be(200);
-            customShardMessages.Aggregate(0, (accum, val) => accum + val).Should().Be(roundTotal * 2);
+            customShardMessages.Count.Should().Be(100 * rounds);
+            customShardMessages.Aggregate(0, (accum, val) => accum + val).Should().Be(roundTotal * rounds);
             
             // "Tag1" check, there should be twice as much "Tag1" as "Tag2"
             roundTotal = Enumerable.Range(0, 300)
@@ -216,25 +216,25 @@ akka.persistence {{
             
             events = await readJournal.CurrentEventsByTag("Tag1", Offset.NoOffset())
                 .RunAsAsyncEnumerable(system.Materializer()).ToListAsync();
-            events.Count.Should().Be(1600);
+            events.Count.Should().Be(800 * rounds);
             
             intMessages = events.Where(e => e.Event is int).Select(e => (int)e.Event).ToList();
-            intMessages.Count.Should().Be(400);
-            intMessages.Aggregate(0, (accum, val) => accum + val).Should().Be(roundTotal * 2);
+            intMessages.Count.Should().Be(200 * rounds);
+            intMessages.Aggregate(0, (accum, val) => accum + val).Should().Be(roundTotal * rounds);
             
             strMessages = events.Where(e => e.Event is string).Select(e => int.Parse((string)e.Event)).ToList();
-            strMessages.Count.Should().Be(400);
-            strMessages.Aggregate(0, (accum, val) => accum + val).Should().Be(roundTotal * 2);
+            strMessages.Count.Should().Be(200 * rounds);
+            strMessages.Aggregate(0, (accum, val) => accum + val).Should().Be(roundTotal * rounds);
             
             shardMessages = events.Where(e => e.Event is ShardedMessage)
                 .Select(e => ((ShardedMessage)e.Event).Message).ToList();
-            shardMessages.Count.Should().Be(400);
-            shardMessages.Aggregate(0, (accum, val) => accum + val).Should().Be(roundTotal * 2);
+            shardMessages.Count.Should().Be(200 * rounds);
+            shardMessages.Aggregate(0, (accum, val) => accum + val).Should().Be(roundTotal * rounds);
             
             customShardMessages = events.Where(e => e.Event is CustomShardedMessage)
                 .Select(e => ((CustomShardedMessage)e.Event).Message).ToList();
-            customShardMessages.Count.Should().Be(400);
-            customShardMessages.Aggregate(0, (accum, val) => accum + val).Should().Be(roundTotal * 2);
+            customShardMessages.Count.Should().Be(200 * rounds);
+            customShardMessages.Aggregate(0, (accum, val) => accum + val).Should().Be(roundTotal * rounds);
         }
 
         protected static async Task ValidateRecovery(IActorRef region)
