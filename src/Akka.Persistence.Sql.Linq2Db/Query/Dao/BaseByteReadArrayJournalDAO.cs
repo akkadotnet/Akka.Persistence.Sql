@@ -39,16 +39,12 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             _deserializeFlow = _serializer.DeserializeFlow();
         }
 
-        protected IQueryable<JournalRow> BaseQuery(DataConnection connection)
-        {
-            return connection.GetTable<JournalRow>()
-                .Where(jr => _includeDeleted == false || jr.Deleted == false);
-        }
-        
         protected static IQueryable<JournalRow> BaseQueryStatic(DataConnection connection, bool includeDeleted)
         {
-            return connection.GetTable<JournalRow>()
-                .Where(jr => includeDeleted == false || jr.Deleted == false);
+            return includeDeleted 
+                ? connection.GetTable<JournalRow>()
+                : connection.GetTable<JournalRow>()
+                    .Where(jr => jr.Deleted == false);
         }
 
         public Source<string, NotUsed> AllPersistenceIdsSource(long max)
@@ -81,11 +77,12 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             var maxTake = MaxTake(max);
             
             return AsyncSource<JournalRow>.FromEnumerable(
-                new { _connectionFactory = ConnectionFactory, maxTake, maxOffset, offset},
+                new { _connectionFactory = ConnectionFactory, maxTake, maxOffset, offset, _includeDeleted },
                 async input=>
                 {
                     await using var conn = input._connectionFactory.GetConnection();
-                    return await conn.GetTable<JournalRow>()
+                    
+                    return await BaseQueryStatic(conn, input._includeDeleted)
                         .OrderBy(r => r.Ordering)
                         .Where(r => r.Ordering > input.offset && r.Ordering <= input.maxOffset)
                         .Take(input.maxTake).ToListAsync();
@@ -103,14 +100,13 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             var maxTake = MaxTake(max);
             
             return AsyncSource<JournalRow>.FromEnumerable(
-                new{ separator, tag, offset, maxOffset, maxTake,
-                    _connectionFactory = ConnectionFactory },
-                async input=>
+                new{ separator, tag, offset, maxOffset, maxTake, _connectionFactory = ConnectionFactory, _includeDeleted },
+                async input =>
                 {
                     var tagValue = $"{separator}{input.tag}{separator}";
                     await using var conn = input._connectionFactory.GetConnection();
                     
-                    return await conn.GetTable<JournalRow>()
+                    return await BaseQueryStatic(conn, input._includeDeleted)
                         .Where(r => r.Tags.Contains(tagValue))
                         .OrderBy(r => r.Ordering)
                         .Where(r => r.Ordering > input.offset && r.Ordering <= input.maxOffset)
@@ -155,12 +151,12 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
         {
             var maxTake = MaxTake(limit);
             return AsyncSource<long>.FromEnumerable(
-                new { maxTake, offset, _connectionFactory = ConnectionFactory },
+                new { maxTake, offset, _connectionFactory = ConnectionFactory, _includeDeleted },
                 async input =>
                 {
                     await using var conn = input._connectionFactory.GetConnection();
                     
-                    return await conn.GetTable<JournalRow>()
+                    return await BaseQueryStatic(conn, input._includeDeleted)
                         .Where(r => r.Ordering > input.offset)
                         .Select(r => r.Ordering)
                         .OrderBy(r => r).Take(input.maxTake).ToListAsync();
@@ -171,7 +167,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
         {
             await using var db = ConnectionFactory.GetConnection();
             
-            return await db.GetTable<JournalRow>()
+            return await BaseQueryStatic(db, _includeDeleted)
                 .Select(r => r.Ordering)
                 .OrderByDescending(r => r)
                 .FirstOrDefaultAsync();

@@ -79,11 +79,11 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal
                         connection: new AkkaPersistenceDataConnectionFactory(_journalConfig),
                         journalConfig: _journalConfig, 
                         serializer: Context.System.Serialization, 
-                        logger: Context.GetLogger());
+                        logger: Logging.GetLogger(Context.System, typeof(ByteArrayJournalDao)));
                 }
                 catch (Exception e)
                 {
-                    Context.GetLogger().Error(e, "Error Initializing Journal!");
+                    _log.Error(e, "Error Initializing Journal!");
                     throw;
                 }
 
@@ -95,7 +95,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal
                     }
                     catch (Exception e)
                     {
-                        Context.GetLogger().Warning(e, "Unable to Initialize Persistence Journal Table!");
+                        _log.Warning(e, "Unable to Initialize Persistence Journal Table!");
                     }
                 }
             }
