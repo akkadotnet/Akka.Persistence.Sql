@@ -44,7 +44,7 @@ akka.persistence.query.journal.linq2db.include-logically-deleted = true", HoconA
             // Truncate all entity events
             await TruncateEventsToLastSnapshot();
             
-            // Assert that events were deleted
+            // Assert that events can still be read
             var system = TestCluster!.ActorSystems[0];
             var readJournal = PersistenceQuery.Get(system)
                 .ReadJournalFor<Linq2DbReadJournal>(Linq2DbReadJournal.Identifier);
@@ -67,9 +67,9 @@ akka.persistence.query.journal.linq2db.include-logically-deleted = true", HoconA
                         _ => throw new Exception("Unknown type")
                     }).ToList();
 
-                list.Count.Should().Be(12);
+                list.Count.Should().Be(24);
                 var total = list.Aggregate(0, (accum, val) => accum + val);
-                total.Should().Be(roundTotal);
+                total.Should().Be(roundTotal * 2);
             }
 
             // Assert that events are preserved in the database (soft delete) and are still readable by the tag query
