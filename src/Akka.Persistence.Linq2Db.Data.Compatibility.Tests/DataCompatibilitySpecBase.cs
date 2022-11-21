@@ -64,6 +64,12 @@ akka.persistence {{
 			connection-string = ""{Fixture.ConnectionString}""
 			provider-name = {Settings.ProviderName}
 			table-compatibility-mode = {Settings.CompatibilityMode}
+
+            # Testing for https://github.com/akkadotnet/Akka.Persistence.Linq2Db/pull/117#discussion_r1027345449
+            batch-size = 3
+            db-round-trip-max-batch-size = 6
+            replay-batch-size = 6
+
 			tables.journal {{ 
 				auto-init = false
 				schema-name = {Settings.SchemaName ?? "null"}
@@ -77,6 +83,11 @@ akka.persistence {{
 		connection-string = ""{Fixture.ConnectionString}""
 		provider-name = {Settings.ProviderName}
 		table-compatibility-mode = {Settings.CompatibilityMode}
+
+        # Testing for https://github.com/akkadotnet/Akka.Persistence.Linq2Db/pull/117#discussion_r1027345449
+        batch-size = 3
+        replay-batch-size = 6
+
 		tables.journal {{ 
 			auto-init = false
 			table-name = {Settings.JournalTableName}
