@@ -27,7 +27,7 @@
     
     <PostgreSqlVersion>6.0.7</PostgreSqlVersion>
     
-    <SqlClientVersion>4.8.4</SqlClientVersion>
+    <SqlClientVersion>4.8.5</SqlClientVersion>
     <DockerDotNetVersion>3.125.12</DockerDotNetVersion>
   </PropertyGroup>
   <!-- SourceLink support for all Akka.NET projects -->
