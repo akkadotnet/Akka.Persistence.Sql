@@ -1,4 +1,4 @@
-﻿namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
+﻿namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
 {
     public enum FlowControlEnum
     {

@@ -11,23 +11,25 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Akka" Version="1.4.21" />
-        <PackageReference Include="Akka.Persistence.Sqlite" Version="1.4.21" />
-        <PackageReference Include="Akka.Persistence.SqlServer" Version="1.4.18" />
-        <PackageReference Include="Akka.Persistence.TCK" Version="1.4.21" />
-        <PackageReference Include="Akka.Persistence.TestKit" Version="1.4.21" />
-        <PackageReference Include="Akka.Serialization.Hyperion" Version="1.4.21" />
-        <PackageReference Include="Docker.DotNet" Version="3.125.4" />
-        <PackageReference Include="Hyperion" Version="0.10.1" />
-        <PackageReference Include="JetBrains.dotMemoryUnit" Version="3.1.20200127.214830" />
-        <PackageReference Include="Microsoft.Data.Sqlite" Version="5.0.7" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
-        <PackageReference Include="Npgsql" Version="4.1.4" />
-        <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
-        <PackageReference Include="System.Data.SQLite.Core" Version="1.0.113.1" />
-        <PackageReference Include="xunit" Version="2.4.1" />
-        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" />
-        <PackageReference Include="coverlet.collector" Version="1.2.0" />
+        <PackageReference Include="Akka" Version="$(AkkaVersion)" />
+        <PackageReference Include="Akka.Persistence.Sqlite" Version="$(AkkaVersion)" />
+        <PackageReference Include="Akka.Persistence.SqlServer" Version="$(AkkaSqlServerVersion)" />
+        <PackageReference Include="Akka.Persistence.TCK" Version="$(AkkaVersion)" />
+        <PackageReference Include="Akka.Persistence.TestKit" Version="$(AkkaVersion)" />
+        <PackageReference Include="Akka.Serialization.Hyperion" Version="$(AkkaVersion)" />
+        <PackageReference Include="Docker.DotNet" Version="$(DockerDotNetVersion)" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
+        <PackageReference Include="System.Data.SqlClient" Version="$(SqlClientVersion)" />
+        <PackageReference Include="System.Data.SQLite.Core" Version="1.0.116" />
+        <PackageReference Include="xunit" Version="$(XunitVersion)" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitRunnerVersion)">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="coverlet.collector" Version="$(CoverletVersion)">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
     </ItemGroup>
 
     <ItemGroup>

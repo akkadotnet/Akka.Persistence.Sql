@@ -11,14 +11,14 @@ namespace Akka.Persistence.Sql.Linq2Db.Utility
         
         private static ActorSystem ActorSystemOf(IActorRefFactory context)
         {
-            if (context is ExtendedActorSystem)
-                return (ActorSystem)context;
-            if (context is IActorContext)
-                return ((IActorContext)context).System;
-            if (context == null)
-                throw new ArgumentNullException(nameof(context), "IActorRefFactory must be defined");
-
-            throw new ArgumentException($"ActorRefFactory context must be a ActorSystem or ActorContext, got [{context.GetType()}]");
+            return context switch
+            {
+                null => throw new ArgumentNullException(nameof(context), "IActorRefFactory must be defined"),
+                ExtendedActorSystem system => system,
+                IActorContext actorContext => actorContext.System,
+                _ => throw new ArgumentException(
+                    $"ActorRefFactory context must be a ActorSystem or ActorContext, got [{context.GetType()}]")
+            };
         }
         /// <summary>
         /// Creates a Materializer under the /system/ hierarchy instead of /user/
@@ -28,18 +28,23 @@ namespace Akka.Persistence.Sql.Linq2Db.Utility
         /// <param name="settings"></param>
         /// <param name="namePrefix"></param>
         /// <returns></returns>
-        public static ActorMaterializer CreateSystemMaterializer(ExtendedActorSystem context, ActorMaterializerSettings settings = null, string namePrefix = null)
+        public static ActorMaterializer CreateSystemMaterializer(
+            ExtendedActorSystem context,
+            ActorMaterializerSettings settings = null,
+            string namePrefix = null)
         {
             var haveShutDown = new AtomicBoolean();
             var system = ActorSystemOf(context);
             system.Settings.InjectTopLevelFallback(ActorMaterializer.DefaultConfig());
-            settings = settings ?? ActorMaterializerSettings.Create(system);
+            settings ??= ActorMaterializerSettings.Create(system);
 
             return new ActorMaterializerImpl(
                 system: system,
                 settings: settings,
                 dispatchers: system.Dispatchers,
-                supervisor: context.SystemActorOf(StreamSupervisor.Props(settings, haveShutDown).WithDispatcher(settings.Dispatcher), StreamSupervisor.NextName()),
+                supervisor: context.SystemActorOf(
+                    props: StreamSupervisor.Props(settings, haveShutDown).WithDispatcher(settings.Dispatcher),
+                    name: StreamSupervisor.NextName()),
                 haveShutDown: haveShutDown,
                 flowNames: EnumerableActorName.Create(namePrefix ?? "Flow"));
         }

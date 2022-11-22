@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Akka.Util;
 using Docker.DotNet;
 using Docker.DotNet.Models;
-using Npgsql;
 using Xunit;
 
 namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.Docker
@@ -13,26 +12,17 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.Docker
     /// <summary>
     ///     Fixture used to run SQL Server
     /// </summary>
-    public class PostgreSQLFixture : IAsyncLifetime
+    public class PostgreSqlFixture : IAsyncLifetime
     {
         protected readonly string PostgresContainerName = $"postgresSqlServer-{Guid.NewGuid():N}";
         //protected readonly string PostgreSqlImageName = $"PostgreSQL-{Guid.NewGuid():N}";
-        protected DockerClient Client;
+        protected readonly DockerClient Client;
 
-        public PostgreSQLFixture()
+        public PostgreSqlFixture()
         {
-            DockerClientConfiguration config;
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                config = new DockerClientConfiguration(new Uri("unix://var/run/docker.sock"));
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                config = new DockerClientConfiguration(new Uri("npipe://./pipe/docker_engine"));
-            else
-                throw new NotSupportedException($"Unsupported OS [{RuntimeInformation.OSDescription}]");
-
-            Client = config.CreateClient();
+            Client = new DockerClientConfiguration().CreateClient();
         }
 
-        
         protected string ImageName => "postgres";
         protected string Tag => "latest";
 
@@ -74,23 +64,14 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.Docker
                 Image = PostgresImageName,
                 Name = PostgresContainerName,
                 Tty = true,
-                ExposedPorts = new Dictionary<string, EmptyStruct>
-                {
-                    {"5432/tcp", new EmptyStruct()}
-                },
+                ExposedPorts = new Dictionary<string, EmptyStruct> { ["5432/tcp"] = new EmptyStruct() },
                 HostConfig = new HostConfig
                 {
                     PortBindings = new Dictionary<string, IList<PortBinding>>
                     {
+                        ["5432/tcp"] = new List<PortBinding>
                         {
-                            "5432/tcp",
-                            new List<PortBinding>
-                            {
-                                new PortBinding
-                                {
-                                    HostPort = $"{sqlServerHostPort}"
-                                }
-                            }
+                            new PortBinding { HostPort = $"{sqlServerHostPort}" }
                         }
                     }
                 },
@@ -122,13 +103,16 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.Docker
 
         public async Task DisposeAsync()
         {
-            if (Client != null)
+            try
             {
                 await Client.Containers.StopContainerAsync(PostgresContainerName, new ContainerStopParameters());
-                await Client.Containers.RemoveContainerAsync(PostgresContainerName,
-                    new ContainerRemoveParameters {Force = true});
-                Client.Dispose();
+                await Client.Containers.RemoveContainerAsync(PostgresContainerName, new ContainerRemoveParameters { Force = true });
             }
+            catch
+            {
+                // no-op
+            }
+            Client.Dispose();
         }
     }
 }

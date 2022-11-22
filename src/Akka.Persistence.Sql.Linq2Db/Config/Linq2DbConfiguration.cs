@@ -5,8 +5,8 @@
     {
         public Linq2DbConfiguration(Configuration.Config config)
         {
-            ProviderName = config.GetString("providername");
-            ConnectionString = config.GetString("connectionstring");
+            ProviderName = config.GetString("provider-name");
+            ConnectionString = config.GetString("connection-string");
         }
 
         public string ConnectionString { get; }

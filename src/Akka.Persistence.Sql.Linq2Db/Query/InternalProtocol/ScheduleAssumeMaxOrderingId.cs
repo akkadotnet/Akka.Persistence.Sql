@@ -1,12 +1,12 @@
 ﻿namespace Akka.Persistence.Sql.Linq2Db.Query.InternalProtocol
 {
-    public class ScheduleAssumeMaxOrderingId
+    public sealed class ScheduleAssumeMaxOrderingId
     {
         public ScheduleAssumeMaxOrderingId(long maxInDatabase)
         {
             MaxInDatabase = maxInDatabase;
         }
 
-        public long MaxInDatabase { get; set; }
+        public long MaxInDatabase { get; }
     }
 }

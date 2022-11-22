@@ -4,75 +4,61 @@ using Akka.Persistence.Sql.Linq2Db.Snapshot;
 
 namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.SqlServer
 {
-    public static class SQLServerJournalSpecConfig
+    public static class SqlServerJournalSpecConfig
     {
-        public static string _journalBaseConfig = @"
-akka.persistence {{
-                publish-plugin-commands = on
-                journal {{
-                    plugin = ""akka.persistence.journal.linq2db""
-                    linq2db {{
-                        class = ""{0}""
-                        plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
-#plugin-dispatcher = ""akka.actor.default-dispatcher""
-                        connection-string = ""{1}""
-#connection-string = ""FullUri=file:test.db&cache=shared""
-                        provider-name = """ + LinqToDB.ProviderName.SqlServer2017 + @"""
-                        parallelism = {4}
-                        batch-size = {3}
-                        #use-clone-connection = true
-                        tables.journal {{ 
-                           auto-init = true
-                           warn-on-auto-init-fail = false
-                           table-name = ""{2}"" 
-                           }}
-                    }}
-                }}
-            }}
-        ";
         public static Configuration.Config Create(string connString, string tableName, int batchSize = 100, int parallelism = 2)
         {
-            return ConfigurationFactory.ParseString(
-                string.Format(_journalBaseConfig,
-                    typeof(Linq2DbWriteJournal).AssemblyQualifiedName,
-                    connString,tableName,batchSize, parallelism));
+            return ConfigurationFactory.ParseString(@$"
+akka.persistence {{
+    publish-plugin-commands = on
+    journal {{
+        plugin = ""akka.persistence.journal.linq2db""
+        linq2db {{
+            class = ""{typeof(Linq2DbWriteJournal).AssemblyQualifiedName}""
+            plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
+            connection-string = ""{connString}""
+            provider-name = ""{LinqToDB.ProviderName.SqlServer2017}""
+            parallelism = {parallelism}
+            batch-size = {batchSize}
+            #use-clone-connection = true
+            tables.journal {{ 
+                auto-init = true
+                warn-on-auto-init-fail = false
+                table-name = ""{tableName}"" 
+            }}
+        }}
+    }}
+}}");
         }
     }
     
-    public static class SQLServerSnapshotSpecConfig
+    public static class SqlServerSnapshotSpecConfig
     {
-        public static string _snapshotBaseConfig = @"
-akka.persistence {{
-                publish-plugin-commands = on
-                snapshot-store {{
-                    plugin = ""akka.persistence.snapshot-store.linq2db""
-                    linq2db {{
-                        class = ""{0}""
-                        plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
-#plugin-dispatcher = ""akka.actor.default-dispatcher""
-                        connection-string = ""{1}""
-#connection-string = ""FullUri=file:test.db&cache=shared""
-                        provider-name = """ + LinqToDB.ProviderName.SqlServer2017 + @"""
-                        parallelism = {4}
-                        batch-size = {3}
-                        #use-clone-connection = true
-                        tables.snapshot {{ 
-                           auto-init = true
-                           warn-on-auto-init-fail = false
-                           table-name = ""{2}""
-                           column-names {{
-                           }} 
-                           }}
-                    }}
-                }}
-            }}
-        ";
         public static Configuration.Config Create(string connString, string tableName, int batchSize = 100, int parallelism = 2)
         {
-            return ConfigurationFactory.ParseString(
-                string.Format(_snapshotBaseConfig,
-                    typeof(Linq2DbSnapshotStore).AssemblyQualifiedName,
-                    connString,tableName,batchSize, parallelism));
+            return ConfigurationFactory.ParseString(@$"
+akka.persistence {{
+    publish-plugin-commands = on
+    snapshot-store {{
+        plugin = ""akka.persistence.snapshot-store.linq2db""
+        linq2db {{
+            class = ""{typeof(Linq2DbSnapshotStore).AssemblyQualifiedName}""
+            plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
+            connection-string = ""{connString}""
+            provider-name = ""{LinqToDB.ProviderName.SqlServer2017}""
+            parallelism = {parallelism}
+            batch-size = {batchSize}
+            #use-clone-connection = true
+            tables.snapshot {{ 
+                auto-init = true
+                warn-on-auto-init-fail = false
+                table-name = ""{tableName}""
+                column-names {{
+                }} 
+            }}
+        }}
+    }}
+}}");
         }
     }
 }

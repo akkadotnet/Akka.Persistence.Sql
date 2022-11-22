@@ -2,7 +2,7 @@
 
 namespace Akka.Persistence.Sql.Linq2Db.Journal.Types
 {
-    public class ReplayCompletion
+    public sealed class ReplayCompletion
     {
         public ReplayCompletion(IPersistentRepresentation repr, long ordering)
         {
@@ -15,9 +15,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Types
 
         public ReplayCompletion((IPersistentRepresentation, IImmutableSet<string>, long) success)
         {
-            //(Repr, _, Ordering) = success;
-            Repr = success.Item1;
-            Ordering = success.Item3;
+            (Repr, _, Ordering) = success;
         }
     }
 }

@@ -1,12 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Persistence.Sql.Linq2Db.Config;
 using Akka.Persistence.Sql.Linq2Db.Db;
-using Akka.Persistence.Sql.Linq2Db.Journal.DAO;
+using Akka.Persistence.Sql.Linq2Db.Journal.Dao;
 using Akka.Persistence.Sql.Linq2Db.Journal.Types;
 using Akka.Persistence.Sql.Linq2Db.Serialization;
 using Akka.Persistence.Sql.Linq2Db.Utility;
@@ -19,203 +18,159 @@ using LinqToDB.Data;
 namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
 {
     
-    public abstract class
-        BaseByteReadArrayJournalDAO : BaseJournalDaoWithReadMessages,
-            IReadJournalDAO
+    public abstract class BaseByteReadArrayJournalDao : BaseJournalDaoWithReadMessages, IReadJournalDao
     {
-        private bool includeDeleted;
-        private ReadJournalConfig _readJournalConfig;
-        private FlowPersistentReprSerializer<JournalRow> _serializer;
-        private Flow<JournalRow, Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, NotUsed> deserializeFlow;
+        private readonly bool _includeDeleted;
+        private readonly ReadJournalConfig _readJournalConfig;
+        private readonly FlowPersistentReprSerializer<JournalRow> _serializer;
+        private readonly Flow<JournalRow, Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, NotUsed> _deserializeFlow;
 
-        protected BaseByteReadArrayJournalDAO(IAdvancedScheduler ec,
-            IMaterializer mat,
+        protected BaseByteReadArrayJournalDao(
+            IAdvancedScheduler scheduler,
+            IMaterializer materializer,
             AkkaPersistenceDataConnectionFactory connectionFactory,
             ReadJournalConfig readJournalConfig,
-            FlowPersistentReprSerializer<JournalRow> serializer) : base(ec, mat,
-            connectionFactory)
+            FlowPersistentReprSerializer<JournalRow> serializer) 
+            : base(scheduler, materializer, connectionFactory)
         {
-
             _readJournalConfig = readJournalConfig;
-            includeDeleted = readJournalConfig.IncludeDeleted;
+            _includeDeleted = readJournalConfig.IncludeDeleted;
             _serializer = serializer;
-            deserializeFlow = _serializer.DeserializeFlow();
+            _deserializeFlow = _serializer.DeserializeFlow();
         }
 
-        protected IQueryable<JournalRow> baseQuery(DataConnection connection)
+        protected static IQueryable<JournalRow> BaseQueryStatic(DataConnection connection, bool includeDeleted)
         {
-            return connection.GetTable<JournalRow>()
-                .Where(jr =>
-                    includeDeleted == false || (jr.deleted == false));
-        }
-        
-        protected static IQueryable<JournalRow> baseQueryStatic(DataConnection connection, bool includeDeleted)
-        {
-            return connection.GetTable<JournalRow>()
-                .Where(jr =>
-                    includeDeleted == false || (jr.deleted == false));
+            return includeDeleted 
+                ? connection.GetTable<JournalRow>()
+                : connection.GetTable<JournalRow>()
+                    .Where(jr => jr.Deleted == false);
         }
 
         public Source<string, NotUsed> AllPersistenceIdsSource(long max)
         {
-            
-                var maxTake = MaxTake(max);
+            var maxTake = MaxTake(max);
 
-                return AsyncSource<string>.FromEnumerable(
-                    new {_connectionFactory, maxTake, includeDeleted},
-                    async (input) =>
-                    {
-                        using (var db =
-                            input._connectionFactory.GetConnection())
-                        {
-                            return await baseQueryStatic(db,
-                                    input.includeDeleted)
-                                .Select(r => r.persistenceId)
-                                .Distinct()
-                                .Take(input.maxTake).ToListAsync();
-                        }
-                    });
+            return AsyncSource<string>.FromEnumerable(
+                new { _connectionFactory = ConnectionFactory, maxTake, _includeDeleted },
+                async input =>
+                {
+                    await using var db = input._connectionFactory.GetConnection();
+                    
+                    return await BaseQueryStatic(db, input._includeDeleted)
+                        .Select(r => r.PersistenceId)
+                        .Distinct()
+                        .Take(input.maxTake).ToListAsync();
+                });
         }
 
         private static int MaxTake(long max)
         {
-            int maxTake;
-            if (max > Int32.MaxValue)
-            {
-                maxTake = Int32.MaxValue;
-            }
-            else
-            {
-                maxTake = (int) max;
-            }
-
-            return maxTake;
+            return max > int.MaxValue ? int.MaxValue : (int)max;
         }
         
-        public Source<
-            Akka.Util.Try<(IPersistentRepresentation, IImmutableSet<string>, long)>,
-            NotUsed> Events(long offset, long maxOffset,
+        public Source<Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, NotUsed> Events(
+            long offset,
+            long maxOffset,
             long max)
         {
-            
             var maxTake = MaxTake(max);
             
-            return AsyncSource<JournalRow>.FromEnumerable(new {_connectionFactory,maxTake,maxOffset,offset},async(input)=>
+            return AsyncSource<JournalRow>.FromEnumerable(
+                new { _connectionFactory = ConnectionFactory, maxTake, maxOffset, offset, _includeDeleted },
+                async input=>
                 {
-                    using (var conn = input._connectionFactory.GetConnection())
-                    {
-                        return await conn.GetTable<JournalRow>()
-                            .OrderBy(r => r.ordering)
-                            .Where(r =>
-                                r.ordering > input.offset &&
-                                r.ordering <= input.maxOffset)
-                            .Take(input.maxTake).ToListAsync();
-                    }
+                    await using var conn = input._connectionFactory.GetConnection();
+                    
+                    return await BaseQueryStatic(conn, input._includeDeleted)
+                        .OrderBy(r => r.Ordering)
+                        .Where(r => r.Ordering > input.offset && r.Ordering <= input.maxOffset)
+                        .Take(input.maxTake).ToListAsync();
                 }
-            ).Via(deserializeFlow);
-             
-            
+            ).Via(_deserializeFlow);
         }
         
-        public Source<
-            Akka.Util.Try<(IPersistentRepresentation, IImmutableSet<string>, long)>,
-            NotUsed> EventsByTag(string tag, long offset, long maxOffset,
+        public Source<Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, NotUsed> EventsByTag(
+            string tag,
+            long offset,
+            long maxOffset,
             long max)
         {
             var separator = _readJournalConfig.PluginConfig.TagSeparator;
             var maxTake = MaxTake(max);
-            return AsyncSource<JournalRow>.FromEnumerable(new{separator,tag,offset,maxOffset,maxTake,_connectionFactory},
-                    async(input)=>
+            
+            return AsyncSource<JournalRow>.FromEnumerable(
+                new{ separator, tag, offset, maxOffset, maxTake, _connectionFactory = ConnectionFactory, _includeDeleted },
+                async input =>
                 {
-                    using (var conn = input._connectionFactory.GetConnection())
-                    {
-                        return await conn.GetTable<JournalRow>()
-                            .Where<JournalRow>(r => r.tags.Contains(input.tag))
-                            .OrderBy(r => r.ordering)
-                            .Where(r =>
-                                r.ordering > input.offset && r.ordering <= input.maxOffset)
-                            .Take(input.maxTake).ToListAsync();
-                    }
-                }).Via(perfectlyMatchTag(tag, separator))
-                .Via(deserializeFlow);
-
+                    var tagValue = $"{separator}{input.tag}{separator}";
+                    await using var conn = input._connectionFactory.GetConnection();
+                    
+                    return await BaseQueryStatic(conn, input._includeDeleted)
+                        .Where(r => r.Tags.Contains(tagValue))
+                        .OrderBy(r => r.Ordering)
+                        .Where(r => r.Ordering > input.offset && r.Ordering <= input.maxOffset)
+                        .Take(input.maxTake).ToListAsync();
+                })
+                .Via(_deserializeFlow);
         }
 
-        private Flow<JournalRow, JournalRow, NotUsed> perfectlyMatchTag(
-            string tag,
-            string separator)
-        {
-
-            return Flow.Create<JournalRow>().Where(r =>
-                (r.tags ?? "")
-                .Split(new[] {separator}, StringSplitOptions.RemoveEmptyEntries)
-                .Any(t => t.Contains(tag)));
-        }
-
-        public override Source<Akka.Util.Try<ReplayCompletion>, NotUsed> Messages(
-            DataConnection dc, string persistenceId, long fromSequenceNr,
-            long toSequenceNr, long max)
+        public override Source<Try<ReplayCompletion>, NotUsed> Messages(
+            DataConnection dc, 
+            string persistenceId,
+            long fromSequenceNr,
+            long toSequenceNr,
+            long max)
         {
             return AsyncSource<JournalRow>.FromEnumerable(
-                    new
+                new { dc, persistenceId, fromSequenceNr, toSequenceNr, toTake = MaxTake(max), _includeDeleted }, 
+                async state =>
+                    await BaseQueryStatic(state.dc, state._includeDeleted)
+                        .Where(r => 
+                            r.PersistenceId == state.persistenceId 
+                            && r.SequenceNumber >= state.fromSequenceNr
+                            && r.SequenceNumber <= state.toSequenceNr)
+                        .OrderBy(r => r.SequenceNumber)
+                        .Take(state.toTake).ToListAsync())
+                .Via(_deserializeFlow)
+                .Select( t =>
+                {
+                    try
                     {
-                        dc, persistenceId, fromSequenceNr, toSequenceNr,toTake= MaxTake(max),
-                        includeDeleted
-                    }, async (state) =>
-
-                        await baseQueryStatic(state.dc, state.includeDeleted)
-                            .Where(r => r.persistenceId == state.persistenceId
-                                        && r.sequenceNumber >=
-                                        state.fromSequenceNr
-                                        && r.sequenceNumber <=
-                                        state.toSequenceNr)
-                            .OrderBy(r => r.sequenceNumber)
-                            .Take(state.toTake).ToListAsync())
-                .Via(deserializeFlow)
-                .Select(
-                    t =>
+                        var (representation, _, ordering) = t.Get();
+                        return new Try<ReplayCompletion>(new ReplayCompletion(representation ,ordering));
+                    }
+                    catch (Exception e)
                     {
-                        try
-                        {
-                            var val = t.Get();
-                            return new Akka.Util.Try<ReplayCompletion>(
-                                new ReplayCompletion(val.Item1,val.Item3)
-                                );
-                        }
-                        catch (Exception e)
-                        {
-                            return new Akka.Util.Try<ReplayCompletion>(e);
-                        }
-                    });
-
-
+                        return new Try<ReplayCompletion>(e);
+                    }
+                });
         }
 
         public Source<long, NotUsed> JournalSequence(long offset, long limit)
         {
             var maxTake = MaxTake(limit);
-            return AsyncSource<long>.FromEnumerable(new {maxTake, offset, _connectionFactory},
-                async (input) =>
+            return AsyncSource<long>.FromEnumerable(
+                new { maxTake, offset, _connectionFactory = ConnectionFactory, _includeDeleted },
+                async input =>
                 {
+                    await using var conn = input._connectionFactory.GetConnection();
                     
-                    using (var conn = input._connectionFactory.GetConnection())
-                    {
-                        return await conn.GetTable<JournalRow>()
-                            .Where<JournalRow>(r => r.ordering > input.offset)
-                            .Select(r => r.ordering)
-                            .OrderBy(r => r).Take(input.maxTake).ToListAsync();
-                    }
+                    return await BaseQueryStatic(conn, input._includeDeleted)
+                        .Where(r => r.Ordering > input.offset)
+                        .Select(r => r.Ordering)
+                        .OrderBy(r => r).Take(input.maxTake).ToListAsync();
                 });
         }
 
         public async Task<long> MaxJournalSequenceAsync()
         {
-            using (var db = _connectionFactory.GetConnection())
-            {
-                return await db.GetTable<JournalRow>()
-                    .Select<JournalRow, long>(r => r.ordering)
-                    .FirstOrDefaultAsync();
-            }
+            await using var db = ConnectionFactory.GetConnection();
+            
+            return await BaseQueryStatic(db, _includeDeleted)
+                .Select(r => r.Ordering)
+                .OrderByDescending(r => r)
+                .FirstOrDefaultAsync();
         }
     }
 }

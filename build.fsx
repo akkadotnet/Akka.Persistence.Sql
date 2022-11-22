@@ -95,7 +95,9 @@ Target "RunTests" (fun _ ->
     let projects = 
         match (isWindows) with 
         | true -> !! "./src/**/*.Tests.csproj"
+                  -- "./src/**/*.Benchmark.*.csproj"
         | _ -> !! "./src/**/*.Tests.csproj"
+               -- "./src/**/*.Benchmark.*.csproj"
                ++  "./src/**/*.DockerTests.csproj" // if you need to filter specs for Linux vs. Windows, do it here
 
     let runSingleProject project =
@@ -197,6 +199,7 @@ Target "CreateNuget" (fun _ ->
     let projects = !! "src/**/*.csproj" 
                    -- "src/**/*Tests.csproj" // Don't publish unit tests
                    -- "src/**/*Tests*.csproj"
+                   -- "src/**/*.Benchmark.*.csproj"
 
     let runSingleProject project =
         DotNetCli.Pack
