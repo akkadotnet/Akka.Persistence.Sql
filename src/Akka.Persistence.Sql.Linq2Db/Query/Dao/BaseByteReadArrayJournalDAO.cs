@@ -137,7 +137,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
         public Option<Expression<Func<JournalTagRow, bool>>> TagCheckPredicate(
             List<JournalRow> toAdd)
         {
-            if (_readJournalConfig.PluginConfig.TagTableMode == TagTableMode.SequentialUUID)
+            if (_readJournalConfig.PluginConfig.TagTableMode == TagTableMode.SequentialUuid)
             {
                 //Check whether we have anything to query for two reasons:
                 //1: Linq2Db may choke on an empty 'in' set.

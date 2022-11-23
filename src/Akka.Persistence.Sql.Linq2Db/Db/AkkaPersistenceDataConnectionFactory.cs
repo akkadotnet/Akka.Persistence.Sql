@@ -159,27 +159,21 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                     .Member(r=>r.SequenceNumber).IsPrimaryKey();
             }
             
-            void SetJoinCol<T>(PropertyMappingBuilder<JournalTagRow, T> builder,
-                PropertyMappingBuilder<JournalRow, long> propertyMappingBuilder)
+            void SetJoinCol<T>(PropertyMappingBuilder<JournalTagRow, T> builder)
             {
-                if (config.TableConfig.TagTableMode ==
-                    TagTableMode.SequentialUUID)
+                if (config.TableConfig.TagTableMode == TagTableMode.SequentialUuid)
                 {
                     builder.Member(r => r.JournalOrderingId)
-                        .IsNotColumn()
-                        .Member(r => r.WriteUuid)
+                        .IsNotColumn();
+                    builder.Member(r => r.WriteUuid)
                         .IsColumn().IsPrimaryKey();
-                    journalRowBuilder.Member(r => r.WriteUuid)
-                        .IsColumn();
                 }
                 else
                 {
                     builder.Member(r => r.WriteUuid)
-                        .IsNotColumn()
-                        .Member(r => r.JournalOrderingId)
-                        .IsColumn().IsPrimaryKey();
-                    journalRowBuilder.Member(r => r.WriteUuid)
                         .IsNotColumn();
+                    builder.Member(r => r.JournalOrderingId)
+                        .IsColumn().IsPrimaryKey();
                 }
             }
 
@@ -193,6 +187,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                 journalRowBuilder.Member(r => r.EventManifest)
                     .IsNotColumn();   
             }
+            
             if ((config.TableConfig.TagWriteMode & TagWriteMode.TagTable) != 0)
             {
                 var tagTableBuilder = fmb.Entity<JournalTagRow>()
@@ -202,8 +197,22 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                     .IsColumn().IsNullable(false)
                     .HasLength(64)
                     .IsPrimaryKey();
-                SetJoinCol(tagTableBuilder, journalRowBuilder);
+            
+                SetJoinCol(tagTableBuilder);
             }
+            
+            // column compatibility
+            if (config.TableConfig.TagTableMode == TagTableMode.SequentialUuid)
+            {
+                journalRowBuilder.Member(r => r.WriteUuid)
+                    .IsColumn();
+            }
+            else
+            {
+                journalRowBuilder.Member(r => r.WriteUuid)
+                    .IsNotColumn();
+            }
+            
             
             //Probably overkill, but we only set Metadata Mapping if specified
             //That we are in delete compatibility mode.

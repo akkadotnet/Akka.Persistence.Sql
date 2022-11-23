@@ -14,7 +14,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
     public enum TagTableMode
     {
         OrderingId,
-        SequentialUUID
+        SequentialUuid
     }
     
     public class JournalTableConfig
@@ -29,7 +29,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
 
         public TagWriteMode TagWriteMode { get; }
         public TagTableMode TagTableMode { get; }
-        public string? TagTableName { get; }
+        public string TagTableName { get; }
         public bool UseEventManifestColumn { get; }
         
         public JournalTableConfig(Configuration.Config config)
@@ -46,28 +46,16 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
             AutoInitialize = localCfg.GetBoolean("auto-init", false);
             WarnOnAutoInitializeFail = localCfg.GetBoolean("warn-on-auto-init-fail", true);
             
-            var s = config.GetString("tag-write-mode", "default");
-            if (Enum.TryParse<TagWriteMode>(s, true, out TagWriteMode res))
+            var s = config.GetString("tag-write-mode", "default").ToLowerInvariant();
+            if (!Enum.TryParse(s, true, out TagWriteMode res))
             {
-
-            }
-            else if (s.Equals("default", StringComparison.InvariantCultureIgnoreCase))
-            {
-                res = TagWriteMode.CommaSeparatedArray;
-            }
-            else if (s.Equals("migration",
-                         StringComparison.InvariantCultureIgnoreCase))
-            {
-                res = TagWriteMode.CommaSeparatedArrayAndTagTable;
-            }
-            else if (s.Equals("tagtableonly",
-                         StringComparison.InvariantCultureIgnoreCase))
-            {
-                res = TagWriteMode.TagTable;
-            }
-            else
-            {
-                res = TagWriteMode.CommaSeparatedArray;
+                res = s switch
+                {
+                    "default" => TagWriteMode.CommaSeparatedArray,
+                    "migration" => TagWriteMode.CommaSeparatedArrayAndTagTable,
+                    "tagtableonly" => TagWriteMode.TagTable,
+                    _ => TagWriteMode.CommaSeparatedArray
+                };
             }
             TagWriteMode = res;
         }
