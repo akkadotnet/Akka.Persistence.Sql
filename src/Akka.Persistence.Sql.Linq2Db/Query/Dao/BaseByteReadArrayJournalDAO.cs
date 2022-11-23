@@ -44,14 +44,16 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
 
         protected IQueryable<JournalRow> BaseQuery(DataConnection connection)
         {
-            return connection.GetTable<JournalRow>()
-                .Where(jr => _includeDeleted == false || jr.Deleted == false);
+            return _includeDeleted 
+                ? connection.GetTable<JournalRow>()
+                : connection.GetTable<JournalRow>().Where(jr => jr.Deleted == false);
         }
         
         protected static IQueryable<JournalRow> BaseQueryStatic(DataConnection connection, bool includeDeleted)
         {
-            return connection.GetTable<JournalRow>()
-                .Where(jr => includeDeleted == false || jr.Deleted == false);
+            return includeDeleted 
+                ? connection.GetTable<JournalRow>()
+                : connection.GetTable<JournalRow>().Where(jr => jr.Deleted == false);
         }
 
         public Source<string, NotUsed> AllPersistenceIdsSource(long max)
@@ -293,10 +295,10 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
         {
             //Do the tagArr check first here
             //Since the logic is simpler.
-            return Flow.Create<JournalRow>().Where(r =>
-                r.TagArr?.Contains(tag) ?? (r.Tags ?? "")
-                .Split(new[] { separator }, StringSplitOptions.RemoveEmptyEntries)
-                .Any(t => t.Contains(tag)));
+            return Flow.Create<JournalRow>()
+                .Where(r => r.TagArr?.Contains(tag) ?? (r.Tags ?? "")
+                    .Split( new[] { separator }, StringSplitOptions.RemoveEmptyEntries )
+                    .Any(t => t.Contains(tag)));
         }
 
         public override Source<Try<ReplayCompletion>, NotUsed> Messages(
