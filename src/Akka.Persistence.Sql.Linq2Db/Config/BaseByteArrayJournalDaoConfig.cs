@@ -12,7 +12,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
             PreferParametersOnMultiRowInsert = config.GetBoolean("prefer-parameters-on-multirow-insert", false);
             ReplayBatchSize = config.GetInt("replay-batch-size", 1000);
             Parallelism = config.GetInt("parallelism", 2);
-            LogicalDelete = config.GetBoolean("logical-delete", false);
             MaxRowByRowSize = config.GetInt("max-row-by-row-size", 100);
             SqlCommonCompatibilityMode = config.GetBoolean("delete-compatibility-mode", true);
         }
@@ -31,8 +30,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
         public int Parallelism { get; }
 
         public int BatchSize { get; }
-
-        public bool LogicalDelete { get; }
 
         public int ReplayBatchSize { get; }
 

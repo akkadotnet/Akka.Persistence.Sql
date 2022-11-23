@@ -32,7 +32,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
         private readonly Lazy<object> _logWarnAboutLogicalDeletionDeprecation =
             new(() => new object(), LazyThreadSafetyMode.None);
 
-        public readonly bool LogicalDelete;
         protected readonly ILoggingAdapter Logger;
         private readonly Flow<JournalRow, Util.Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, NotUsed> _deserializeFlow;
         private readonly Flow<JournalRow, Util.Try<ReplayCompletion>, NotUsed> _deserializeFlowMapped;
@@ -48,7 +47,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
         {
             Logger = logger;
             JournalConfig = config;
-            LogicalDelete = JournalConfig.DaoConfig.LogicalDelete;
             Serializer = serializer;
             _deserializeFlow = Serializer.DeserializeFlow();
             _deserializeFlowMapped = Serializer.DeserializeFlow().Select(MessageWithBatchMapper());
@@ -256,11 +254,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
 
         public async Task Delete(string persistenceId, long maxSequenceNr)
         {
-            if (LogicalDelete)
-            {
-                var _ = _logWarnAboutLogicalDeletionDeprecation.Value;
-            }
-
             await using var db = ConnectionFactory.GetConnection();
             
             var transaction = await db.BeginTransactionAsync();
@@ -291,15 +284,12 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
                             });
                 }
 
-                if (LogicalDelete == false)
-                {
-                    await db.GetTable<JournalRow>()
-                        .Where(r =>
-                            r.PersistenceId == persistenceId &&
-                            r.SequenceNumber <= maxSequenceNr &&
-                            r.SequenceNumber < maxMarkedDeletion)
-                        .DeleteAsync();
-                }
+                await db.GetTable<JournalRow>()
+                    .Where(r =>
+                        r.PersistenceId == persistenceId &&
+                        r.SequenceNumber <= maxSequenceNr &&
+                        r.SequenceNumber < maxMarkedDeletion)
+                    .DeleteAsync();
 
                 if (JournalConfig.DaoConfig.SqlCommonCompatibilityMode)
                 {
