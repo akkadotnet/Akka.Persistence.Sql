@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Event;
 using Akka.TestKit.Xunit2.Internals;
+using FluentAssertions;
+using LanguageExt.UnitsOfMeasure;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -41,36 +43,44 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             var persistRef = sys1.ActorOf(Props.Create(() =>
                 new JournalCompatActor(OldJournal, "p-1")), "test-recover-1");
             var ourGuid = Guid.NewGuid();
-            persistRef.Tell(new SomeEvent(){EventName = "rec-test", Guid = ourGuid, Number = 1});
-            Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid}, TimeSpan.FromSeconds(5)).Result);
+            var someEvent = new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 };
+            (await persistRef.Ask<SomeEvent>(someEvent, 5.Seconds())).Should().Be(someEvent);
+            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
+                .Should().BeTrue();
             
-            await persistRef.GracefulStop(TimeSpan.FromSeconds(5));
-            await Task.Delay(1000);
+            (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
             
-            persistRef =  sys1.ActorOf(Props.Create(() =>
+            persistRef = sys1.ActorOf(Props.Create(() =>
                 new JournalCompatActor(NewJournal, "p-1")), "test-recover-1");
-            Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid},TimeSpan.FromSeconds(5)).Result);
+            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
+                .Should().BeTrue();
         }
         [Fact]
         public async Task Can_Persist_SqlCommon_Journal()
         {
             var sys1 = ActorSystem.Create("first", Config);
             InitializeLogger(sys1);
+            
             var persistRef = sys1.ActorOf(Props.Create(() =>
                 new JournalCompatActor(OldJournal, "p-2")), "test-persist-1");
             var ourGuid = Guid.NewGuid();
-            persistRef.Tell(new SomeEvent(){EventName = "rec-test", Guid = ourGuid, Number = 1});
-            Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid}, TimeSpan.FromSeconds(5)).Result);
+            var someEvent = new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 };
+            (await persistRef.Ask<SomeEvent>(someEvent, 5.Seconds())).Should().Be(someEvent);
+            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
+                .Should().BeTrue();
             
-            await persistRef.GracefulStop(TimeSpan.FromSeconds(5));
+            (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
             
             persistRef =  sys1.ActorOf(Props.Create(() =>
                 new JournalCompatActor(NewJournal, "p-2")), "test-persist-1");
-            Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid},TimeSpan.FromSeconds(10)).Result);
+            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
+                .Should().BeTrue();
             
             var ourSecondGuid = Guid.NewGuid();
-            persistRef.Tell(new SomeEvent(){EventName = "rec-test", Guid = ourSecondGuid, Number = 2});
-            Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourSecondGuid},TimeSpan.FromSeconds(5)).Result);
+            var secondEvent = new SomeEvent { EventName = "rec-test", Guid = ourSecondGuid, Number = 2 };
+            (await persistRef.Ask<SomeEvent>(secondEvent, 5.Seconds())).Should().Be(secondEvent);
+            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourSecondGuid }, TimeSpan.FromSeconds(5)))
+                .Should().BeTrue();
         }
         
         [Fact]
@@ -82,15 +92,17 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             var persistRef = sys1.ActorOf(Props.Create(() =>
                 new JournalCompatActor(NewJournal, "p-3")), "test-recover-2");
             var ourGuid = Guid.NewGuid();
-            persistRef.Tell(new SomeEvent(){EventName = "rec-test", Guid = ourGuid, Number = 1});
-            Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid}, TimeSpan.FromSeconds(5)).Result);
+            var someEvent = new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 };
+            (await persistRef.Ask<SomeEvent>(someEvent, 5.Seconds())).Should().Be(someEvent);
+            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
+                .Should().BeTrue();
             
-            await persistRef.GracefulStop(TimeSpan.FromSeconds(5));
-            await Task.Delay(1000);
+            (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
             
             persistRef = sys1.ActorOf(Props.Create(() =>
                 new JournalCompatActor(OldJournal, "p-3")), "test-recover-2");
-            Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid},TimeSpan.FromSeconds(5)).Result);
+            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
+                .Should().BeTrue();
         }
         [Fact]
         public async Task SqlCommon_Journal_Can_Persist_L2db_Journal()
@@ -101,18 +113,23 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             var persistRef = sys1.ActorOf(Props.Create(() =>
                 new JournalCompatActor(NewJournal, "p-4")), "test-persist-2");
             var ourGuid = Guid.NewGuid();
-            persistRef.Tell(new SomeEvent(){EventName = "rec-test", Guid = ourGuid, Number = 1});
-            Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid}, TimeSpan.FromSeconds(5)).Result);
+            var someEvent = new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 };
+            (await persistRef.Ask<SomeEvent>(someEvent, 5.Seconds())).Should().Be(someEvent);
+            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
+                .Should().BeTrue();
             
-            await persistRef.GracefulStop(TimeSpan.FromSeconds(5));
+            (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
             
             persistRef =  sys1.ActorOf(Props.Create(() =>
                 new JournalCompatActor(OldJournal, "p-4")), "test-persist-2");
-            Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid},TimeSpan.FromSeconds(10)).Result);
+            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
+                .Should().BeTrue();
             
             var ourSecondGuid = Guid.NewGuid();
-            persistRef.Tell(new SomeEvent(){EventName = "rec-test", Guid = ourSecondGuid, Number = 2});
-            Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourSecondGuid},TimeSpan.FromSeconds(5)).Result);
+            var secondEvent = new SomeEvent { EventName = "rec-test", Guid = ourSecondGuid, Number = 2 };
+            (await persistRef.Ask<SomeEvent>(secondEvent, 5.Seconds())).Should().Be(secondEvent);
+            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourSecondGuid }, TimeSpan.FromSeconds(5)))
+                .Should().BeTrue();
         }
         
         [Fact]
@@ -130,33 +147,39 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             var ourGuid3 = Guid.NewGuid();
             var ourGuid4 = Guid.NewGuid();
             var ourGuid5 = Guid.NewGuid();
-            persistRef.Tell(new SomeEvent(){EventName = "rec-test", Guid = ourGuid1, Number = 1});
-            persistRef.Tell(new SomeEvent(){EventName = "rec-test", Guid = ourGuid2, Number = 2});
-            persistRef.Tell(new SomeEvent(){EventName = "rec-test", Guid = ourGuid3, Number = 3});
-            persistRef.Tell(new SomeEvent(){EventName = "rec-test", Guid = ourGuid4, Number = 4});
-            persistRef.Tell(new SomeEvent(){EventName = "rec-test", Guid = ourGuid5, Number = 5});
-            Assert.True((await persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid5}, TimeSpan.FromSeconds(5))));
+            var event1 = new SomeEvent { EventName = "rec-test", Guid = ourGuid1, Number = 1 };
+            var event2 = new SomeEvent { EventName = "rec-test", Guid = ourGuid2, Number = 2 };
+            var event3 = new SomeEvent { EventName = "rec-test", Guid = ourGuid3, Number = 3 };
+            var event4 = new SomeEvent { EventName = "rec-test", Guid = ourGuid4, Number = 4 };
+            var event5 = new SomeEvent { EventName = "rec-test", Guid = ourGuid5, Number = 5 };
+
+            (await persistRef.Ask<SomeEvent>(event1, 5.Seconds())).Should().Be(event1);
+            (await persistRef.Ask<SomeEvent>(event2, 5.Seconds())).Should().Be(event2);
+            (await persistRef.Ask<SomeEvent>(event3, 5.Seconds())).Should().Be(event3);
+            (await persistRef.Ask<SomeEvent>(event4, 5.Seconds())).Should().Be(event4);
+            (await persistRef.Ask<SomeEvent>(event5, 5.Seconds())).Should().Be(event5);
+            (await persistRef.Ask<bool>(new ContainsEvent() { Guid = ourGuid5 }, TimeSpan.FromSeconds(5)))
+                .Should().BeTrue();
             
             var currentSequenceNr = await persistRef.Ask<CurrentSequenceNr>(new GetSequenceNr(), TimeSpan.FromSeconds(5));
-            var delResult =
-                await persistRef.Ask<object>(new DeleteUpToSequenceNumber(currentSequenceNr.SequenceNumber));
-            Assert.True(delResult is DeleteMessagesSuccess);
+            var delResult = await persistRef.Ask<object>(new DeleteUpToSequenceNumber(currentSequenceNr.SequenceNumber));
+            delResult.Should().BeOfType<DeleteMessagesSuccess>();
             
-            await persistRef.GracefulStop(TimeSpan.FromSeconds(5));
+            (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
             
             persistRef = sys1.ActorOf(Props.Create(() =>
                 new JournalCompatActor(NewJournal, persistenceId)), "test-compat-delete-seqno");
-            var reIncaranatedSequenceNrNewJournal = await persistRef.Ask<CurrentSequenceNr>(new GetSequenceNr(),TimeSpan.FromSeconds(5));
-            Output.WriteLine($"oldSeq : {currentSequenceNr.SequenceNumber} - newSeq : {reIncaranatedSequenceNrNewJournal.SequenceNumber}");
-            Assert.Equal(currentSequenceNr.SequenceNumber,reIncaranatedSequenceNrNewJournal.SequenceNumber);
+            var reincaranatedSequenceNrNewJournal = await persistRef.Ask<CurrentSequenceNr>(new GetSequenceNr(),TimeSpan.FromSeconds(5));
+            Output.WriteLine($"oldSeq : {currentSequenceNr.SequenceNumber} - newSeq : {reincaranatedSequenceNrNewJournal.SequenceNumber}");
+            reincaranatedSequenceNrNewJournal.SequenceNumber.Should().Be(currentSequenceNr.SequenceNumber);
             
-            await persistRef.GracefulStop(TimeSpan.FromSeconds(5));
+            (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
             
             persistRef = sys1.ActorOf(Props.Create(() =>
                 new JournalCompatActor(OldJournal, persistenceId)), "test-compat-delete-seqno");
-            var reIncaranatedSequenceNr = await persistRef.Ask<CurrentSequenceNr>(new GetSequenceNr(),TimeSpan.FromSeconds(5));
-            Output.WriteLine($"oldSeq : {currentSequenceNr.SequenceNumber} - newSeq : {reIncaranatedSequenceNr.SequenceNumber}");
-            Assert.Equal(currentSequenceNr.SequenceNumber,reIncaranatedSequenceNr.SequenceNumber);
+            var reincaranatedSequenceNr = await persistRef.Ask<CurrentSequenceNr>(new GetSequenceNr(),TimeSpan.FromSeconds(5));
+            Output.WriteLine($"oldSeq : {currentSequenceNr.SequenceNumber} - newSeq : {reincaranatedSequenceNr.SequenceNumber}");
+            reincaranatedSequenceNr.SequenceNumber.Should().Be(currentSequenceNr.SequenceNumber);
         }
     }
 }

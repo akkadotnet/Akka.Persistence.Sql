@@ -26,10 +26,15 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
         {
             JournalPluginId = journal;
             PersistenceId = persistenceId;
-            Command<SomeEvent>(se=>Persist(se, p =>
+            Command<SomeEvent>(se =>
             {
-                events.Add(p);
-            }));
+                var sender = Sender;
+                Persist(se, p =>
+                {
+                    events.Add(p);
+                    sender.Tell(se);
+                });
+            });
             Command<ContainsEvent>(ce=>Context.Sender.Tell(events.Any(e=>e.Guid==ce.Guid)));
             Command<GetSequenceNr>(gsn =>
                 Context.Sender.Tell(
