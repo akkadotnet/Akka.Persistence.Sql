@@ -43,11 +43,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build-system", "build-syste
 		build-system\windows-release.yaml = build-system\windows-release.yaml
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.IndexHelperLib", "Akka.Persistence.Linq2Db.IndexHelperLib\Akka.Persistence.Linq2Db.IndexHelperLib.csproj", "{AACE3FBC-51FE-4A9B-B6C4-4CCA750DB22E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Linq2Db.Sandbox", "src\Akka.Linq2Db.Sandbox\Akka.Linq2Db.Sandbox.csproj", "{C9D2CCA5-D431-44F7-B8FC-5424655291B6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.IndexHelperApp", "Akka.Persistence.Linq2Db.IndexHelperApp\Akka.Persistence.Linq2Db.IndexHelperApp.csproj", "{D5C851AA-DB80-4E9F-BD2E-03E63DC3082E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.IndexHelperApp", "src\Akka.Persistence.Linq2Db.IndexHelperApp\Akka.Persistence.Linq2Db.IndexHelperApp.csproj", "{7B03FDD2-45CC-4F83-B23F-66B4EE82437A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Linq2Db.Sandbox", "Akka.Linq2Db.Sandbox\Akka.Linq2Db.Sandbox.csproj", "{697B9FC8-29E2-4F7D-B63B-9E4B873F6AA1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.IndexHelperLib", "src\Akka.Persistence.Linq2Db.IndexHelperLib\Akka.Persistence.Linq2Db.IndexHelperLib.csproj", "{FD78AE77-C95F-4D5D-90EC-923935BAC580}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -91,18 +91,18 @@ Global
 		{170698FA-DA1E-40BC-896D-AFA67976C0EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{170698FA-DA1E-40BC-896D-AFA67976C0EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{170698FA-DA1E-40BC-896D-AFA67976C0EB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{AACE3FBC-51FE-4A9B-B6C4-4CCA750DB22E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{AACE3FBC-51FE-4A9B-B6C4-4CCA750DB22E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{AACE3FBC-51FE-4A9B-B6C4-4CCA750DB22E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{AACE3FBC-51FE-4A9B-B6C4-4CCA750DB22E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D5C851AA-DB80-4E9F-BD2E-03E63DC3082E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D5C851AA-DB80-4E9F-BD2E-03E63DC3082E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D5C851AA-DB80-4E9F-BD2E-03E63DC3082E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D5C851AA-DB80-4E9F-BD2E-03E63DC3082E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{697B9FC8-29E2-4F7D-B63B-9E4B873F6AA1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{697B9FC8-29E2-4F7D-B63B-9E4B873F6AA1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{697B9FC8-29E2-4F7D-B63B-9E4B873F6AA1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{697B9FC8-29E2-4F7D-B63B-9E4B873F6AA1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C9D2CCA5-D431-44F7-B8FC-5424655291B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9D2CCA5-D431-44F7-B8FC-5424655291B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9D2CCA5-D431-44F7-B8FC-5424655291B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9D2CCA5-D431-44F7-B8FC-5424655291B6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B03FDD2-45CC-4F83-B23F-66B4EE82437A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B03FDD2-45CC-4F83-B23F-66B4EE82437A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B03FDD2-45CC-4F83-B23F-66B4EE82437A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B03FDD2-45CC-4F83-B23F-66B4EE82437A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD78AE77-C95F-4D5D-90EC-923935BAC580}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD78AE77-C95F-4D5D-90EC-923935BAC580}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD78AE77-C95F-4D5D-90EC-923935BAC580}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD78AE77-C95F-4D5D-90EC-923935BAC580}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
