@@ -2,10 +2,10 @@
 
 namespace Akka.Persistence.Sql.Linq2Db.Query.InternalProtocol
 {
-    public class NewOrderingIds
+    public sealed class NewOrderingIds
     {
         public long MaxOrdering { get; }
-        public IImmutableList<long> Elements { get; set; }
+        public IImmutableList<long> Elements { get; }
         
         public NewOrderingIds(long currentMaxOrdering, IImmutableList<long> res)
         {

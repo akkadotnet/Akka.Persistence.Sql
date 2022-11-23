@@ -2,7 +2,7 @@
 
 namespace Akka.Persistence.Sql.Linq2Db.Query.InternalProtocol
 {
-    public class MissingElements
+    public sealed class MissingElements
     {
         public MissingElements(Seq<NumericRangeEntry> elements)
         {
@@ -11,8 +11,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.InternalProtocol
 
         public MissingElements AddRange(long from, long until)
         {
-            return new MissingElements(
-                Elements.Add(new NumericRangeEntry(from, until)));
+            return new MissingElements(Elements.Add(new NumericRangeEntry(from, until)));
         }
 
         public bool Contains(long id)
@@ -21,8 +20,8 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.InternalProtocol
         }
 
         public bool Isempty => Elements.IsEmpty;
-        public Seq<NumericRangeEntry> Elements { get; protected set; }
+        public Seq<NumericRangeEntry> Elements { get; }
         
-        public static readonly MissingElements Empty = new MissingElements(Seq<NumericRangeEntry>.Empty);
+        public static readonly MissingElements Empty = new( Seq<NumericRangeEntry>.Empty );
     }
 }

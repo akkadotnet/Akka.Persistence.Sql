@@ -7,50 +7,55 @@ using Akka.Persistence.Sql.Linq2Db.Journal.Types;
 using Akka.Streams;
 using LinqToDB;
 
-namespace Akka.Persistence.Sql.Linq2Db.Journal.DAO
+namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
 {
-    public class ByteArrayJournalDao : BaseByteArrayJournalDao
+    public sealed class ByteArrayJournalDao : BaseByteArrayJournalDao
     {
-        public ByteArrayJournalDao(IAdvancedScheduler sched, IMaterializer mat,
+        public ByteArrayJournalDao(
+            IAdvancedScheduler scheduler,
+            IMaterializer mat,
             AkkaPersistenceDataConnectionFactory connection,
             JournalConfig journalConfig,
-            Akka.Serialization.Serialization serializer, ILoggingAdapter logger) : base(sched, mat,
-            connection, journalConfig,
-            new ByteArrayJournalSerializer(journalConfig, serializer,
-                journalConfig.PluginConfig.TagSeparator),logger)
+            Akka.Serialization.Serialization serializer, 
+            ILoggingAdapter logger) 
+            : base(
+                scheduler: scheduler,
+                materializer: mat,
+                connectionFactory: connection,
+                config: journalConfig, 
+                serializer: new ByteArrayJournalSerializer(journalConfig, serializer, journalConfig.PluginConfig.TagSeparator),
+                logger: logger)
         {
-            
         }
 
+        // TODO: change this to async
         public void InitializeTables()
         {
-            using (var conn = _connectionFactory.GetConnection())
+            using var conn = ConnectionFactory.GetConnection();
+            
+            try
+            {
+                conn.CreateTable<JournalRow>();
+            }
+            catch (Exception e)
+            {
+                if (JournalConfig.TableConfig.WarnOnAutoInitializeFail)
+                {
+                    Logger.Warning(e,$"Could not Create Journal Table {JournalConfig.TableConfig.TableName} as requested by config.");    
+                }
+            }
+
+            if (JournalConfig.DaoConfig.SqlCommonCompatibilityMode)
             {
                 try
                 {
-                    conn.CreateTable<JournalRow>();
+                    conn.CreateTable<JournalMetaData>();
                 }
                 catch (Exception e)
                 {
-                    if (_journalConfig.TableConfig.WarnOnAutoInitializeFail)
+                    if (JournalConfig.TableConfig.WarnOnAutoInitializeFail)
                     {
-                        _logger.Warning(e,$"Could not Create Journal Table {_journalConfig.TableConfig.TableName} as requested by config.");    
-                    }
-                    
-                }
-
-                if (_journalConfig.DaoConfig.SqlCommonCompatibilityMode)
-                {
-                    try
-                    {
-                        conn.CreateTable<JournalMetaData>();
-                    }
-                    catch (Exception e)
-                    {
-                        if (_journalConfig.TableConfig.WarnOnAutoInitializeFail)
-                        {
-                            _logger.Warning(e,$"Could not Create Journal Metadata Table {_journalConfig.TableConfig.TableName} as requested by config.");    
-                        }
+                        Logger.Warning(e,$"Could not Create Journal Metadata Table {JournalConfig.TableConfig.TableName} as requested by config.");    
                     }
                 }
             }

@@ -11,32 +11,35 @@ using Xunit.Abstractions;
 namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.SqlServer
 {
     [Collection("SqlServerSpec")]
-    public class SQLServerSnapshotSpec : SnapshotStoreSpec
+    public class SqlServerSnapshotSpec : SnapshotStoreSpec
     {
         public static Configuration.Config Initialize(SqlServerFixture fixture)
         {
             DockerDbUtils.Initialize(fixture.ConnectionString);
-            return conf;
+            return Configuration;
         }
-        private static  Configuration.Config conf => SQLServerSnapshotSpecConfig.Create(DockerDbUtils.ConnectionString,"snapshotSpec");
+        private static Configuration.Config Configuration => SqlServerSnapshotSpecConfig.Create(DockerDbUtils.ConnectionString,"snapshotSpec");
 
-        public SQLServerSnapshotSpec(ITestOutputHelper outputHelper, SqlServerFixture fixture) :
-            base(Initialize(fixture))
+        public SqlServerSnapshotSpec(ITestOutputHelper outputHelper, SqlServerFixture fixture) 
+            : base(Initialize(fixture))
         {
             DebuggingHelpers.SetupTraceDump(outputHelper);
+            var extension = Linq2DbPersistence.Get(Sys);
             var connFactory = new AkkaPersistenceDataConnectionFactory(
                 new SnapshotConfig(
-                    conf.GetConfig("akka.persistence.snapshot-store.linq2db")));
+                    Configuration
+                        .WithFallback(extension.DefaultConfig)
+                        .GetConfig("akka.persistence.snapshot-store.linq2db")));
+            
             using (var conn = connFactory.GetConnection())
             {
-                
                 try
                 {
                     conn.GetTable<SnapshotRow>().Delete();
                 }
-                catch (Exception e)
+                catch 
                 {
-
+                    // no-op
                 }
             }
             

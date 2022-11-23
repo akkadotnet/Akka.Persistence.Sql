@@ -8,6 +8,7 @@
 using Akka.Configuration;
 using Akka.Persistence.Linq2Db.Journal.Query.Tests;
 using Akka.Persistence.Query;
+using Akka.Persistence.Sql.Linq2Db;
 using Akka.Persistence.Sql.Linq2Db.Journal;
 using Akka.Persistence.Sql.Linq2Db.Query;
 using Akka.Persistence.TCK.Query;
@@ -17,9 +18,7 @@ using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sqlite.Tests.Query
 {
-    public class
-        SqliteCurrentEventsByPersistenceIdSpec :
-            CurrentEventsByPersistenceIdSpec
+    public class SqliteCurrentEventsByPersistenceIdSpec : CurrentEventsByPersistenceIdSpec
     {
         public static readonly AtomicCounter Counter = new AtomicCounter(0);
 
@@ -28,55 +27,49 @@ namespace Akka.Persistence.Sqlite.Tests.Query
             var connString =
                 $"Filename=file:memdb-l2db-journal-currenteventsbypersistenceid-{id}.db;Mode=Memory;Cache=Shared";
             ConnectionContext.Remember(connString);
-            return ConfigurationFactory.ParseString(
-                    $@"
-            akka.loglevel = INFO
-            akka.persistence
-            {{
-              journal
-              {{
-                plugin = ""akka.persistence.journal.linq2db""
-                linq2db 
-                {{
-                  class = ""{typeof(Linq2DbWriteJournal).AssemblyQualifiedName}""
-                  plugin-dispatcher = ""akka.actor.default-dispatcher""
-                  auto-initialize = on
-                  provider-name = ""{ProviderName.SQLiteMS}""
-                  connection-string = ""{connString}""
-                  refresh-interval = 1s
-                  tables {{
-                   journal {{
-                     table-name = event_journal
-                     metadata-table-name = journal_metadata
-                     auto-init = true 
-                           warn-on-auto-init-fail = false
-                   }} 
-                }}
+            return ConfigurationFactory.ParseString($@"
+akka.loglevel = INFO
+akka.persistence {{
+    journal {{
+        plugin = ""akka.persistence.journal.linq2db""
+        linq2db {{
+            class = ""{typeof(Linq2DbWriteJournal).AssemblyQualifiedName}""
+            plugin-dispatcher = ""akka.actor.default-dispatcher""
+            auto-initialize = on
+            provider-name = ""{ProviderName.SQLiteMS}""
+            table-compatibility-mode = sqlite
+            connection-string = ""{connString}""
+            refresh-interval = 1s
+            tables {{
+                journal {{
+                    table-name = event_journal
+                    metadata-table-name = journal_metadata
+                    auto-init = true 
+                    warn-on-auto-init-fail = false
+                }} 
+            }}
+        }}
+    }}
+    query {{
+        journal {{
+            linq2db {{
+                provider-name = ""{ProviderName.SQLiteMS}""
+                connection-string = ""Filename=file:memdb-l2db-journal-currenteventsbypersistenceid-{id}.db;Mode=Memory;Cache=Shared""
+                table-compatibility-mode = sqlite
+                tables {{
+                    journal {{
+                        table-name = event_journal
+                        metadata-table-name = journal_metadata
+                        auto-init = true 
+                        warn-on-auto-init-fail = false
+                    }} 
                 }}
             }}
-            query
-            {{
-               journal
-               {{
-                  linq2db
-                  {{
-                    provider-name = ""{ProviderName.SQLiteMS}""
-                    connection-string = ""Filename=file:memdb-l2db-journal-currenteventsbypersistenceid-{id}.db;Mode=Memory;Cache=Shared""
-                    tables {{
-                       journal {{
-                         table-name = event_journal
-                         metadata-table-name = journal_metadata
-                         auto-init = true 
-                           warn-on-auto-init-fail = false
-                       }} 
-                    }}
-                  }}
-               }}
-            }}
-          }}
-            akka.test.single-expect-default = 10s")
-                .WithFallback(Linq2DbReadJournal.DefaultConfiguration)
-                .WithFallback(Linq2DbWriteJournal.DefaultConfiguration);
+        }}
+    }}
+}}
+akka.test.single-expect-default = 10s")
+                .WithFallback(Linq2DbPersistence.DefaultConfiguration());
         }
 
         public SqliteCurrentEventsByPersistenceIdSpec(ITestOutputHelper output) : base(Config(Counter.GetAndIncrement()), nameof(SqliteCurrentEventsByPersistenceIdSpec), output)

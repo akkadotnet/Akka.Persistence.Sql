@@ -6,33 +6,30 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
     {
         public ReadJournalPluginConfig(Configuration.Config config)
         {
-            TagSeparator = config.GetString("tag-separator", ",");
-            Dao = config.GetString("dao",
-                "akka.persistence.sql.linq2db.dao.bytea.readjournal.bytearrayreadjournaldao");
-            var tagReadStr = config.GetString("tag-read-mode", "default");
-            if (Enum.TryParse<TagReadMode>(tagReadStr,true,out TagReadMode tgr))
+            TagSeparator = config.GetString("tag-separator", ";");
+            Dao = config.GetString("dao", "Akka.Persistence.Sql.Linq2Db.Journal.Dao.ByteArrayJournalDao, Akka.Persistence.Sql.Linq2Db");
+            
+            var tagReadStr = config.GetString("tag-read-mode", "default").ToLowerInvariant();
+            if (!Enum.TryParse<TagReadMode>(tagReadStr,true,out var tgr))
             {
-                
-            }
-            else if (tagReadStr.Equals("default", StringComparison.InvariantCultureIgnoreCase))
-            {
-                tgr = TagReadMode.CommaSeparatedArray;
-            }
-            else if (tagReadStr.Equals("migrate", StringComparison.InvariantCultureIgnoreCase))
-            {
-                tgr = TagReadMode.CommaSeparatedArrayAndTagTable;
+                tgr = tagReadStr switch
+                {
+                    "default" => TagReadMode.CommaSeparatedArray,
+                    "migrate" => TagReadMode.CommaSeparatedArrayAndTagTable,
+                    _ => TagReadMode.CommaSeparatedArray
+                };
             }
 
             TagReadMode = tgr;
         }
 
-        public string Dao { get; set; }
+        public string Dao { get; }
 
-        public string TagSeparator { get; set; }
-        public TagReadMode TagReadMode { get; set; }
+        public string TagSeparator { get; }
+        public TagReadMode TagReadMode { get; }
         public TagTableMode TagTableMode { get; }
     }
-
+    
     [Flags]
     public enum TagReadMode
     {

@@ -18,10 +18,9 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests.Docker.SqlServer
             "akka.persistence.journal.sql-server";
 
         protected override string NewJournal =>
-            "akka.persistence.journal.testspec";
+            "akka.persistence.journal.linq2db";
 
         protected override Configuration.Config Config =>
-            SqlServerCompatibilitySpecConfig.InitJournalConfig("journal_compat",
-                "journal_metadata_compat");
+            SqlServerCompatibilitySpecConfig.InitJournalConfig("journal_compat", "journal_metadata_compat");
     }
 }

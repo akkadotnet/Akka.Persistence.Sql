@@ -19,54 +19,47 @@ namespace Akka.Persistence.Linq2Db.BenchmarkTests.Docker.Linq2Db
     [Collection("SqlServerSpec")]
     public class DockerLinq2DbSqlServerJournalPerfSpec : L2dbJournalPerfSpec
     {
-        public static string _journalBaseConfig = @"
-            akka.persistence {{
-                publish-plugin-commands = on
-                journal {{
-                    plugin = ""akka.persistence.journal.testspec""
-                    testspec {{
-                        class = ""{0}""
-                        #plugin-dispatcher = ""akka.actor.default-dispatcher""
-                        plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
-                        parallelism = 2
-                        connection-string = ""{1}""
-#connection-string = ""FullUri=file:test.db&cache=shared""
-                        provider-name = """ + LinqToDB.ProviderName.SqlServer2017 + @"""
-                        use-clone-connection = true
-                        #prefer-parameters-on-multirow-insert = true
-                        tables.journal {{ 
-                           auto-init = true
-                           warn-on-auto-init-fail = false
-                           table-name = ""{2}"" 
-                           }}
-                    }}
-                }}
-            }}
-        ";
-        
-        public static Config Create(string connString)
+        private static Config Create(string connString)
         {
-            return ConfigurationFactory.ParseString(
-                string.Format(_journalBaseConfig,
-                    typeof(Linq2DbWriteJournal).AssemblyQualifiedName,
-                    connString,"testPerfTable"));
+            return ConfigurationFactory.ParseString($@"
+akka.persistence {{
+    publish-plugin-commands = on
+    journal {{
+        plugin = ""akka.persistence.journal.linq2db""
+        linq2db {{
+            class = ""{typeof(Linq2DbWriteJournal).AssemblyQualifiedName}""
+            plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
+
+            connection-string = ""{connString}""
+            provider-name = ""{ProviderName.SqlServer2017}""
+            use-clone-connection = true
+            tables.journal {{ 
+                auto-init = true
+                warn-on-auto-init-fail = false
+                table-name = ""testPerfTable"" 
+            }}
+        }}
+    }}
+}}");
         }
+        
         public DockerLinq2DbSqlServerJournalPerfSpec(ITestOutputHelper output,
             SqlServerFixture fixture) : base(InitConfig(fixture),
             "sqlserverperf", output,40, eventsCount: TestConstants.DockerNumMessages)
         {
-            
-            var connFactory = new AkkaPersistenceDataConnectionFactory(new JournalConfig(Create(DockerDbUtils.ConnectionString).GetConfig("akka.persistence.journal.testspec")));
-            using (var conn = connFactory.GetConnection())
+            var extension = Linq2DbPersistence.Get(Sys);
+            var config = Create(DockerDbUtils.ConnectionString)
+                .WithFallback(extension.DefaultConfig)
+                .GetConfig("akka.persistence.journal.linq2db");
+            var connFactory = new AkkaPersistenceDataConnectionFactory(new JournalConfig(config));
+            using var conn = connFactory.GetConnection();
+            try
             {
-                try
-                {
-                    conn.GetTable<JournalRow>().Delete();
-                }
-                catch (Exception e)
-                {
-                }
-                
+                conn.GetTable<JournalRow>().Delete();
+            }
+            catch
+            {
+                // no-op
             }
         }
             
@@ -74,7 +67,6 @@ namespace Akka.Persistence.Linq2Db.BenchmarkTests.Docker.Linq2Db
         {
             //need to make sure db is created before the tests start
             DbUtils.Initialize(fixture.ConnectionString);
-            
 
             return Create(DbUtils.ConnectionString);
         }  

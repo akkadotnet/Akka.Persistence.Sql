@@ -5,9 +5,9 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
 {
     public class Linq2DbReadJournalProvider : IReadJournalProvider
     {
-        private string _configPath;
-        private ExtendedActorSystem _system;
-        private Configuration.Config _config;
+        private readonly string _configPath;
+        private readonly ExtendedActorSystem _system;
+        private readonly Configuration.Config _config;
 
         public Linq2DbReadJournalProvider(ExtendedActorSystem system,
             Configuration.Config config)

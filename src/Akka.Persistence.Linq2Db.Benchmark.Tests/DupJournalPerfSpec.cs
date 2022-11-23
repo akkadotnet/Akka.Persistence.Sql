@@ -27,35 +27,41 @@ namespace Akka.Persistence.Linq2Db.BenchmarkTests
 {
     public abstract class L2dbJournalPerfSpec : Akka.TestKit.Xunit2.TestKit
     {
-        private TestProbe testProbe;
+        private readonly TestProbe _testProbe;
 
         // Number of messages sent to the PersistentActor under test for each test iteration
-        private int EventsCount;
+        private readonly int _eventsCount;
 
         // Number of measurement iterations each test will be run.
         private const int MeasurementIterations = 10;
 
-        private IReadOnlyList<int> Commands => Enumerable.Range(1, EventsCount).ToList();
+        private IReadOnlyList<int> Commands => Enumerable.Range(1, _eventsCount).ToList();
 
-        private TimeSpan ExpectDuration;
+        private readonly TimeSpan _expectDuration;
 
-        protected L2dbJournalPerfSpec(Config config, string actorSystem, ITestOutputHelper output, int timeoutDurationSeconds = 30, int eventsCount = 10000)
+        protected L2dbJournalPerfSpec(
+            Config config,
+            string actorSystem,
+            ITestOutputHelper output,
+            int timeoutDurationSeconds = 30,
+            int eventsCount = 10000)
             : base(config ?? Config.Empty, actorSystem, output)
         {
             ThreadPool.SetMinThreads(12, 12);
-            EventsCount = eventsCount;
-            ExpectDuration = TimeSpan.FromSeconds(timeoutDurationSeconds);
-            testProbe = CreateTestProbe();
+            _eventsCount = eventsCount;
+            _expectDuration = TimeSpan.FromSeconds(timeoutDurationSeconds);
+            _testProbe = CreateTestProbe();
         }
         
         internal IActorRef BenchActor(string pid, int replyAfter)
         {
-            return Sys.ActorOf(Props.Create(() => new BenchActor(pid, testProbe, EventsCount)));;
+            return Sys.ActorOf(Props.Create(() => new BenchActor(pid, _testProbe, _eventsCount)));;
         }
+        
         internal (IActorRef aut,TestProbe probe) BenchActorNewProbe(string pid, int replyAfter)
         {
             var tp = CreateTestProbe();
-            return (Sys.ActorOf(Props.Create(() => new BenchActor(pid, tp, EventsCount))), tp);
+            return (Sys.ActorOf(Props.Create(() => new BenchActor(pid, tp, _eventsCount))), tp);
         }
         
         internal (IActorRef aut,TestProbe probe) BenchActorNewProbeGroup(string pid, int numActors, int numMsgs)
@@ -69,29 +75,24 @@ namespace Akka.Persistence.Linq2Db.BenchmarkTests
         }
         
         internal void FeedAndExpectLastRouterSet(
-            (IActorRef actor, TestProbe probe) autSet, string mode,
-            IReadOnlyList<int> commands, int numExpect)
+            (IActorRef actor, TestProbe probe) autSet, string mode, IReadOnlyList<int> commands, int numExpect)
         {
-            
-                commands.ForEach(c => autSet.actor.Tell(new Broadcast(new Cmd(mode, c))));
+            commands.ForEach(c => autSet.actor.Tell(new Broadcast(new Cmd(mode, c))));
 
-                for (int i = 0; i < numExpect; i++)
-                {
-                    //Output.WriteLine("Expecting " + i);
-                    autSet.probe.ExpectMsg(commands.Last(), ExpectDuration);    
-                }
-
+            for (var i = 0; i < numExpect; i++)
+            {
+                autSet.probe.ExpectMsg(commands.Last(), _expectDuration);    
+            }
         }
 
         internal void FeedAndExpectLast(IActorRef actor, string mode, IReadOnlyList<int> commands)
         {
             commands.ForEach(c => actor.Tell(new Cmd(mode, c)));
-            testProbe.ExpectMsg(commands.Last(), ExpectDuration);
+            _testProbe.ExpectMsg(commands.Last(), _expectDuration);
         }
 
         internal void FeedAndExpectLastGroup(
-            (IActorRef actor, TestProbe probe)[] autSet, string mode,
-            IReadOnlyList<int> commands)
+            (IActorRef actor, TestProbe probe)[] autSet, string mode, IReadOnlyList<int> commands)
         {
             foreach (var aut in autSet)
             {
@@ -100,22 +101,24 @@ namespace Akka.Persistence.Linq2Db.BenchmarkTests
 
             foreach (var aut in autSet)
             {
-                aut.probe.ExpectMsg(commands.Last(), ExpectDuration);
+                aut.probe.ExpectMsg(commands.Last(), _expectDuration);
             }
         }
+        
         internal void FeedAndExpectLastSpecific((IActorRef actor, TestProbe probe) aut, string mode, IReadOnlyList<int> commands)
         {
             commands.ForEach(c => aut.actor.Tell(new Cmd(mode, c)));
             
-            aut.probe.ExpectMsg(commands.Last(), ExpectDuration);
+            aut.probe.ExpectMsg(commands.Last(), _expectDuration);
         }
+        
         internal void Measure(Func<TimeSpan, string> msg, Action block)
         {
             var measurements = new List<TimeSpan>(MeasurementIterations);
 
             block(); //warm-up
 
-            int i = 0;
+            var i = 0;
             while (i < MeasurementIterations)
             {
                 var sw = Stopwatch.StartNew();
@@ -126,8 +129,8 @@ namespace Akka.Persistence.Linq2Db.BenchmarkTests
                 i++;
             }
 
-            double avgTime = measurements.Select(c => c.TotalMilliseconds).Sum() / MeasurementIterations;
-            double msgPerSec = (EventsCount / avgTime) * 1000;
+            var avgTime = measurements.Select(c => c.TotalMilliseconds).Sum() / MeasurementIterations;
+            var msgPerSec = (_eventsCount / avgTime) * 1000;
             
             Output.WriteLine($"Average time: {avgTime} ms, {msgPerSec} msg/sec");
         }
@@ -139,7 +142,7 @@ namespace Akka.Persistence.Linq2Db.BenchmarkTests
             block();
             block(); //warm-up
 
-            int i = 0;
+            var i = 0;
             while (i < MeasurementIterations)
             {
                 var sw = Stopwatch.StartNew();
@@ -150,9 +153,9 @@ namespace Akka.Persistence.Linq2Db.BenchmarkTests
                 i++;
             }
 
-            double avgTime = measurements.Select(c => c.TotalMilliseconds).Sum() / MeasurementIterations;
-            double msgPerSec = (numMsg / avgTime) * 1000;
-            double msgPerSecTotal = (numMsg*numGroup / avgTime) * 1000;
+            var avgTime = measurements.Select(c => c.TotalMilliseconds).Sum() / MeasurementIterations;
+            var msgPerSec = (numMsg / avgTime) * 1000;
+            var msgPerSecTotal = (numMsg*numGroup / avgTime) * 1000;
             Output.WriteLine($"Workers: {numGroup} , Average time: {avgTime} ms, {msgPerSec} msg/sec/actor, {msgPerSecTotal} total msg/sec.");
         }
         
@@ -162,13 +165,12 @@ namespace Akka.Persistence.Linq2Db.BenchmarkTests
         {
             dotMemory.Check();
             
-            var p1 = BenchActor("DotMemoryPersistPid", EventsCount);
+            var p1 = BenchActor("DotMemoryPersistPid", _eventsCount);
             
             dotMemory.Check((mem) =>
                 {
                     Measure(
-                        d =>
-                            $"Persist()-ing {EventsCount} took {d.TotalMilliseconds} ms",
+                        d => $"Persist()-ing {_eventsCount} took {d.TotalMilliseconds} ms",
                         () =>
                         {
                             FeedAndExpectLast(p1, "p", Commands);
@@ -179,8 +181,7 @@ namespace Akka.Persistence.Linq2Db.BenchmarkTests
             dotMemory.Check((mem) =>
                 {
                     Measure(
-                        d =>
-                            $"Persist()-ing {EventsCount} took {d.TotalMilliseconds} ms",
+                        d => $"Persist()-ing {_eventsCount} took {d.TotalMilliseconds} ms",
                         () =>
                         {
                             FeedAndExpectLast(p1, "p", Commands);
@@ -197,10 +198,8 @@ namespace Akka.Persistence.Linq2Db.BenchmarkTests
         {
             dotMemory.Check();
             
-            int numGroup = 400;
-            int numCommands = Math.Min(EventsCount/100,500);
-            
-            
+            const int numGroup = 400;
+            var numCommands = Math.Min(_eventsCount/100,500);
             
             dotMemory.Check((mem) =>
                 {
@@ -220,13 +219,13 @@ namespace Akka.Persistence.Linq2Db.BenchmarkTests
         public void PersistenceActor_performance_must_measure_Persist()
         {
             
-            var p1 = BenchActor("PersistPid", EventsCount);
+            var p1 = BenchActor("PersistPid", _eventsCount);
             
             //dotMemory.Check((mem) =>
             //{
                 Measure(
                     d =>
-                        $"Persist()-ing {EventsCount} took {d.TotalMilliseconds} ms",
+                        $"Persist()-ing {_eventsCount} took {d.TotalMilliseconds} ms",
                     () =>
                     {
                         FeedAndExpectLast(p1, "p", Commands);
@@ -298,58 +297,56 @@ namespace Akka.Persistence.Linq2Db.BenchmarkTests
         [Fact]
         public void PersistenceActor_performance_must_measure_PersistGroup10()
         {
-            int numGroup = 10;
-            int numCommands = Math.Min(EventsCount/10,1000);
+            const int numGroup = 10;
+            var numCommands = Math.Min(_eventsCount/10,1000);
             RunGroupBenchmark(numGroup, numCommands);
         }
         
         [Fact]
         public void PersistenceActor_performance_must_measure_PersistGroup25()
         {
-            int numGroup = 25;
-            int numCommands = Math.Min(EventsCount/25,1000);
+            const int numGroup = 25;
+            var numCommands = Math.Min(_eventsCount/25,1000);
             RunGroupBenchmark(numGroup, numCommands);
         }
         
         [Fact]
         public void PersistenceActor_performance_must_measure_PersistGroup50()
         {
-            int numGroup = 50;
-            int numCommands = Math.Min(EventsCount/50,1000);
+            const int numGroup = 50;
+            var numCommands = Math.Min(_eventsCount/50,1000);
             RunGroupBenchmark(numGroup, numCommands);
         }
         
         [Fact]
         public void PersistenceActor_performance_must_measure_PersistGroup100()
         {
-            int numGroup = 100;
-            int numCommands = Math.Min(EventsCount/100,1000);
+            const int numGroup = 100;
+            var numCommands = Math.Min(_eventsCount/100,1000);
             RunGroupBenchmark(numGroup, numCommands);
         }
         
         [Fact]
         public void PersistenceActor_performance_must_measure_PersistGroup200()
         {
-            int numGroup = 200;
-            int numCommands = Math.Min(EventsCount/100,500);
+            const int numGroup = 200;
+            var numCommands = Math.Min(_eventsCount/100,500);
             RunGroupBenchmark(numGroup, numCommands);
         }
         
         [Fact]
         public void PersistenceActor_performance_must_measure_PersistGroup400()
         {
-            int numGroup = 400;
-            int numCommands = Math.Min(EventsCount/100,500);
+            const int numGroup = 400;
+            var numCommands = Math.Min(_eventsCount/100,500);
             RunGroupBenchmark(numGroup, numCommands);
         }
 
         protected void RunGroupBenchmark(int numGroup, int numCommands)
         {
-            var p1 = BenchActorNewProbeGroup("GroupPersistPid" + numGroup, numGroup,
-                numCommands);
+            var p1 = BenchActorNewProbeGroup("GroupPersistPid" + numGroup, numGroup, numCommands);
             MeasureGroup(
-                d =>
-                    $"Persist()-ing {numCommands} * {numGroup} took {d.TotalMilliseconds} ms",
+                d => $"Persist()-ing {numCommands} * {numGroup} took {d.TotalMilliseconds} ms",
                 () =>
                 {
                     FeedAndExpectLastRouterSet(p1, "p",
@@ -427,8 +424,8 @@ namespace Akka.Persistence.Linq2Db.BenchmarkTests
         [Fact]
         public void PersistenceActor_performance_must_measure_PersistAll()
         {
-            var p1 = BenchActor("PersistAllPid", EventsCount);
-            Measure(d => $"PersistAll()-ing {EventsCount} took {d.TotalMilliseconds} ms", () =>
+            var p1 = BenchActor("PersistAllPid", _eventsCount);
+            Measure(d => $"PersistAll()-ing {_eventsCount} took {d.TotalMilliseconds} ms", () =>
             {
                 FeedAndExpectLast(p1, "pb", Commands);
                 p1.Tell(ResetCounter.Instance);
@@ -438,8 +435,8 @@ namespace Akka.Persistence.Linq2Db.BenchmarkTests
         [Fact]
         public void PersistenceActor_performance_must_measure_PersistAsync()
         {
-            var p1 = BenchActor("PersistAsyncPid", EventsCount);
-            Measure(d => $"PersistAsync()-ing {EventsCount} took {d.TotalMilliseconds} ms", () =>
+            var p1 = BenchActor("PersistAsyncPid", _eventsCount);
+            Measure(d => $"PersistAsync()-ing {_eventsCount} took {d.TotalMilliseconds} ms", () =>
             {
                 FeedAndExpectLast(p1, "pa", Commands);
                 p1.Tell(ResetCounter.Instance);
@@ -449,8 +446,8 @@ namespace Akka.Persistence.Linq2Db.BenchmarkTests
         [Fact]
         public void PersistenceActor_performance_must_measure_PersistAllAsync()
         {
-            var p1 = BenchActor("PersistAllAsyncPid", EventsCount);
-            Measure(d => $"PersistAllAsync()-ing {EventsCount} took {d.TotalMilliseconds} ms", () =>
+            var p1 = BenchActor("PersistAllAsyncPid", _eventsCount);
+            Measure(d => $"PersistAllAsync()-ing {_eventsCount} took {d.TotalMilliseconds} ms", () =>
             {
                 FeedAndExpectLast(p1, "pba", Commands);
                 p1.Tell(ResetCounter.Instance);
@@ -460,89 +457,89 @@ namespace Akka.Persistence.Linq2Db.BenchmarkTests
         [Fact]
         public void PersistenceActor_performance_must_measure_Recovering()
         {
-            var p1 = BenchActor("PersistRecoverPid", EventsCount);
+            var p1 = BenchActor("PersistRecoverPid", _eventsCount);
 
             FeedAndExpectLast(p1, "p", Commands);
-            Measure(d => $"Recovering {EventsCount} took {d.TotalMilliseconds} ms", () =>
+            Measure(d => $"Recovering {_eventsCount} took {d.TotalMilliseconds} ms", () =>
             {
-                BenchActor("PersistRecoverPid", EventsCount);
-                testProbe.ExpectMsg(Commands.Last(), ExpectDuration);
+                BenchActor("PersistRecoverPid", _eventsCount);
+                _testProbe.ExpectMsg(Commands.Last(), _expectDuration);
             });
         }
         
         [Fact]
         public void PersistenceActor_performance_must_measure_RecoveringTwo()
         {
-            var p1 = BenchActorNewProbe("DoublePersistRecoverPid1", EventsCount);
-            var p2 = BenchActorNewProbe("DoublePersistRecoverPid2", EventsCount);
+            var p1 = BenchActorNewProbe("DoublePersistRecoverPid1", _eventsCount);
+            var p2 = BenchActorNewProbe("DoublePersistRecoverPid2", _eventsCount);
             FeedAndExpectLastSpecific(p1, "p", Commands);
             FeedAndExpectLastSpecific(p2, "p", Commands);
-            MeasureGroup(d => $"Recovering {EventsCount} took {d.TotalMilliseconds} ms", () =>
+            MeasureGroup(d => $"Recovering {_eventsCount} took {d.TotalMilliseconds} ms", () =>
             {
                var task1 = Task.Run(()=>
                {
                    var refAndProbe =BenchActorNewProbe("DoublePersistRecoverPid1",
-                           EventsCount);
-                   refAndProbe.probe.ExpectMsg(Commands.Last(), ExpectDuration);
+                           _eventsCount);
+                   refAndProbe.probe.ExpectMsg(Commands.Last(), _expectDuration);
                });
                var task2 =Task.Run(() =>
                {
-                   var refAndProbe =BenchActorNewProbe("DoublePersistRecoverPid2", EventsCount);
-                   refAndProbe.probe.ExpectMsg(Commands.Last(), ExpectDuration);
+                   var refAndProbe =BenchActorNewProbe("DoublePersistRecoverPid2", _eventsCount);
+                   refAndProbe.probe.ExpectMsg(Commands.Last(), _expectDuration);
                });
                Task.WaitAll(new[] {task1, task2});
 
-            },EventsCount,2);
+            },_eventsCount,2);
         }
         [Fact]
         public void PersistenceActor_performance_must_measure_RecoveringFour()
         {
-            var p1 = BenchActorNewProbe("QuadPersistRecoverPid1", EventsCount);
-            var p2 = BenchActorNewProbe("QuadPersistRecoverPid2", EventsCount);
-            var p3 = BenchActorNewProbe("QuadPersistRecoverPid3", EventsCount);
-            var p4 = BenchActorNewProbe("QuadPersistRecoverPid4", EventsCount);
+            var p1 = BenchActorNewProbe("QuadPersistRecoverPid1", _eventsCount);
+            var p2 = BenchActorNewProbe("QuadPersistRecoverPid2", _eventsCount);
+            var p3 = BenchActorNewProbe("QuadPersistRecoverPid3", _eventsCount);
+            var p4 = BenchActorNewProbe("QuadPersistRecoverPid4", _eventsCount);
             FeedAndExpectLastSpecific(p1, "p", Commands);
             FeedAndExpectLastSpecific(p2, "p", Commands);
             FeedAndExpectLastSpecific(p3, "p", Commands);
             FeedAndExpectLastSpecific(p4, "p", Commands);
-            MeasureGroup(d => $"Recovering {EventsCount} took {d.TotalMilliseconds} ms", () =>
+            MeasureGroup(d => $"Recovering {_eventsCount} took {d.TotalMilliseconds} ms", () =>
             {
                 var task1 = Task.Run(()=>
                 {
                     var refAndProbe =BenchActorNewProbe("QuadPersistRecoverPid1",
-                        EventsCount);
-                    refAndProbe.probe.ExpectMsg(Commands.Last(), ExpectDuration);
+                        _eventsCount);
+                    refAndProbe.probe.ExpectMsg(Commands.Last(), _expectDuration);
                 });
                 var task2 =Task.Run(() =>
                 {
-                    var refAndProbe =BenchActorNewProbe("QuadPersistRecoverPid2", EventsCount);
-                    refAndProbe.probe.ExpectMsg(Commands.Last(), ExpectDuration);
+                    var refAndProbe =BenchActorNewProbe("QuadPersistRecoverPid2", _eventsCount);
+                    refAndProbe.probe.ExpectMsg(Commands.Last(), _expectDuration);
                 });
                 var task3 =Task.Run(() =>
                 {
-                    var refAndProbe =BenchActorNewProbe("QuadPersistRecoverPid3", EventsCount);
-                    refAndProbe.probe.ExpectMsg(Commands.Last(), ExpectDuration);
+                    var refAndProbe =BenchActorNewProbe("QuadPersistRecoverPid3", _eventsCount);
+                    refAndProbe.probe.ExpectMsg(Commands.Last(), _expectDuration);
                 });
                 var task4 =Task.Run(() =>
                 {
-                    var refAndProbe =BenchActorNewProbe("QuadPersistRecoverPid4", EventsCount);
-                    refAndProbe.probe.ExpectMsg(Commands.Last(), ExpectDuration);
+                    var refAndProbe =BenchActorNewProbe("QuadPersistRecoverPid4", _eventsCount);
+                    refAndProbe.probe.ExpectMsg(Commands.Last(), _expectDuration);
                 });
                 Task.WaitAll(new[] {task1, task2,task3,task4});
 
-            },EventsCount,4);
+            },_eventsCount,4);
         }
         [Fact]
         public void PersistenceActor_performance_must_measure_Recovering8()
         {
-            var p1 = BenchActorNewProbe("OctPersistRecoverPid1", EventsCount);
-            var p2 = BenchActorNewProbe("OctPersistRecoverPid2", EventsCount);
-            var p3 = BenchActorNewProbe("OctPersistRecoverPid3", EventsCount);
-            var p4 = BenchActorNewProbe("OctPersistRecoverPid4", EventsCount);
-            var p5 = BenchActorNewProbe("OctPersistRecoverPid5", EventsCount);
-            var p6 = BenchActorNewProbe("OctPersistRecoverPid6", EventsCount);
-            var p7 = BenchActorNewProbe("OctPersistRecoverPid7", EventsCount);
-            var p8 = BenchActorNewProbe("OctPersistRecoverPid8", EventsCount);
+            var p1 = BenchActorNewProbe("OctPersistRecoverPid1", _eventsCount);
+            var p2 = BenchActorNewProbe("OctPersistRecoverPid2", _eventsCount);
+            var p3 = BenchActorNewProbe("OctPersistRecoverPid3", _eventsCount);
+            var p4 = BenchActorNewProbe("OctPersistRecoverPid4", _eventsCount);
+            var p5 = BenchActorNewProbe("OctPersistRecoverPid5", _eventsCount);
+            var p6 = BenchActorNewProbe("OctPersistRecoverPid6", _eventsCount);
+            var p7 = BenchActorNewProbe("OctPersistRecoverPid7", _eventsCount);
+            var p8 = BenchActorNewProbe("OctPersistRecoverPid8", _eventsCount);
             FeedAndExpectLastSpecific(p1, "p", Commands);
             FeedAndExpectLastSpecific(p2, "p", Commands);
             FeedAndExpectLastSpecific(p3, "p", Commands);
@@ -551,52 +548,52 @@ namespace Akka.Persistence.Linq2Db.BenchmarkTests
             FeedAndExpectLastSpecific(p6, "p", Commands);
             FeedAndExpectLastSpecific(p7, "p", Commands);
             FeedAndExpectLastSpecific(p8, "p", Commands);
-            MeasureGroup(d => $"Recovering {EventsCount} took {d.TotalMilliseconds} ms , {(EventsCount*8 / d.TotalMilliseconds) * 1000} total msg/sec", () =>
+            MeasureGroup(d => $"Recovering {_eventsCount} took {d.TotalMilliseconds} ms , {(_eventsCount*8 / d.TotalMilliseconds) * 1000} total msg/sec", () =>
             {
                 var task1 = Task.Run(()=>
                 {
                     var refAndProbe =BenchActorNewProbe("OctPersistRecoverPid1",
-                        EventsCount);
-                    refAndProbe.probe.ExpectMsg(Commands.Last(), ExpectDuration);
+                        _eventsCount);
+                    refAndProbe.probe.ExpectMsg(Commands.Last(), _expectDuration);
                 });
                 var task2 =Task.Run(() =>
                 {
-                    var refAndProbe =BenchActorNewProbe("OctPersistRecoverPid2", EventsCount);
-                    refAndProbe.probe.ExpectMsg(Commands.Last(), ExpectDuration);
+                    var refAndProbe =BenchActorNewProbe("OctPersistRecoverPid2", _eventsCount);
+                    refAndProbe.probe.ExpectMsg(Commands.Last(), _expectDuration);
                 });
                 var task3 =Task.Run(() =>
                 {
-                    var refAndProbe =BenchActorNewProbe("OctPersistRecoverPid3", EventsCount);
-                    refAndProbe.probe.ExpectMsg(Commands.Last(), ExpectDuration);
+                    var refAndProbe =BenchActorNewProbe("OctPersistRecoverPid3", _eventsCount);
+                    refAndProbe.probe.ExpectMsg(Commands.Last(), _expectDuration);
                 });
                 var task4 =Task.Run(() =>
                 {
-                    var refAndProbe =BenchActorNewProbe("OctPersistRecoverPid4", EventsCount);
-                    refAndProbe.probe.ExpectMsg(Commands.Last(), ExpectDuration);
+                    var refAndProbe =BenchActorNewProbe("OctPersistRecoverPid4", _eventsCount);
+                    refAndProbe.probe.ExpectMsg(Commands.Last(), _expectDuration);
                 });
                 var task5 =Task.Run(() =>
                 {
-                    var refAndProbe =BenchActorNewProbe("OctPersistRecoverPid5", EventsCount);
-                    refAndProbe.probe.ExpectMsg(Commands.Last(), ExpectDuration);
+                    var refAndProbe =BenchActorNewProbe("OctPersistRecoverPid5", _eventsCount);
+                    refAndProbe.probe.ExpectMsg(Commands.Last(), _expectDuration);
                 });
                 var task6 =Task.Run(() =>
                 {
-                    var refAndProbe =BenchActorNewProbe("OctPersistRecoverPid6", EventsCount);
-                    refAndProbe.probe.ExpectMsg(Commands.Last(), ExpectDuration);
+                    var refAndProbe =BenchActorNewProbe("OctPersistRecoverPid6", _eventsCount);
+                    refAndProbe.probe.ExpectMsg(Commands.Last(), _expectDuration);
                 });
                 var task7 =Task.Run(() =>
                 {
-                    var refAndProbe =BenchActorNewProbe("OctPersistRecoverPid7", EventsCount);
-                    refAndProbe.probe.ExpectMsg(Commands.Last(), ExpectDuration);
+                    var refAndProbe =BenchActorNewProbe("OctPersistRecoverPid7", _eventsCount);
+                    refAndProbe.probe.ExpectMsg(Commands.Last(), _expectDuration);
                 });
                 var task8 =Task.Run(() =>
                 {
-                    var refAndProbe =BenchActorNewProbe("OctPersistRecoverPid8", EventsCount);
-                    refAndProbe.probe.ExpectMsg(Commands.Last(), ExpectDuration);
+                    var refAndProbe =BenchActorNewProbe("OctPersistRecoverPid8", _eventsCount);
+                    refAndProbe.probe.ExpectMsg(Commands.Last(), _expectDuration);
                 });
                 Task.WaitAll(new[] {task1, task2,task3,task4,task5,task6,task7,task8});
 
-            },EventsCount,8);
+            },_eventsCount,8);
         }
     }
 

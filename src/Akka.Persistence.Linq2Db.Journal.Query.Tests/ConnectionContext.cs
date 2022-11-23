@@ -23,7 +23,8 @@ namespace Akka.Persistence.Linq2Db.Journal.Query.Tests
         /// <returns>TBD</returns>
         public static SqliteConnection Remember(string connectionString)
         {
-            if (string.IsNullOrEmpty(connectionString)) throw new ArgumentNullException(nameof(connectionString), "No connection string with connection to remember");
+            if (string.IsNullOrEmpty(connectionString)) 
+                throw new ArgumentNullException(nameof(connectionString), "No connection string with connection to remember");
 
             var conn = Remembered.GetOrAdd(connectionString, s => new SqliteConnection(connectionString));
 

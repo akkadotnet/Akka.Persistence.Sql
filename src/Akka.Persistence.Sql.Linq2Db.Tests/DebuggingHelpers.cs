@@ -10,8 +10,8 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests
     {
         public static void SetupTraceDump(ITestOutputHelper outputHelper)
         {
-            LinqToDB.Data.DataConnection.TurnTraceSwitchOn();
-            LinqToDB.Data.DataConnection.OnTrace = info =>
+            DataConnection.TurnTraceSwitchOn();
+            DataConnection.OnTrace = info =>
             {
                 try
                 {
@@ -23,9 +23,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests
                     {
                         var sb = new StringBuilder();
 
-                        for (var ex = info.Exception;
-                            ex != null;
-                            ex = ex.InnerException)
+                        for (var ex = info.Exception; ex != null; ex = ex.InnerException)
                         {
                             sb
                                 .AppendLine()
@@ -33,8 +31,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests
                                 .AppendLine($"Exception: {ex.GetType()}")
                                 .AppendLine($"Message  : {ex.Message}")
                                 .AppendLine(ex.StackTrace)
-                                .AppendLine("*/")
-                                ;
+                                .AppendLine("*/");
                         }
 
                         outputHelper.WriteLine(sb.ToString());

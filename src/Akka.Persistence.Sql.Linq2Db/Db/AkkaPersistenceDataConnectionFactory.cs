@@ -6,7 +6,6 @@ using Akka.Persistence.Sql.Linq2Db.Config;
 using Akka.Persistence.Sql.Linq2Db.Journal;
 using Akka.Persistence.Sql.Linq2Db.Journal.Types;
 using Akka.Persistence.Sql.Linq2Db.Snapshot;
-using Akka.Streams.Dsl;
 using Akka.Util;
 using LinqToDB;
 using LinqToDB.Configuration;
@@ -19,61 +18,61 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
 {
     public class AkkaPersistenceDataConnectionFactory
     {
-        private string providerName;
-        private string connString;
-        private MappingSchema mappingSchema;
-        private LinqToDbConnectionOptions opts;
-        
+        private readonly string _providerName;
+        private readonly string _connString;
+        private readonly MappingSchema _mappingSchema;
+        private readonly LinqToDbConnectionOptions _opts;
         
         public AkkaPersistenceDataConnectionFactory(IProviderConfig<JournalTableConfig> config)
         {
-            providerName = config.ProviderName;
-            connString = config.ConnectionString;
+            _providerName = config.ProviderName;
+            _connString = config.ConnectionString;
+            
             //Build Mapping Schema to be used for all connections.
             //Make a unique mapping schema name here to avoid problems
             //with multiple configurations using different schemas.
             var configName = "akka.persistence.l2db." + HashCode.Combine(config.ConnectionString, config.ProviderName, config.TableConfig.GetHashCode());
-            var fmb = new MappingSchema(configName,MappingSchema.Default)
-                .GetFluentMappingBuilder();
+            var fmb = new MappingSchema(configName,MappingSchema.Default).GetFluentMappingBuilder();
             MapJournalRow(config, fmb);
 
-            useCloneDataConnection = config.UseCloneConnection;
-            mappingSchema = fmb.MappingSchema;
-            opts = new LinqToDbConnectionOptionsBuilder()
-                .UseConnectionString(providerName, connString)
-                .UseMappingSchema(mappingSchema).Build();
-            if (providerName.ToLower().StartsWith("sqlserver"))
+            _useCloneDataConnection = config.UseCloneConnection;
+            _mappingSchema = fmb.MappingSchema;
+            _opts = new LinqToDbConnectionOptionsBuilder()
+                .UseConnectionString(_providerName, _connString)
+                .UseMappingSchema(_mappingSchema).Build();
+            
+            if (_providerName.ToLower().StartsWith("sqlserver"))
             {
-                policy = new SqlServerRetryPolicy();
+                _policy = new SqlServerRetryPolicy();
             }
-            _cloneConnection = new Lazy<DataConnection>(()=>new DataConnection(opts));
+            _cloneConnection = new Lazy<DataConnection>(()=>new DataConnection(_opts));
         }
         
         public AkkaPersistenceDataConnectionFactory(IProviderConfig<SnapshotTableConfiguration> config)
         {
-            providerName = config.ProviderName;
-            connString = config.ConnectionString;
+            _providerName = config.ProviderName;
+            _connString = config.ConnectionString;
+            
             //Build Mapping Schema to be used for all connections.
             //Make a unique mapping schema name here to avoid problems
             //with multiple configurations using different schemas.
             var configName = "akka.persistence.l2db." + HashCode.Combine(config.ConnectionString, config.ProviderName, config.TableConfig.GetHashCode());
             var ms = new MappingSchema(configName, MappingSchema.Default);
             //ms.SetConvertExpression<DateTime, DateTime>(dt => DateTime.SpecifyKind(dt, DateTimeKind.Utc));
-            var fmb = ms
-                .GetFluentMappingBuilder();
+            var fmb = ms.GetFluentMappingBuilder();
             MapSnapshotRow(config, fmb);
 
-            useCloneDataConnection = config.UseCloneConnection;
-            mappingSchema = fmb.MappingSchema;
-            opts = new LinqToDbConnectionOptionsBuilder()
-                .UseConnectionString(providerName, connString)
-                .UseMappingSchema(mappingSchema).Build();
+            _useCloneDataConnection = config.UseCloneConnection;
+            _mappingSchema = fmb.MappingSchema;
+            _opts = new LinqToDbConnectionOptionsBuilder()
+                .UseConnectionString(_providerName, _connString)
+                .UseMappingSchema(_mappingSchema).Build();
             
-            if (providerName.ToLower().StartsWith("sqlserver"))
+            if (_providerName.ToLower().StartsWith("sqlserver"))
             {
-                policy = new SqlServerRetryPolicy();
+                _policy = new SqlServerRetryPolicy();
             }
-            _cloneConnection = new Lazy<DataConnection>(()=>new DataConnection(opts));
+            _cloneConnection = new Lazy<DataConnection>(()=>new DataConnection(_opts));
         }
 
         private static void MapSnapshotRow(
@@ -98,12 +97,14 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                 .Member(r => r.PersistenceId)
                 .HasColumnName(tableConfig.ColumnNames.PersistenceId)
                 .HasLength(255);
-            if (config.ProviderName.ToLower().Contains("sqlite")||config.ProviderName.ToLower().Contains("postgres"))
+            
+            if (config.ProviderName.ToLower().Contains("sqlite") || config.ProviderName.ToLower().Contains("postgres"))
             {
                 builder.Member(r => r.Created)
                     .HasDataType(DataType.Int64)
                     .HasConversion(r => r.Ticks, r => new DateTime(r));
             }
+            
             if (config.IDaoConfig.SqlCommonCompatibilityMode)
             {
                 
@@ -120,40 +121,44 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
             var journalRowBuilder = fmb.Entity<JournalRow>()
                 .HasSchemaName(tableConfig.SchemaName)
                 .HasTableName(tableConfig.TableName)
-                .Member(r => r.deleted).HasColumnName(tableConfig.ColumnNames.Deleted)
-                .Member(r => r.manifest).HasColumnName(tableConfig.ColumnNames.Manifest)
+                .Member(r => r.Deleted).HasColumnName(tableConfig.ColumnNames.Deleted)
+                .Member(r => r.Manifest).HasColumnName(tableConfig.ColumnNames.Manifest)
                 .HasLength(500)
-                .Member(r => r.message).HasColumnName(tableConfig.ColumnNames.Message).IsNullable(false)
-                .Member(r => r.ordering).HasColumnName(tableConfig.ColumnNames.Ordering)
-                .Member(r => r.tags).HasLength(100)
+                .Member(r => r.Message).HasColumnName(tableConfig.ColumnNames.Message).IsNullable(false)
+                .Member(r => r.Ordering).HasColumnName(tableConfig.ColumnNames.Ordering)
+                .Member(r => r.Tags).HasLength(100)
                 .HasColumnName(tableConfig.ColumnNames.Tags)
                 .Member(r => r.Identifier)
-                .HasColumnName(tableConfig.ColumnNames.Identitifer)
-                .Member(r => r.persistenceId)
+                .HasColumnName(tableConfig.ColumnNames.Identifier)
+                .Member(r => r.PersistenceId)
                 .HasColumnName(tableConfig.ColumnNames.PersistenceId).HasLength(255).IsNullable(false)
-                .Member(r => r.sequenceNumber)
+                .Member(r => r.SequenceNumber)
                 .HasColumnName(tableConfig.ColumnNames.SequenceNumber)
                 .Member(r => r.Timestamp)
                 .HasColumnName(tableConfig.ColumnNames.Created);
+
             //We can skip writing tags the old way by ignoring the column in mapping.
-            journalRowBuilder.Member(r => r.tagArr).IsNotColumn();
-            if ((tableConfig.TagWriteMode &
-                TagWriteMode.CommaSeparatedArray) == 0)
+            journalRowBuilder.Member(r => r.TagArr).IsNotColumn();
+            if ((tableConfig.TagWriteMode & TagWriteMode.CommaSeparatedArray) == 0)
             {
-                journalRowBuilder.Member(r => r.tags).IsNotColumn();
+                journalRowBuilder.Member(r => r.Tags).IsNotColumn();
             }
+            
             if (config.ProviderName.ToLower().Contains("sqlite"))
             {
-                journalRowBuilder.Member(r => r.ordering).IsPrimaryKey().HasDbType("INTEGER")
+                journalRowBuilder
+                    .Member(r => r.Ordering).IsPrimaryKey()
+                    .HasDbType("INTEGER")
                     .IsIdentity();
             }
             else
             {
-                journalRowBuilder.Member(r => r.ordering).IsIdentity()
-                    .Member(r=>r.persistenceId).IsPrimaryKey()
-                    .Member(r=>r.sequenceNumber).IsPrimaryKey();
+                journalRowBuilder
+                    .Member(r => r.Ordering).IsIdentity()
+                    .Member(r=>r.PersistenceId).IsPrimaryKey()
+                    .Member(r=>r.SequenceNumber).IsPrimaryKey();
             }
-
+            
             void SetJoinCol<T>(PropertyMappingBuilder<JournalTagRow, T> builder,
                 PropertyMappingBuilder<JournalRow, long> propertyMappingBuilder)
             {
@@ -199,7 +204,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                     .IsPrimaryKey();
                 SetJoinCol(tagTableBuilder, journalRowBuilder);
             }
-
+            
             //Probably overkill, but we only set Metadata Mapping if specified
             //That we are in delete compatibility mode.
             if (config.IDaoConfig.SqlCommonCompatibilityMode)
@@ -211,27 +216,24 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                     .HasColumnName(tableConfig.MetadataColumnNames.PersistenceId)
                     .HasLength(255)
                     .Member(r => r.SequenceNumber)
-                    .HasColumnName(tableConfig.MetadataColumnNames.SequenceNumber)
-                    ;
+                    .HasColumnName(tableConfig.MetadataColumnNames.SequenceNumber);
             }
         }
 
-        private Lazy<DataConnection> _cloneConnection;
-        private bool useCloneDataConnection;
-        private IRetryPolicy policy;
+        private readonly Lazy<DataConnection> _cloneConnection;
+        private readonly bool _useCloneDataConnection;
+        private readonly IRetryPolicy _policy;
 
         public DataConnection GetConnection()
         {
-            if (useCloneDataConnection)
+            if (_useCloneDataConnection)
             {
-                var conn =  (DataConnection)_cloneConnection.Value.Clone();
-                conn.RetryPolicy = policy;
+                var conn = (DataConnection)_cloneConnection.Value.Clone();
+                conn.RetryPolicy = _policy;
                 return conn;
             }
-            else
-            {
-                return new DataConnection(opts) { RetryPolicy = policy};    
-            }
+            
+            return new DataConnection(_opts) { RetryPolicy = _policy};
         }
     }
 }

@@ -21,10 +21,9 @@ using Newtonsoft.Json;
 
 namespace Akka.Persistence.Linq2Db.IndexHelperApp
 {
-    class Program
+    public static class Program
     {
-        
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             Parser.Default.ParseArguments<Options>(args)
                 .WithParsed(opts =>
@@ -32,44 +31,36 @@ namespace Akka.Persistence.Linq2Db.IndexHelperApp
                     //var str = Linq2DbJournalDefaultSpecConfig.customConfig("testGen",
                     //    "journalTbl", "metadataTbl", ProviderName.SqlServer,
                     //    "connStr");
-                    var conf =
-                        ConfigurationFactory.ParseString(
-                            File.ReadAllText(opts.File));
+                    var conf = ConfigurationFactory.ParseString(File.ReadAllText(opts.File));
 
-                    var journalConf =
-                        new Akka.Persistence.Sql.Linq2Db.Config.JournalConfig(
-                            conf.GetConfig(
-                                    opts.HoconPath
-                                    //"akka.persistence.journal.linq2db.testGen"
-                                    )
-                                .WithFallback(Akka.Persistence.Sql.Linq2Db
-                                    .Journal
-                                    .Linq2DbWriteJournal.DefaultConfiguration));
-                    var generator = getGenerator(journalConf.ProviderName);
+                    var journalConf = new JournalConfig(conf
+                        .GetConfig(opts.HoconPath)
+                        //.GetConfig("akka.persistence.journal.linq2db.testGen")
+                        .WithFallback(Sql.Linq2Db.Journal.Linq2DbWriteJournal.DefaultConfiguration));
+                    var generator = GetGenerator(journalConf.ProviderName);
                     var helper = new JournalIndexHelper();
-                    CreateIndexExpression expr = null;
                     GeneratePerOptions(opts, helper, journalConf, generator);
                 });
         }
 
-        private static void GeneratePerOptions(Options opts, JournalIndexHelper helper,
-            JournalConfig journalConf, GenericGenerator generator)
+        private static void GeneratePerOptions(
+            Options opts, 
+            JournalIndexHelper helper,
+            JournalConfig journalConf, 
+            GenericGenerator generator)
         {
-            CreateIndexExpression expr;
             if (opts.GeneratePidSeqNo)
             {
-                expr = new CreateIndexExpression()
+                var orderingExpr = new CreateIndexExpression
                 {
-                    Index = helper.JournalOrdering(journalConf.TableConfig.TableName,
+                    Index = helper.JournalOrdering(
+                        journalConf.TableConfig.TableName,
                         journalConf.TableConfig.ColumnNames.Ordering,
                         journalConf.TableConfig.SchemaName)
                 };
-                GenerateWithHeaderAndFooter(generator, expr, "Ordering");
-            }
+                GenerateWithHeaderAndFooter(generator, orderingExpr, "Ordering");
 
-            if (opts.GeneratePidSeqNo)
-            {
-                expr = new CreateIndexExpression()
+                var indexExpr = new CreateIndexExpression
                 {
                     Index = helper.DefaultJournalIndex(
                         journalConf.TableConfig.TableName,
@@ -77,23 +68,25 @@ namespace Akka.Persistence.Linq2Db.IndexHelperApp
                         journalConf.TableConfig.ColumnNames.SequenceNumber,
                         journalConf.TableConfig.SchemaName)
                 };
-                GenerateWithHeaderAndFooter(generator, expr, "PidAndSequenceNo");
+                GenerateWithHeaderAndFooter(generator, indexExpr, "PidAndSequenceNo");
             }
 
             if (opts.GenerateTimestamp)
             {
-                expr = new CreateIndexExpression()
+                var timestampExpr = new CreateIndexExpression()
                 {
                     Index = helper.JournalTimestamp(journalConf.TableConfig.TableName,
                         journalConf.TableConfig.ColumnNames.Created,
                         journalConf.TableConfig.SchemaName)
                 };
-                GenerateWithHeaderAndFooter(generator, expr, "Timestamp");
+                GenerateWithHeaderAndFooter(generator, timestampExpr, "Timestamp");
             }
         }
 
-        private static void GenerateWithHeaderAndFooter(GenericGenerator generator,
-            CreateIndexExpression expr, string indexType)
+        private static void GenerateWithHeaderAndFooter(
+            GenericGenerator generator,
+            CreateIndexExpression expr, 
+            string indexType)
         {
             Console.WriteLine("-------");
             Console.WriteLine($"----{indexType} Index Create Below");
@@ -102,40 +95,21 @@ namespace Akka.Persistence.Linq2Db.IndexHelperApp
             Console.WriteLine("-------");
         }
 
-        static GenericGenerator getGenerator(string dbArg)
+        private static GenericGenerator GetGenerator(string dbArg)
         {
-            if (dbArg.StartsWith("sqlserver",
-                StringComparison.InvariantCultureIgnoreCase))
+            const StringComparison comp = StringComparison.InvariantCultureIgnoreCase;
+            return dbArg switch
             {
-                return new SqlServer2008Generator();
-            }
-            else if (dbArg.Contains("sqlite",
-                StringComparison.InvariantCultureIgnoreCase))
-            {
-                return new SQLiteGenerator();
-            }
-            else if (dbArg.Contains("postgres",
-                StringComparison.InvariantCultureIgnoreCase))
-            {
-                return new Postgres92Generator(
-                    new PostgresQuoter(new PostgresOptions()),
-                    new OptionsWrapper<GeneratorOptions>(
-                        new GeneratorOptions()));
-            }
-            else if (dbArg.Contains("mysql",
-                StringComparison.InvariantCultureIgnoreCase))
-            {
-                return new MySql5Generator();
-            }
-            else if (dbArg.Contains("oracle",
-                StringComparison.InvariantCultureIgnoreCase))
-            {
-                return new OracleGenerator();
-            }
-            else
-            {
-                throw new Exception("IDK what to do with this!");
-            }
+                _ when dbArg.StartsWith("sqlserver", comp) => new SqlServer2008Generator(),
+                _ when dbArg.Contains("sqlite", comp) => new SQLiteGenerator(),
+                _ when dbArg.Contains("postgres", comp) =>
+                    new Postgres92Generator(
+                        new PostgresQuoter(new PostgresOptions()),
+                        new OptionsWrapper<GeneratorOptions>(new GeneratorOptions())),
+                _ when dbArg.Contains("mysql", comp) => new MySql5Generator(),
+                _ when dbArg.Contains("oracle", comp) => new OracleGenerator(),
+                _ => throw new Exception("IDK what to do with this!")
+            };
         }
     }
 }
