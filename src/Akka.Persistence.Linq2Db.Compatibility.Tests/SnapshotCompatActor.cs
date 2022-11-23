@@ -14,17 +14,33 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
     public class SnapshotCompatActor : ReceivePersistentActor
     {
         private List<SomeEvent> events = new List<SomeEvent>();
+        private IActorRef _sender;
         public SnapshotCompatActor(string snapshot, string persistenceId)
         {
             JournalPluginId = "akka.persistence.journal.inmem";
             SnapshotPluginId = snapshot;
             PersistenceId = persistenceId;
-            Command<SomeEvent>(se=>Persist(se, p =>
+            Command<SomeEvent>(se =>
             {
-                events.Add(p);
-                SaveSnapshot(events);
-            }));
-            Command<ContainsEvent>(ce=>Context.Sender.Tell(events.Any(e=>e.Guid==ce.Guid)));
+                _sender = Sender;
+                Persist(se, p =>
+                {
+                    events.Add(p);
+                    SaveSnapshot(events);
+                });
+            });
+            Command<ContainsEvent>(ce =>
+            {
+                Context.Sender.Tell(events.Any(e => e.Guid == ce.Guid));
+            });
+            Command<SaveSnapshotSuccess>(s =>
+            {
+                _sender.Tell(true);
+            });
+            Command<SaveSnapshotFailure>(s =>
+            {
+                _sender.Tell(false);
+            });
             
             Recover<SnapshotOffer>(se =>
             {
