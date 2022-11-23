@@ -37,16 +37,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             _deserializeFlow = _serializer.DeserializeFlow();
         }
 
-        /*
-        protected static IQueryable<JournalRow> BaseQueryStatic(DataConnection connection, bool includeDeleted)
-        {
-            return includeDeleted 
-                ? connection.GetTable<JournalRow>()
-                : connection.GetTable<JournalRow>()
-                    .Where(jr => jr.Deleted == false);
-        }
-        */
-
         public Source<string, NotUsed> AllPersistenceIdsSource(long max)
         {
             var maxTake = MaxTake(max);
