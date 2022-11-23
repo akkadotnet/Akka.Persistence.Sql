@@ -128,7 +128,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                 foreach (var journalRow in toAdd)
                 {
                     journalRow.TagArr = tagRows
-                        .Where(r => r.WriteUUID == journalRow.WriteUUID)
+                        .Where(r => r.WriteUuid == journalRow.WriteUuid)
                         .Select(r => r.TagValue).ToArray();
                 }
             }
@@ -144,11 +144,11 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                 //2: Don't wanna make a useless round trip to the DB,
                 //   if we know nothing is tagged.
                 var set = toAdd
-                    .Where(r => r.WriteUUID.HasValue)
-                    .Select(r => r.WriteUUID.Value).ToList();
+                    .Where(r => r.WriteUuid.HasValue)
+                    .Select(r => r.WriteUuid.Value).ToList();
                 return set.Count == 0 
                     ? Option<Expression<Func<JournalTagRow, bool>>>.None 
-                    : new Option<Expression<Func<JournalTagRow, bool>>>(r => r.WriteUUID.In(set));
+                    : new Option<Expression<Func<JournalTagRow, bool>>>(r => r.WriteUuid.In(set));
             }
 
             //We can just check the count here.
@@ -233,7 +233,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                 if (_readJournalConfig.TableConfig.TagTableMode == TagTableMode.OrderingId)
                     return (jr, jtr) => jr.Ordering == jtr.JournalOrderingId;
                 
-                return (jr, jtr) => jr.WriteUUID == jtr.WriteUUID;
+                return (jr, jtr) => jr.WriteUuid == jtr.WriteUuid;
             }
         }
         
@@ -280,10 +280,10 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                                     .Select(j => j.JournalOrderingId))
                               || r.Tags.Contains(tagVal);
             }
-            return r => r.WriteUUID.Value
+            return r => r.WriteUuid.Value
                             .In(conn.GetTable<JournalTagRow>()
                                 .Where(j => j.TagValue == tagVal)
-                                .Select(j => j.WriteUUID))
+                                .Select(j => j.WriteUuid))
                         || r.Tags.Contains(tagVal);
         }
 

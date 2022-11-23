@@ -15,13 +15,13 @@ using Akka.Persistence.Sql.Linq2Db.Serialization;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using LanguageExt;
-using LinqToDB;
+using LinqToDB;using LinqToDB.Common;
 using LinqToDB.Data;
 using static LanguageExt.Prelude;
 
 namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
 {
-    public class SequentialUUIDGenerator
+    public class SequentialUuidGenerator
     {
         private long _counter = DateTime.UtcNow.Ticks;
 
@@ -68,7 +68,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
         protected readonly ILoggingAdapter Logger;
         private readonly Flow<JournalRow, Util.Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, NotUsed> _deserializeFlow;
         private readonly Flow<JournalRow, Util.Try<ReplayCompletion>, NotUsed> _deserializeFlowMapped;
-        private readonly SequentialUUIDGenerator _uuidGen;
+        private readonly SequentialUuidGenerator _uuidGen;
         
         protected BaseByteArrayJournalDao(
             IAdvancedScheduler scheduler,
@@ -85,7 +85,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
             Serializer = serializer;
             _deserializeFlow = Serializer.DeserializeFlow();
             _deserializeFlowMapped = Serializer.DeserializeFlow().Select(MessageWithBatchMapper());
-            _uuidGen = new SequentialUUIDGenerator();
+            _uuidGen = new SequentialUuidGenerator();
             
             //Due to C# rules we have to initialize WriteQueue here
             //Keeping it here vs init function prevents accidental moving of init
@@ -246,10 +246,10 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
                 if (journalRow.TagArr?.Length > 0)
                 {
                     var uid = NextUuid();
-                    journalRow.WriteUUID = uid;
+                    journalRow.WriteUuid = uid;
                     foreach (var s1 in journalRow.TagArr)
                     {
-                        tagWrites.Add(new JournalTagRow { WriteUUID = uid, TagValue = s1 });
+                        tagWrites.Add(new JournalTagRow { WriteUuid = uid, TagValue = s1 });
                     }
                 }
             }

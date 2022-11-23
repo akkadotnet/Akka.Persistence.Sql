@@ -105,7 +105,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
                             row.PersistenceId = representation.PersistenceId;
                             row.Identifier = serializer.Identifier;
                             row.SequenceNumber = representation.SequenceNr;
-                            row.eventManifest = representation.Manifest;
+                            row.EventManifest = representation.Manifest;
                                 
                             return new Try<JournalRow>(row);
                         });
@@ -135,7 +135,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
                                 action: state => state.Item1.FromBinary(state.message, state.type)), 
                             sequenceNr: t.SequenceNumber,
                             persistenceId: t.PersistenceId,
-                            manifest: t.eventManifest ?? t.Manifest, 
+                            manifest: t.EventManifest ?? t.Manifest, 
                             isDeleted: t.Deleted, 
                             sender: ActorRefs.NoSender,
                             writerGuid: null, 
@@ -152,7 +152,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
                         payload: _serializer.Deserialize(t.Message, identifierMaybe.Value, t.Manifest), 
                         sequenceNr: t.SequenceNumber,
                         persistenceId: t.PersistenceId,
-                        manifest: t.eventManifest ?? t.Manifest, 
+                        manifest: t.EventManifest ?? t.Manifest, 
                         isDeleted: t.Deleted,
                         sender: ActorRefs.NoSender,
                         writerGuid: null,

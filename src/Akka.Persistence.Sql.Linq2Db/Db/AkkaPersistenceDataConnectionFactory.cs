@@ -167,30 +167,30 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                 {
                     builder.Member(r => r.JournalOrderingId)
                         .IsNotColumn()
-                        .Member(r => r.WriteUUID)
+                        .Member(r => r.WriteUuid)
                         .IsColumn().IsPrimaryKey();
-                    journalRowBuilder.Member(r => r.WriteUUID)
+                    journalRowBuilder.Member(r => r.WriteUuid)
                         .IsColumn();
                 }
                 else
                 {
-                    builder.Member(r => r.WriteUUID)
+                    builder.Member(r => r.WriteUuid)
                         .IsNotColumn()
                         .Member(r => r.JournalOrderingId)
                         .IsColumn().IsPrimaryKey();
-                    journalRowBuilder.Member(r => r.WriteUUID)
+                    journalRowBuilder.Member(r => r.WriteUuid)
                         .IsNotColumn();
                 }
             }
 
             if (config.TableConfig.UseEventManifestColumn)
             {
-                journalRowBuilder.Member(r => r.eventManifest)
+                journalRowBuilder.Member(r => r.EventManifest)
                     .IsColumn().HasLength(64);
             }
             else
             {
-                journalRowBuilder.Member(r => r.eventManifest)
+                journalRowBuilder.Member(r => r.EventManifest)
                     .IsNotColumn();   
             }
             if ((config.TableConfig.TagWriteMode & TagWriteMode.TagTable) != 0)
