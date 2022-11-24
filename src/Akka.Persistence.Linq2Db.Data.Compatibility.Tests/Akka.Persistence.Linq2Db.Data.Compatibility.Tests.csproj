@@ -18,7 +18,7 @@
         
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
         
-        <PackageReference Include="MySql.Data" Version="8.0.28" />
+        <PackageReference Include="MySql.Data" Version="8.0.31" />
         
         <PackageReference Include="Npgsql" Version="$(PostgreSqlVersion)" />
         <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
