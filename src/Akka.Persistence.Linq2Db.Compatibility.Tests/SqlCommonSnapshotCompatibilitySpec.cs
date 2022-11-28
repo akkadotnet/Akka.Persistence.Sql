@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Event;
 using Akka.TestKit.Xunit2.Internals;
+using FluentAssertions;
+using LanguageExt.UnitsOfMeasure;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -39,16 +41,18 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             var persistRef = sys1.ActorOf(Props.Create(() =>
                 new SnapshotCompatActor(OldSnapshot, "p-1")), "test-snap-recover-1");
             var ourGuid = Guid.NewGuid();
-            persistRef.Tell(new SomeEvent(){EventName = "rec-test", Guid = ourGuid, Number = 1});
-            Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid}, TimeSpan.FromSeconds(5)).Result);
             
-            await Task.Delay(TimeSpan.FromSeconds(2));
-            await persistRef.GracefulStop(TimeSpan.FromSeconds(5));
-            await Task.Delay(TimeSpan.FromSeconds(2));
+            (await persistRef.Ask<bool>(new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 }))
+                .Should().BeTrue();
+            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
+                .Should().BeTrue();
+            
+            (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
             
             persistRef =  sys1.ActorOf(Props.Create(() =>
                 new SnapshotCompatActor(NewSnapshot, "p-1")), "test-snap-recover-1");
-            Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid},TimeSpan.FromSeconds(5)).Result);
+            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
+                .Should().BeTrue();
         }
         [Fact]
         public async Task Can_Persist_SqlCommon_Snapshot()
@@ -59,20 +63,24 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             var persistRef = sys1.ActorOf(Props.Create(() =>
                 new SnapshotCompatActor(OldSnapshot, "p-2")), "test-snap-persist-1");
             var ourGuid = Guid.NewGuid();
-            persistRef.Tell(new SomeEvent(){EventName = "rec-test", Guid = ourGuid, Number = 1});
-            Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid}, TimeSpan.FromSeconds(5)).Result);
             
-            await Task.Delay(TimeSpan.FromSeconds(2));
-            await persistRef.GracefulStop(TimeSpan.FromSeconds(5));
-            await Task.Delay(TimeSpan.FromSeconds(2));
+            (await persistRef.Ask<bool>(new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 }))
+                .Should().BeTrue();
+            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
+                .Should().BeTrue();
             
-            persistRef =  sys1.ActorOf(Props.Create(() =>
+            (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
+            
+            persistRef = sys1.ActorOf(Props.Create(() =>
                 new SnapshotCompatActor(NewSnapshot, "p-2")), "test-snap-persist-1");
-            Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid},TimeSpan.FromSeconds(10)).Result);
+            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
+                .Should().BeTrue();
             
             var ourSecondGuid = Guid.NewGuid();
-            persistRef.Tell(new SomeEvent(){EventName = "rec-test", Guid = ourSecondGuid, Number = 2});
-            Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourSecondGuid},TimeSpan.FromSeconds(5)).Result);
+            (await persistRef.Ask<bool>(new SomeEvent { EventName = "rec-test", Guid = ourSecondGuid, Number = 2 }))
+                .Should().BeTrue();
+            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourSecondGuid }, TimeSpan.FromSeconds(5)))
+                .Should().BeTrue();
         }
         
         [Fact]
@@ -84,17 +92,20 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             var persistRef = sys1.ActorOf(Props.Create(() =>
                 new SnapshotCompatActor(NewSnapshot, "p-3")), "test-snap-recover-2");
             var ourGuid = Guid.NewGuid();
-            persistRef.Tell(new SomeEvent(){EventName = "rec-test", Guid = ourGuid, Number = 1});
-            Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid}, TimeSpan.FromSeconds(5)).Result);
             
-            await Task.Delay(TimeSpan.FromSeconds(2));
-            await persistRef.GracefulStop(TimeSpan.FromSeconds(5));
-            await Task.Delay(TimeSpan.FromSeconds(2));
+            (await persistRef.Ask<bool>(new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 }))
+                .Should().BeTrue();
+            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
+                .Should().BeTrue();
+            
+            (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
             
             persistRef = sys1.ActorOf(Props.Create(() =>
                 new SnapshotCompatActor(OldSnapshot, "p-3")), "test-snap-recover-2");
-            Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid},TimeSpan.FromSeconds(5)).Result);
+            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
+                .Should().BeTrue();
         }
+        
         [Fact]
         public async Task SqlCommon_Snapshot_Can_Persist_L2db_Snapshot()
         {
@@ -104,20 +115,24 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             var persistRef = sys1.ActorOf(Props.Create(() =>
                 new SnapshotCompatActor(NewSnapshot, "p-4")), "test-snap-persist-2");
             var ourGuid = Guid.NewGuid();
-            persistRef.Tell(new SomeEvent(){EventName = "rec-test", Guid = ourGuid, Number = 1});
-            Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid}, TimeSpan.FromSeconds(5)).Result);
             
-            await Task.Delay(TimeSpan.FromSeconds(2));
-            await persistRef.GracefulStop(TimeSpan.FromSeconds(5));
-            await Task.Delay(TimeSpan.FromSeconds(2));
+            (await persistRef.Ask<bool>(new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 }))
+                .Should().BeTrue();
+            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
+                .Should().BeTrue();
             
-            persistRef =  sys1.ActorOf(Props.Create(() =>
+            (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
+            
+            persistRef = sys1.ActorOf(Props.Create(() =>
                 new SnapshotCompatActor(OldSnapshot, "p-4")), "test-snap-persist-2");
-            Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourGuid},TimeSpan.FromSeconds(10)).Result);
+            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(10)))
+                .Should().BeTrue();
             
             var ourSecondGuid = Guid.NewGuid();
-            persistRef.Tell(new SomeEvent(){EventName = "rec-test", Guid = ourSecondGuid, Number = 2});
-            Assert.True(persistRef.Ask<bool>(new ContainsEvent(){Guid = ourSecondGuid},TimeSpan.FromSeconds(5)).Result);
+            (await persistRef.Ask<bool>(new SomeEvent { EventName = "rec-test", Guid = ourSecondGuid, Number = 2 }))
+                .Should().BeTrue();
+            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourSecondGuid }, TimeSpan.FromSeconds(5)))
+                .Should().BeTrue();
         }
     }
 }
