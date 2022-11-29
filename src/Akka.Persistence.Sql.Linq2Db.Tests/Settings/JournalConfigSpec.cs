@@ -37,7 +37,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
                 .Be("akka.persistence.dispatchers.default-plugin-dispatcher");
             journal.GetString("connection-string", "invalid").Should().BeNullOrEmpty();
             journal.GetString("provider-name", "invalid").Should().BeNullOrEmpty();
-            journal.GetBoolean("logical-delete").Should().BeFalse();
             journal.GetBoolean("delete-compatibility-mode").Should().BeTrue();
             journal.GetString("table-compatibility-mode", "invalid").Should().BeNullOrEmpty();
             journal.GetInt("buffer-size").Should().Be(5000);
@@ -246,7 +245,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             daoConfig.PreferParametersOnMultiRowInsert.Should().BeTrue();
             daoConfig.ReplayBatchSize.Should().Be(1000);
             daoConfig.Parallelism.Should().Be(3);
-            daoConfig.LogicalDelete.Should().BeFalse();
             daoConfig.MaxRowByRowSize.Should().Be(100);
             daoConfig.SqlCommonCompatibilityMode.Should().BeTrue();
             

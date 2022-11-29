@@ -35,12 +35,10 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             type.Should().Be(typeof(Linq2DbReadJournalProvider));
 
             query.GetString("write-plugin", "invalid").Should().BeNullOrEmpty();
-            query.GetBoolean("include-logically-deleted").Should().BeFalse();
             query.GetInt("max-buffer-size").Should().Be(500);
             query.GetTimeSpan("refresh-interval").Should().Be(1.Seconds());
             query.GetString("connection-string", "invalid").Should().BeNullOrEmpty();
             query.GetString("provider-name", "invalid").Should().BeNullOrEmpty();
-            query.GetBoolean("logical-delete").Should().BeFalse();
             query.GetBoolean("delete-compatibility-mode").Should().BeTrue();
             query.GetString("table-compatibility-mode", "invalid").Should().BeNullOrEmpty();
             query.GetInt("buffer-size").Should().Be(5000);
@@ -240,7 +238,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             journal.RefreshInterval.Should().Be(1.Seconds());
             journal.MaxBufferSize.Should().Be(500);
             journal.AddShutdownHook.Should().BeTrue();
-            journal.IncludeDeleted.Should().BeFalse();
 
             var pluginConfig = journal.PluginConfig;
             pluginConfig.TagSeparator.Should().Be(";");
@@ -254,7 +251,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             // daoConfig.PreferParametersOnMultiRowInsert.Should().BeTrue(); // Not used in query config
             daoConfig.ReplayBatchSize.Should().Be(1000);
             daoConfig.Parallelism.Should().Be(3);
-            daoConfig.LogicalDelete.Should().BeFalse();
             daoConfig.MaxRowByRowSize.Should().Be(100);
             daoConfig.SqlCommonCompatibilityMode.Should().BeTrue();
             
