@@ -23,7 +23,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
     
     public abstract class BaseByteReadArrayJournalDao : BaseJournalDaoWithReadMessages, IReadJournalDao
     {
-        private readonly bool _includeDeleted;
         private readonly ReadJournalConfig _readJournalConfig;
         private readonly FlowPersistentReprSerializer<JournalRow> _serializer;
         private readonly Flow<JournalRow, Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, NotUsed> _deserializeFlow;
@@ -37,23 +36,8 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             : base(scheduler, materializer, connectionFactory)
         {
             _readJournalConfig = readJournalConfig;
-            _includeDeleted = readJournalConfig.IncludeDeleted;
             _serializer = serializer;
             _deserializeFlow = _serializer.DeserializeFlow();
-        }
-
-        protected IQueryable<JournalRow> BaseQuery(DataConnection connection)
-        {
-            return _includeDeleted 
-                ? connection.GetTable<JournalRow>()
-                : connection.GetTable<JournalRow>().Where(jr => jr.Deleted == false);
-        }
-        
-        protected static IQueryable<JournalRow> BaseQueryStatic(DataConnection connection, bool includeDeleted)
-        {
-            return includeDeleted 
-                ? connection.GetTable<JournalRow>()
-                : connection.GetTable<JournalRow>().Where(jr => jr.Deleted == false);
         }
 
         public Source<string, NotUsed> AllPersistenceIdsSource(long max)
@@ -61,12 +45,13 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             var maxTake = MaxTake(max);
 
             return AsyncSource<string>.FromEnumerable(
-                new { _connectionFactory = ConnectionFactory, maxTake, _includeDeleted },
+                new { _connectionFactory = ConnectionFactory, maxTake},
                 async input =>
                 {
                     await using var db = input._connectionFactory.GetConnection();
                     
-                    return await BaseQueryStatic(db, input._includeDeleted)
+                    return await db.GetTable<JournalRow>()
+                        .Where(r => r.Deleted == false)
                         .Select(r => r.PersistenceId)
                         .Distinct()
                         .Take(input.maxTake).ToListAsync();
@@ -86,15 +71,16 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             var maxTake = MaxTake(max);
             
             return AsyncSource<JournalRow>.FromEnumerable(
-                new { _connectionFactory = ConnectionFactory, maxTake, maxOffset, offset, _includeDeleted },
+                new { _connectionFactory = ConnectionFactory, maxTake, maxOffset, offset},
                 async input=>
                 {
                     await using var conn = input._connectionFactory.GetConnection();
-                    var events = await BaseQueryStatic(conn, input._includeDeleted)
+                    var events = await conn.GetTable<JournalRow>()
                         .OrderBy(r => r.Ordering)
                         .Where(r => 
                             r.Ordering > input.offset && 
-                            r.Ordering <= input.maxOffset)
+                            r.Ordering <= input.maxOffset &&
+                            r.Deleted == false)
                         .Take(input.maxTake).ToListAsync();
                     return await AddTagDataIfNeeded(events, conn);
                 }
@@ -173,13 +159,13 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             {
                 case TagReadMode.CommaSeparatedArray:
                     return AsyncSource<JournalRow>.FromEnumerable(
-                            new { separator, tag, offset, maxOffset, maxTake, ConnectionFactory, _includeDeleted },
+                            new { separator, tag, offset, maxOffset, maxTake, ConnectionFactory },
                             async input =>
                             {
                                 var tagValue = $"{separator}{input.tag}{separator}";
                                 await using var conn = input.ConnectionFactory.GetConnection();
                                 
-                                return await BaseQueryStatic(conn, input._includeDeleted)
+                                return await conn.GetTable<JournalRow>()
                                     .Where(r => r.Tags.Contains(tagValue))
                                     .OrderBy(r => r.Ordering)
                                     .Where(r => r.Ordering > input.offset && r.Ordering <= input.maxOffset)
@@ -204,13 +190,13 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
         {
             return AsyncSource<JournalRow>
                 .FromEnumerable(
-                    new { ConnectionFactory, separator, tag, offset, maxOffset, maxTake, _includeDeleted },
+                    new { ConnectionFactory, separator, tag, offset, maxOffset, maxTake },
                     async input =>
                     {
                         //TODO: Optimize Flow
                         await using var conn = input.ConnectionFactory.GetConnection();
                         //First, Get eligible rows.
-                        var mainRows = await BaseQueryStatic(conn, input._includeDeleted)
+                        var mainRows = await conn.GetTable<JournalRow>()
                                 .LeftJoin(
                                     conn.GetTable<JournalTagRow>(),
                                     EventsByTagOnlyJoinPredicate,
@@ -247,7 +233,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             int maxTake)
         {
             return AsyncSource<JournalRow>.FromEnumerable(
-                    new { ConnectionFactory, separator, tag, offset, maxOffset, maxTake, _includeDeleted },
+                    new { ConnectionFactory, separator, tag, offset, maxOffset, maxTake },
                     async input =>
                     {
                         // NOTE: This flow is probably not performant,
@@ -259,10 +245,10 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                         // We use IN here instead of left join because it's safer from a
                         // 'avoid duplicate rows tripping things up later' standpoint.
                         var tagValue = $"{separator}{input.tag}{separator}";
-                        var mainRows = await BaseQueryStatic(conn, input._includeDeleted)
+                        var mainRows = await conn.GetTable<JournalRow>()
                             .Where(EventsByTagMigrationPredicate(conn, input.tag))
                             .OrderBy(r => r.Ordering)
-                            .Where(r => r.Ordering > input.offset && r.Ordering <= input.maxOffset)
+                            .Where(r => r.Ordering > input.offset && r.Ordering <= input.maxOffset && r.Deleted == false)
                             .Take(input.maxTake).ToListAsync();
                         
                         await AddTagDataFromTagTable(mainRows, conn);
@@ -309,13 +295,14 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             long max)
         {
             return AsyncSource<JournalRow>.FromEnumerable(
-                new { dc, persistenceId, fromSequenceNr, toSequenceNr, toTake = MaxTake(max), _includeDeleted }, 
+                new { dc, persistenceId, fromSequenceNr, toSequenceNr, toTake = MaxTake(max) }, 
                 async state =>
-                    await BaseQueryStatic(state.dc, state._includeDeleted)
+                    await dc.GetTable<JournalRow>()
                         .Where(r => 
                             r.PersistenceId == state.persistenceId 
                             && r.SequenceNumber >= state.fromSequenceNr
-                            && r.SequenceNumber <= state.toSequenceNr)
+                            && r.SequenceNumber <= state.toSequenceNr
+                            && r.Deleted == false)
                         .OrderBy(r => r.SequenceNumber)
                         .Take(state.toTake).ToListAsync())
                 .Via(_deserializeFlow)

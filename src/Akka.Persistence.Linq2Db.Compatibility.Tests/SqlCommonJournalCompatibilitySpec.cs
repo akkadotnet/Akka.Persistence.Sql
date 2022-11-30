@@ -49,6 +49,8 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
                 .Should().BeTrue();
             
             (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
+            // Intentionally being called twice to make sure that the actor state inside the user guardian has been cleared 
+            (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
             
             persistRef = sys1.ActorOf(Props.Create(() =>
                 new JournalCompatActor(NewJournal, "p-1")), "test-recover-1");
@@ -69,6 +71,8 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
                 .Should().BeTrue();
             
+            (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
+            // Intentionally being called twice to make sure that the actor state inside the user guardian has been cleared 
             (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
             
             persistRef =  sys1.ActorOf(Props.Create(() =>
@@ -98,6 +102,8 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
                 .Should().BeTrue();
             
             (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
+            // Intentionally being called twice to make sure that the actor state inside the user guardian has been cleared 
+            (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
             
             persistRef = sys1.ActorOf(Props.Create(() =>
                 new JournalCompatActor(OldJournal, "p-3")), "test-recover-2");
@@ -118,6 +124,8 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
                 .Should().BeTrue();
             
+            (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
+            // Intentionally being called twice to make sure that the actor state inside the user guardian has been cleared 
             (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
             
             persistRef =  sys1.ActorOf(Props.Create(() =>
@@ -173,6 +181,8 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             Output.WriteLine($"oldSeq : {currentSequenceNr.SequenceNumber} - newSeq : {reincaranatedSequenceNrNewJournal.SequenceNumber}");
             reincaranatedSequenceNrNewJournal.SequenceNumber.Should().Be(currentSequenceNr.SequenceNumber);
             
+            (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
+            // Intentionally being called twice to make sure that the actor state inside the user guardian has been cleared 
             (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
             
             persistRef = sys1.ActorOf(Props.Create(() =>
