@@ -45,7 +45,7 @@ akka.persistence {{
             "postgresperf", output,40, eventsCount: TestConstants.DockerNumMessages)
         {
             var extension = Linq2DbPersistence.Get(Sys);
-            var config = Create(DockerDbUtils.ConnectionString)
+            var config = Create(SqlServerDbUtils.ConnectionString)
                 .WithFallback(extension.DefaultConfig)
                 .GetConfig("akka.persistence.journal.linq2db");
             var connFactory = new AkkaPersistenceDataConnectionFactory(new JournalConfig(config));

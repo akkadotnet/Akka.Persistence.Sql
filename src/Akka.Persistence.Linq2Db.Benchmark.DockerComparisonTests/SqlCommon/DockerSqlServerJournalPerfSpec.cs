@@ -16,7 +16,7 @@ namespace Akka.Persistence.Linq2Db.Benchmark.DockerComparisonTests.SqlCommon
         public static Config InitConfig(SqlServerFixture fixture)
         {
             //need to make sure db is created before the tests start
-            DockerDbUtils.Initialize(fixture.ConnectionString);
+            SqlServerDbUtils.Initialize(fixture.ConnectionString);
             var specString = $@"
 akka.persistence {{
     publish-plugin-commands = on
@@ -28,7 +28,7 @@ akka.persistence {{
             table-name = EventJournal
             schema-name = dbo
             auto-initialize = on
-            connection-string = ""{DockerDbUtils.ConnectionString}""
+            connection-string = ""{SqlServerDbUtils.ConnectionString}""
         }}
     }}
 }}";

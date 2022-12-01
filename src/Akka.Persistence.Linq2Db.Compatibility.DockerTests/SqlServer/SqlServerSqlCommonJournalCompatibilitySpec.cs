@@ -11,7 +11,7 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests.Docker.SqlServer
         
         public SqlServerSqlCommonJournalCompatibilitySpec(ITestOutputHelper outputHelper, SqlServerFixture fixture) : base(outputHelper)
         {
-            DockerDbUtils.Initialize(fixture.ConnectionString);
+            SqlServerDbUtils.Initialize(fixture.ConnectionString);
         }
 
         protected override string OldJournal =>

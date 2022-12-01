@@ -15,10 +15,10 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.SqlServer
     {
         public static Configuration.Config Initialize(SqlServerFixture fixture)
         {
-            DockerDbUtils.Initialize(fixture.ConnectionString);
+            SqlServerDbUtils.Initialize(fixture.ConnectionString);
             return Configuration;
         }
-        private static Configuration.Config Configuration => SqlServerSnapshotSpecConfig.Create(DockerDbUtils.ConnectionString,"snapshotSpec");
+        private static Configuration.Config Configuration => SqlServerSnapshotSpecConfig.Create(SqlServerDbUtils.ConnectionString,"snapshotSpec");
 
         public SqlServerSnapshotSpec(ITestOutputHelper outputHelper, SqlServerFixture fixture) 
             : base(Initialize(fixture))
