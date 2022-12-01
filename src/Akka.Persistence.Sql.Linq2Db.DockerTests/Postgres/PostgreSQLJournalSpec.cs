@@ -14,7 +14,7 @@ using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.Postgres
 {
-    [Collection("PostgreSQLSpec")]
+    [Collection("PostgreSqlSpec")]
     
     public class PostgreSqlSnapshotSpec : SnapshotStoreSpec
     {
@@ -65,7 +65,7 @@ akka.persistence {{
         }
     }
     
-    [Collection("PostgreSQLSpec")]
+    [Collection("PostgreSqlSpec")]
     public class DockerLinq2DbPostgreSqlJournalSpec : JournalSpec
     {
         public static Configuration.Config Create(string connString)
