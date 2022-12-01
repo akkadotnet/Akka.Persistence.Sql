@@ -3,12 +3,10 @@ using Akka.Configuration;
 
 namespace Akka.Persistence.Sql.Linq2Db.Config
 {
-    [Flags]
     public enum TagWriteMode
     {
-        CommaSeparatedArray = 1,
+        Csv = 1,
         TagTable = 2,
-        CommaSeparatedArrayAndTagTable = 3,
     }
     
     public enum TagTableMode
@@ -46,16 +44,10 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
             AutoInitialize = localCfg.GetBoolean("auto-init", false);
             WarnOnAutoInitializeFail = localCfg.GetBoolean("warn-on-auto-init-fail", true);
             
-            var s = config.GetString("tag-write-mode", "default").ToLowerInvariant();
+            var s = config.GetString("tag-write-mode", "csv").ToLowerInvariant();
             if (!Enum.TryParse(s, true, out TagWriteMode res))
             {
-                res = s switch
-                {
-                    "default" => TagWriteMode.CommaSeparatedArray,
-                    "migration" => TagWriteMode.CommaSeparatedArrayAndTagTable,
-                    "tagtableonly" => TagWriteMode.TagTable,
-                    _ => TagWriteMode.CommaSeparatedArray
-                };
+                res = TagWriteMode.Csv;
             }
             TagWriteMode = res;
         }

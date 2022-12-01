@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Persistence.Sql.Linq2Db.Config;
@@ -58,6 +59,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                 });
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int MaxTake(long max)
         {
             return max > int.MaxValue ? int.MaxValue : (int)max;
@@ -76,11 +78,11 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                 {
                     await using var conn = input._connectionFactory.GetConnection();
                     var events = await conn.GetTable<JournalRow>()
-                        .OrderBy(r => r.Ordering)
                         .Where(r => 
                             r.Ordering > input.offset && 
                             r.Ordering <= input.maxOffset &&
                             r.Deleted == false)
+                        .OrderBy(r => r.Ordering)
                         .Take(input.maxTake).ToListAsync();
                     return await AddTagDataIfNeeded(events, conn);
                 }
@@ -89,7 +91,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
         
         public async Task<List<JournalRow>> AddTagDataIfNeeded(List<JournalRow> toAdd, DataConnection context)
         {
-            if ((_readJournalConfig.PluginConfig.TagReadMode & TagReadMode.TagTable) != 0)
+            if (_readJournalConfig.PluginConfig.TagReadMode == TagReadMode.TagTable)
             {
                 await AddTagDataFromTagTable(toAdd, context);
             }
@@ -122,8 +124,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             }
         }
 
-        public Option<Expression<Func<JournalTagRow, bool>>> TagCheckPredicate(
-            List<JournalRow> toAdd)
+        public Option<Expression<Func<JournalTagRow, bool>>> TagCheckPredicate(List<JournalRow> toAdd)
         {
             if (_readJournalConfig.PluginConfig.TagTableMode == TagTableMode.SequentialUuid)
             {
@@ -157,7 +158,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             var maxTake = MaxTake(max);
             switch (_readJournalConfig.PluginConfig.TagReadMode)
             {
-                case TagReadMode.CommaSeparatedArray:
+                case TagReadMode.Csv:
                     return AsyncSource<JournalRow>.FromEnumerable(
                             new { separator, tag, offset, maxOffset, maxTake, ConnectionFactory },
                             async input =>
@@ -166,14 +167,15 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                                 await using var conn = input.ConnectionFactory.GetConnection();
                                 
                                 return await conn.GetTable<JournalRow>()
-                                    .Where(r => r.Tags.Contains(tagValue))
+                                    .Where(r => 
+                                        r.Tags.Contains(tagValue)
+                                        && !r.Deleted
+                                        && r.Ordering > input.offset
+                                        && r.Ordering <= input.maxOffset)
                                     .OrderBy(r => r.Ordering)
-                                    .Where(r => r.Ordering > input.offset && r.Ordering <= input.maxOffset)
                                     .Take(input.maxTake).ToListAsync();
                             })
                         .Via(_deserializeFlow);
-                case TagReadMode.CommaSeparatedArrayAndTagTable:
-                    return EventByTagMigration(tag, offset, maxOffset, separator, maxTake);
                 case TagReadMode.TagTable:
                     return EventByTagTableOnly(tag, offset, maxOffset, separator, maxTake);
                 default:
@@ -203,7 +205,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                                     (jr, jtr) => new { jr, jtr })
                                 .Where(r => r.jtr.TagValue == input.tag)
                                 .Select(r => r.jr)
-                                .Where(r => r.Ordering > input.offset && r.Ordering <= input.maxOffset)
+                                .Where(r => r.Ordering > input.offset && r.Ordering <= input.maxOffset && !r.Deleted)
                                 .Take(input.maxTake).ToListAsync();
                         await AddTagDataFromTagTable(mainRows, conn);
                         return mainRows;
@@ -244,9 +246,8 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                         // First, find the rows.
                         // We use IN here instead of left join because it's safer from a
                         // 'avoid duplicate rows tripping things up later' standpoint.
-                        var tagValue = $"{separator}{input.tag}{separator}";
                         var mainRows = await conn.GetTable<JournalRow>()
-                            .Where(EventsByTagMigrationPredicate(conn, input.tag))
+                            .Where(EventsByTagMigrationPredicate(conn, input.tag, separator))
                             .OrderBy(r => r.Ordering)
                             .Where(r => r.Ordering > input.offset && r.Ordering <= input.maxOffset && r.Deleted == false)
                             .Take(input.maxTake).ToListAsync();
@@ -254,25 +255,27 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                         await AddTagDataFromTagTable(mainRows, conn);
                         return mainRows;
                     })
-                .Via(PerfectlyMatchTag(tag, separator))
                 .Via(_deserializeFlow);
         }        
         
-        private Expression<Func<JournalRow, bool>> EventsByTagMigrationPredicate(DataConnection conn, string tagVal)
+        private Expression<Func<JournalRow, bool>> EventsByTagMigrationPredicate(DataConnection conn, string tag, string separator)
         {
+            var tagValue = $"{separator}{tag}{separator}";
             if (_readJournalConfig.TableConfig.TagTableMode == TagTableMode.OrderingId)
             {
-                return r => r.Ordering
-                                .In(conn.GetTable<JournalTagRow>()
-                                    .Where(j => j.TagValue == tagVal)
-                                    .Select(j => j.JournalOrderingId))
-                              || r.Tags.Contains(tagVal);
+                return r => 
+                    r.Tags.Contains(tagValue) ||
+                    r.Ordering.In(
+                        conn.GetTable<JournalTagRow>()
+                            .Where(j => j.TagValue == tag)
+                            .Select(j => j.JournalOrderingId));
             }
-            return r => r.WriteUuid.Value
-                            .In(conn.GetTable<JournalTagRow>()
-                                .Where(j => j.TagValue == tagVal)
-                                .Select(j => j.WriteUuid))
-                        || r.Tags.Contains(tagVal);
+            return r => 
+                r.Tags.Contains(tagValue) ||
+                r.WriteUuid.Value.In(
+                    conn.GetTable<JournalTagRow>()
+                        .Where(j => j.TagValue == tag)
+                        .Select(j => j.WriteUuid));
         }
 
         private Flow<JournalRow, JournalRow, NotUsed> PerfectlyMatchTag(

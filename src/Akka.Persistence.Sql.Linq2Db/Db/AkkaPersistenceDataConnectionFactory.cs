@@ -139,7 +139,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
 
             //We can skip writing tags the old way by ignoring the column in mapping.
             journalRowBuilder.Member(r => r.TagArr).IsNotColumn();
-            if ((tableConfig.TagWriteMode & TagWriteMode.CommaSeparatedArray) == 0)
+            if ((tableConfig.TagWriteMode & TagWriteMode.Csv) == 0)
             {
                 journalRowBuilder.Member(r => r.Tags).IsNotColumn();
             }

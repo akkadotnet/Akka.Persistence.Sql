@@ -45,7 +45,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
         {
             return _tagWriteMode switch
             {
-                TagWriteMode.CommaSeparatedArray => new JournalRow
+                TagWriteMode.Csv => new JournalRow
                 {
                     Tags = StringSep(tags, _separator),
                     Timestamp = representation.Timestamp == 0 ? ts : representation.Timestamp
@@ -54,13 +54,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
                 TagWriteMode.TagTable => new JournalRow
                 {
                     Tags = "",
-                    TagArr = tags.ToArray(),
-                    Timestamp = representation.Timestamp == 0 ? ts : representation.Timestamp
-                },
-                
-                TagWriteMode.CommaSeparatedArrayAndTagTable => new JournalRow()
-                {
-                    Tags = StringSep(tags, _separator),
                     TagArr = tags.ToArray(),
                     Timestamp = representation.Timestamp == 0 ? ts : representation.Timestamp
                 },
