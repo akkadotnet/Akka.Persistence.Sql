@@ -29,10 +29,9 @@ akka.persistence.journal.linq2db {{
         ""System.String"" = color-tagger
     }}
     plugin-dispatcher = ""akka.actor.default-dispatcher""
-    auto-initialize = on
-    warn-on-auto-init-fail = false
     provider-name = ""{ProviderName.SQLiteMS}""
     table-mapping = sqlite
+    auto-initialize = on
     connection-string = ""{connString}""
     refresh-interval = 1s
 }}
@@ -40,6 +39,7 @@ akka.persistence.query.journal.linq2db {{
     provider-name = ""{ProviderName.SQLiteMS}""
     connection-string = ""{connString}""
     table-mapping = sqlite
+    auto-initialize = on
 }}
 akka.test.single-expect-default = 10s")
                 .WithFallback(Linq2DbPersistence.DefaultConfiguration());

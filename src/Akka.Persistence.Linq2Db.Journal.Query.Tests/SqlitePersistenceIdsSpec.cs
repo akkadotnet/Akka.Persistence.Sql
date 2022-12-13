@@ -50,7 +50,6 @@ akka.persistence {{
             auto-initialize = on
             connection-string = ""{journalString}""
             refresh-interval = 200ms
-            warn-on-auto-init-fail = false
         }}
     }}
     snapshot-store {{
@@ -69,7 +68,6 @@ akka.persistence.query.journal.linq2db {{
     table-mapping = sqlite
     connection-string = ""{journalString}""
     auto-initialize = on
-    warn-on-auto-init-fail = false
     write-plugin = ""akka.persistence.journal.linq2db""
 }}
 akka.test.single-expect-default = 10s")

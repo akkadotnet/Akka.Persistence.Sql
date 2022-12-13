@@ -16,14 +16,12 @@ akka.persistence.journal.{customJournalName} {{
     provider-name = ""{providerName}""
     connection-string = ""{connectionString}""
     auto-initialize = true
-    tables {{
-        default {{
-            journal {{
-                table-name = ""{journalTableName}""
-            }}
-            metadata {{
-                table-name = ""{metadataTableName}""
-            }}
+    default {{
+        journal {{
+            table-name = ""{journalTableName}""
+        }}
+        metadata {{
+            table-name = ""{metadataTableName}""
         }}
     }}
 }}";
@@ -37,14 +35,12 @@ akka.persistence.journal.linq2db {{
     provider-name = ""{providerName}""
     connection-string = ""{connectionString}""
     auto-initialize = true
-    tables {{
-        default {{
-            journal {{
-                table-name = ""{tableName}""
-            }}
-            metadata {{
-                table-name = ""{metadataTableName}""
-            }}
+    default {{
+        journal {{
+            table-name = ""{tableName}""
+        }}
+        metadata {{
+            table-name = ""{metadataTableName}""
         }}
     }}
 }}";

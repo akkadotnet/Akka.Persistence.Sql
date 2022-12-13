@@ -35,13 +35,11 @@ akka.persistence {{
         linq2db {{
             class = ""{typeof(Linq2DbWriteJournal).AssemblyQualifiedName}""
             plugin-dispatcher = ""akka.actor.default-dispatcher""
-            auto-initialize = on
             provider-name = ""{ProviderName.SQLiteMS}""
             table-mapping = sqlite
             connection-string = ""{connString}""
             refresh-interval = 1s
             auto-initialize = on
-            warn-on-auto-init-fail = false
         }}
     }}
     query {{
@@ -51,7 +49,6 @@ akka.persistence {{
                 connection-string = ""Filename=file:memdb-l2db-journal-currenteventsbypersistenceid-{id}.db;Mode=Memory;Cache=Shared""
                 table-mapping = sqlite
                 auto-initialize = on
-                warn-on-auto-init-fail = false
             }}
         }}
     }}
