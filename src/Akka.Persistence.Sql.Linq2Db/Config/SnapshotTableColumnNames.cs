@@ -7,17 +7,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
     {
         public SnapshotTableColumnNames(Configuration.Config config)
         {
-            var compat = (config.GetString("table-compatibility-mode", "") ?? "").ToLower();
-            var colString = compat switch
-            {
-                "sqlserver" => "sql-server-compat-column-names",
-                "sqlite" => "sqlite-compat-column-names",
-                "postgres" => "postgres-compat-column-names",
-                "mysql" => "mysql-compat-column-names",
-                _ => "column-names"
-            };
-            
-            var cfg = config.GetConfig($"tables.snapshot.{colString}");
+            var cfg = config.GetConfig("columns");
             PersistenceId = cfg.GetString("persistenceId", "persistence_id");
             SequenceNumber = cfg.GetString("sequenceNumber", "sequence_number");
             Created = cfg.GetString("created", "created");

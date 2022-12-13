@@ -37,14 +37,13 @@ akka.persistence {{
             plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
 			connection-string = ""{connectionString}""
 			provider-name = ""{LinqToDB.ProviderName.SQLiteMS}""
-			table-compatibility-mode = sqlite
-			tables {{
-				snapshot {{ 
-					auto-init = true
-					warn-on-auto-init-fail = false
-					table-name = ""{tableName}""    
-				}}
-			}}
+			table-mapping = sqlite
+            auto-initialize = true
+            sqlite {{
+                snapshot {{
+                    table-name = ""{tableName}"" 
+                }}
+            }}
 		}}
 	}}
 }}";
@@ -75,12 +74,15 @@ akka.persistence {{
 			connection-string = ""{connectionString}""
 			provider-name = ""{LinqToDB.ProviderName.SQLiteMS}""
 			parallelism = 3
-			table-compatibility-mode = sqlite
-			tables.journal {{ 
-				auto-init = true
-				warn-on-auto-init-fail = false
-				table-name = ""{tableName}"" 
-				metadata-table-name = ""{metadataTableName}""                           
+            table-mapping = sqlite
+            auto-initialize = true
+            sqlite {{
+                journal {{
+                    table-name = ""{tableName}"" 
+                }}
+                metadata {{
+                    table-name = ""{metadataTableName}"" 
+                }}
 			}}
 		}}
 	}}

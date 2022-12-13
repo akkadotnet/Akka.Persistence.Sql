@@ -11,17 +11,18 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests
             string metadataTableName,
             string providerName,
             string connectionString) => $@"
-akka.persistence.journal.linq2db{{
-    {customJournalName} {{
-        class = ""Akka.Persistence.Sql.Linq2Db.Journal.Linq2DbWriteJournal, Akka.Persistence.Sql.Linq2Db""
-        provider-name = ""{providerName}""
-        connection-string = ""{connectionString}""
-        tables{{
-            journal{{
-                auto-init = true
-                warn-on-auto-init-fail = false
+akka.persistence.journal.{customJournalName} {{
+    class = ""Akka.Persistence.Sql.Linq2Db.Journal.Linq2DbWriteJournal, Akka.Persistence.Sql.Linq2Db""
+    provider-name = ""{providerName}""
+    connection-string = ""{connectionString}""
+    auto-initialize = true
+    tables {{
+        default {{
+            journal {{
                 table-name = ""{journalTableName}""
-                metadata-table-name = ""{metadataTableName}""
+            }}
+            metadata {{
+                table-name = ""{metadataTableName}""
             }}
         }}
     }}
@@ -35,12 +36,15 @@ akka.persistence.journal.linq2db{{
 akka.persistence.journal.linq2db {{
     provider-name = ""{providerName}""
     connection-string = ""{connectionString}""
+    auto-initialize = true
     tables {{
-        journal {{
-            auto-init = true
-            warn-on-auto-init-fail = false
-            table-name = ""{tableName}""
-            metadata-table-name = ""{metadataTableName}""
+        default {{
+            journal {{
+                table-name = ""{tableName}""
+            }}
+            metadata {{
+                table-name = ""{metadataTableName}""
+            }}
         }}
     }}
 }}";
@@ -63,7 +67,7 @@ akka.persistence.journal.linq2db {{
 akka{{
   persistence {{
     journal {{
-      plugin = akka.persistence.journal.linq2db.{configName}
+      plugin = akka.persistence.journal.{configName}
     }}      
   }}
 }}" : ""));

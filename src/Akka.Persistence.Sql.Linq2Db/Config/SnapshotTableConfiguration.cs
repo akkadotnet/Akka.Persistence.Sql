@@ -9,29 +9,29 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
     {
         public SnapshotTableConfiguration(Configuration.Config config)
         {
-            var localCfg = config.GetConfig("tables.snapshot")
-                .SafeWithFallback(config).SafeWithFallback(Configuration.Config.Empty);
+            var mappingPath = config.GetString("table-mapping");
+            if (string.IsNullOrEmpty(mappingPath))
+                throw new ConfigurationException("The configuration property akka.persistence.journal.linq2db.table-mapping is null or empty");
             
-            ColumnNames= new SnapshotTableColumnNames(config);
-            TableName = config.GetString("table-name", localCfg.GetString("table-name", "snapshot"));
-            SchemaName = localCfg.GetString("schema-name", null);
-            AutoInitialize = localCfg.GetBoolean("auto-init", false);
-            WarnOnAutoInitializeFail = localCfg.GetBoolean("warn-on-auto-init-fail", true);
-        }
+            var mappingConfig = config.GetConfig(mappingPath);
+            if (mappingConfig is null)
+                throw new ConfigurationException($"The configuration path akka.persistence.journal.linq2db.{mappingPath} does not exist");
+            
+            if (mappingPath != "default")
+                mappingConfig.WithFallback(config.GetString("default"));
+            
+            SchemaName = mappingConfig.GetString("schema-name");
 
-        public bool WarnOnAutoInitializeFail { get; }
+            SnapshotTable = new SnapshotTableConfig(mappingConfig);
+        }
         
-        public SnapshotTableColumnNames ColumnNames { get; }
-        
-        public string TableName { get; }
-        
+        public SnapshotTableConfig SnapshotTable { get; }
+
         public string SchemaName { get; }
-        
-        public bool AutoInitialize { get; }
         
         public override int GetHashCode()
         {
-            return HashCode.Combine(WarnOnAutoInitializeFail, ColumnNames, TableName, SchemaName, AutoInitialize);
+            return HashCode.Combine(SnapshotTable, SchemaName);
         }
     }
 }

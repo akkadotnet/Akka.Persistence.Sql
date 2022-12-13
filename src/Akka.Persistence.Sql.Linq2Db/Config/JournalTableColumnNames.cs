@@ -7,17 +7,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
     {
         public JournalTableColumnNames(Configuration.Config config)
         {
-            var compat = (config.GetString("table-compatibility-mode", "") ?? "").ToLower();
-            var colString = compat switch
-            {
-                "sqlserver" => "sqlserver-compat-column-names",
-                "sqlite" => "sqlite-compat-column-names",
-                "postgres" => "postgres-compat-column-names",
-                "mysql" => "mysql-compat-column-names",
-                _ => "column-names"
-            };
-
-            var cfg = config.GetConfig($"tables.journal.{colString}");
+            var cfg = config.GetConfig("columns");
             Ordering = cfg.GetString("ordering","ordering");
             Deleted = cfg.GetString("deleted","deleted");
             PersistenceId = cfg.GetString("persistenceId", "persistence_id");

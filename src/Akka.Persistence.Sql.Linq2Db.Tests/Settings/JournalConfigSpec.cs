@@ -38,7 +38,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             journal.GetString("connection-string", "invalid").Should().BeNullOrEmpty();
             journal.GetString("provider-name", "invalid").Should().BeNullOrEmpty();
             journal.GetBoolean("delete-compatibility-mode").Should().BeTrue();
-            journal.GetString("table-compatibility-mode", "invalid").Should().BeNullOrEmpty();
+            journal.GetString("table-mapping", "invalid").Should().Be("default");
             journal.GetInt("buffer-size").Should().Be(5000);
             journal.GetInt("batch-size").Should().Be(100);
             journal.GetInt("db-round-trip-max-batch-size").Should().Be(1000);
@@ -52,14 +52,18 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             journal.GetString("tag-separator", "invalid").Should().Be(";");
             journal.GetString("dao", "invalid").Should()
                 .Be("Akka.Persistence.Sql.Linq2Db.Journal.Dao.ByteArrayJournalDao, Akka.Persistence.Sql.Linq2Db");
+            journal.GetBoolean("auto-initialize").Should().BeFalse();
+            journal.GetBoolean("warn-on-auto-init-fail").Should().BeTrue();
 
-            var journalTable = journal.GetConfig("tables.journal");
-            journalTable.Should().NotBeNull();
-            journalTable.GetBoolean("auto-init").Should().BeTrue();
-            journalTable.GetBoolean("warn-on-auto-init-fail").Should().BeTrue();
+            var journalTables = journal.GetConfig("default");
+            journalTables.Should().NotBeNull();
+            journalTables.GetString("schema-name", "invalid").Should().BeNullOrEmpty();
+
+            var journalTable = journalTables.GetConfig("journal");
             journalTable.GetString("table-name", "invalid").Should().Be("journal");
-            journalTable.GetString("metadata-table-name", "invalid").Should().Be("journal_metadata");
-            journalTable.GetString("schema-name", "invalid").Should().BeNullOrEmpty();
+
+            var metadataTable = journalTables.GetConfig("metadata");
+            metadataTable.GetString("table-name", "invalid").Should().Be("journal_metadata");
         }
         
         [Fact(DisplayName = "Default journal config should contain default values")]
@@ -73,9 +77,15 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             AssertDefaultJournalConfig(journal);
             
             var tableConfig = journal.TableConfig;
+            var journalTable = tableConfig.EventJournalTable;
+            var metadataTable = tableConfig.MetadataTable;
 
+            tableConfig.SchemaName.Should().BeNullOrEmpty();
+            journalTable.Name.Should().Be("journal");
+            metadataTable.Name.Should().Be("journal_metadata");
+            
             // assert default journal column names
-            var journalColumns = tableConfig.ColumnNames;
+            var journalColumns = journalTable.ColumnNames;
             journalColumns.Ordering.Should().Be("ordering");
             journalColumns.Deleted.Should().Be("deleted");
             journalColumns.PersistenceId.Should().Be("persistence_id");
@@ -87,16 +97,16 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             journalColumns.Manifest.Should().Be("manifest");
             
             // assert default metadata column names
-            var metaColumns = tableConfig.MetadataColumnNames;
+            var metaColumns = metadataTable.ColumnNames;
             metaColumns.PersistenceId.Should().Be("persistenceId");
             metaColumns.SequenceNumber.Should().Be("sequenceNr");
         }
 
-        [Fact(DisplayName = "Journal config with SqlServer compat should contain correct SqlServer column names")]
+        [Fact(DisplayName = "Journal config with SqlServer compat should contain correct column names")]
         public void SqlServerJournalConfigTest()
         {
             var journalHocon = ConfigurationFactory
-                .ParseString("akka.persistence.journal.linq2db.table-compatibility-mode = sqlserver")
+                .ParseString("akka.persistence.journal.linq2db.table-mapping = sql-server")
                 .WithFallback(_defaultConfig)
                 .GetConfig("akka.persistence.journal.linq2db");
             journalHocon.Should().NotBeNull();
@@ -106,9 +116,15 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             AssertDefaultJournalConfig(journal);
             
             var tableConfig = journal.TableConfig;
+            var journalTable = tableConfig.EventJournalTable;
+            var metadataTable = tableConfig.MetadataTable;
 
+            tableConfig.SchemaName.Should().Be("dbo");
+            journalTable.Name.Should().Be("EventJournal");
+            metadataTable.Name.Should().Be("Metadata");
+            
             // assert default journal column names
-            var journalColumns = tableConfig.ColumnNames;
+            var journalColumns = journalTable.ColumnNames;
             journalColumns.Ordering.Should().Be("Ordering");
             journalColumns.Deleted.Should().Be("IsDeleted");
             journalColumns.PersistenceId.Should().Be("PersistenceId");
@@ -120,16 +136,16 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             journalColumns.Manifest.Should().Be("Manifest");
             
             // assert default metadata column names
-            var metaColumns = tableConfig.MetadataColumnNames;
-            metaColumns.PersistenceId.Should().Be("persistenceId");
-            metaColumns.SequenceNumber.Should().Be("sequenceNr");
+            var metaColumns = metadataTable.ColumnNames;
+            metaColumns.PersistenceId.Should().Be("PersistenceId");
+            metaColumns.SequenceNumber.Should().Be("SequenceNr");
         }
 
-        [Fact(DisplayName = "Journal config with Sqlite compat should contain correct SqlServer column names")]
+        [Fact(DisplayName = "Journal config with Sqlite compat should contain correct column names")]
         public void SqliteJournalConfigTest()
         {
             var journalHocon = ConfigurationFactory
-                .ParseString("akka.persistence.journal.linq2db.table-compatibility-mode = sqlite")
+                .ParseString("akka.persistence.journal.linq2db.table-mapping = sqlite")
                 .WithFallback(_defaultConfig)
                 .GetConfig("akka.persistence.journal.linq2db");
             journalHocon.Should().NotBeNull();
@@ -139,9 +155,15 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             AssertDefaultJournalConfig(journal);
             
             var tableConfig = journal.TableConfig;
+            var journalTable = tableConfig.EventJournalTable;
+            var metadataTable = tableConfig.MetadataTable;
 
+            tableConfig.SchemaName.Should().BeNullOrEmpty();
+            journalTable.Name.Should().Be("event_journal");
+            metadataTable.Name.Should().Be("journal_metadata");
+            
             // assert default journal column names
-            var journalColumns = tableConfig.ColumnNames;
+            var journalColumns = journalTable.ColumnNames;
             journalColumns.Ordering.Should().Be("ordering");
             journalColumns.Deleted.Should().Be("is_deleted");
             journalColumns.PersistenceId.Should().Be("persistence_id");
@@ -153,16 +175,16 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             journalColumns.Manifest.Should().Be("manifest");
             
             // assert default metadata column names
-            var metaColumns = tableConfig.MetadataColumnNames;
+            var metaColumns = metadataTable.ColumnNames;
             metaColumns.PersistenceId.Should().Be("persistence_id");
             metaColumns.SequenceNumber.Should().Be("sequence_nr");
         }
 
-        [Fact(DisplayName = "Journal config with PostgreSql compat should contain correct SqlServer column names")]
+        [Fact(DisplayName = "Journal config with PostgreSql compat should contain correct column names")]
         public void PostgreSqlJournalConfigTest()
         {
             var journalHocon = ConfigurationFactory
-                .ParseString("akka.persistence.journal.linq2db.table-compatibility-mode = postgres")
+                .ParseString("akka.persistence.journal.linq2db.table-mapping = postgresql")
                 .WithFallback(_defaultConfig)
                 .GetConfig("akka.persistence.journal.linq2db");
             journalHocon.Should().NotBeNull();
@@ -172,9 +194,15 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             AssertDefaultJournalConfig(journal);
             
             var tableConfig = journal.TableConfig;
+            var journalTable = tableConfig.EventJournalTable;
+            var metadataTable = tableConfig.MetadataTable;
+
+            tableConfig.SchemaName.Should().Be("public");
+            journalTable.Name.Should().Be("event_journal");
+            metadataTable.Name.Should().Be("metadata");
 
             // assert default journal column names
-            var journalColumns = tableConfig.ColumnNames;
+            var journalColumns = journalTable.ColumnNames;
             journalColumns.Ordering.Should().Be("ordering");
             journalColumns.Deleted.Should().Be("is_deleted");
             journalColumns.PersistenceId.Should().Be("persistence_id");
@@ -186,16 +214,16 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             journalColumns.Manifest.Should().Be("manifest");
             
             // assert default metadata column names
-            var metaColumns = tableConfig.MetadataColumnNames;
+            var metaColumns = metadataTable.ColumnNames;
             metaColumns.PersistenceId.Should().Be("persistence_id");
             metaColumns.SequenceNumber.Should().Be("sequence_nr");
         }
 
-        [Fact(DisplayName = "Journal config with MySql compat should contain correct SqlServer column names")]
+        [Fact(DisplayName = "Journal config with MySql compat should contain correct column names")]
         public void MySqlJournalConfigTest()
         {
             var journalHocon = ConfigurationFactory
-                .ParseString("akka.persistence.journal.linq2db.table-compatibility-mode = mysql")
+                .ParseString("akka.persistence.journal.linq2db.table-mapping = mysql")
                 .WithFallback(_defaultConfig)
                 .GetConfig("akka.persistence.journal.linq2db");
             journalHocon.Should().NotBeNull();
@@ -205,9 +233,15 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             AssertDefaultJournalConfig(journal);
             
             var tableConfig = journal.TableConfig;
+            var journalTable = tableConfig.EventJournalTable;
+            var metadataTable = tableConfig.MetadataTable;
+            
+            tableConfig.SchemaName.Should().BeNullOrEmpty();
+            journalTable.Name.Should().Be("event_journal");
+            metadataTable.Name.Should().Be("metadata");
 
             // assert default journal column names
-            var journalColumns = tableConfig.ColumnNames;
+            var journalColumns = journalTable.ColumnNames;
             journalColumns.Ordering.Should().Be("ordering");
             journalColumns.Deleted.Should().Be("is_deleted");
             journalColumns.PersistenceId.Should().Be("persistence_id");
@@ -219,7 +253,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             journalColumns.Manifest.Should().Be("manifest");
             
             // assert default metadata column names
-            var metaColumns = tableConfig.MetadataColumnNames;
+            var metaColumns = metadataTable.ColumnNames;
             metaColumns.PersistenceId.Should().Be("persistence_id");
             metaColumns.SequenceNumber.Should().Be("sequence_nr");
         }
@@ -232,6 +266,8 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             journal.UseSharedDb.Should().BeNullOrEmpty();
             journal.UseCloneConnection.Should().BeFalse();
             journal.DefaultSerializer.Should().BeNullOrEmpty();
+            journal.AutoInitialize.Should().BeFalse();
+            journal.WarnOnAutoInitializeFail.Should().BeTrue();
 
             var pluginConfig = journal.PluginConfig;
             pluginConfig.TagSeparator.Should().Be(";");
@@ -247,15 +283,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             daoConfig.Parallelism.Should().Be(3);
             daoConfig.MaxRowByRowSize.Should().Be(100);
             daoConfig.SqlCommonCompatibilityMode.Should().BeTrue();
-            
-            var tableConfig = journal.TableConfig;
-            tableConfig.AutoInitialize.Should().BeTrue();
-            tableConfig.TableName.Should().Be("journal");
-            tableConfig.MetadataTableName.Should().Be("journal_metadata");
-            tableConfig.SchemaName.Should().BeNullOrEmpty();
-            tableConfig.WarnOnAutoInitializeFail.Should().BeTrue();
         }
-        
-
     }
 }

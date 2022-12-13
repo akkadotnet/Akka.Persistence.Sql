@@ -33,10 +33,12 @@ akka.persistence {{
             connection-string = ""{connString}""
             provider-name = ""{ProviderName.SqlServer2017}""
             use-clone-connection = true
-            tables.journal {{ 
-                auto-init = true
-                warn-on-auto-init-fail = false
-                table-name = ""testPerfTable"" 
+            auto-initialize = true
+            warn-on-auto-init-fail = false
+            default {{
+                journal {{
+                    table-name = testPerfTable 
+                }}
             }}
         }}
     }}

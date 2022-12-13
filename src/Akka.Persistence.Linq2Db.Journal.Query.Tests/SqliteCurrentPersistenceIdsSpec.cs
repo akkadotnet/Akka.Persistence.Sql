@@ -32,34 +32,21 @@ akka.loglevel = INFO
 akka.persistence.journal.plugin = ""akka.persistence.journal.linq2db""
 akka.persistence.journal.linq2db {{
     plugin-dispatcher = ""akka.actor.default-dispatcher""
-    table-name = event_journal
-    metadata-table-name = journal_metadata
     auto-initialize = on
     provider-name = ""{ProviderName.SQLiteMS}""
-    table-compatibility-mode = sqlite
+    table-mapping = sqlite
     connection-string = ""{connString}""
     refresh-interval = 1s
-    tables {{
-       journal {{
-         table-name = event_journal
-         metadata-table-name = journal_metadata
-         auto-init = true 
-               warn-on-auto-init-fail = false
-       }} 
-    }}
+    auto-initialize = on
+    warn-on-auto-init-fail = false
 }}
 akka.persistence.query.journal.linq2db
 {{
     provider-name = ""{ProviderName.SQLiteMS}""
-    table-compatibility-mode = sqlite
+    table-mapping = sqlite
     connection-string = ""{connString}""
-    tables {{
-       journal {{
-         table-name = event_journal
-         metadata-table-name = journal_metadata 
-               warn-on-auto-init-fail = false
-       }} 
-    }}
+    auto-initialize = on
+    warn-on-auto-init-fail = false
 }}
 akka.test.single-expect-default = 10s")
                 .WithFallback(Linq2DbPersistence.DefaultConfiguration());

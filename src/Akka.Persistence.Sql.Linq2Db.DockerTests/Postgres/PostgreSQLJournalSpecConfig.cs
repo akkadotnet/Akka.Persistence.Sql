@@ -18,10 +18,8 @@ akka.persistence {{
             connection-string = ""{connString}""
             provider-name = ""{providerName}""
             use-clone-connection = false
-            tables.journal {{ 
-                auto-init = true 
-                warn-on-auto-init-fail = false
-            }}
+            auto-initialize = true
+            warn-on-auto-init-fail = false
         }}
     }}
 }}");

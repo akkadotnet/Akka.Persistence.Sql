@@ -31,15 +31,13 @@ akka.persistence {{
         linq2db {{
             class = ""{typeof(Linq2DbSnapshotStore).AssemblyQualifiedName}""
             plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
-            #plugin-dispatcher = ""akka.actor.default-dispatcher""
             connection-string = ""{DbUtils.ConnectionString}""
-            provider-name = """ + LinqToDB.ProviderName.SqlServer2017 + $@"""
-            table-compatibility-mode = sqlserver
-            tables {{
-                snapshot {{ 
-                    auto-init = true
-                    warn-on-auto-init-fail = false
-                    table-name = ""{tableName}""    
+            provider-name = ""{LinqToDB.ProviderName.SqlServer2017}""
+            table-mapping = sql-server
+            auto-initialize = true
+            sql-server {{
+                snapshot {{
+                    table-name = ""{tableName}"" 
                 }}
             }}
         }}
@@ -74,12 +72,15 @@ akka.persistence {{
             connection-string = ""{DbUtils.ConnectionString}""
             provider-name = ""{LinqToDB.ProviderName.SqlServer2017}""
             parallelism = 3
-            table-compatibility-mode = sqlserver
-            tables.journal {{ 
-                auto-init = true
-                warn-on-auto-init-fail = false
-                table-name = ""{tableName}"" 
-                metadata-table-name = ""{metadataTableName}""       
+            table-mapping = sql-server
+            auto-initialize = true
+            sql-server {{
+                journal {{
+                    table-name = ""{tableName}"" 
+                }}
+                metadata {{
+                    table-name = ""{metadataTableName}"" 
+                }}
             }}
         }}
     }}

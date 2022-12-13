@@ -14,15 +14,9 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Sqlite
         {
         }
         
-        public override string JournalTableName => "event_journal";
-        
-        public override string JournalMetadataTableName => "journal_metadata";
-        
-        public override string SnapshotTableName => "snapshot";
-
         public override string ProviderName => LinqToDB.ProviderName.SQLite;
 
-        public override string CompatibilityMode => "sqlite";
+        public override string TableMapping => "sqlite";
 
     }
 }
