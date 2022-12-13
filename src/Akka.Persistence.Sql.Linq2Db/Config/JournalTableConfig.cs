@@ -19,7 +19,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
                 throw new ConfigurationException($"The configuration path akka.persistence.journal.linq2db.{mappingPath} does not exist");
 
             if (mappingPath != "default")
-                mappingConfig.WithFallback(config.GetString("default"));
+                mappingConfig.WithFallback(config.GetConfig("default"));
             
             SchemaName = mappingConfig.GetString("schema-name");
 
