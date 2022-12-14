@@ -1,0 +1,66 @@
+DROP TABLE IF EXISTS TagTable;
+
+CREATE TABLE TagTable(
+  ordering_id BIGINT NOT NULL,
+  tag NVARCHAR(64) NOT NULL,
+  PRIMARY KEY (ordering_id, tag)
+);
+
+DROP PROCEDURE IF EXISTS Split;
+
+DELIMITER #
+CREATE PROCEDURE Split()  
+proc_main: BEGIN
+	
+DECLARE v_cursor_done tinyint unsigned DEFAULT 0;
+DECLARE Id int unsigned;
+DECLARE String varchar(8000);
+DECLARE idx int unsigned;
+DECLARE slice varchar(8000);
+
+DECLARE v_cursor CURSOR FOR 
+	SELECT ej.`ordering` , ej.tags FROM event_journal ej ORDER BY `ordering`;
+DECLARE CONTINUE handler FOR NOT FOUND 
+	SET v_cursor_done = 1;
+
+SET autocommit = 0; 
+
+OPEN v_cursor;
+REPEAT
+
+  FETCH v_cursor INTO Id, String;
+
+  SET idx = 1;
+ 
+  IF String IS NULL OR LENGTH(String) < 1 THEN
+    SET idx = 0;
+  END IF;
+
+  WHILE idx != 0 DO
+    SET idx = LOCATE(';', String);
+    IF idx != 0 THEN
+      SET slice = LEFT(String, idx - 1);
+    ELSE
+      SET slice = String;
+    END IF;
+    
+    IF LENGTH(slice) > 0 THEN
+      INSERT INTO TagTable (ordering_id, tag) values (Id, slice);
+    END IF;
+    
+    SET String = RIGHT(String, LENGTH(String) - idx);
+    
+    IF LENGTH(String) = 0 THEN
+      SET idx = 0;
+    END IF;
+   
+  END WHILE;
+
+UNTIL v_cursor_done END REPEAT;
+close v_cursor;
+commit;
+
+END proc_main #
+DELIMITER ;
+
+CALL Split();
