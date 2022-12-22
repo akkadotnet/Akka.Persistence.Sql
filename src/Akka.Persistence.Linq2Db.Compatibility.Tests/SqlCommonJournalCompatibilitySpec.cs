@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Akka.Actor;
-using Akka.Event;
-using Akka.TestKit.Xunit2.Internals;
+using Akka.TestKit;
 using FluentAssertions;
 using LanguageExt.UnitsOfMeasure;
 using Xunit;
@@ -10,145 +9,153 @@ using Xunit.Abstractions;
 
 namespace Akka.Persistence.Linq2Db.CompatibilityTests
 {
-    public abstract class SqlCommonJournalCompatibilitySpec
+    public abstract class SqlCommonJournalCompatibilitySpec: IAsyncLifetime
     {
-        public SqlCommonJournalCompatibilitySpec(ITestOutputHelper outputHelper)
+        protected SqlCommonJournalCompatibilitySpec(ITestOutputHelper outputHelper)
         {
             Output = outputHelper;
         }
 
-        public ITestOutputHelper Output { get; }
-
-        protected void InitializeLogger(ActorSystem system)
-        {
-            if (Output != null)
-            {
-                var extSystem = (ExtendedActorSystem)system;
-                var logger = extSystem.SystemActorOf(Props.Create(() => new TestOutputLogger(Output)), "log-test");
-                logger.Tell(new InitializeLogger(system.EventStream));
-            }
-        }
+        protected ITestOutputHelper Output { get; }
 
         protected abstract Configuration.Config Config { get; }
 
         protected abstract string OldJournal { get; }
         protected abstract string NewJournal { get; }
+        protected ActorSystem Sys { get; private set;  }
+        protected Akka.TestKit.Xunit2.TestKit TestKit { get; private set; }
+        protected TestProbe Probe { get; private set; }
+        
+        public Task InitializeAsync()
+        {
+            Sys = ActorSystem.Create("test-sys", Config);
+            TestKit = new Akka.TestKit.Xunit2.TestKit(Sys, Output);
+            Probe = TestKit.CreateTestProbe();
+            return Task.CompletedTask;
+        }
+
+        public async Task DisposeAsync()
+        {
+            await Sys.Terminate();
+        }
         
         [Fact]
-        public async Task Can_Recover_SqlCommon_Journal()
+        public void Can_Recover_SqlCommon_Journal()
         {
-            var sys1 = ActorSystem.Create("first", Config);
-            InitializeLogger(sys1);
-            
-            var persistRef = sys1.ActorOf(Props.Create(() =>
+            var persistRef = Sys.ActorOf(Props.Create(() =>
                 new JournalCompatActor(OldJournal, "p-1")), "test-recover-1");
             var ourGuid = Guid.NewGuid();
             var someEvent = new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 };
-            (await persistRef.Ask<SomeEvent>(someEvent, 5.Seconds())).Should().Be(someEvent);
-            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
-                .Should().BeTrue();
             
-            (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
-            // Intentionally being called twice to make sure that the actor state inside the user guardian has been cleared 
-            (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
+            Probe.Send(persistRef, someEvent);
+            Probe.ExpectMsg(someEvent, 5.Seconds());
+            Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
+            Probe.ExpectMsg(true, 5.Seconds());
             
-            persistRef = sys1.ActorOf(Props.Create(() =>
+            Probe.Watch(persistRef);
+            persistRef.Tell(PoisonPill.Instance);
+            Probe.ExpectTerminated(persistRef);
+            Probe.Unwatch(persistRef);
+            
+            persistRef = Sys.ActorOf(Props.Create(() =>
                 new JournalCompatActor(NewJournal, "p-1")), "test-recover-1");
-            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
-                .Should().BeTrue();
+            Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
+            Probe.ExpectMsg(true, 5.Seconds());
         }
+        
         [Fact]
-        public async Task Can_Persist_SqlCommon_Journal()
+        public void Can_Persist_SqlCommon_Journal()
         {
-            var sys1 = ActorSystem.Create("first", Config);
-            InitializeLogger(sys1);
-            
-            var persistRef = sys1.ActorOf(Props.Create(() =>
+            var persistRef = Sys.ActorOf(Props.Create(() =>
                 new JournalCompatActor(OldJournal, "p-2")), "test-persist-1");
             var ourGuid = Guid.NewGuid();
             var someEvent = new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 };
-            (await persistRef.Ask<SomeEvent>(someEvent, 5.Seconds())).Should().Be(someEvent);
-            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
-                .Should().BeTrue();
             
-            (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
-            // Intentionally being called twice to make sure that the actor state inside the user guardian has been cleared 
-            (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
+            Probe.Send(persistRef, someEvent);
+            Probe.ExpectMsg(someEvent, 5.Seconds());
+            Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
+            Probe.ExpectMsg(true, 5.Seconds());
             
-            persistRef =  sys1.ActorOf(Props.Create(() =>
+            Probe.Watch(persistRef);
+            persistRef.Tell(PoisonPill.Instance);
+            Probe.ExpectTerminated(persistRef);
+            Probe.Unwatch(persistRef);
+            
+            persistRef = Sys.ActorOf(Props.Create(() =>
                 new JournalCompatActor(NewJournal, "p-2")), "test-persist-1");
-            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
-                .Should().BeTrue();
+            Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
+            Probe.ExpectMsg(true, 5.Seconds());
             
             var ourSecondGuid = Guid.NewGuid();
             var secondEvent = new SomeEvent { EventName = "rec-test", Guid = ourSecondGuid, Number = 2 };
-            (await persistRef.Ask<SomeEvent>(secondEvent, 5.Seconds())).Should().Be(secondEvent);
-            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourSecondGuid }, TimeSpan.FromSeconds(5)))
-                .Should().BeTrue();
+            
+            Probe.Send(persistRef, secondEvent);
+            Probe.ExpectMsg(secondEvent, 5.Seconds());
+            Probe.Send(persistRef, new ContainsEvent { Guid = ourSecondGuid });
+            Probe.ExpectMsg(true, 5.Seconds());
         }
         
         [Fact]
-        public async Task SqlCommon_Journal_Can_Recover_L2Db_Journal()
+        public void SqlCommon_Journal_Can_Recover_L2Db_Journal()
         {
-            var sys1 = ActorSystem.Create("first", Config);
-            InitializeLogger(sys1);
-            
-            var persistRef = sys1.ActorOf(Props.Create(() =>
+            var persistRef = Sys.ActorOf(Props.Create(() =>
                 new JournalCompatActor(NewJournal, "p-3")), "test-recover-2");
             var ourGuid = Guid.NewGuid();
             var someEvent = new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 };
-            (await persistRef.Ask<SomeEvent>(someEvent, 5.Seconds())).Should().Be(someEvent);
-            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
-                .Should().BeTrue();
             
-            (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
-            // Intentionally being called twice to make sure that the actor state inside the user guardian has been cleared 
-            (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
+            Probe.Send(persistRef, someEvent);
+            Probe.ExpectMsg(someEvent, 5.Seconds());
+            Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
+            Probe.ExpectMsg(true, 5.Seconds());
             
-            persistRef = sys1.ActorOf(Props.Create(() =>
+            Probe.Watch(persistRef);
+            persistRef.Tell(PoisonPill.Instance);
+            Probe.ExpectTerminated(persistRef);
+            Probe.Unwatch(persistRef);
+            
+            persistRef = Sys.ActorOf(Props.Create(() =>
                 new JournalCompatActor(OldJournal, "p-3")), "test-recover-2");
-            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
-                .Should().BeTrue();
-        }
-        [Fact]
-        public async Task SqlCommon_Journal_Can_Persist_L2db_Journal()
-        {
-            var sys1 = ActorSystem.Create("first", Config);
-            InitializeLogger(sys1);
-            
-            var persistRef = sys1.ActorOf(Props.Create(() =>
-                new JournalCompatActor(NewJournal, "p-4")), "test-persist-2");
-            var ourGuid = Guid.NewGuid();
-            var someEvent = new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 };
-            (await persistRef.Ask<SomeEvent>(someEvent, 5.Seconds())).Should().Be(someEvent);
-            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
-                .Should().BeTrue();
-            
-            (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
-            // Intentionally being called twice to make sure that the actor state inside the user guardian has been cleared 
-            (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
-            
-            persistRef =  sys1.ActorOf(Props.Create(() =>
-                new JournalCompatActor(OldJournal, "p-4")), "test-persist-2");
-            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
-                .Should().BeTrue();
-            
-            var ourSecondGuid = Guid.NewGuid();
-            var secondEvent = new SomeEvent { EventName = "rec-test", Guid = ourSecondGuid, Number = 2 };
-            (await persistRef.Ask<SomeEvent>(secondEvent, 5.Seconds())).Should().Be(secondEvent);
-            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourSecondGuid }, TimeSpan.FromSeconds(5)))
-                .Should().BeTrue();
+            Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
+            Probe.ExpectMsg(true, 5.Seconds());
         }
         
         [Fact]
-        public async Task L2db_Journal_Delete_Compat_mode_Preserves_proper_SequenceNr()
+        public void SqlCommon_Journal_Can_Persist_L2db_Journal()
         {
-            var sys1 = ActorSystem.Create("first", Config);
-            InitializeLogger(sys1);
+            var persistRef = Sys.ActorOf(Props.Create(() =>
+                new JournalCompatActor(NewJournal, "p-4")), "test-persist-2");
+            var ourGuid = Guid.NewGuid();
+            var someEvent = new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 };
             
+            Probe.Send(persistRef, someEvent);
+            Probe.ExpectMsg(someEvent, 5.Seconds());
+            Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
+            Probe.ExpectMsg(true, 5.Seconds());
+            
+            Probe.Watch(persistRef);
+            persistRef.Tell(PoisonPill.Instance);
+            Probe.ExpectTerminated(persistRef);
+            Probe.Unwatch(persistRef);
+            
+            persistRef = Sys.ActorOf(Props.Create(() =>
+                new JournalCompatActor(OldJournal, "p-4")), "test-persist-2");
+            Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
+            Probe.ExpectMsg(true, 5.Seconds());
+            
+            var ourSecondGuid = Guid.NewGuid();
+            var secondEvent = new SomeEvent { EventName = "rec-test", Guid = ourSecondGuid, Number = 2 };
+            Probe.Send(persistRef, secondEvent);
+            Probe.ExpectMsg(secondEvent, 5.Seconds());
+            Probe.Send(persistRef, new ContainsEvent { Guid = ourSecondGuid });
+            Probe.ExpectMsg(true, 5.Seconds());
+        }
+        
+        [Fact]
+        public void L2db_Journal_Delete_Compat_mode_Preserves_proper_SequenceNr()
+        {
             const string persistenceId = "d-1";
-            var persistRef = sys1.ActorOf(Props.Create(() =>
-                new JournalCompatActor(NewJournal, persistenceId)), "test-compat-delete-seqno");
+            var persistRef = Sys.ActorOf(Props.Create(() =>
+                new JournalCompatActor(NewJournal, persistenceId)), "test-compat-delete-seqNo");
             
             var ourGuid1 = Guid.NewGuid();
             var ourGuid2 = Guid.NewGuid();
@@ -161,33 +168,50 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             var event4 = new SomeEvent { EventName = "rec-test", Guid = ourGuid4, Number = 4 };
             var event5 = new SomeEvent { EventName = "rec-test", Guid = ourGuid5, Number = 5 };
 
-            (await persistRef.Ask<SomeEvent>(event1, 5.Seconds())).Should().Be(event1);
-            (await persistRef.Ask<SomeEvent>(event2, 5.Seconds())).Should().Be(event2);
-            (await persistRef.Ask<SomeEvent>(event3, 5.Seconds())).Should().Be(event3);
-            (await persistRef.Ask<SomeEvent>(event4, 5.Seconds())).Should().Be(event4);
-            (await persistRef.Ask<SomeEvent>(event5, 5.Seconds())).Should().Be(event5);
-            (await persistRef.Ask<bool>(new ContainsEvent() { Guid = ourGuid5 }, TimeSpan.FromSeconds(5)))
-                .Should().BeTrue();
+            Probe.Send(persistRef, event1);
+            Probe.ExpectMsg(event1, 5.Seconds());
+            Probe.Send(persistRef, event2);
+            Probe.ExpectMsg(event2, 5.Seconds());
+            Probe.Send(persistRef, event3);
+            Probe.ExpectMsg(event3, 5.Seconds());
+            Probe.Send(persistRef, event4);
+            Probe.ExpectMsg(event4, 5.Seconds());
+            Probe.Send(persistRef, event5);
+            Probe.ExpectMsg(event5, 5.Seconds());
             
-            var currentSequenceNr = await persistRef.Ask<CurrentSequenceNr>(new GetSequenceNr(), TimeSpan.FromSeconds(5));
-            var delResult = await persistRef.Ask<object>(new DeleteUpToSequenceNumber(currentSequenceNr.SequenceNumber));
+            Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid5 });
+            Probe.ExpectMsg(true, 5.Seconds());
+            
+            Probe.Send(persistRef, new GetSequenceNr());
+            var currentSequenceNr = Probe.ExpectMsg<CurrentSequenceNr>(5.Seconds());
+            
+            Probe.Send(persistRef, new DeleteUpToSequenceNumber(currentSequenceNr.SequenceNumber));
+            var delResult = Probe.ExpectMsg<object>(5.Seconds());
             delResult.Should().BeOfType<DeleteMessagesSuccess>();
             
-            (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
+            Probe.Watch(persistRef);
+            persistRef.Tell(PoisonPill.Instance);
+            Probe.ExpectTerminated(persistRef);
+            Probe.Unwatch(persistRef);
             
-            persistRef = sys1.ActorOf(Props.Create(() =>
-                new JournalCompatActor(NewJournal, persistenceId)), "test-compat-delete-seqno");
-            var reincaranatedSequenceNrNewJournal = await persistRef.Ask<CurrentSequenceNr>(new GetSequenceNr(),TimeSpan.FromSeconds(5));
+            persistRef = Sys.ActorOf(Props.Create(() =>
+                new JournalCompatActor(NewJournal, persistenceId)), "test-compat-delete-seqNo");
+            
+            Probe.Send(persistRef, new GetSequenceNr());
+            var reincaranatedSequenceNrNewJournal = Probe.ExpectMsg<CurrentSequenceNr>(5.Seconds());
             Output.WriteLine($"oldSeq : {currentSequenceNr.SequenceNumber} - newSeq : {reincaranatedSequenceNrNewJournal.SequenceNumber}");
             reincaranatedSequenceNrNewJournal.SequenceNumber.Should().Be(currentSequenceNr.SequenceNumber);
             
-            (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
-            // Intentionally being called twice to make sure that the actor state inside the user guardian has been cleared 
-            (await persistRef.GracefulStop(10.Seconds())).Should().BeTrue();
+            Probe.Watch(persistRef);
+            persistRef.Tell(PoisonPill.Instance);
+            Probe.ExpectTerminated(persistRef);
+            Probe.Unwatch(persistRef);
             
-            persistRef = sys1.ActorOf(Props.Create(() =>
-                new JournalCompatActor(OldJournal, persistenceId)), "test-compat-delete-seqno");
-            var reincaranatedSequenceNr = await persistRef.Ask<CurrentSequenceNr>(new GetSequenceNr(),TimeSpan.FromSeconds(5));
+            persistRef = Sys.ActorOf(Props.Create(() =>
+                new JournalCompatActor(OldJournal, persistenceId)), "test-compat-delete-seqNo");
+            
+            Probe.Send(persistRef, new GetSequenceNr());
+            var reincaranatedSequenceNr = Probe.ExpectMsg<CurrentSequenceNr>(5.Seconds());
             Output.WriteLine($"oldSeq : {currentSequenceNr.SequenceNumber} - newSeq : {reincaranatedSequenceNr.SequenceNumber}");
             reincaranatedSequenceNr.SequenceNumber.Should().Be(currentSequenceNr.SequenceNumber);
         }
