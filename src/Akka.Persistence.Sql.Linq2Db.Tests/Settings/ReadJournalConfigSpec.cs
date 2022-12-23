@@ -97,8 +97,8 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             
             // assert default metadata column names
             var metaColumns = metadataTable.ColumnNames;
-            metaColumns.PersistenceId.Should().Be("persistenceId");
-            metaColumns.SequenceNumber.Should().Be("sequenceNr");
+            metaColumns.PersistenceId.Should().Be("persistence_id");
+            metaColumns.SequenceNumber.Should().Be("sequence_number");
         }
 
         [Fact(DisplayName = "Journal config with SqlServer compat should contain correct column names")]
