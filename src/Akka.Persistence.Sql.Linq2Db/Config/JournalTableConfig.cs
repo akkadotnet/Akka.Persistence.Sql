@@ -14,6 +14,11 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
             if (string.IsNullOrEmpty(mappingPath))
                 throw new ConfigurationException("The configuration property akka.persistence.journal.linq2db.table-mapping is null or empty");
             
+            // backward compatibility
+            var compat = config.GetString("table-compatibility-mode");
+            if (compat != null)
+                mappingPath = compat;
+            
             var mappingConfig = config.GetConfig(mappingPath);
             if (mappingConfig is null)
                 throw new ConfigurationException($"The configuration path akka.persistence.journal.linq2db.{mappingPath} does not exist");

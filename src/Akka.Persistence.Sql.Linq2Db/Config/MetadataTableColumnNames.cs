@@ -12,8 +12,8 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
         public MetadataTableColumnNames(Configuration.Config config)
         {
             var cfg = config.GetConfig("columns");
-            PersistenceId =  cfg.GetString("persistenceId", "PersistenceId");
-            SequenceNumber = cfg.GetString("sequenceNumber", "sequenceNr");
+            PersistenceId =  cfg.GetString("persistence-id", "persistence_id");
+            SequenceNumber = cfg.GetString("sequence-number", "sequence_number");
         }
         public bool Equals(MetadataTableColumnNames other)
         {

@@ -8,10 +8,10 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
         public JournalTableColumnNames(Configuration.Config config)
         {
             var cfg = config.GetConfig("columns");
-            Ordering = cfg.GetString("ordering","ordering");
-            Deleted = cfg.GetString("deleted","deleted");
-            PersistenceId = cfg.GetString("persistenceId", "persistence_id");
-            SequenceNumber = cfg.GetString("sequenceNumber", "sequence_number");
+            Ordering = cfg.GetString("ordering", "ordering");
+            Deleted = cfg.GetString("deleted", "deleted");
+            PersistenceId = cfg.GetString("persistence-id", "persistence_id");
+            SequenceNumber = cfg.GetString("sequence-number", "sequence_number");
             Created = cfg.GetString("created", "created");
             Tags = cfg.GetString("tags", "tags");
             Message = cfg.GetString("message", "message");
