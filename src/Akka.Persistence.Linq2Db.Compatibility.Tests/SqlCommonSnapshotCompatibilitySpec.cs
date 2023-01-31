@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Akka.Actor;
-using Akka.Event;
+using FluentAssertions.Extensions;
 using Akka.TestKit;
-using FluentAssertions;
-using LanguageExt.UnitsOfMeasure;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -12,125 +10,123 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
 {
     public abstract class SqlCommonSnapshotCompatibilitySpec: IAsyncLifetime
     {
-        private Akka.TestKit.Xunit2.TestKit _testKit;
-        private ActorSystem _sys;
-        private TestProbe _probe;
-        private ILoggingAdapter _log;
-        private readonly ITestOutputHelper _helper;
-        
         protected abstract Configuration.Config Config { get; }
         public SqlCommonSnapshotCompatibilitySpec(ITestOutputHelper helper)
         {
-            _helper = helper;
+            Output = helper;
         }
 
+        protected ITestOutputHelper Output { get; }
         protected abstract string OldSnapshot { get; }
         protected abstract string NewSnapshot { get; }
+        protected ActorSystem Sys { get; private set;  }
+        protected Akka.TestKit.Xunit2.TestKit TestKit { get; private set; }
+        protected TestProbe Probe { get; private set; }
         
         public Task InitializeAsync()
         {
-            _testKit = new Akka.TestKit.Xunit2.TestKit(Config, nameof(SqlCommonJournalCompatibilitySpec), _helper);
-            _sys = _testKit.Sys;
-            _probe = _testKit.CreateTestProbe();
-            _log = _testKit.Log;
+            Sys = ActorSystem.Create("test-sys", Config);
+            TestKit = new Akka.TestKit.Xunit2.TestKit(Sys, Output);
+            Probe = TestKit.CreateTestProbe();
             return Task.CompletedTask;
         }
 
         public Task DisposeAsync()
         {
+            TestKit.Shutdown();
             return Task.CompletedTask;
         }
         
         [Fact]
-        public async Task Can_Recover_SqlCommon_Snapshot()
+        public void Can_Recover_SqlCommon_Snapshot()
         {
-            var persistRef = _sys.ActorOf(Props.Create(() => new SnapshotCompatActor(OldSnapshot, "p-1")));
+            var persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatActor(OldSnapshot, "p-1")));
             var ourGuid = Guid.NewGuid();
-            
-            (await persistRef.Ask<bool>(new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 }))
-                .Should().BeTrue();
-            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
-                .Should().BeTrue();
-            
+
+            Probe.Send(persistRef, new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 });
+            Probe.ExpectMsg(true);
+            Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
+            Probe.ExpectMsg(true, 5.Seconds());
+
             EnsureTerminated(persistRef);
             
-            persistRef =  _sys.ActorOf(Props.Create(() => new SnapshotCompatActor(NewSnapshot, "p-1")));
-            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
-                .Should().BeTrue();
+            persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatActor(NewSnapshot, "p-1")));
+            Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
+            Probe.ExpectMsg(true, 5.Seconds());
         }
         
         [Fact]
-        public async Task Can_Persist_SqlCommon_Snapshot()
+        public void Can_Persist_SqlCommon_Snapshot()
         {
-            var persistRef = _sys.ActorOf(Props.Create(() => new SnapshotCompatActor(OldSnapshot, "p-2")));
+            var persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatActor(OldSnapshot, "p-2")));
             var ourGuid = Guid.NewGuid();
-            
-            (await persistRef.Ask<bool>(new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 }))
-                .Should().BeTrue();
-            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
-                .Should().BeTrue();
+
+            Probe.Send(persistRef, new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 });
+            Probe.ExpectMsg(true);
+            Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
+            Probe.ExpectMsg(true, 5.Seconds());
             
             EnsureTerminated(persistRef);
             
-            persistRef = _sys.ActorOf(Props.Create(() => new SnapshotCompatActor(NewSnapshot, "p-2")));
-            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
-                .Should().BeTrue();
+            persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatActor(NewSnapshot, "p-2")));
+            Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
+            Probe.ExpectMsg(true, 5.Seconds());
             
             var ourSecondGuid = Guid.NewGuid();
-            (await persistRef.Ask<bool>(new SomeEvent { EventName = "rec-test", Guid = ourSecondGuid, Number = 2 }))
-                .Should().BeTrue();
-            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourSecondGuid }, TimeSpan.FromSeconds(5)))
-                .Should().BeTrue();
+            Probe.Send(persistRef, new SomeEvent { EventName = "rec-test", Guid = ourSecondGuid, Number = 2 });
+            Probe.ExpectMsg(true);
+            Probe.Send(persistRef, new ContainsEvent { Guid = ourSecondGuid });
+            Probe.ExpectMsg(true, 5.Seconds());
         }
         
         [Fact]
-        public async Task SqlCommon_Snapshot_Can_Recover_L2Db_Snapshot()
+        public void SqlCommon_Snapshot_Can_Recover_L2Db_Snapshot()
         {
-            var persistRef = _sys.ActorOf(Props.Create(() => new SnapshotCompatActor(NewSnapshot, "p-3")));
+            var persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatActor(NewSnapshot, "p-3")));
             var ourGuid = Guid.NewGuid();
             
-            (await persistRef.Ask<bool>(new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 }))
-                .Should().BeTrue();
-            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
-                .Should().BeTrue();
+            Probe.Send(persistRef, new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 });
+            Probe.ExpectMsg(true);
+            Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
+            Probe.ExpectMsg(true, 5.Seconds());
             
             EnsureTerminated(persistRef);
             
-            persistRef = _sys.ActorOf(Props.Create(() => new SnapshotCompatActor(OldSnapshot, "p-3")));
-            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
-                .Should().BeTrue();
+            persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatActor(OldSnapshot, "p-3")));
+            Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
+            Probe.ExpectMsg(true, 5.Seconds());
         }
         
         [Fact]
-        public async Task SqlCommon_Snapshot_Can_Persist_L2db_Snapshot()
+        public void SqlCommon_Snapshot_Can_Persist_L2db_Snapshot()
         {
-            var persistRef = _sys.ActorOf(Props.Create(() => new SnapshotCompatActor(NewSnapshot, "p-4")));
+            var persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatActor(NewSnapshot, "p-4")));
             var ourGuid = Guid.NewGuid();
             
-            (await persistRef.Ask<bool>(new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 }))
-                .Should().BeTrue();
-            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(5)))
-                .Should().BeTrue();
+            Probe.Send(persistRef, new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 });
+            Probe.ExpectMsg(true);
+            Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
+            Probe.ExpectMsg(true, 5.Seconds());
             
             EnsureTerminated(persistRef);
             
-            persistRef = _sys.ActorOf(Props.Create(() => new SnapshotCompatActor(OldSnapshot, "p-4")));
-            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourGuid }, TimeSpan.FromSeconds(10)))
-                .Should().BeTrue();
+            persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatActor(OldSnapshot, "p-4")));
+            Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
+            Probe.ExpectMsg(true, 10.Seconds());
             
             var ourSecondGuid = Guid.NewGuid();
-            (await persistRef.Ask<bool>(new SomeEvent { EventName = "rec-test", Guid = ourSecondGuid, Number = 2 }))
-                .Should().BeTrue();
-            (await persistRef.Ask<bool>(new ContainsEvent { Guid = ourSecondGuid }, TimeSpan.FromSeconds(5)))
-                .Should().BeTrue();
+            Probe.Send(persistRef, new SomeEvent { EventName = "rec-test", Guid = ourSecondGuid, Number = 2 });
+            Probe.ExpectMsg(true);
+            Probe.Send(persistRef, new ContainsEvent { Guid = ourSecondGuid });
+            Probe.ExpectMsg(true, 10.Seconds());
         }
 
         private void EnsureTerminated(IActorRef actorRef)
         {
-            _probe.Watch(actorRef);
+            Probe.Watch(actorRef);
             actorRef.Tell(PoisonPill.Instance);
-            _probe.ExpectTerminated(actorRef);
-            _probe.Unwatch(actorRef);
+            Probe.ExpectTerminated(actorRef);
+            Probe.Unwatch(actorRef);
         }
     }
 }
