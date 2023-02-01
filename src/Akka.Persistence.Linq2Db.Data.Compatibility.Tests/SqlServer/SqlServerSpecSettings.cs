@@ -14,15 +14,9 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.SqlServer
         {
         }
         
-        public override string JournalTableName => "EventJournal";
-        
-        public override string JournalMetadataTableName => "Metadata";
-        
-        public override string SnapshotTableName => "SnapshotStore";
-        
         public override string ProviderName => LinqToDB.ProviderName.SqlServer2017;
         
-        public override string CompatibilityMode => "sqlserver";
+        public override string TableMapping => "sql-server";
 
         public override string SchemaName => "dbo";
         

@@ -78,7 +78,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
             _journalSequenceActor = system.ActorOf(
                 props: Props.Create(() => new JournalSequenceActor(
                         _readJournalDao, _readJournalConfig.JournalSequenceRetrievalConfiguration)),
-                name: _readJournalConfig.TableConfig.TableName + "akka-persistence-linq2db-sequence-actor");
+                name: _readJournalConfig.TableConfig.EventJournalTable.Name + "akka-persistence-linq2db-sequence-actor");
             
             _delaySource = Source.Tick(TimeSpan.FromSeconds(0), _readJournalConfig.RefreshInterval, 0L).Take(1);
         }

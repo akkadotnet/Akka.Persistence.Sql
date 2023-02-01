@@ -3,7 +3,7 @@ using Akka.Configuration;
 
 namespace Akka.Persistence.Sql.Linq2Db.Config
 {
-    public class MetadataTableColumnNames
+    public class MetadataTableColumnNames: IEquatable<MetadataTableColumnNames>
     {
         public string PersistenceId { get; }
         
@@ -11,22 +11,14 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
         
         public MetadataTableColumnNames(Configuration.Config config)
         {
-            var compat = (config.GetString("table-compatibility-mode", "") ?? "").ToLower();
-            var colString = compat switch
-            {
-                "sqlserver" => "sqlserver-compat-metadata-column-names",
-                "sqlite" => "sqlite-compat-metadata-column-names",
-                "postgres" => "postgres-compat-metadata-column-names",
-                "mysql" => "mysql-compat-metadata-column-names",
-                _ => "metadata-column-names"
-            };
-            
-            var cfg = config.GetConfig($"tables.journal.{colString}");
-            PersistenceId =  cfg.GetString("persistenceId", "PersistenceId");
-            SequenceNumber = cfg.GetString("sequenceNumber", "sequenceNr");
+            var cfg = config.GetConfig("columns");
+            PersistenceId =  cfg.GetString("persistence-id", "persistence_id");
+            SequenceNumber = cfg.GetString("sequence-number", "sequence_number");
         }
-        protected bool Equals(MetadataTableColumnNames other)
+        public bool Equals(MetadataTableColumnNames other)
         {
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
             return PersistenceId == other.PersistenceId && SequenceNumber == other.SequenceNumber;
         }
 

@@ -27,15 +27,9 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests
 {
     public abstract class TestSettings
     {
-        public abstract string JournalTableName { get; }
-        
-        public abstract string JournalMetadataTableName { get; }
-        
-        public abstract string SnapshotTableName { get; }
-        
         public abstract string ProviderName { get; }
         
-        public abstract string CompatibilityMode { get; }
+        public abstract string TableMapping { get; }
         
         public virtual string? SchemaName { get; } = null;
     }
@@ -63,36 +57,31 @@ akka.persistence {{
 		linq2db {{
 			connection-string = ""{Fixture.ConnectionString}""
 			provider-name = {Settings.ProviderName}
-			table-compatibility-mode = {Settings.CompatibilityMode}
+			table-mapping = {Settings.TableMapping}
+            auto-initialize = off
+            warn-on-auto-init-fail = true
 
             # Testing for https://github.com/akkadotnet/Akka.Persistence.Linq2Db/pull/117#discussion_r1027345449
             batch-size = 3
             db-round-trip-max-batch-size = 6
             replay-batch-size = 6
 
-			tables.journal {{ 
-				auto-init = false
-				schema-name = {Settings.SchemaName ?? "null"}
-				table-name = {Settings.JournalTableName} 
-				metadata-table-name = {Settings.JournalMetadataTableName}
-			}}
+            {Settings.TableMapping} {{
+                schema-name = {Settings.SchemaName ?? "null"}
+            }}
 		}}
 	}}
 
 	query.journal.linq2db {{
 		connection-string = ""{Fixture.ConnectionString}""
 		provider-name = {Settings.ProviderName}
-		table-compatibility-mode = {Settings.CompatibilityMode}
+		table-mapping = {Settings.TableMapping}
+        auto-initialize = off
+        warn-on-auto-init-fail = true
 
         # Testing for https://github.com/akkadotnet/Akka.Persistence.Linq2Db/pull/117#discussion_r1027345449
         batch-size = 3
         replay-batch-size = 6
-
-		tables.journal {{ 
-			auto-init = false
-			table-name = {Settings.JournalTableName}
-			metadata-table-name = {Settings.JournalMetadataTableName}
-		}}
 	}}
 
 	snapshot-store {{
@@ -100,14 +89,12 @@ akka.persistence {{
 		linq2db {{
 			connection-string = ""{Fixture.ConnectionString}""
 			provider-name = {Settings.ProviderName}
-			table-compatibility-mode = {Settings.CompatibilityMode}
-			tables {{
-				snapshot {{ 
-					auto-init = false
-					schema-name = {Settings.SchemaName ?? "null"}
-					table-name = {Settings.SnapshotTableName}
-				}}
-			}}
+			table-mapping = {Settings.TableMapping}
+            auto-initialize = off
+
+            {Settings.TableMapping} {{
+                schema-name = {Settings.SchemaName ?? "null"}
+            }}
 		}}
 	}}
 }}";

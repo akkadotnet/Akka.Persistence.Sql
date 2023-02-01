@@ -18,6 +18,8 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
             UseSharedDb = string.IsNullOrWhiteSpace(dbConf) ? null : dbConf;
             UseCloneConnection = config.GetBoolean("use-clone-connection", false);
             DefaultSerializer = config.GetString("serializer", null);
+            AutoInitialize = config.GetBoolean("auto-initialize");
+            WarnOnAutoInitializeFail = config.GetBoolean("warn-on-auto-init-fail");
         }
         
         public string MaterializerDispatcher { get; }
@@ -39,6 +41,13 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
         public string ConnectionString { get; }
         
         public bool UseCloneConnection { get; }
+        
+        /// <summary>
+        /// Flag determining in in case of event journal or metadata table missing, they should be automatically initialized.
+        /// </summary>
+        public bool AutoInitialize { get; }
+        
+        public bool WarnOnAutoInitializeFail { get; }
     }
 
     public interface IProviderConfig<TTable>
