@@ -37,7 +37,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Snapshot
                 mat: Materializer.CreateSystemMaterializer((ExtendedActorSystem)Context.System), 
                 logger: Context.GetLogger());
             
-            if (_snapshotConfig.TableConfig.AutoInitialize)
+            if (_snapshotConfig.AutoInitialize)
             {
                 try
                 {

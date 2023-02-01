@@ -33,12 +33,11 @@ akka.persistence {{
             plugin-dispatcher = ""akka.actor.default-dispatcher""
             connection-string = ""{PostgreDbUtils.ConnectionString}""
             provider-name = {LinqToDB.ProviderName.PostgreSQL95}
-            table-compatibility-mode = postgres
-            tables {{
-                snapshot {{ 
-                    auto-init = true
-                    warn-on-auto-init-fail = false
-                    table-name = {tableName}    
+            table-mapping = postgresql
+            auto-initialize = true
+            postgresql {{
+                snapshot {{
+                    table-name = ""{tableName}"" 
                 }}
             }}
         }}
@@ -71,12 +70,15 @@ akka.persistence {{
             connection-string = ""{PostgreDbUtils.ConnectionString}""
             provider-name = ""{LinqToDB.ProviderName.PostgreSQL95}""
             parallelism = 3
-            table-compatibility-mode = postgres
-            tables.journal {{ 
-                auto-init = true
-                warn-on-auto-init-fail = false
-                table-name = ""{tableName}"" 
-                metadata-table-name = ""{metadataTableName}""       
+            table-mapping = postgresql
+            auto-initialize = true
+            postgresql {{
+                journal {{
+                    table-name = ""{tableName}"" 
+                }}
+                metadata {{
+                    table-name = ""{metadataTableName}"" 
+                }}
             }}
         }}
     }}

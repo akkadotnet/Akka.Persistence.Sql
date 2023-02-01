@@ -15,34 +15,20 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
         SequentialUuid
     }
     
-    public class JournalTableConfig
+    public class JournalTableConfig : IEquatable<JournalTableConfig>
     {
-        public JournalTableColumnNames ColumnNames { get; }
-        public string TableName { get; }
         public string SchemaName { get; }
-        public bool AutoInitialize { get; }
-        public string MetadataTableName { get; }
-        public MetadataTableColumnNames MetadataColumnNames { get; }
-        public bool WarnOnAutoInitializeFail { get; }
-
         public TagWriteMode TagWriteMode { get; }
         public TagTableMode TagTableMode { get; }
         public string TagTableName { get; }
         public bool UseEventManifestColumn { get; }
-        
+        public EventJournalTableConfig EventJournalTable { get; }
+        public MetadataTableConfig MetadataTable { get; }
         public JournalTableConfig(Configuration.Config config)
         {
-            var localCfg = config.GetConfig("tables.journal")
-                .SafeWithFallback(config) //For easier compatibility with old cfgs.
-                .SafeWithFallback(Configuration.Config.Empty);
-            
-            ColumnNames= new JournalTableColumnNames(config);
-            MetadataColumnNames = new MetadataTableColumnNames(config);
-            TableName = localCfg.GetString("table-name", "journal");
-            MetadataTableName = localCfg.GetString("metadata-table-name", "journal_metadata");
-            SchemaName = localCfg.GetString("schema-name", null);
-            AutoInitialize = localCfg.GetBoolean("auto-init", false);
-            WarnOnAutoInitializeFail = localCfg.GetBoolean("warn-on-auto-init-fail", true);
+            var mappingPath = config.GetString("table-mapping");
+            if (string.IsNullOrEmpty(mappingPath))
+                throw new ConfigurationException("The configuration property akka.persistence.journal.linq2db.table-mapping is null or empty");
             
             var s = config.GetString("tag-write-mode", "csv").ToLowerInvariant();
             if (!Enum.TryParse(s, true, out TagWriteMode res))
@@ -50,19 +36,32 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
                 res = TagWriteMode.Csv;
             }
             TagWriteMode = res;
+            
+            // backward compatibility
+            var compat = config.GetString("table-compatibility-mode");
+            if (compat != null)
+                mappingPath = compat;
+            
+            var mappingConfig = config.GetConfig(mappingPath);
+            if (mappingConfig is null)
+                throw new ConfigurationException($"The configuration path akka.persistence.journal.linq2db.{mappingPath} does not exist");
+
+            if (mappingPath != "default")
+                mappingConfig.WithFallback(config.GetConfig("default"));
+            
+            SchemaName = mappingConfig.GetString("schema-name");
+
+            EventJournalTable = new EventJournalTableConfig(mappingConfig);
+            MetadataTable = new MetadataTableConfig(mappingConfig);
         }
 
-        protected bool Equals(JournalTableConfig other)
+        public bool Equals(JournalTableConfig other)
         {
-            return 
-                Equals(ColumnNames, other.ColumnNames) &&
-                TableName == other.TableName &&
-                SchemaName == other.SchemaName &&
-                AutoInitialize == other.AutoInitialize &&
-                MetadataTableName == other.MetadataTableName &&
-                WarnOnAutoInitializeFail == other.WarnOnAutoInitializeFail &&
-                Equals(MetadataColumnNames, other.MetadataColumnNames) &&
-                TagWriteMode== other.TagWriteMode;
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return Equals(EventJournalTable, other.EventJournalTable) &&
+                   Equals(MetadataTable, other.MetadataTable) &&
+                   SchemaName == other.SchemaName;
         }
 
         public override bool Equals(object obj)
@@ -74,7 +73,8 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(ColumnNames, TableName, SchemaName, AutoInitialize, MetadataTableName, MetadataColumnNames, TagWriteMode);
+            return HashCode.Combine(EventJournalTable, SchemaName, MetadataTable);
         }
     }
+
 }

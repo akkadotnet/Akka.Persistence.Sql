@@ -30,10 +30,12 @@ akka.persistence {{
             connection-string = ""{fixture.ConnectionString}""
             provider-name = ""{ProviderName.PostgreSQL95}""
             use-clone-connection = true
-            tables.snapshot {{ 
-               auto-init = true
-               warn-on-auto-init-fail = false
-               table-name = l2dbSnapshotSpec 
+            auto-initialize = true
+            warn-on-auto-init-fail = false
+            default {{
+                journal {{
+                    table-name = l2dbSnapshotSpec
+                }}
             }}
         }}
     }}
@@ -81,11 +83,7 @@ akka.persistence {{
             connection-string = ""{connString}""
             provider-name = ""{ProviderName.PostgreSQL95}""
             use-clone-connection = true
-            tables.journal {{ 
-               auto-init = true
-               warn-on-auto-init-fail = false
-               table-name = testJournal 
-            }}
+            auto-initialize = true
         }}
     }}
 }}");

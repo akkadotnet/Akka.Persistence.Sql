@@ -20,12 +20,7 @@ akka.persistence {{
             provider-name = ""{LinqToDB.ProviderName.SqlServer2017}""
             parallelism = {parallelism}
             batch-size = {batchSize}
-            #use-clone-connection = true
-            tables.journal {{ 
-                auto-init = true
-                warn-on-auto-init-fail = false
-                table-name = ""{tableName}"" 
-            }}
+            auto-initialize = true
         }}
     }}
 }}");
@@ -49,12 +44,12 @@ akka.persistence {{
             parallelism = {parallelism}
             batch-size = {batchSize}
             #use-clone-connection = true
-            tables.snapshot {{ 
-                auto-init = true
-                warn-on-auto-init-fail = false
-                table-name = ""{tableName}""
-                column-names {{
-                }} 
+            auto-initialize = true
+            warn-on-auto-init-fail = false
+            default {{
+                journal {{
+                    table-name = ""{tableName}""
+                }}
             }}
         }}
     }}

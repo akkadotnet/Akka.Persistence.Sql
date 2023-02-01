@@ -32,7 +32,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.SqlServer
             var extension = Linq2DbPersistence.Get(Sys);
             var connFactory = new AkkaPersistenceDataConnectionFactory(new JournalConfig(
                 Configuration
-                    .GetConfig("akka.persistence.journal.linq2db.customSpec")
+                    .GetConfig("akka.persistence.journal.customSpec")
                     .WithFallback(extension.DefaultJournalConfig)));
             using (var conn = connFactory.GetConnection())
             {

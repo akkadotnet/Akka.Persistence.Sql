@@ -14,15 +14,9 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.PostgreSql
         {
         }
         
-        public override string JournalTableName => "event_journal";
-        
-        public override string JournalMetadataTableName => "metadata";
-        
-        public override string SnapshotTableName => "snapshot_store";
-        
         public override string ProviderName => LinqToDB.ProviderName.PostgreSQL;
         
-        public override string CompatibilityMode => "postgres";
+        public override string TableMapping => "postgresql";
 
     }
 }

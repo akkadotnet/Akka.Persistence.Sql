@@ -51,6 +51,32 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.In
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.Data.Compatibility.Tests", "src\Akka.Persistence.Linq2Db.Data.Compatibility.Tests\Akka.Persistence.Linq2Db.Data.Compatibility.Tests.csproj", "{5240D81C-0F6C-4F4A-85A1-6442C6D6ECBF}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sql Scripts", "Sql Scripts", "{C4AC49FF-9ECF-4D38-A201-1105BBF7E628}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MySql", "MySql", "{CFDAF69C-0E6F-48A4-8434-995090175EAD}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\MySql\1_Migration_Setup.sql = scripts\MySql\1_Migration_Setup.sql
+		scripts\MySql\2_Migration.sql = scripts\MySql\2_Migration.sql
+		scripts\MySql\3_Post_Migration_Cleanup.sql = scripts\MySql\3_Post_Migration_Cleanup.sql
+		scripts\MySql\DROP_migration.sql = scripts\MySql\DROP_migration.sql
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PostgreSql", "PostgreSql", "{11DAD9A0-1DDF-4A32-BC17-091220045D1E}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\PostgreSql\1_Migration_Setup.sql = scripts\PostgreSql\1_Migration_Setup.sql
+		scripts\PostgreSql\2_Migration.sql = scripts\PostgreSql\2_Migration.sql
+		scripts\PostgreSql\3_Post_Migration_Cleanup.sql = scripts\PostgreSql\3_Post_Migration_Cleanup.sql
+		scripts\PostgreSql\DROP_migration.sql = scripts\PostgreSql\DROP_migration.sql
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SqlServer", "SqlServer", "{74AFECF0-CC70-47C9-9393-2AB952B23BBD}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\SqlServer\1_Migration_Setup.sql = scripts\SqlServer\1_Migration_Setup.sql
+		scripts\SqlServer\2_Migration.sql = scripts\SqlServer\2_Migration.sql
+		scripts\SqlServer\3_Post_Migration_Cleanup.sql = scripts\SqlServer\3_Post_Migration_Cleanup.sql
+		scripts\SqlServer\DROP_Migration.sql = scripts\SqlServer\DROP_Migration.sql
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -118,5 +144,8 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{7537908B-6A42-4E34-889F-6004A97D4987} = {79D71264-186B-4F62-8930-35DD9ECCAF3B}
+		{CFDAF69C-0E6F-48A4-8434-995090175EAD} = {C4AC49FF-9ECF-4D38-A201-1105BBF7E628}
+		{11DAD9A0-1DDF-4A32-BC17-091220045D1E} = {C4AC49FF-9ECF-4D38-A201-1105BBF7E628}
+		{74AFECF0-CC70-47C9-9393-2AB952B23BBD} = {C4AC49FF-9ECF-4D38-A201-1105BBF7E628}
 	EndGlobalSection
 EndGlobal

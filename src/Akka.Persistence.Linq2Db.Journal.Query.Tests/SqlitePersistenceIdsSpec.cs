@@ -45,19 +45,11 @@ akka.persistence {{
         plugin = ""akka.persistence.journal.linq2db""
         linq2db = {{
             provider-name = ""{ProviderName.SQLiteMS}""
-            table-compatibility-mode = sqlite
+            table-mapping = sqlite
             plugin-dispatcher = ""akka.actor.default-dispatcher""
             auto-initialize = on
             connection-string = ""{journalString}""
             refresh-interval = 200ms
-            tables {{
-                journal {{
-                    table-name = event_journal
-                    metadata-table-name = journal_metadata
-                    auto-init = true 
-                    warn-on-auto-init-fail = false
-                }} 
-            }}
         }}
     }}
     snapshot-store {{
@@ -73,15 +65,9 @@ akka.persistence {{
 }}
 akka.persistence.query.journal.linq2db {{
     provider-name = ""{ProviderName.SQLiteMS}""
-    table-compatibility-mode = sqlite
+    table-mapping = sqlite
     connection-string = ""{journalString}""
-    tables {{
-       journal {{
-         table-name = event_journal
-         metadata-table-name = journal_metadata 
-         warn-on-auto-init-fail = false
-       }} 
-    }}
+    auto-initialize = on
     write-plugin = ""akka.persistence.journal.linq2db""
 }}
 akka.test.single-expect-default = 10s")

@@ -80,22 +80,23 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
             FluentMappingBuilder fmb)
         {
             var tableConfig = config.TableConfig;
+            var snapshotConfig = tableConfig.SnapshotTable;
             var builder = fmb.Entity<SnapshotRow>()
                 .HasSchemaName(tableConfig.SchemaName)
-                .HasTableName(tableConfig.TableName)
+                .HasTableName(snapshotConfig.Name)
                 .Member(r => r.Created)
-                .HasColumnName(tableConfig.ColumnNames.Created)
+                .HasColumnName(snapshotConfig.ColumnNames.Created)
                 .Member(r => r.Manifest)
-                .HasColumnName(tableConfig.ColumnNames.Manifest)
+                .HasColumnName(snapshotConfig.ColumnNames.Manifest)
                 .HasLength(500)
                 .Member(r => r.Payload)
-                .HasColumnName(tableConfig.ColumnNames.Snapshot)
+                .HasColumnName(snapshotConfig.ColumnNames.Snapshot)
                 .Member(r => r.SequenceNumber)
-                .HasColumnName(tableConfig.ColumnNames.SequenceNumber)
+                .HasColumnName(snapshotConfig.ColumnNames.SequenceNumber)
                 .Member(r => r.SerializerId)
-                .HasColumnName(tableConfig.ColumnNames.SerializerId)
+                .HasColumnName(snapshotConfig.ColumnNames.SerializerId)
                 .Member(r => r.PersistenceId)
-                .HasColumnName(tableConfig.ColumnNames.PersistenceId)
+                .HasColumnName(snapshotConfig.ColumnNames.PersistenceId)
                 .HasLength(255);
             
             if (config.ProviderName.ToLower().Contains("sqlite") || config.ProviderName.ToLower().Contains("postgres"))
@@ -118,24 +119,26 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
             FluentMappingBuilder fmb)
         {
             var tableConfig = config.TableConfig;
+            var journalConfig = tableConfig.EventJournalTable;
+            var columnNames = journalConfig.ColumnNames;
             var journalRowBuilder = fmb.Entity<JournalRow>()
                 .HasSchemaName(tableConfig.SchemaName)
-                .HasTableName(tableConfig.TableName)
-                .Member(r => r.Deleted).HasColumnName(tableConfig.ColumnNames.Deleted)
-                .Member(r => r.Manifest).HasColumnName(tableConfig.ColumnNames.Manifest)
+                .HasTableName(journalConfig.Name)
+                .Member(r => r.Deleted).HasColumnName(columnNames.Deleted)
+                .Member(r => r.Manifest).HasColumnName(columnNames.Manifest)
                 .HasLength(500)
-                .Member(r => r.Message).HasColumnName(tableConfig.ColumnNames.Message).IsNullable(false)
-                .Member(r => r.Ordering).HasColumnName(tableConfig.ColumnNames.Ordering)
+                .Member(r => r.Message).HasColumnName(columnNames.Message).IsNullable(false)
+                .Member(r => r.Ordering).HasColumnName(columnNames.Ordering)
                 .Member(r => r.Tags).HasLength(100)
-                .HasColumnName(tableConfig.ColumnNames.Tags)
+                .HasColumnName(columnNames.Tags)
                 .Member(r => r.Identifier)
-                .HasColumnName(tableConfig.ColumnNames.Identifier)
+                .HasColumnName(columnNames.Identifier)
                 .Member(r => r.PersistenceId)
-                .HasColumnName(tableConfig.ColumnNames.PersistenceId).HasLength(255).IsNullable(false)
+                .HasColumnName(columnNames.PersistenceId).HasLength(255).IsNullable(false)
                 .Member(r => r.SequenceNumber)
-                .HasColumnName(tableConfig.ColumnNames.SequenceNumber)
+                .HasColumnName(columnNames.SequenceNumber)
                 .Member(r => r.Timestamp)
-                .HasColumnName(tableConfig.ColumnNames.Created);
+                .HasColumnName(columnNames.Created);
 
             //We can skip writing tags the old way by ignoring the column in mapping.
             journalRowBuilder.Member(r => r.TagArr).IsNotColumn();
@@ -219,13 +222,13 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
             if (config.IDaoConfig.SqlCommonCompatibilityMode)
             {
                 fmb.Entity<JournalMetaData>()
-                    .HasTableName(tableConfig.MetadataTableName)
+                    .HasTableName(tableConfig.MetadataTable.Name)
                     .HasSchemaName(tableConfig.SchemaName)
                     .Member(r => r.PersistenceId)
-                    .HasColumnName(tableConfig.MetadataColumnNames.PersistenceId)
+                    .HasColumnName(tableConfig.MetadataTable.ColumnNames.PersistenceId)
                     .HasLength(255)
                     .Member(r => r.SequenceNumber)
-                    .HasColumnName(tableConfig.MetadataColumnNames.SequenceNumber);
+                    .HasColumnName(tableConfig.MetadataTable.ColumnNames.SequenceNumber);
             }
         }
 

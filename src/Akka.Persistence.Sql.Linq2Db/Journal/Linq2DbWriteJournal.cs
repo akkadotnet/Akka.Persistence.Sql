@@ -87,7 +87,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal
                     throw;
                 }
 
-                if (_journalConfig.TableConfig.AutoInitialize)
+                if (_journalConfig.AutoInitialize)
                 {
                     try
                     {

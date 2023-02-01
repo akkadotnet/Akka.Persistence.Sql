@@ -258,7 +258,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
             {
                 await ctx.BulkCopyAsync(new BulkCopyOptions
                 {
-                    TableName = JournalConfig.TableConfig.TableName,
+                    TableName = JournalConfig.TableConfig.EventJournalTable.Name,
                     MaxBatchSize = JournalConfig.DaoConfig.DbRoundTripBatchSize
                 },xs);
                 

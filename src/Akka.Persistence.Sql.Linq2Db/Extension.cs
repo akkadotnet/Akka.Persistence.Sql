@@ -31,6 +31,8 @@ namespace Akka.Persistence.Sql.Linq2Db
         public readonly Configuration.Config DefaultJournalConfig;
         public readonly Configuration.Config DefaultSnapshotConfig;
         public readonly Configuration.Config DefaultConfig;
+        public readonly Configuration.Config DefaultJournalMappingConfig;
+        public readonly Configuration.Config DefaultSnapshotMappingConfig;
 
         public Linq2DbPersistence(ExtendedActorSystem system)
         {
@@ -39,6 +41,9 @@ namespace Akka.Persistence.Sql.Linq2Db
 
             DefaultJournalConfig = DefaultConfig.GetConfig(JournalConfigPath);
             DefaultSnapshotConfig = DefaultConfig.GetConfig(SnapshotStoreConfigPath);
+
+            DefaultJournalMappingConfig = DefaultJournalConfig.GetConfig("default");
+            DefaultSnapshotMappingConfig = DefaultSnapshotConfig.GetConfig("default");
         }
     
         public static Linq2DbPersistence Get(ActorSystem system)

@@ -21,10 +21,8 @@ akka.persistence {{
             provider-name = ""{providerName}""
             parallelism = 1
             max-row-by-row-size = 100
-            tables.snapshot {{ 
-                auto-init = true 
-                warn-on-auto-init-fail = false
-            }}
+            auto-initialize = true
+            warn-on-auto-init-fail = false
             use-clone-connection = {(providerName == ProviderName.SQLiteMS ? "on" : "off")}
         }}
     }}
@@ -49,10 +47,7 @@ akka.persistence {{
             parallelism = 1
             max-row-by-row-size = 100
             delete-compatibility-mode = {(nativeMode == false ? "on" : "off")}
-            tables.journal {{ 
-                auto-init = true
-                warn-on-auto-init-fail = false 
-            }}
+            auto-initialize = true
             use-clone-connection = {(providerName == ProviderName.SQLiteMS ? "on" : "off")}
         }}
     }}

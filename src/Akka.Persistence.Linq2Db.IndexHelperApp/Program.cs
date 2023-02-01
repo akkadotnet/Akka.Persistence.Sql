@@ -54,8 +54,8 @@ namespace Akka.Persistence.Linq2Db.IndexHelperApp
                 var orderingExpr = new CreateIndexExpression
                 {
                     Index = helper.JournalOrdering(
-                        journalConf.TableConfig.TableName,
-                        journalConf.TableConfig.ColumnNames.Ordering,
+                        journalConf.TableConfig.EventJournalTable.Name,
+                        journalConf.TableConfig.EventJournalTable.ColumnNames.Ordering,
                         journalConf.TableConfig.SchemaName)
                 };
                 GenerateWithHeaderAndFooter(generator, orderingExpr, "Ordering");
@@ -63,9 +63,9 @@ namespace Akka.Persistence.Linq2Db.IndexHelperApp
                 var indexExpr = new CreateIndexExpression
                 {
                     Index = helper.DefaultJournalIndex(
-                        journalConf.TableConfig.TableName,
-                        journalConf.TableConfig.ColumnNames.PersistenceId,
-                        journalConf.TableConfig.ColumnNames.SequenceNumber,
+                        journalConf.TableConfig.EventJournalTable.Name,
+                        journalConf.TableConfig.EventJournalTable.ColumnNames.PersistenceId,
+                        journalConf.TableConfig.EventJournalTable.ColumnNames.SequenceNumber,
                         journalConf.TableConfig.SchemaName)
                 };
                 GenerateWithHeaderAndFooter(generator, indexExpr, "PidAndSequenceNo");
@@ -75,8 +75,9 @@ namespace Akka.Persistence.Linq2Db.IndexHelperApp
             {
                 var timestampExpr = new CreateIndexExpression()
                 {
-                    Index = helper.JournalTimestamp(journalConf.TableConfig.TableName,
-                        journalConf.TableConfig.ColumnNames.Created,
+                    Index = helper.JournalTimestamp(
+                        journalConf.TableConfig.EventJournalTable.Name,
+                        journalConf.TableConfig.EventJournalTable.ColumnNames.Created,
                         journalConf.TableConfig.SchemaName)
                 };
                 GenerateWithHeaderAndFooter(generator, timestampExpr, "Timestamp");

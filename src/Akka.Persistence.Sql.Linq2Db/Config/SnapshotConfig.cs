@@ -26,6 +26,8 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
             ProviderName = config.GetString("provider-name", null);
             IDaoConfig = new SnapshotDaoConfig(config.GetBoolean("compatibility-mode", false));
             UseCloneConnection = config.GetBoolean("use-clone-connection", false);
+            AutoInitialize = config.GetBoolean("auto-initialize");
+            WarnOnAutoInitializeFail = config.GetBoolean("warn-on-auto-init-fail");
         }
 
         public string ProviderName { get; }
@@ -44,5 +46,11 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
 
         public SnapshotPluginConfig PluginConfig { get; }
         
+        /// <summary>
+        /// Flag determining in in case of event journal or metadata table missing, they should be automatically initialized.
+        /// </summary>
+        public bool AutoInitialize { get; }
+        
+        public bool WarnOnAutoInitializeFail { get; }
     }
 }
