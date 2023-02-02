@@ -19,11 +19,11 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
     {
         public string SchemaName { get; }
         public TagWriteMode TagWriteMode { get; }
-        public TagTableMode TagTableMode { get; }
-        public string TagTableName { get; }
-        public bool UseEventManifestColumn { get; }
+        public TagTableMode TagTableMode { get; } = TagTableMode.OrderingId;
+        public bool UseEventManifestColumn { get; } = false;
         public EventJournalTableConfig EventJournalTable { get; }
         public MetadataTableConfig MetadataTable { get; }
+        public TagTableConfig TagTable { get; }
         public JournalTableConfig(Configuration.Config config)
         {
             var mappingPath = config.GetString("table-mapping");
@@ -47,12 +47,16 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
                 throw new ConfigurationException($"The configuration path akka.persistence.journal.linq2db.{mappingPath} does not exist");
 
             if (mappingPath != "default")
-                mappingConfig.WithFallback(config.GetConfig("default"));
+            {
+                var defaultConfig = config.GetConfig("default");
+                mappingConfig = mappingConfig.WithFallback(defaultConfig);
+            }
             
             SchemaName = mappingConfig.GetString("schema-name");
 
             EventJournalTable = new EventJournalTableConfig(mappingConfig);
             MetadataTable = new MetadataTableConfig(mappingConfig);
+            TagTable = new TagTableConfig(mappingConfig);
         }
 
         public bool Equals(JournalTableConfig other)

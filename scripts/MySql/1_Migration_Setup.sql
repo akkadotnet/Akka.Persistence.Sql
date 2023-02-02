@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS TagTable(
+CREATE TABLE IF NOT EXISTS tags(
     ordering_id BIGINT NOT NULL,
     tag NVARCHAR(64) NOT NULL,
     PRIMARY KEY (ordering_id, tag)
@@ -38,7 +38,7 @@ proc_main: BEGIN
             END IF;
 
             IF LENGTH(slice) > 0 THEN
-                INSERT IGNORE INTO TagTable (ordering_id, tag) VALUES (Id, slice);
+                INSERT IGNORE INTO tags (ordering_id, tag) VALUES (Id, slice);
             END IF;
 
             SET String = RIGHT(String, LENGTH(String) - idx);
