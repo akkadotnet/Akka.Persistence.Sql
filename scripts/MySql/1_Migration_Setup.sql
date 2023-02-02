@@ -5,9 +5,10 @@ CREATE TABLE IF NOT EXISTS tags(
 );
 
 DROP PROCEDURE IF EXISTS Split;
-DELIMITER #
+
+DELIMITER ??
 CREATE PROCEDURE Split()
-proc_main: BEGIN
+BEGIN
 
     DECLARE v_cursor_done TINYINT UNSIGNED DEFAULT 0;
     DECLARE Id INT UNSIGNED;
@@ -51,5 +52,5 @@ proc_main: BEGIN
     
     CLOSE v_cursor;
 
-END proc_main #
+END??
 DELIMITER ;

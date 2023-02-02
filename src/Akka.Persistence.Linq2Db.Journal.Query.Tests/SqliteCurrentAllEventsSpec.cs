@@ -43,7 +43,7 @@ akka.persistence.query.journal.linq2db {{
     auto-initialize = on
 }}
 akka.test.single-expect-default = 10s")
-                .WithFallback(Linq2DbPersistence.DefaultConfiguration());
+                .WithFallback(Linq2DbPersistence.DefaultConfiguration);
         }
         public SqliteCurrentAllEventsSpec(ITestOutputHelper output) : base(Config(Counter.GetAndIncrement()), nameof(SqliteCurrentAllEventsSpec), output)
         {

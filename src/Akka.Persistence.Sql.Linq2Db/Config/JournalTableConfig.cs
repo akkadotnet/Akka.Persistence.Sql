@@ -5,8 +5,8 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
 {
     public enum TagWriteMode
     {
-        Csv = 1,
-        TagTable = 2,
+        Csv,
+        TagTable,
     }
     
     public enum TagTableMode
@@ -47,10 +47,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
                 throw new ConfigurationException($"The configuration path akka.persistence.journal.linq2db.{mappingPath} does not exist");
 
             if (mappingPath != "default")
-            {
-                var defaultConfig = config.GetConfig("default");
-                mappingConfig = mappingConfig.WithFallback(defaultConfig);
-            }
+                mappingConfig = mappingConfig.WithFallback(Linq2DbPersistence.DefaultJournalMappingConfiguration);
             
             SchemaName = mappingConfig.GetString("schema-name");
 

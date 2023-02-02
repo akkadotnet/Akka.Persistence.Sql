@@ -71,7 +71,7 @@ akka.persistence.query.journal.linq2db {{
     write-plugin = ""akka.persistence.journal.linq2db""
 }}
 akka.test.single-expect-default = 10s")
-                    .WithFallback(Linq2DbPersistence.DefaultConfiguration());
+                    .WithFallback(Linq2DbPersistence.DefaultConfiguration);
             }
         }
 

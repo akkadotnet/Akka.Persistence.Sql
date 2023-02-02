@@ -17,6 +17,5 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.PostgreSql
         public override string ProviderName => LinqToDB.ProviderName.PostgreSQL;
         
         public override string TableMapping => "postgresql";
-
     }
 }

@@ -29,10 +29,9 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.SqlServer
         public SqlServerJournalDefaultConfigSpec(ITestOutputHelper outputHelper, SqlServerFixture fixture)
             : base(Initialize(fixture), "SQLServer-default", outputHelper)
         {
-            var extension = Linq2DbPersistence.Get(Sys);
             var connFactory = new AkkaPersistenceDataConnectionFactory(new JournalConfig(
                 Configuration
-                    .WithFallback(extension.DefaultConfig)
+                    .WithFallback(Linq2DbPersistence.DefaultConfiguration)
                     .GetConfig("akka.persistence.journal.linq2db")));
             using (var conn = connFactory.GetConnection())
             {

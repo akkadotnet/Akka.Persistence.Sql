@@ -44,12 +44,11 @@ akka.persistence {{
         public PostgreSqlSnapshotSpec(ITestOutputHelper outputHelper, PostgreSqlFixture fixture) :
             base(Configuration(fixture))
         {
-            var extension = Linq2DbPersistence.Get(Sys);
             DebuggingHelpers.SetupTraceDump(outputHelper);
             var connFactory = new AkkaPersistenceDataConnectionFactory(
                 new SnapshotConfig(
                     Configuration(fixture)
-                        .WithFallback(extension.DefaultConfig)
+                        .WithFallback(Linq2DbPersistence.DefaultConfiguration)
                         .GetConfig("akka.persistence.snapshot-store.linq2db")));
             using (var conn = connFactory.GetConnection())
             {
@@ -92,9 +91,8 @@ akka.persistence {{
         public DockerLinq2DbPostgreSqlJournalSpec(ITestOutputHelper output, PostgreSqlFixture fixture) 
             : base(InitConfig(fixture), "postgresperf", output)
         {
-            var extension = Linq2DbPersistence.Get(Sys);
             var config = Create(SqlServerDbUtils.ConnectionString)
-                .WithFallback(extension.DefaultConfig)
+                .WithFallback(Linq2DbPersistence.DefaultConfiguration)
                 .GetConfig("akka.persistence.journal.linq2db");
             var connFactory = new AkkaPersistenceDataConnectionFactory(new JournalConfig(config));
             using (var conn = connFactory.GetConnection())

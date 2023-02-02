@@ -16,34 +16,35 @@ namespace Akka.Persistence.Sql.Linq2Db
         public const string JournalConfigPath = "akka.persistence.journal.linq2db";
         public const string SnapshotStoreConfigPath = "akka.persistence.snapshot-store.linq2db";
     
-        /// <summary>
-        /// Returns a default configuration for akka persistence Linq2Db-based journals and snapshot stores.
-        /// </summary>
-        /// <returns></returns>
-        public static Configuration.Config DefaultConfiguration()
+        public static readonly Configuration.Config DefaultJournalConfiguration;
+        public static readonly Configuration.Config DefaultSnapshotConfiguration;
+        public static readonly Configuration.Config DefaultConfiguration;
+        public static readonly Configuration.Config DefaultJournalMappingConfiguration;
+        public static readonly Configuration.Config DefaultSnapshotMappingConfiguration;
+        
+        public readonly Configuration.Config DefaultJournalConfig = DefaultJournalConfiguration;
+        public readonly Configuration.Config DefaultSnapshotConfig = DefaultSnapshotConfiguration;
+        public readonly Configuration.Config DefaultConfig = DefaultConfiguration;
+        public readonly Configuration.Config DefaultJournalMappingConfig = DefaultJournalMappingConfiguration;
+        public readonly Configuration.Config DefaultSnapshotMappingConfig = DefaultSnapshotMappingConfiguration;
+
+        static Linq2DbPersistence()
         {
             var journalConfig =  ConfigurationFactory.FromResource<Linq2DbWriteJournal>("Akka.Persistence.Sql.Linq2Db.persistence.conf");
             var snapshotConfig = ConfigurationFactory.FromResource<Linq2DbSnapshotStore>("Akka.Persistence.Sql.Linq2Db.snapshot.conf");
-        
-            return journalConfig.WithFallback(snapshotConfig);
-        }    
-    
-        public readonly Configuration.Config DefaultJournalConfig;
-        public readonly Configuration.Config DefaultSnapshotConfig;
-        public readonly Configuration.Config DefaultConfig;
-        public readonly Configuration.Config DefaultJournalMappingConfig;
-        public readonly Configuration.Config DefaultSnapshotMappingConfig;
+
+            DefaultConfiguration = journalConfig.WithFallback(snapshotConfig);
+
+            DefaultJournalConfiguration = DefaultConfiguration.GetConfig(JournalConfigPath);
+            DefaultSnapshotConfiguration = DefaultConfiguration.GetConfig(SnapshotStoreConfigPath);
+
+            DefaultJournalMappingConfiguration = DefaultJournalConfiguration.GetConfig("default");
+            DefaultSnapshotMappingConfiguration = DefaultSnapshotConfiguration.GetConfig("default");
+        }
 
         public Linq2DbPersistence(ExtendedActorSystem system)
         {
-            DefaultConfig = DefaultConfiguration();
             system.Settings.InjectTopLevelFallback(DefaultConfig);
-
-            DefaultJournalConfig = DefaultConfig.GetConfig(JournalConfigPath);
-            DefaultSnapshotConfig = DefaultConfig.GetConfig(SnapshotStoreConfigPath);
-
-            DefaultJournalMappingConfig = DefaultJournalConfig.GetConfig("default");
-            DefaultSnapshotMappingConfig = DefaultSnapshotConfig.GetConfig("default");
         }
     
         public static Linq2DbPersistence Get(ActorSystem system)

@@ -7,10 +7,12 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.SqlServer.Management.Common;
 using Microsoft.SqlServer.Management.Smo;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.SqlServer
 {
+    [Collection("SqlCompatSpec")]
     public class SqlServerScriptCompatibilitySpec: SqlScriptCompatibilitySpec<SqlServerFixture>
     {
         public SqlServerScriptCompatibilitySpec(ITestOutputHelper output) : base(output)

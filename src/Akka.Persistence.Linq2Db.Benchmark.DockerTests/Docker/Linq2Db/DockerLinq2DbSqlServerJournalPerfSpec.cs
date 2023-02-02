@@ -49,9 +49,8 @@ akka.persistence {{
             SqlServerFixture fixture) : base(InitConfig(fixture),
             "sqlserverperf", output,40, eventsCount: TestConstants.DockerNumMessages)
         {
-            var extension = Linq2DbPersistence.Get(Sys);
             var config = Create(SqlServerDbUtils.ConnectionString)
-                .WithFallback(extension.DefaultConfig)
+                .WithFallback(Linq2DbPersistence.DefaultConfiguration)
                 .GetConfig("akka.persistence.journal.linq2db");
             var connFactory = new AkkaPersistenceDataConnectionFactory(new JournalConfig(config));
             using var conn = connFactory.GetConnection();

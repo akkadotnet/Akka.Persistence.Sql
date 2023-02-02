@@ -21,7 +21,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
         
         public ReadJournalConfigSpec()
         {
-            _defaultConfig = Linq2DbPersistence.DefaultConfiguration();
+            _defaultConfig = Linq2DbPersistence.DefaultConfiguration;
         }
 
         [Fact(DisplayName = "Default journal query HOCON config should contain default values")]

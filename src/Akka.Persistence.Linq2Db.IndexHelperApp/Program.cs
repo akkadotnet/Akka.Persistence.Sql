@@ -2,6 +2,7 @@
 using System.IO;
 using Akka.Configuration;
 using Akka.Persistence.Linq2Db.IndexHelperLib;
+using Akka.Persistence.Sql.Linq2Db;
 using Akka.Persistence.Sql.Linq2Db.Config;
 using Akka.Persistence.Sql.Linq2Db.Tests;
 using CommandLine;
@@ -36,7 +37,7 @@ namespace Akka.Persistence.Linq2Db.IndexHelperApp
                     var journalConf = new JournalConfig(conf
                         .GetConfig(opts.HoconPath)
                         //.GetConfig("akka.persistence.journal.linq2db.testGen")
-                        .WithFallback(Sql.Linq2Db.Journal.Linq2DbWriteJournal.DefaultConfiguration));
+                        .WithFallback(Linq2DbPersistence.DefaultConfiguration));
                     var generator = GetGenerator(journalConf.ProviderName);
                     var helper = new JournalIndexHelper();
                     GeneratePerOptions(opts, helper, journalConf, generator);

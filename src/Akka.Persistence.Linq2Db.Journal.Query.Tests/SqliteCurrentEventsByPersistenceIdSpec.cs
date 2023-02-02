@@ -54,7 +54,7 @@ akka.persistence {{
     }}
 }}
 akka.test.single-expect-default = 10s")
-                .WithFallback(Linq2DbPersistence.DefaultConfiguration());
+                .WithFallback(Linq2DbPersistence.DefaultConfiguration);
         }
 
         public SqliteCurrentEventsByPersistenceIdSpec(ITestOutputHelper output) : base(Config(Counter.GetAndIncrement()), nameof(SqliteCurrentEventsByPersistenceIdSpec), output)
