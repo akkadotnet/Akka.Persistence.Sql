@@ -174,7 +174,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
 
         private async Task InsertSingle(Seq<JournalRow> xs)
         {
-            if ((JournalConfig.TableConfig.TagWriteMode & TagWriteMode.TagTable)!=0 && xs.Head.TagArr.Length>0)
+            if (JournalConfig.TableConfig.TagWriteMode == TagWriteMode.TagTable && xs.Head.TagArr.Length>0)
             {
                 //Lazy fallback; do the InsertMultiple call here and leave it at that.
                 await InsertMultiple(xs);
@@ -219,7 +219,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
         
         private async Task InsertMultiple(Seq<JournalRow> xs)
         {
-            if ((JournalConfig.TableConfig.TagWriteMode & TagWriteMode.TagTable) !=0)
+            if (JournalConfig.TableConfig.TagWriteMode == TagWriteMode.TagTable)
             {
                 if (JournalConfig.TableConfig.TagTableMode == TagTableMode.OrderingId)
                 {
