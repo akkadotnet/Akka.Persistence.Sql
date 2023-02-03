@@ -221,70 +221,11 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
         {
             if (JournalConfig.TableConfig.TagWriteMode == TagWriteMode.TagTable)
             {
-                if (JournalConfig.TableConfig.TagTableMode == TagTableMode.OrderingId)
-                {
-                    await HandleTagTableInsert(xs);
-                }
-                else
-                {
-                    await HandleTagTableUuidInsert(xs);
-                }
+                await HandleTagTableInsert(xs);
             }
             else
             {
                 await HandleDefaultInsert(xs);
-            }
-        }
-        
-        private async Task HandleTagTableUuidInsert(Seq<JournalRow> xs)
-        {
-            var tagWrites = new List<JournalTagRow>();
-            foreach (var journalRow in xs)
-            {
-                if (journalRow.TagArr?.Length > 0)
-                {
-                    var uid = NextUuid();
-                    journalRow.WriteUuid = uid;
-                    foreach (var s1 in journalRow.TagArr)
-                    {
-                        tagWrites.Add(new JournalTagRow { WriteUuid = uid, TagValue = s1 });
-                    }
-                }
-            }
-
-            await using var ctx = ConnectionFactory.GetConnection();
-            await using var tx = await ctx.BeginTransactionAsync();
-            try
-            {
-                await ctx.BulkCopyAsync(new BulkCopyOptions
-                {
-                    TableName = JournalConfig.TableConfig.EventJournalTable.Name,
-                    MaxBatchSize = JournalConfig.DaoConfig.DbRoundTripBatchSize
-                },xs);
-                
-                if (tagWrites.Count > 0)
-                {
-                    await ctx.BulkCopyAsync(new BulkCopyOptions
-                    {
-                        TableName = JournalConfig.TableConfig.TagTable.Name,
-                        MaxBatchSize = JournalConfig.DaoConfig.DbRoundTripTagBatchSize,
-                        UseParameters = JournalConfig.DaoConfig.PreferParametersOnMultiRowInsert
-                    }, tagWrites);    
-                }
-                await ctx.CommitTransactionAsync();
-            }
-            catch (Exception e1)
-            {
-                try
-                {
-                    await ctx.RollbackTransactionAsync();
-                }
-                catch (Exception e2)
-                {
-                    throw new AggregateException(e2, e1);
-                }
-                
-                throw;
             }
         }
 

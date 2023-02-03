@@ -138,7 +138,10 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                 .Member(r => r.SequenceNumber)
                 .HasColumnName(columnNames.SequenceNumber)
                 .Member(r => r.Timestamp)
-                .HasColumnName(columnNames.Created);
+                .HasColumnName(columnNames.Created)
+                // TODO: Disabling this for now, will need a migration script to support this
+                .Member(r => r.WriteUuid)
+                .IsNotColumn();
 
             //We can skip writing tags the old way by ignoring the column in mapping.
             journalRowBuilder.Member(r => r.TagArr).IsNotColumn();
@@ -178,7 +181,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                 var tagConfig = tableConfig.TagTable;
                 var tagColumns = tagConfig.ColumnNames;
                 
-                var tagTableBuilder = fmb.Entity<JournalTagRow>()
+                fmb.Entity<JournalTagRow>()
                     .HasSchemaName(tableConfig.SchemaName)
                     .HasTableName(tagConfig.Name)
                     .Member(r => r.TagValue).HasColumnName(tagColumns.Tag)
@@ -187,31 +190,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                     .IsPrimaryKey()
                     .Member(r => r.JournalOrderingId).HasColumnName(tagColumns.OrderingId)
                     .IsColumn().IsPrimaryKey();
-            
-                if (config.TableConfig.TagTableMode == TagTableMode.SequentialUuid)
-                {
-                    tagTableBuilder.Member(r => r.JournalOrderingId)
-                        .IsNotColumn();
-                    tagTableBuilder.Member(r => r.WriteUuid).HasColumnName(tagColumns.WriteUuid)
-                        .IsColumn().IsPrimaryKey();
-                }
-                else
-                {
-                    tagTableBuilder.Member(r => r.WriteUuid)
-                        .IsNotColumn();
-                }
-            }
-            
-            // column compatibility
-            if (config.TableConfig.TagTableMode == TagTableMode.SequentialUuid)
-            {
-                journalRowBuilder.Member(r => r.WriteUuid)
-                    .IsColumn();
-            }
-            else
-            {
-                journalRowBuilder.Member(r => r.WriteUuid)
-                    .IsNotColumn();
             }
             
             //Probably overkill, but we only set Metadata Mapping if specified

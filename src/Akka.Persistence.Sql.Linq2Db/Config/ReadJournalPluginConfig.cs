@@ -22,7 +22,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
 
         public string TagSeparator { get; }
         public TagReadMode TagReadMode { get; }
-        public TagTableMode TagTableMode { get; }
     }
     
     public enum TagReadMode
