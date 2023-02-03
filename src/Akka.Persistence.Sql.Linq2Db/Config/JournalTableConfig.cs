@@ -9,17 +9,11 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
         TagTable,
     }
     
-    public enum TagTableMode
-    {
-        OrderingId,
-        SequentialUuid
-    }
-    
     public class JournalTableConfig : IEquatable<JournalTableConfig>
     {
         public string SchemaName { get; }
         public TagWriteMode TagWriteMode { get; }
-        public TagTableMode TagTableMode { get; } = TagTableMode.OrderingId;
+        // TODO: implement this settings
         public bool UseEventManifestColumn { get; } = false;
         public EventJournalTableConfig EventJournalTable { get; }
         public MetadataTableConfig MetadataTable { get; }

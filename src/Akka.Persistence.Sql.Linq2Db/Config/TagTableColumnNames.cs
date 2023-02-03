@@ -16,18 +16,16 @@ public class TagTableColumnNames: IEquatable<TagTableColumnNames>
         var cfg = config.GetConfig("columns");
         OrderingId = cfg.GetString("ordering-id", "ordering_id");
         Tag = cfg.GetString("tag-value", "tag");
-        WriteUuid = cfg.GetString("writer-uuid", "writer_uuid");
     }
     
     public string OrderingId { get; }
     public string Tag { get; }
-    public string WriteUuid { get; }
 
     public bool Equals(TagTableColumnNames other)
     {
         if (ReferenceEquals(null, other)) return false;
         if (ReferenceEquals(this, other)) return true;
-        return OrderingId == other.OrderingId && Tag == other.Tag && WriteUuid == other.WriteUuid;
+        return OrderingId == other.OrderingId;
     }
 
     public override bool Equals(object obj)
@@ -38,6 +36,6 @@ public class TagTableColumnNames: IEquatable<TagTableColumnNames>
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(OrderingId, Tag, WriteUuid);
+        return HashCode.Combine(OrderingId, Tag);
     }
 }
