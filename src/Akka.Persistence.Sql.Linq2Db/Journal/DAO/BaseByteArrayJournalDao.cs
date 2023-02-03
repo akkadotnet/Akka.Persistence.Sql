@@ -15,7 +15,7 @@ using Akka.Persistence.Sql.Linq2Db.Serialization;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using LanguageExt;
-using LinqToDB;using LinqToDB.Common;
+using LinqToDB;
 using LinqToDB.Data;
 using static LanguageExt.Prelude;
 
