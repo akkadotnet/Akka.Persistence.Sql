@@ -49,7 +49,7 @@ akka.persistence {{
 }}";
 
             return ConfigurationFactory.ParseString(specString)
-	            .WithFallback(Linq2DbPersistence.DefaultConfiguration());
+	            .WithFallback(Linq2DbPersistence.DefaultConfiguration);
         }
         
         public static Config InitJournalConfig(string tableName, string metadataTableName, string connectionString)

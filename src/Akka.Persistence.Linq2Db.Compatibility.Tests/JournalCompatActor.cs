@@ -20,8 +20,8 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
     }
     public class JournalCompatActor : ReceivePersistentActor
     {
-        private List<SomeEvent> events = new List<SomeEvent>();
-        private IActorRef deleteSubscriber;
+        private readonly List<SomeEvent> _events = new List<SomeEvent>();
+        private IActorRef _deleteSubscriber;
         public JournalCompatActor(string journal, string persistenceId)
         {
             JournalPluginId = journal;
@@ -31,22 +31,22 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
                 var sender = Sender;
                 Persist(se, p =>
                 {
-                    events.Add(p);
+                    _events.Add(p);
                     sender.Tell(se);
                 });
             });
-            Command<ContainsEvent>(ce=>Context.Sender.Tell(events.Any(e=>e.Guid==ce.Guid)));
+            Command<ContainsEvent>(ce=>Context.Sender.Tell(_events.Any(e=>e.Guid==ce.Guid)));
             Command<GetSequenceNr>(gsn =>
                 Context.Sender.Tell(
-                    new CurrentSequenceNr(this.LastSequenceNr)));
+                    new CurrentSequenceNr(LastSequenceNr)));
             Command<DeleteUpToSequenceNumber>(dc =>
             {
-                deleteSubscriber = Context.Sender;
+                _deleteSubscriber = Context.Sender;
                 DeleteMessages(dc.Number);
             });
-            Command<DeleteMessagesSuccess>(dms => deleteSubscriber?.Tell(dms));
-            Command<DeleteMessagesFailure>(dmf=>deleteSubscriber?.Tell(dmf));
-            Recover<SomeEvent>(se => events.Add(se));
+            Command<DeleteMessagesSuccess>(dms => _deleteSubscriber?.Tell(dms));
+            Command<DeleteMessagesFailure>(dmf=>_deleteSubscriber?.Tell(dmf));
+            Recover<SomeEvent>(se => _events.Add(se));
         }
         public override string PersistenceId { get; }
     }

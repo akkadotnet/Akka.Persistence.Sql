@@ -18,6 +18,8 @@
         
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
         
+        <PackageReference Include="Microsoft.SqlServer.SqlManagementObjects" Version="170.13.0" />
+        
         <PackageReference Include="MySql.Data" Version="8.0.28" />
         
         <PackageReference Include="Npgsql" Version="$(PostgreSqlVersion)" />
@@ -39,6 +41,42 @@
     </ItemGroup>
 
     <ItemGroup>
+        <None Include="..\..\scripts\SqlServer\1_Migration_Setup.sql">
+          <Link>SqlServer\1_Migration_Setup.sql</Link>
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Include="..\..\scripts\SqlServer\2_Migration.sql">
+          <Link>SqlServer\2_Migration.sql</Link>
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Include="..\..\scripts\SqlServer\3_Post_Migration_Cleanup.sql">
+          <Link>SqlServer\3_Post_Migration_Cleanup.sql</Link>
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Include="..\..\scripts\PostgreSql\1_Migration_Setup.sql">
+          <Link>PostgreSql\1_Migration_Setup.sql</Link>
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Include="..\..\scripts\PostgreSql\2_Migration.sql">
+          <Link>PostgreSql\2_Migration.sql</Link>
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Include="..\..\scripts\PostgreSql\3_Post_Migration_Cleanup.sql">
+          <Link>PostgreSql\3_Post_Migration_Cleanup.sql</Link>
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Include="..\..\scripts\MySql\1_Migration_Setup.sql">
+          <Link>MySql\1_Migration_Setup.sql</Link>
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Include="..\..\scripts\MySql\2_Migration.sql">
+          <Link>MySql\2_Migration.sql</Link>
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Include="..\..\scripts\MySql\3_Post_Migration_Cleanup.sql">
+          <Link>MySql\3_Post_Migration_Cleanup.sql</Link>
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
         <Content Include="db/*.*">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>

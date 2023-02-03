@@ -20,14 +20,14 @@
     <RedisInsideVersion>3.3.0</RedisInsideVersion>
     
     <AkkaVersion>1.4.46</AkkaVersion>
-    <AkkaHostingVersion>0.5.1</AkkaHostingVersion>
-    <AkkaPostgresSqlVersion>1.4.45</AkkaPostgresSqlVersion>
+    <AkkaHostingVersion>0.5.2-beta1</AkkaHostingVersion>
+    <AkkaPostgresSqlVersion>1.4.46</AkkaPostgresSqlVersion>
     <AkkaRedisVersion>1.4.35</AkkaRedisVersion>
     <AkkaSqlServerVersion>1.4.35</AkkaSqlServerVersion>
     
     <PostgreSqlVersion>6.0.7</PostgreSqlVersion>
     
-    <SqlClientVersion>4.8.5</SqlClientVersion>
+    <SqlClientVersion>4.8.4</SqlClientVersion>
     <DockerDotNetVersion>3.125.12</DockerDotNetVersion>
   </PropertyGroup>
   <!-- SourceLink support for all Akka.NET projects -->

@@ -8,7 +8,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Serialization
 {
     public abstract class PersistentReprSerializer<T>
     {
-        public List<Util.Try<List<T>>> Serialize(IEnumerable<AtomicWrite> messages, long timeStamp = 0)
+        public List<Util.Try<T[]>> Serialize(IEnumerable<AtomicWrite> messages, long timeStamp = 0)
         {
             return messages.Select(aw =>
             {
@@ -20,7 +20,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Serialization
                 //We will only enumerate if we have more than one element.
                 if (aw.Payload is not IImmutableList<IPersistentRepresentation> payloads)
                 {
-                    return new Util.Try<List<T>>(
+                    return new Util.Try<T[]>(
                         new ArgumentNullException(
                             $"{aw.PersistenceId} received empty payload for sequenceNr range " +
                             $"{aw.LowestSequenceNr} - {aw.HighestSequenceNr}"));
@@ -28,40 +28,65 @@ namespace Akka.Persistence.Sql.Linq2Db.Serialization
                 
                 //Preallocate our list; In the common case
                 //This saves a tiny bit of garbage
-                var retList = new List<T>(payloads.Count);
-                if (payloads.Count == 1)
+                var retList = new T[payloads.Count];
+                for (var idx = 0; idx < payloads.Count; idx++)
                 {
-                    // If there's only one payload
-                    // Don't allocate the enumerable.
-                    var ser = Serialize(payloads[0], timeStamp);
-                    var opt = ser.Success;
-                    if (opt.HasValue)
-                    {
-                        retList.Add(opt.Value);    
-                        return new Util.Try<List<T>>(retList);
-                    }
-                    
-                    return new Util.Try<List<T>>(ser.Failure.Value);
-                }
-
-                foreach (var p in payloads)
-                {
+                    var p = payloads[idx];
                     var ser = Serialize(p, timeStamp);
                     var opt = ser.Success;
                     if (opt.HasValue)
                     {
-                        retList.Add(opt.Value);
+                        retList[idx] = opt.Value;
                     }
                     else
                     {
-                        return new Util.Try<List<T>>(ser.Failure.Value);
+                        return new Util.Try<T[]>(ser.Failure.Value);
                     }
                 }
 
-                return new Util.Try<List<T>>(retList);
+                return new Util.Try<T[]>(retList);
             }).ToList();
         }
 
+        private List<Util.Try<T[]>> HandleSerializeList(long timeStamp, AtomicWrite[] msgArr)
+        {
+            var fullSet = new List<Util.Try<T[]>>(msgArr.Length);
+            for (var i = 0; i < msgArr.Length; i++)
+            {
+                if (msgArr[i].Payload is not IImmutableList<IPersistentRepresentation> payloads)
+                {
+                    fullSet.Add(new Util.Try<T[]>(new ArgumentNullException(
+                            $"{msgArr[i].PersistenceId} received empty payload for sequenceNr range " +
+                            $"{msgArr[i].LowestSequenceNr} - {msgArr[i].HighestSequenceNr}")));
+                }
+                else
+                {
+                    fullSet.Add(SerializerItem(timeStamp, payloads));
+                }
+            }
+
+            return fullSet;
+        }
+
+        private Util.Try<T[]> SerializerItem(long timeStamp, IImmutableList<IPersistentRepresentation> payloads)
+        {
+            var retList = new T[payloads.Count];
+            for (var j = 0; j < payloads.Count; j++)
+            {
+                var ser = Serialize(payloads[j], timeStamp);
+                var opt = ser.Success;
+                if (opt.HasValue)
+                {
+                    retList[j] = opt.Value;
+                }
+                else
+                {
+                    return new Util.Try<T[]>(ser.Failure.Value);
+                }
+            }
+
+            return new Util.Try<T[]>(retList);
+        }        
 
         public Util.Try<T> Serialize(IPersistentRepresentation persistentRepr, long timeStamp = 0)
         {

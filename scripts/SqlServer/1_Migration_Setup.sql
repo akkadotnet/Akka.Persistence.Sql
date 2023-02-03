@@ -1,7 +1,7 @@
 IF NOT EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLES
-              WHERE TABLE_SCHEMA = N'dbo' AND TABLE_NAME = N'TagTable')
+              WHERE TABLE_SCHEMA = N'dbo' AND TABLE_NAME = N'tags')
 BEGIN
-    CREATE TABLE [dbo].[TagTable](
+    CREATE TABLE [dbo].[tags](
         ordering_id BIGINT NOT NULL,
         tag NVARCHAR(64) NOT NULL,
         PRIMARY KEY (ordering_id, tag)

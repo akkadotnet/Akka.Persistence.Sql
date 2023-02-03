@@ -15,7 +15,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.SqlServer
     {
         public static Configuration.Config Initialize(SqlServerFixture fixture)
         {
-            DockerDbUtils.Initialize(fixture.ConnectionString);
+            SqlServerDbUtils.Initialize(fixture.ConnectionString);
             return Configuration;
         }
 
@@ -24,16 +24,15 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.SqlServer
                 "customSpec",
                 "customJournalSpec", 
                 "customJournalMetadata",
-                ProviderName.SqlServer2017, DockerDbUtils.ConnectionString, true);
+                ProviderName.SqlServer2017, SqlServerDbUtils.ConnectionString, true);
         
         public SqlServerJournalCustomConfigSpec(ITestOutputHelper outputHelper, SqlServerFixture fixture)
             : base(Initialize(fixture), "SQLServer-custom", outputHelper)
         {
-            var extension = Linq2DbPersistence.Get(Sys);
             var connFactory = new AkkaPersistenceDataConnectionFactory(new JournalConfig(
                 Configuration
                     .GetConfig("akka.persistence.journal.customSpec")
-                    .WithFallback(extension.DefaultJournalConfig)));
+                    .WithFallback(Linq2DbPersistence.DefaultJournalConfiguration)));
             using (var conn = connFactory.GetConnection())
             {
                 try

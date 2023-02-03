@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Akka.Util;
 using Docker.DotNet;
 using Docker.DotNet.Models;
+using Npgsql;
 using Xunit;
 
 namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.Docker
@@ -15,7 +16,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.Docker
     public class PostgreSqlFixture : IAsyncLifetime
     {
         protected readonly string PostgresContainerName = $"postgresSqlServer-{Guid.NewGuid():N}";
-        //protected readonly string PostgreSqlImageName = $"PostgreSQL-{Guid.NewGuid():N}";
         protected readonly DockerClient Client;
 
         public PostgreSqlFixture()
@@ -88,17 +88,18 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.Docker
             // Provide a 10 second startup delay
             await Task.Delay(TimeSpan.FromSeconds(10));
 
-            ConnectionString = $"Server=127.0.0.1;Port={sqlServerHostPort};" +
-                               "Database=postgres;User Id=postgres;Password=postgres";
+            //ConnectionString = $"Server=127.0.0.1;Port={sqlServerHostPort};Database=postgres;User Id=postgres;Password=postgres";
 
-            //var connectionString = new NpgsqlConnectionStringBuilder()
-            //{
-            //    Host = "localhost", Password = "l0lTh1sIsOpenSource",
-            //    Username = "postgres", Database = "postgres",
-            //    Port = sqlServerHostPort
-            //};
-            //
-            //ConnectionString = connectionString.ToString();
+            var connectionString = new NpgsqlConnectionStringBuilder()
+            {
+                Host = "localhost", 
+                Password = "postgres",
+                Username = "postgres", 
+                Database = "postgres",
+                Port = sqlServerHostPort
+            };
+            
+            ConnectionString = connectionString.ToString();
         }
 
         public async Task DisposeAsync()

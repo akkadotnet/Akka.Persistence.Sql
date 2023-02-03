@@ -49,9 +49,8 @@ akka.persistence {{
             SqlServerFixture fixture) : base(InitConfig(fixture),
             "sqlserverperf", output,40, eventsCount: TestConstants.DockerNumMessages)
         {
-            var extension = Linq2DbPersistence.Get(Sys);
-            var config = Create(DockerDbUtils.ConnectionString)
-                .WithFallback(extension.DefaultConfig)
+            var config = Create(SqlServerDbUtils.ConnectionString)
+                .WithFallback(Linq2DbPersistence.DefaultConfiguration)
                 .GetConfig("akka.persistence.journal.linq2db");
             var connFactory = new AkkaPersistenceDataConnectionFactory(new JournalConfig(config));
             using var conn = connFactory.GetConnection();
@@ -68,14 +67,14 @@ akka.persistence {{
         public static Config InitConfig(SqlServerFixture fixture)
         {
             //need to make sure db is created before the tests start
-            DbUtils.Initialize(fixture.ConnectionString);
+            SqlServerDbUtils.Initialize(fixture.ConnectionString);
 
-            return Create(DbUtils.ConnectionString);
+            return Create(SqlServerDbUtils.ConnectionString);
         }  
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
-            DbUtils.Clean();
+            SqlServerDbUtils.Clean();
         }
 
         [Fact]

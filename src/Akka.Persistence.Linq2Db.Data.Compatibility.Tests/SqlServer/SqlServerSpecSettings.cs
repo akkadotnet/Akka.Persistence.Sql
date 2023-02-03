@@ -17,8 +17,5 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.SqlServer
         public override string ProviderName => LinqToDB.ProviderName.SqlServer2017;
         
         public override string TableMapping => "sql-server";
-
-        public override string SchemaName => "dbo";
-        
     }
 }

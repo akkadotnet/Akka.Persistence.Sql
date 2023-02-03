@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Linq;
 using Akka.Actor;
 using Akka.Persistence.Sql.Linq2Db.Config;
 using Akka.Persistence.Sql.Linq2Db.Journal.Types;
@@ -18,6 +19,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
         private readonly string _separator;
         private readonly IProviderConfig<JournalTableConfig> _journalConfig;
         private readonly string[] _separatorArray;
+        private readonly TagWriteMode _tagWriteMode;
 
         public ByteArrayJournalSerializer(IProviderConfig<JournalTableConfig> journalConfig, Akka.Serialization.Serialization serializer, string separator)
         {
@@ -25,6 +27,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
             _serializer = serializer;
             _separator = separator;
             _separatorArray = new[] {_separator};
+            _tagWriteMode = journalConfig.TableConfig.TagWriteMode;
         }
 
         /// <summary>
@@ -36,6 +39,27 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
         private static string StringSep(IImmutableSet<string> tags, string separator)
         {
             return tags.Count == 0 ? "" : $"{separator}{string.Join(separator, tags)}{separator}";
+        }
+        
+        private JournalRow CreateJournalRow(IImmutableSet<string> tags, IPersistentRepresentation representation, long ts)
+        {
+            return _tagWriteMode switch
+            {
+                TagWriteMode.Csv => new JournalRow
+                {
+                    Tags = StringSep(tags, _separator),
+                    Timestamp = representation.Timestamp == 0 ? ts : representation.Timestamp
+                },
+                
+                TagWriteMode.TagTable => new JournalRow
+                {
+                    Tags = "",
+                    TagArr = tags.ToArray(),
+                    Timestamp = representation.Timestamp == 0 ? ts : representation.Timestamp
+                },
+                
+                _ => throw new Exception($"Invalid Tag Write Mode! Was: {_tagWriteMode}")
+            };
         }
 
         protected override Try<JournalRow> Serialize(
@@ -52,36 +76,31 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
                         state: (
                             persistentRepr, 
                             _serializer.FindSerializerForType(persistentRepr.Payload.GetType(), _journalConfig.DefaultSerializer),
-                            StringSep(tTags,_separator),
-                            timeStamp
+                            CreateJournalRow(tTags,persistentRepr,timeStamp)
                         ),
                         action: state =>
                         {
-                            var (representation, serializer, tags, ts) = state;
-                            var thisManifest = "";
+                            var (representation, serializer, row) = state;
                             if (serializer is SerializerWithStringManifest withStringManifest)
                             {
-                                thisManifest = withStringManifest.Manifest(representation.Payload);
+                                row.Manifest = withStringManifest.Manifest(representation.Payload);
+                            }
+                            else if (serializer.IncludeManifest)
+                            {
+                                row.Manifest = representation.Payload.GetType().TypeQualifiedName();
                             }
                             else
                             {
-                                if (serializer.IncludeManifest)
-                                {
-                                    thisManifest = representation.Payload.GetType().TypeQualifiedName();
-                                }
+                                row.Manifest = "";
                             }
-                            return new Try<JournalRow>(new JournalRow
-                            {
-                                Message = serializer.ToBinary(representation.Payload),
-                                Manifest = thisManifest,
-                                PersistenceId = representation.PersistenceId,
-                                Tags = tags,
-                                Identifier = serializer.Identifier,
-                                SequenceNumber = representation.SequenceNr,
-                                Timestamp = representation.Timestamp == 0
-                                    ? ts
-                                    : representation.Timestamp
-                            });
+
+                            row.Message = serializer.ToBinary(representation.Payload);
+                            row.PersistenceId = representation.PersistenceId;
+                            row.Identifier = serializer.Identifier;
+                            row.SequenceNumber = representation.SequenceNr;
+                            row.EventManifest = representation.Manifest;
+                                
+                            return new Try<JournalRow>(row);
                         });
             }
             catch (Exception e)
@@ -109,14 +128,14 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
                                 action: state => state.Item1.FromBinary(state.message, state.type)), 
                             sequenceNr: t.SequenceNumber,
                             persistenceId: t.PersistenceId,
-                            manifest: t.Manifest, 
+                            manifest: t.EventManifest ?? t.Manifest, 
                             isDeleted: t.Deleted, 
                             sender: ActorRefs.NoSender,
                             writerGuid: null, 
                             timestamp: t.Timestamp),
                         t.Tags?
                             .Split(_separatorArray, StringSplitOptions.RemoveEmptyEntries)
-                            .ToImmutableHashSet() ?? ImmutableHashSet<string>.Empty,
+                            .ToImmutableHashSet() ?? t.TagArr?.ToImmutableHashSet()?? ImmutableHashSet<string>.Empty,
                         t.Ordering));
                 }
                 
@@ -126,14 +145,14 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
                         payload: _serializer.Deserialize(t.Message, identifierMaybe.Value, t.Manifest), 
                         sequenceNr: t.SequenceNumber,
                         persistenceId: t.PersistenceId,
-                        manifest: t.Manifest, 
+                        manifest: t.EventManifest ?? t.Manifest, 
                         isDeleted: t.Deleted,
                         sender: ActorRefs.NoSender,
                         writerGuid: null,
                         timestamp: t.Timestamp),
                     t.Tags?
                         .Split(_separatorArray, StringSplitOptions.RemoveEmptyEntries)
-                        .ToImmutableHashSet() ?? ImmutableHashSet<string>.Empty,
+                        .ToImmutableHashSet() ?? t.TagArr?.ToImmutableHashSet()?? ImmutableHashSet<string>.Empty,
                     t.Ordering));
             }
             catch (Exception e)

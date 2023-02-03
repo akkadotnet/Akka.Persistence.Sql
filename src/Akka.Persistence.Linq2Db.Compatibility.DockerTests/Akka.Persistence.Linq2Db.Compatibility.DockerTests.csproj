@@ -2,13 +2,9 @@
     <Import Project="..\common.props" />
 
     <PropertyGroup>
-    
         <IsPackable>false</IsPackable>
-    
         <RootNamespace>Akka.Persistence.Linq2Db.CompatibilityTests.Docker</RootNamespace>
-    
         <TargetFramework>netcoreapp3.1</TargetFramework>
-
     </PropertyGroup>
 
     <ItemGroup>
@@ -30,18 +26,6 @@
         <ProjectReference Include="..\Akka.Persistence.Linq2Db.Compatibility.Tests\Akka.Persistence.Linq2Db.Compatibility.Tests.csproj" />
         <ProjectReference Include="..\Akka.Persistence.Sql.Linq2Db.DockerTests\Akka.Persistence.Sql.Linq2Db.DockerTests.csproj" />
         <ProjectReference Include="..\Akka.Persistence.Sql.Linq2Db.Tests\Akka.Persistence.Sql.Linq2Db.Tests.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Compile Remove="Postgres\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <EmbeddedResource Remove="Postgres\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Remove="Postgres\**" />
     </ItemGroup>
 
 </Project>

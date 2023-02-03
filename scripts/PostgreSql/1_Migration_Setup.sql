@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS "public"."TagTable"(
+CREATE TABLE IF NOT EXISTS "public"."tags"(
     ordering_id BIGINT NOT NULL,
     tag VARCHAR(64) NOT NULL,
     PRIMARY KEY (ordering_id, tag)
@@ -10,7 +10,7 @@ BEGIN
     FOR var_t IN(SELECT unnest(string_to_array(tags, ';')) AS t) 
     LOOP 
 		CONTINUE WHEN var_t.t IS NULL OR var_t.t = '';
-        INSERT INTO "public"."TagTable" (ordering_id, tag) 
+        INSERT INTO "public"."tags" (ordering_id, tag) 
             VALUES (id, var_t.t)
 		    ON CONFLICT DO NOTHING;
     END LOOP;

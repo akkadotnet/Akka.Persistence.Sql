@@ -1,13 +1,14 @@
-CREATE TABLE IF NOT EXISTS TagTable(
+CREATE TABLE IF NOT EXISTS tags(
     ordering_id BIGINT NOT NULL,
     tag NVARCHAR(64) NOT NULL,
     PRIMARY KEY (ordering_id, tag)
 );
 
 DROP PROCEDURE IF EXISTS Split;
-DELIMITER #
+
+DELIMITER ??
 CREATE PROCEDURE Split()
-proc_main: BEGIN
+BEGIN
 
     DECLARE v_cursor_done TINYINT UNSIGNED DEFAULT 0;
     DECLARE Id INT UNSIGNED;
@@ -38,7 +39,7 @@ proc_main: BEGIN
             END IF;
 
             IF LENGTH(slice) > 0 THEN
-                INSERT IGNORE INTO TagTable (ordering_id, tag) VALUES (Id, slice);
+                INSERT IGNORE INTO tags (ordering_id, tag) VALUES (Id, slice);
             END IF;
 
             SET String = RIGHT(String, LENGTH(String) - idx);
@@ -51,5 +52,5 @@ proc_main: BEGIN
     
     CLOSE v_cursor;
 
-END proc_main #
+END??
 DELIMITER ;

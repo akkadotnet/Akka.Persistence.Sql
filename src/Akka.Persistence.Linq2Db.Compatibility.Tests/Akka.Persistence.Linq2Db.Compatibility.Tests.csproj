@@ -9,6 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Akka.TestKit" Version="$(AkkaVersion)" />
         <PackageReference Include="Akka" Version="$(AkkaVersion)" />
         <PackageReference Include="Akka.Persistence.PostgreSql" Version="$(AkkaPostgresSqlVersion)" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
