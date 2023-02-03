@@ -71,6 +71,30 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SqlServer", "SqlServer", "{
 		scripts\SqlServer\DROP_Migration.sql = scripts\SqlServer\DROP_Migration.sql
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Batched", "Batched", "{FA2398A6-1AAD-430F-9F4D-0957E3E7BF42}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\MySql\Batched\1_Migration_Setup.sql = scripts\MySql\Batched\1_Migration_Setup.sql
+		scripts\MySql\Batched\2_Migration.sql = scripts\MySql\Batched\2_Migration.sql
+		scripts\MySql\Batched\3_Post_Migration_Cleanup.sql = scripts\MySql\Batched\3_Post_Migration_Cleanup.sql
+		scripts\MySql\Batched\DROP_migration.sql = scripts\MySql\Batched\DROP_migration.sql
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Batched", "Batched", "{EA135684-AEE8-4455-A276-A39D8ACD1C1B}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\PostgreSql\Batched\1_Migration_Setup.sql = scripts\PostgreSql\Batched\1_Migration_Setup.sql
+		scripts\PostgreSql\Batched\2_Migration.sql = scripts\PostgreSql\Batched\2_Migration.sql
+		scripts\PostgreSql\Batched\3_Post_Migration_Cleanup.sql = scripts\PostgreSql\Batched\3_Post_Migration_Cleanup.sql
+		scripts\PostgreSql\Batched\DROP_migration.sql = scripts\PostgreSql\Batched\DROP_migration.sql
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Batched", "Batched", "{49DB26B4-2375-4217-9480-2DE25166B117}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\SqlServer\Batched\1_Migration_Setup.sql = scripts\SqlServer\Batched\1_Migration_Setup.sql
+		scripts\SqlServer\Batched\2_Migration.sql = scripts\SqlServer\Batched\2_Migration.sql
+		scripts\SqlServer\Batched\3_Post_Migration_Cleanup.sql = scripts\SqlServer\Batched\3_Post_Migration_Cleanup.sql
+		scripts\SqlServer\Batched\DROP_Migration.sql = scripts\SqlServer\Batched\DROP_Migration.sql
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -129,5 +153,8 @@ Global
 		{CFDAF69C-0E6F-48A4-8434-995090175EAD} = {C4AC49FF-9ECF-4D38-A201-1105BBF7E628}
 		{11DAD9A0-1DDF-4A32-BC17-091220045D1E} = {C4AC49FF-9ECF-4D38-A201-1105BBF7E628}
 		{74AFECF0-CC70-47C9-9393-2AB952B23BBD} = {C4AC49FF-9ECF-4D38-A201-1105BBF7E628}
+		{FA2398A6-1AAD-430F-9F4D-0957E3E7BF42} = {CFDAF69C-0E6F-48A4-8434-995090175EAD}
+		{EA135684-AEE8-4455-A276-A39D8ACD1C1B} = {11DAD9A0-1DDF-4A32-BC17-091220045D1E}
+		{49DB26B4-2375-4217-9480-2DE25166B117} = {74AFECF0-CC70-47C9-9393-2AB952B23BBD}
 	EndGlobalSection
 EndGlobal

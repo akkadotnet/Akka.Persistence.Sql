@@ -1,0 +1,1 @@
+CALL BatchedMigration(0);

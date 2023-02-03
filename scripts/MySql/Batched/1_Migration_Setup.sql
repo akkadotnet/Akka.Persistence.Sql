@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS tags(
 DROP PROCEDURE IF EXISTS Split;
 
 DELIMITER ??
-CREATE PROCEDURE Split()
+CREATE PROCEDURE Split(IN fromId INT, IN toId INT)
 BEGIN
 
     DECLARE v_cursor_done TINYINT UNSIGNED DEFAULT 0;
@@ -17,7 +17,10 @@ BEGIN
     DECLARE slice VARCHAR(8000);
 
     DECLARE v_cursor CURSOR FOR
-        SELECT ej.`ordering`, ej.tags FROM event_journal ej ORDER BY `ordering`;
+        SELECT ej.`ordering`, ej.tags 
+        FROM event_journal ej
+        WHERE ej.`ordering` >= fromId AND ej.`ordering` <= toId
+        ORDER BY ej.`ordering`;
     DECLARE CONTINUE HANDLER FOR NOT FOUND
         SET v_cursor_done = 1;
 
@@ -53,4 +56,32 @@ BEGIN
     CLOSE v_cursor;
 
 END??
+
+CREATE PROCEDURE BatchedMigration(IN fromId BIGINT)
+BEGIN
+    DECLARE maxId BIGINT UNSIGNED;
+    DECLARE oldCommitValue TINYINT DEFAULT @@autocommit;
+
+    SELECT maxId = MAX(ej.`ordering`)
+    FROM event_journal ej
+    WHERE
+        ej.`tags` IS NOT null
+      AND LENGTH(ej.`tags`) > 0
+      AND ej.`ordering` NOT IN (SELECT t.`ordering_id` FROM tags t);
+
+    loopLabel: LOOP
+        IF fromId > maxId THEN
+            LEAVE loopLabel;
+        END IF;
+
+        SET autocommit = 0;
+        START TRANSACTION;
+        CALL Split(fromId, fromId + 1000);
+        COMMIT;
+        SET autocommit = oldCommitValue;
+
+        SET fromId = fromId + 1000;
+    END LOOP;
+END ??
+
 DELIMITER ;

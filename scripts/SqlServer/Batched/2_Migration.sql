@@ -1,0 +1,1 @@
+EXEC [dbo].[BatchedMigration] @from_id = 0;

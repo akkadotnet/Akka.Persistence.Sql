@@ -37,3 +37,29 @@ BEGIN
     RETURN
 END;
 GO
+
+CREATE OR ALTER PROCEDURE [dbo].[BatchedMigration](@from_id BIGINT) AS
+BEGIN
+    DECLARE @max_id BIGINT;
+    
+    SELECT @max_id = MAX(ej.[Ordering])
+    FROM [dbo].[EventJournal] ej
+    WHERE
+        ej.[Tags] IS NOT NULL
+      AND LEN(ej.[Tags]) > 0
+      AND ej.[Ordering] NOT IN (SELECT t.[ordering_id] FROM [dbo].[tags] t);
+        
+    WHILE @from_id <= @max_id
+    BEGIN
+        INSERT INTO [dbo].[tags]([ordering_id], [tag])
+        SELECT * FROM (SELECT records.[Ordering], cross_product.[items] FROM (
+            SELECT *
+            FROM [dbo].[EventJournal] AS ej
+            WHERE ej.[Ordering] >= @from_id AND ej.[Ordering] <= @from_id + 1000
+        ) AS records CROSS APPLY [dbo].[Split](records.Tags, ';') cross_product) AS s([ordering_id], [tag])
+        WHERE NOT EXISTS (
+                SELECT * FROM [dbo].[tags] t WITH (updlock)
+                WHERE s.[ordering_id] = t.[ordering_id] AND s.[tag] = t.[tag]
+            );
+    END
+END
