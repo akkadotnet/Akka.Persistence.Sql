@@ -1,10 +1,10 @@
 ﻿using System.Data.SqlClient;
 
-namespace Akka.Persistence.Sql.Linq2Db.Tests
+namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.Docker
 {
-    public static class DbUtils
+    public static class SqlServerDbUtils
     {
-        public static string ConnectionString { get; set; }
+        public static string ConnectionString { get; private set; }
 
         public static void Initialize(string connectionString)
         {
@@ -16,7 +16,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests
             ConnectionString = connectionBuilder.ToString();
 
             using var conn = new SqlConnection(ConnectionString);
-            
             conn.Open();
 
             using (var cmd = new SqlCommand())
@@ -26,7 +25,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests
                             BEGIN
                                 CREATE DATABASE {0}
                             END
-                            
                     ", databaseName);
                 cmd.Connection = conn;
 

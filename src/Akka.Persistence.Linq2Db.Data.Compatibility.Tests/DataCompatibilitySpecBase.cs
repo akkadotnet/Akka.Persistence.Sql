@@ -65,10 +65,10 @@ akka.persistence {{
             batch-size = 3
             db-round-trip-max-batch-size = 6
             replay-batch-size = 6
-
+{(Settings.SchemaName is { } ? @$"
             {Settings.TableMapping} {{
-                schema-name = {Settings.SchemaName ?? "null"}
-            }}
+                schema-name = {Settings.SchemaName}
+            }}" : "")}
 		}}
 	}}
 
@@ -92,9 +92,10 @@ akka.persistence {{
 			table-mapping = {Settings.TableMapping}
             auto-initialize = off
 
+{(Settings.SchemaName is { } ? @$"
             {Settings.TableMapping} {{
-                schema-name = {Settings.SchemaName ?? "null"}
-            }}
+                schema-name = {Settings.SchemaName}
+            }}" : "")}
 		}}
 	}}
 }}";
@@ -109,7 +110,7 @@ akka.persistence {{
         private void InternalSetup(AkkaConfigurationBuilder builder, IServiceProvider provider)
         {
             builder.AddHocon(
-                Config().WithFallback(Linq2DbPersistence.DefaultConfiguration()), 
+                Config().WithFallback(Linq2DbPersistence.DefaultConfiguration), 
                 HoconAddMode.Prepend);
             Setup(builder, provider);
         }

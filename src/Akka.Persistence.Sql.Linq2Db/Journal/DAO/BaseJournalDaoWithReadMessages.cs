@@ -47,15 +47,21 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
                     (Math.Max(1, fromSequenceNr), FlowControlEnum.Continue),
                     async opt =>
                     {
-                        async Task<Util.Option<((long, FlowControlEnum), Seq<Util.Try<ReplayCompletion>>)>> RetrieveNextBatch()
+                        async Task<Seq<Util.Try<ReplayCompletion>>> BatchFromDb(string s, long l, int i, long fromSeqNo)
                         {
                             Seq<Util.Try<ReplayCompletion>> msg;
-                            await using (var conn = ConnectionFactory.GetConnection())
-                            {
-                                msg = await Messages(conn, persistenceId, opt.seqNr, toSequenceNr, batchSize)
-                                    .RunWith(ExtSeq.Seq<Util.Try<ReplayCompletion>>(), Materializer);
-                            }
+                            await using var conn = ConnectionFactory.GetConnection();
+                            msg = await Messages(conn, s, fromSeqNo, l, i)
+                                .RunWith(ExtSeq.Seq<Util.Try<ReplayCompletion>>(), Materializer);
 
+                            return msg;
+                        }
+
+                        async Task<Util.Option<((long, FlowControlEnum), Seq<Util.Try<ReplayCompletion>>)>> RetrieveNextBatch(long fromSeq)
+                        {
+                            Seq<Util.Try<ReplayCompletion>> msg;
+                            msg = await BatchFromDb(persistenceId, toSequenceNr, batchSize, fromSeq);
+                            
                             var hasMoreEvents = msg.Count == batchSize;
                             //var lastMsg = msg.IsEmpty.LastOrDefault();
                             var lastSeq = Util.Option<long>.None;
@@ -88,8 +94,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
                                 nextFrom = lastSeq.Value + 1;
                             }
 
-                            return new Util.Option<((long, FlowControlEnum), Seq<Util.Try<ReplayCompletion>>)>((
-                                    (nextFrom, nextControl), msg));
+                            return new Util.Option<((long, FlowControlEnum), Seq<Util.Try<ReplayCompletion>>)>(((nextFrom, nextControl), msg));
                         }
 
                         return opt.flowControl switch
@@ -97,10 +102,10 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
                             FlowControlEnum.Stop => 
                                 Util.Option<((long, FlowControlEnum), Seq<Util.Try<ReplayCompletion>>)>.None,
                             
-                            FlowControlEnum.Continue => await RetrieveNextBatch(),
+                            FlowControlEnum.Continue => await RetrieveNextBatch(opt.seqNr),
                             
                             FlowControlEnum.ContinueDelayed when refreshInterval.HasValue => 
-                                await FutureTimeoutSupport.After(refreshInterval.Value.Item1, refreshInterval.Value.Item2, RetrieveNextBatch),
+                                await FutureTimeoutSupport.After(refreshInterval.Value.Item1, refreshInterval.Value.Item2, () => RetrieveNextBatch(opt.seqNr)),
                             
                             _ => InvalidFlowThrowHelper(opt)
                         };

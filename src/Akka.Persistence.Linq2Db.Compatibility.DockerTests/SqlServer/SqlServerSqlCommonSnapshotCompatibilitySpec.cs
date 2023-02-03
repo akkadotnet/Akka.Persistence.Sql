@@ -1,5 +1,4 @@
-﻿using Akka.Persistence.Sql.Linq2Db.Tests.Docker;
-using Akka.Persistence.Sql.Linq2Db.Tests.Docker.Docker;
+﻿using Akka.Persistence.Sql.Linq2Db.Tests.Docker.Docker;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -11,7 +10,7 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests.Docker.SqlServer
         
         public SqlServerSqlCommonSnapshotCompatibilitySpec(ITestOutputHelper outputHelper, SqlServerFixture fixture) : base(outputHelper)
         {
-            DockerDbUtils.Initialize(fixture.ConnectionString);
+            SqlServerDbUtils.Initialize(fixture.ConnectionString);
         }
 
         protected override string OldSnapshot =>

@@ -63,7 +63,8 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.SqlServer
                 ["Server"] = $"localhost,{Port}",
                 ["Database"] = DatabaseName,
                 ["User Id"] = User,
-                ["Password"] = Password
+                ["Password"] = Password,
+                ["TrustServerCertificate"] = "true"
             };
 
             _connectionString = builder.ToString();

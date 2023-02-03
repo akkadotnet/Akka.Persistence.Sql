@@ -20,7 +20,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
         
         public SnapshotConfigSpec()
         {
-            _defaultConfig = Linq2DbPersistence.DefaultConfiguration();
+            _defaultConfig = Linq2DbPersistence.DefaultConfiguration;
         }
 
         [Fact(DisplayName = "Default snapshot HOCON config should contain default values")]

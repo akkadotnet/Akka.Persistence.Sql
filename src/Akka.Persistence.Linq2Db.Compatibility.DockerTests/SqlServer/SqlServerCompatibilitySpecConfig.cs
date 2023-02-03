@@ -11,7 +11,6 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests.Docker.SqlServer
     {
         public static Config InitSnapshotConfig(string tableName)
         {
-            DbUtils.ConnectionString = DockerDbUtils.ConnectionString;
             var specString = $@"
 akka.persistence {{
     publish-plugin-commands = on
@@ -19,7 +18,7 @@ akka.persistence {{
 		sql-server {{
 			class = ""Akka.Persistence.SqlServer.Snapshot.SqlServerSnapshotStore, Akka.Persistence.SqlServer""
 			plugin-dispatcher = ""akka.actor.default-dispatcher""
-			connection-string = ""{DbUtils.ConnectionString}""
+			connection-string = ""{SqlServerDbUtils.ConnectionString}""
 			connection-timeout = 30s
 			schema-name = dbo
 			table-name = ""{tableName}""
@@ -31,7 +30,7 @@ akka.persistence {{
         linq2db {{
             class = ""{typeof(Linq2DbSnapshotStore).AssemblyQualifiedName}""
             plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
-            connection-string = ""{DbUtils.ConnectionString}""
+            connection-string = ""{SqlServerDbUtils.ConnectionString}""
             provider-name = ""{LinqToDB.ProviderName.SqlServer2017}""
             table-mapping = sql-server
             auto-initialize = true
@@ -49,13 +48,10 @@ akka.persistence {{
         
         public static Config InitJournalConfig(string tableName, string metadataTableName)
         {
-            DbUtils.ConnectionString = DockerDbUtils.ConnectionString;
             var specString = $@"
 akka.persistence {{
     publish-plugin-commands = on
     journal {{
-        plugin = ""akka.persistence.journal.sql-server""
-
         sql-server {{
             class = ""Akka.Persistence.SqlServer.Journal.SqlServerJournal, Akka.Persistence.SqlServer""
             plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
@@ -63,13 +59,13 @@ akka.persistence {{
             metadata-table-name = ""{metadataTableName}""
             schema-name = dbo
             auto-initialize = on
-            connection-string = ""{DbUtils.ConnectionString}""
+            connection-string = ""{SqlServerDbUtils.ConnectionString}""
         }}
 
         linq2db {{
             class = ""{typeof(Linq2DbWriteJournal).AssemblyQualifiedName}""
             plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
-            connection-string = ""{DbUtils.ConnectionString}""
+            connection-string = ""{SqlServerDbUtils.ConnectionString}""
             provider-name = ""{LinqToDB.ProviderName.SqlServer2017}""
             parallelism = 3
             table-mapping = sql-server

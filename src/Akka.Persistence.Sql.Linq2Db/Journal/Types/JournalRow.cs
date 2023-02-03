@@ -1,8 +1,16 @@
-﻿using LinqToDB;
-using LinqToDB.Mapping;
+﻿using System;
 
 namespace Akka.Persistence.Sql.Linq2Db.Journal.Types
 {
+    public sealed class JournalTagRow
+    {
+        public long JournalOrderingId { get; set; }
+        
+        public string TagValue { get; set; }
+        
+        public Guid WriteUuid { get; set; }
+    }
+    
     public sealed class JournalRow
     {
         public long Ordering { get; set; }
@@ -22,5 +30,11 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Types
         public string Manifest { get; set; }
         
         public int? Identifier { get; set; }
+        
+        public string[] TagArr { get; set; }
+        
+        public Guid? WriteUuid { get; set; }
+        
+        public string EventManifest { get; set; }
     }
 }

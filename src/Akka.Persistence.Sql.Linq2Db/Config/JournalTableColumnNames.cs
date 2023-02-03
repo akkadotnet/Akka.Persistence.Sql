@@ -3,7 +3,7 @@ using Akka.Configuration;
 
 namespace Akka.Persistence.Sql.Linq2Db.Config
 {
-    public class JournalTableColumnNames
+    public class JournalTableColumnNames : IEquatable<JournalTableColumnNames>
     {
         public JournalTableColumnNames(Configuration.Config config)
         {
@@ -28,9 +28,9 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
         public string Identifier { get; }
         public string Manifest { get; }
         
-        private bool Equals(JournalTableColumnNames other)
+        public bool Equals(JournalTableColumnNames other)
         {
-            return 
+            return other is { } &&
                 Ordering == other.Ordering && 
                 Deleted == other.Deleted &&
                 PersistenceId == other.PersistenceId &&
@@ -44,7 +44,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
 
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
             return obj is JournalTableColumnNames j && Equals(j);
         }

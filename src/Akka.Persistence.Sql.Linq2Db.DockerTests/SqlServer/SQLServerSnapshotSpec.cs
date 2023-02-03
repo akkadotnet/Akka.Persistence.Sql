@@ -15,20 +15,19 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Docker.SqlServer
     {
         public static Configuration.Config Initialize(SqlServerFixture fixture)
         {
-            DockerDbUtils.Initialize(fixture.ConnectionString);
+            SqlServerDbUtils.Initialize(fixture.ConnectionString);
             return Configuration;
         }
-        private static Configuration.Config Configuration => SqlServerSnapshotSpecConfig.Create(DockerDbUtils.ConnectionString,"snapshotSpec");
+        private static Configuration.Config Configuration => SqlServerSnapshotSpecConfig.Create(SqlServerDbUtils.ConnectionString,"snapshotSpec");
 
         public SqlServerSnapshotSpec(ITestOutputHelper outputHelper, SqlServerFixture fixture) 
             : base(Initialize(fixture))
         {
             DebuggingHelpers.SetupTraceDump(outputHelper);
-            var extension = Linq2DbPersistence.Get(Sys);
             var connFactory = new AkkaPersistenceDataConnectionFactory(
                 new SnapshotConfig(
                     Configuration
-                        .WithFallback(extension.DefaultConfig)
+                        .WithFallback(Linq2DbPersistence.DefaultConfiguration)
                         .GetConfig("akka.persistence.snapshot-store.linq2db")));
             
             using (var conn = connFactory.GetConnection())

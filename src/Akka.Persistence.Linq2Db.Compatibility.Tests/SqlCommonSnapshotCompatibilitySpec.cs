@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Akka.Actor;
+using FluentAssertions.Extensions;
 using Akka.TestKit;
-using LanguageExt.UnitsOfMeasure;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -11,9 +11,9 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
     public abstract class SqlCommonSnapshotCompatibilitySpec: IAsyncLifetime
     {
         protected abstract Configuration.Config Config { get; }
-        public SqlCommonSnapshotCompatibilitySpec(ITestOutputHelper outputHelper)
+        public SqlCommonSnapshotCompatibilitySpec(ITestOutputHelper helper)
         {
-            Output = outputHelper;
+            Output = helper;
         }
 
         protected ITestOutputHelper Output { get; }
@@ -31,9 +31,10 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             return Task.CompletedTask;
         }
 
-        public async Task DisposeAsync()
+        public Task DisposeAsync()
         {
-            await Sys.Terminate();
+            TestKit.Shutdown();
+            return Task.CompletedTask;
         }
         
         [Fact]
@@ -47,10 +48,7 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
             Probe.ExpectMsg(true, 5.Seconds());
 
-            Probe.Watch(persistRef);
-            persistRef.Tell(PoisonPill.Instance);
-            Probe.ExpectTerminated(persistRef);
-            Probe.Unwatch(persistRef);
+            EnsureTerminated(persistRef);
             
             persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatActor(NewSnapshot, "p-1")));
             Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
@@ -68,10 +66,7 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
             Probe.ExpectMsg(true, 5.Seconds());
             
-            Probe.Watch(persistRef);
-            persistRef.Tell(PoisonPill.Instance);
-            Probe.ExpectTerminated(persistRef);
-            Probe.Unwatch(persistRef);
+            EnsureTerminated(persistRef);
             
             persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatActor(NewSnapshot, "p-2")));
             Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
@@ -95,10 +90,7 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
             Probe.ExpectMsg(true, 5.Seconds());
             
-            Probe.Watch(persistRef);
-            persistRef.Tell(PoisonPill.Instance);
-            Probe.ExpectTerminated(persistRef);
-            Probe.Unwatch(persistRef);
+            EnsureTerminated(persistRef);
             
             persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatActor(OldSnapshot, "p-3")));
             Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
@@ -116,10 +108,7 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
             Probe.ExpectMsg(true, 5.Seconds());
             
-            Probe.Watch(persistRef);
-            persistRef.Tell(PoisonPill.Instance);
-            Probe.ExpectTerminated(persistRef);
-            Probe.Unwatch(persistRef);
+            EnsureTerminated(persistRef);
             
             persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatActor(OldSnapshot, "p-4")));
             Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
@@ -130,6 +119,14 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             Probe.ExpectMsg(true);
             Probe.Send(persistRef, new ContainsEvent { Guid = ourSecondGuid });
             Probe.ExpectMsg(true, 10.Seconds());
+        }
+
+        private void EnsureTerminated(IActorRef actorRef)
+        {
+            Probe.Watch(actorRef);
+            actorRef.Tell(PoisonPill.Instance);
+            Probe.ExpectTerminated(actorRef);
+            Probe.Unwatch(actorRef);
         }
     }
 }

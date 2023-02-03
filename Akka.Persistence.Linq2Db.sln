@@ -43,6 +43,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build-system", "build-syste
 		build-system\windows-release.yaml = build-system\windows-release.yaml
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Linq2Db.Sandbox", "src\Akka.Linq2Db.Sandbox\Akka.Linq2Db.Sandbox.csproj", "{C9D2CCA5-D431-44F7-B8FC-5424655291B6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.IndexHelperApp", "src\Akka.Persistence.Linq2Db.IndexHelperApp\Akka.Persistence.Linq2Db.IndexHelperApp.csproj", "{7B03FDD2-45CC-4F83-B23F-66B4EE82437A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.IndexHelperLib", "src\Akka.Persistence.Linq2Db.IndexHelperLib\Akka.Persistence.Linq2Db.IndexHelperLib.csproj", "{FD78AE77-C95F-4D5D-90EC-923935BAC580}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.Data.Compatibility.Tests", "src\Akka.Persistence.Linq2Db.Data.Compatibility.Tests\Akka.Persistence.Linq2Db.Data.Compatibility.Tests.csproj", "{5240D81C-0F6C-4F4A-85A1-6442C6D6ECBF}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sql Scripts", "Sql Scripts", "{C4AC49FF-9ECF-4D38-A201-1105BBF7E628}"
@@ -137,6 +143,18 @@ Global
 		{170698FA-DA1E-40BC-896D-AFA67976C0EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{170698FA-DA1E-40BC-896D-AFA67976C0EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{170698FA-DA1E-40BC-896D-AFA67976C0EB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C9D2CCA5-D431-44F7-B8FC-5424655291B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9D2CCA5-D431-44F7-B8FC-5424655291B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9D2CCA5-D431-44F7-B8FC-5424655291B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9D2CCA5-D431-44F7-B8FC-5424655291B6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B03FDD2-45CC-4F83-B23F-66B4EE82437A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B03FDD2-45CC-4F83-B23F-66B4EE82437A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B03FDD2-45CC-4F83-B23F-66B4EE82437A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B03FDD2-45CC-4F83-B23F-66B4EE82437A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD78AE77-C95F-4D5D-90EC-923935BAC580}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD78AE77-C95F-4D5D-90EC-923935BAC580}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD78AE77-C95F-4D5D-90EC-923935BAC580}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD78AE77-C95F-4D5D-90EC-923935BAC580}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5240D81C-0F6C-4F4A-85A1-6442C6D6ECBF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5240D81C-0F6C-4F4A-85A1-6442C6D6ECBF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5240D81C-0F6C-4F4A-85A1-6442C6D6ECBF}.Release|Any CPU.ActiveCfg = Release|Any CPU

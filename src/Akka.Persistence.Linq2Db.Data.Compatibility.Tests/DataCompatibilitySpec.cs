@@ -28,7 +28,7 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests
         {
         }
 
-        protected sealed override void Setup(AkkaConfigurationBuilder builder, IServiceProvider provider)
+        protected override void Setup(AkkaConfigurationBuilder builder, IServiceProvider provider)
         {
         }
         

@@ -57,7 +57,26 @@ Working:
         - Classes used in place of ValueTuples in certain areas
         - We don't have separate Query classes at this time. This can definitely be improved in future
         - A couple of places around `WriteMessagesAsync` have had their logic moved to facilitate performance (i.e. use of `await` instead of `ContinueWith`)
-    - Backwards Compatibility mode is implemented, to interoperate with existing journals and snapsho stores.
+    - Backwards Compatibility mode is implemented, to interoperate with existing journals and snapshot stores.
+
+- Tag Table Support (Alpha):
+    - Allows the writing of tags to a separate table to allow for different performance strategies when working with tags.
+        - Supports Two Tag Table Modes:
+            - WriteUUID: The tag table and join uses a 'sequential-uuid' type field that will have lower page splits while allowing for good row locality on insert.
+                - This option is intended for those who want maximum write performance, at the expense of database storage and load.
+            - OrderingId: Uses the Journal Row's 'ordering' sequential Int64 for the tag table and join.
+                - This option is intended for those who want more efficient use of the DB's space
+                - This will result in slower writes, but faster/more efficient reads.
+    - Provides multiple modes of operation for reads and writes, note that there are separate switches for both read and write!
+        - CommaSeparatedOnly: The old behavior, where the comma separated tags are held in a column
+        - CommaSeparatedAndTagTable: Will Read/Write from both the Comma Separated column as well as the Tag Table
+        - TagTableOnly: will only use the tag table for Read/Write
+    - 'Live' Migration should be possible via the following flow:
+        1. Run Migration scripts to create new columns/tables.
+        2. Rolling Deploy your system with Reads and Writes in 'CommaSeparatedAndTagTable' mode.
+        3. Rolling deploy your system (again), with Writes now in 'TagTableOnly' mode.
+        4. Run Migration App/Script to move existing tags into tag table.
+        5. Rolling deploy your system (last one!) with Reads now in 'TagTableOnly' mode.
 
 ## Currently Implemented:
 

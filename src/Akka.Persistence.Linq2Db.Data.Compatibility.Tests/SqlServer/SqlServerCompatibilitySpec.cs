@@ -4,12 +4,6 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using System;
-using Akka.Configuration;
-using Akka.Hosting;
-using Akka.Persistence.Sql.Linq2Db;
-using Akka.Persistence.Sql.Linq2Db.Journal;
-using Akka.Persistence.Sql.Linq2Db.Snapshot;
 using Xunit;
 using Xunit.Abstractions;
 

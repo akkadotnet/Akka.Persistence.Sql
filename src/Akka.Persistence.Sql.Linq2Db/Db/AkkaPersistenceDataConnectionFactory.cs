@@ -140,6 +140,13 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                 .Member(r => r.Timestamp)
                 .HasColumnName(columnNames.Created);
 
+            //We can skip writing tags the old way by ignoring the column in mapping.
+            journalRowBuilder.Member(r => r.TagArr).IsNotColumn();
+            if (tableConfig.TagWriteMode == TagWriteMode.TagTable)
+            {
+                journalRowBuilder.Member(r => r.Tags).IsNotColumn();
+            }
+            
             if (config.ProviderName.ToLower().Contains("sqlite"))
             {
                 journalRowBuilder
@@ -154,7 +161,59 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                     .Member(r=>r.PersistenceId).IsPrimaryKey()
                     .Member(r=>r.SequenceNumber).IsPrimaryKey();
             }
-
+            
+            if (config.TableConfig.UseEventManifestColumn)
+            {
+                journalRowBuilder.Member(r => r.EventManifest)
+                    .IsColumn().HasLength(64);
+            }
+            else
+            {
+                journalRowBuilder.Member(r => r.EventManifest)
+                    .IsNotColumn();   
+            }
+            
+            if (config.TableConfig.TagWriteMode == TagWriteMode.TagTable)
+            {
+                var tagConfig = tableConfig.TagTable;
+                var tagColumns = tagConfig.ColumnNames;
+                
+                var tagTableBuilder = fmb.Entity<JournalTagRow>()
+                    .HasSchemaName(tableConfig.SchemaName)
+                    .HasTableName(tagConfig.Name)
+                    .Member(r => r.TagValue).HasColumnName(tagColumns.Tag)
+                    .IsColumn().IsNullable(false)
+                    .HasLength(64)
+                    .IsPrimaryKey()
+                    .Member(r => r.JournalOrderingId).HasColumnName(tagColumns.OrderingId)
+                    .IsColumn().IsPrimaryKey();
+            
+                if (config.TableConfig.TagTableMode == TagTableMode.SequentialUuid)
+                {
+                    tagTableBuilder.Member(r => r.JournalOrderingId)
+                        .IsNotColumn();
+                    tagTableBuilder.Member(r => r.WriteUuid).HasColumnName(tagColumns.WriteUuid)
+                        .IsColumn().IsPrimaryKey();
+                }
+                else
+                {
+                    tagTableBuilder.Member(r => r.WriteUuid)
+                        .IsNotColumn();
+                }
+            }
+            
+            // column compatibility
+            if (config.TableConfig.TagTableMode == TagTableMode.SequentialUuid)
+            {
+                journalRowBuilder.Member(r => r.WriteUuid)
+                    .IsColumn();
+            }
+            else
+            {
+                journalRowBuilder.Member(r => r.WriteUuid)
+                    .IsNotColumn();
+            }
+            
             //Probably overkill, but we only set Metadata Mapping if specified
             //That we are in delete compatibility mode.
             if (config.IDaoConfig.SqlCommonCompatibilityMode)

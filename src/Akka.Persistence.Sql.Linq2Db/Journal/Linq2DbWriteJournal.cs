@@ -44,11 +44,8 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal
 
     public class Linq2DbWriteJournal : AsyncWriteJournal
     {
-        [Obsolete(message: "Use Linq2DbPersistence.Get(ActorSystem).DefaultConfig instead")]
-        public static readonly Configuration.Config DefaultConfiguration =
-            ConfigurationFactory.FromResource<Linq2DbWriteJournal>("Akka.Persistence.Sql.Linq2Db.persistence.conf");
-        
-        public readonly Linq2DbPersistence Extension = Linq2DbPersistence.Get(Context.System);
+        [Obsolete(message: "Use Linq2DbPersistence.DefaultConfiguration or Linq2DbPersistence.Get(ActorSystem).DefaultConfig instead")]
+        public static readonly Configuration.Config DefaultConfiguration = Linq2DbPersistence.DefaultConfiguration;
         
         private readonly ActorMaterializer _mat;
         private readonly JournalConfig _journalConfig;
@@ -61,7 +58,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal
             
             try
             {
-                var config = journalConfig.WithFallback(Extension.DefaultJournalConfig);
+                var config = journalConfig.WithFallback(Linq2DbPersistence.DefaultJournalConfiguration);
                 _journalConfig = new JournalConfig(config);
                 _mat = Materializer.CreateSystemMaterializer(
                     context: (ExtendedActorSystem)Context.System,
@@ -79,11 +76,11 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal
                         connection: new AkkaPersistenceDataConnectionFactory(_journalConfig),
                         journalConfig: _journalConfig, 
                         serializer: Context.System.Serialization, 
-                        logger: Logging.GetLogger(Context.System, typeof(ByteArrayJournalDao)));
+                        logger: Context.GetLogger());
                 }
                 catch (Exception e)
                 {
-                    _log.Error(e, "Error Initializing Journal!");
+                    Context.GetLogger().Error(e, "Error Initializing Journal!");
                     throw;
                 }
 
@@ -95,7 +92,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal
                     }
                     catch (Exception e)
                     {
-                        _log.Warning(e, "Unable to Initialize Persistence Journal Table!");
+                        Context.GetLogger().Warning(e, "Unable to Initialize Persistence Journal Table!");
                     }
                 }
             }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Akka.Actor;
+using Akka.Event;
 using Akka.TestKit;
 using FluentAssertions;
 using LanguageExt.UnitsOfMeasure;
@@ -50,11 +51,8 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             Probe.ExpectMsg(someEvent, 5.Seconds());
             Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
             Probe.ExpectMsg(true, 5.Seconds());
-            
-            Probe.Watch(persistRef);
-            persistRef.Tell(PoisonPill.Instance);
-            Probe.ExpectTerminated(persistRef);
-            Probe.Unwatch(persistRef);
+
+            EnsureTerminated(persistRef);
             
             persistRef = Sys.ActorOf(Props.Create(() => new JournalCompatActor(NewJournal, "p-1")));
             Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
@@ -73,10 +71,7 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
             Probe.ExpectMsg(true, 5.Seconds());
             
-            Probe.Watch(persistRef);
-            persistRef.Tell(PoisonPill.Instance);
-            Probe.ExpectTerminated(persistRef);
-            Probe.Unwatch(persistRef);
+            EnsureTerminated(persistRef);
             
             persistRef = Sys.ActorOf(Props.Create(() => new JournalCompatActor(NewJournal, "p-2")));
             Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
@@ -103,10 +98,7 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
             Probe.ExpectMsg(true, 5.Seconds());
             
-            Probe.Watch(persistRef);
-            persistRef.Tell(PoisonPill.Instance);
-            Probe.ExpectTerminated(persistRef);
-            Probe.Unwatch(persistRef);
+            EnsureTerminated(persistRef);
             
             persistRef = Sys.ActorOf(Props.Create(() => new JournalCompatActor(OldJournal, "p-3")));
             Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
@@ -125,10 +117,7 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
             Probe.ExpectMsg(true, 5.Seconds());
             
-            Probe.Watch(persistRef);
-            persistRef.Tell(PoisonPill.Instance);
-            Probe.ExpectTerminated(persistRef);
-            Probe.Unwatch(persistRef);
+            EnsureTerminated(persistRef);
             
             persistRef = Sys.ActorOf(Props.Create(() => new JournalCompatActor(OldJournal, "p-4")));
             Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
@@ -180,10 +169,7 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             var delResult = Probe.ExpectMsg<object>(5.Seconds());
             delResult.Should().BeOfType<DeleteMessagesSuccess>();
             
-            Probe.Watch(persistRef);
-            persistRef.Tell(PoisonPill.Instance);
-            Probe.ExpectTerminated(persistRef);
-            Probe.Unwatch(persistRef);
+            EnsureTerminated(persistRef);
             
             persistRef = Sys.ActorOf(Props.Create(() => new JournalCompatActor(NewJournal, persistenceId)));
             
@@ -192,10 +178,7 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             Output.WriteLine($"oldSeq : {currentSequenceNr.SequenceNumber} - newSeq : {reincaranatedSequenceNrNewJournal.SequenceNumber}");
             reincaranatedSequenceNrNewJournal.SequenceNumber.Should().Be(currentSequenceNr.SequenceNumber);
             
-            Probe.Watch(persistRef);
-            persistRef.Tell(PoisonPill.Instance);
-            Probe.ExpectTerminated(persistRef);
-            Probe.Unwatch(persistRef);
+            EnsureTerminated(persistRef);
             
             persistRef = Sys.ActorOf(Props.Create(() => new JournalCompatActor(OldJournal, persistenceId)));
             
@@ -203,6 +186,14 @@ namespace Akka.Persistence.Linq2Db.CompatibilityTests
             var reincaranatedSequenceNr = Probe.ExpectMsg<CurrentSequenceNr>(5.Seconds());
             Output.WriteLine($"oldSeq : {currentSequenceNr.SequenceNumber} - newSeq : {reincaranatedSequenceNr.SequenceNumber}");
             reincaranatedSequenceNr.SequenceNumber.Should().Be(currentSequenceNr.SequenceNumber);
+        }
+
+        private void EnsureTerminated(IActorRef actorRef)
+        {
+            Probe.Watch(actorRef);
+            actorRef.Tell(PoisonPill.Instance);
+            Probe.ExpectTerminated(actorRef);
+            Probe.Unwatch(actorRef);
         }
     }
 }
