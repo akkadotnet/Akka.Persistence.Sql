@@ -51,6 +51,7 @@ BEGIN
         
     WHILE @from_id <= @max_id
     BEGIN
+        BEGIN TRAN;
         INSERT INTO [dbo].[tags]([ordering_id], [tag])
         SELECT * FROM (SELECT records.[Ordering], cross_product.[items] FROM (
             SELECT *
@@ -61,5 +62,8 @@ BEGIN
                 SELECT * FROM [dbo].[tags] t WITH (updlock)
                 WHERE s.[ordering_id] = t.[ordering_id] AND s.[tag] = t.[tag]
             );
+        COMMIT TRAN;
+        
+        SET @from_id = @from_id + 1000;
     END
-END
+END;
