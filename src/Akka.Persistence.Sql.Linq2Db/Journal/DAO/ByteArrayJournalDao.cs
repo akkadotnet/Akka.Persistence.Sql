@@ -36,6 +36,8 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
             try
             {
                 conn.CreateTable<JournalRow>();
+                if(JournalConfig.TableConfig.TagWriteMode is not TagWriteMode.Csv)
+                    conn.CreateTable<JournalTagRow>();
             }
             catch (Exception e)
             {
