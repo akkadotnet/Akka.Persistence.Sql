@@ -72,6 +72,7 @@ akka.persistence {{
             parallelism = 3
             table-mapping = postgresql
             auto-initialize = true
+            tag-write-mode = Csv
             postgresql {{
                 journal {{
                     table-name = ""{tableName}"" 

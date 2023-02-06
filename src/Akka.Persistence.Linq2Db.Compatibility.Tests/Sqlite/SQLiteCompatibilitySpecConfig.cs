@@ -75,6 +75,7 @@ akka.persistence {{
 			provider-name = ""{LinqToDB.ProviderName.SQLiteMS}""
 			parallelism = 3
             table-mapping = sqlite
+            tag-write-mode = Csv
             auto-initialize = true
             sqlite {{
                 journal {{

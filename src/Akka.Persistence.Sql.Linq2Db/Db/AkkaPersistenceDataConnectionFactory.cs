@@ -133,8 +133,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                 .HasLength(500)
                 .Member(r => r.Message).HasColumnName(columnNames.Message).IsNullable(false)
                 .Member(r => r.Ordering).HasColumnName(columnNames.Ordering)
-                .Member(r => r.Tags).HasLength(100)
-                .HasColumnName(columnNames.Tags)
                 .Member(r => r.Identifier)
                 .HasColumnName(columnNames.Identifier)
                 .Member(r => r.PersistenceId)
@@ -148,13 +146,18 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                 .IsNotColumn();
 
             journalRowBuilder.Member(r => r.TagArr).IsNotColumn();
-            /*
             //We can skip writing tags the old way by ignoring the column in mapping.
             if (tableConfig.TagWriteMode == TagWriteMode.TagTable)
             {
-                journalRowBuilder.Member(r => r.Tags).IsNotColumn();
+                journalRowBuilder.Member(r => r.Tags)
+                    .IsNotColumn();
             }
-            */
+            else
+            {
+                journalRowBuilder.Member(r => r.Tags)
+                    .HasColumnName(columnNames.Tags)
+                    .HasLength(100);
+            }
             
             if (config.ProviderName.ToLower().Contains("sqlite"))
             {
@@ -182,7 +185,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                     .IsNotColumn();   
             }
             
-            if (config.TableConfig.TagWriteMode is TagWriteMode.TagTable or TagWriteMode.Both)
+            if (config.TableConfig.TagWriteMode is not TagWriteMode.Csv)
             {
                 var tagConfig = tableConfig.TagTable;
                 var tagColumns = tagConfig.ColumnNames;

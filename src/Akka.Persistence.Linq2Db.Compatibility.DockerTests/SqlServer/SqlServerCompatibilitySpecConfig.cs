@@ -69,6 +69,7 @@ akka.persistence {{
             provider-name = ""{LinqToDB.ProviderName.SqlServer2017}""
             parallelism = 3
             table-mapping = sql-server
+            tag-write-mode = Csv
             auto-initialize = true
             sql-server {{
                 journal {{
