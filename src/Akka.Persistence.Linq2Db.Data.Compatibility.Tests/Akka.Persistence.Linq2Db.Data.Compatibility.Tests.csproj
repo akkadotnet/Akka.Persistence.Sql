@@ -20,7 +20,7 @@
         
         <PackageReference Include="Microsoft.SqlServer.SqlManagementObjects" Version="170.13.0" />
         
-        <PackageReference Include="MySql.Data" Version="8.0.28" />
+        <PackageReference Include="MySql.Data" Version="8.0.32" />
         
         <PackageReference Include="Npgsql" Version="$(PostgreSqlVersion)" />
         <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
