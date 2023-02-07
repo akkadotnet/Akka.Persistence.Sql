@@ -98,7 +98,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             return toAdd;
         }
 
-        private async Task AddTagDataFromTagTable(List<JournalRow> toAdd, DataConnection context)
+        private static async Task AddTagDataFromTagTable(List<JournalRow> toAdd, DataConnection context)
         {
             if (toAdd.Count == 0)
                 return;

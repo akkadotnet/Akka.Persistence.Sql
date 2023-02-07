@@ -60,6 +60,7 @@ akka.persistence {{
 			table-mapping = {Settings.TableMapping}
             auto-initialize = off
             warn-on-auto-init-fail = true
+            tag-write-mode = Csv
 
             # Testing for https://github.com/akkadotnet/Akka.Persistence.Linq2Db/pull/117#discussion_r1027345449
             batch-size = 3
@@ -78,6 +79,7 @@ akka.persistence {{
 		table-mapping = {Settings.TableMapping}
         auto-initialize = off
         warn-on-auto-init-fail = true
+        tag-read-mode = Csv
 
         # Testing for https://github.com/akkadotnet/Akka.Persistence.Linq2Db/pull/117#discussion_r1027345449
         batch-size = 3

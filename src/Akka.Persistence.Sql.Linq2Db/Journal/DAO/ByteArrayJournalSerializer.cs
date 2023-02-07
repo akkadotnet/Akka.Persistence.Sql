@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Akka.Actor;
 using Akka.Persistence.Sql.Linq2Db.Config;
 using Akka.Persistence.Sql.Linq2Db.Journal.Types;
@@ -36,29 +37,43 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
         /// <param name="tags"></param>
         /// <param name="separator"></param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static string StringSep(IImmutableSet<string> tags, string separator)
         {
             return tags.Count == 0 ? "" : $"{separator}{string.Join(separator, tags)}{separator}";
         }
         
-        private JournalRow CreateJournalRow(IImmutableSet<string> tags, IPersistentRepresentation representation, long ts)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static JournalRow CreateJournalRow(
+            IImmutableSet<string> tags,
+            IPersistentRepresentation representation,
+            long timestamp,
+            TagWriteMode tagWriteMode,
+            string separator)
         {
-            return _tagWriteMode switch
+            return tagWriteMode switch
             {
                 TagWriteMode.Csv => new JournalRow
                 {
-                    Tags = StringSep(tags, _separator),
-                    Timestamp = representation.Timestamp == 0 ? ts : representation.Timestamp
+                    Tags = StringSep(tags, separator),
+                    Timestamp = representation.Timestamp == 0 ? timestamp : representation.Timestamp
                 },
                 
                 TagWriteMode.TagTable => new JournalRow
                 {
                     Tags = "",
                     TagArr = tags.ToArray(),
-                    Timestamp = representation.Timestamp == 0 ? ts : representation.Timestamp
+                    Timestamp = representation.Timestamp == 0 ? timestamp : representation.Timestamp
                 },
                 
-                _ => throw new Exception($"Invalid Tag Write Mode! Was: {_tagWriteMode}")
+                TagWriteMode.Both => new JournalRow
+                {
+                    Tags = StringSep(tags, separator),
+                    TagArr = tags.ToArray(),
+                    Timestamp = representation.Timestamp == 0 ? timestamp : representation.Timestamp
+                },
+                
+                _ => throw new Exception($"Invalid Tag Write Mode! Was: {tagWriteMode}")
             };
         }
 
@@ -76,7 +91,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
                         state: (
                             persistentRepr, 
                             _serializer.FindSerializerForType(persistentRepr.Payload.GetType(), _journalConfig.DefaultSerializer),
-                            CreateJournalRow(tTags,persistentRepr,timeStamp)
+                            CreateJournalRow(tTags, persistentRepr, timeStamp, _tagWriteMode, _separator)
                         ),
                         action: state =>
                         {

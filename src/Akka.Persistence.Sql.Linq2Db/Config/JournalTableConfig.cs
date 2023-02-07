@@ -7,6 +7,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
     {
         Csv,
         TagTable,
+        Both
     }
     
     public class JournalTableConfig : IEquatable<JournalTableConfig>
@@ -24,10 +25,10 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
             if (string.IsNullOrEmpty(mappingPath))
                 throw new ConfigurationException("The configuration property akka.persistence.journal.linq2db.table-mapping is null or empty");
             
-            var s = config.GetString("tag-write-mode", "csv").ToLowerInvariant();
+            var s = config.GetString("tag-write-mode", "TagTable").ToLowerInvariant();
             if (!Enum.TryParse(s, true, out TagWriteMode res))
             {
-                res = TagWriteMode.Csv;
+                res = TagWriteMode.TagTable;
             }
             TagWriteMode = res;
             

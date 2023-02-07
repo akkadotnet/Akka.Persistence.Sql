@@ -9,10 +9,10 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
             TagSeparator = config.GetString("tag-separator", ";");
             Dao = config.GetString("dao", "Akka.Persistence.Sql.Linq2Db.Journal.Dao.ByteArrayJournalDao, Akka.Persistence.Sql.Linq2Db");
             
-            var tagReadStr = config.GetString("tag-read-mode", "csv").ToLowerInvariant();
+            var tagReadStr = config.GetString("tag-read-mode", "TagTable").ToLowerInvariant();
             if (!Enum.TryParse<TagReadMode>(tagReadStr,true,out var tgr))
             {
-                tgr = TagReadMode.Csv;
+                tgr = TagReadMode.TagTable;
             }
 
             TagReadMode = tgr;
@@ -26,7 +26,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
     
     public enum TagReadMode
     {
-        Csv = 1,
-        TagTable = 2,
+        Csv,
+        TagTable,
     }
 }
