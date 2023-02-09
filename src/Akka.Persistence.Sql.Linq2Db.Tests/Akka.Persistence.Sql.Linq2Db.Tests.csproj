@@ -20,7 +20,7 @@
         <PackageReference Include="Docker.DotNet" Version="$(DockerDotNetVersion)" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
         <PackageReference Include="System.Data.SqlClient" Version="$(SqlClientVersion)" />
-        <PackageReference Include="System.Data.SQLite.Core" Version="1.0.116" />
+        <PackageReference Include="System.Data.SQLite.Core" Version="1.0.117" />
         <PackageReference Include="xunit" Version="$(XunitVersion)" />
         <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitRunnerVersion)">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
