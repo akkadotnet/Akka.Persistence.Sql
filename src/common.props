@@ -20,7 +20,7 @@
     <RedisInsideVersion>3.3.0</RedisInsideVersion>
     
     <AkkaVersion>1.4.49</AkkaVersion>
-    <AkkaHostingVersion>0.5.2-beta1</AkkaHostingVersion>
+    <AkkaHostingVersion>1.0.3</AkkaHostingVersion>
     <AkkaPostgresSqlVersion>1.4.46</AkkaPostgresSqlVersion>
     <AkkaRedisVersion>1.4.35</AkkaRedisVersion>
     <AkkaSqlServerVersion>1.4.35</AkkaSqlServerVersion>
