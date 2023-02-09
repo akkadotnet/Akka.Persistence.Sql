@@ -15,6 +15,7 @@ using Akka.Persistence.Sql.Linq2Db.Journal.Types;
 using Akka.Persistence.Sql.Linq2Db.Serialization;
 using Akka.Streams;
 using Akka.Streams.Dsl;
+using Akka.Util.Internal;
 using LanguageExt;
 using LinqToDB;
 using LinqToDB.Data;
@@ -22,19 +23,19 @@ using static LanguageExt.Prelude;
 
 namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
 {
-    public class SequentialUuidGenerator
+    public static class SequentialUuidGenerator
     {
-        private long _counter = DateTime.UtcNow.Ticks;
+        private static AtomicCounterLong _counter = new(DateTime.UtcNow.Ticks);
 
         /// <summary>
         ///     Gets a value to be assigned to a property.
         /// </summary>
         /// <param name="entry">The change tracking entry of the entity for which the value is being generated.</param>
         /// <returns>The value to be assigned to a property.</returns>
-        public Guid Next()
+        public static Guid Next()
         {
             var guidBytes = Guid.NewGuid().ToByteArray();
-            var counterBytes = BitConverter.GetBytes(Interlocked.Increment(ref _counter));
+            var counterBytes = BitConverter.GetBytes(_counter.GetAndIncrement());
 
             if (!BitConverter.IsLittleEndian)
             {
@@ -64,7 +65,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
 
         protected readonly ILoggingAdapter Logger;
         private readonly Flow<JournalRow, Util.Try<ReplayCompletion>, NotUsed> _deserializeFlowMapped;
-        private readonly SequentialUuidGenerator _uuidGen;
         private readonly TagWriteMode _tagWriteMode;
         
         protected BaseByteArrayJournalDao(
@@ -80,7 +80,6 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
             JournalConfig = config;
             Serializer = serializer;
             _deserializeFlowMapped = Serializer.DeserializeFlow().Select(MessageWithBatchMapper());
-            _uuidGen = new SequentialUuidGenerator();
             _tagWriteMode = JournalConfig.TableConfig.TagWriteMode;
             
             //Due to C# rules we have to initialize WriteQueue here
@@ -258,9 +257,10 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
             }, xs);
         }
         
-        private Guid NextUuid()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static Guid NextUuid()
         {
-            return _uuidGen.Next();
+            return SequentialUuidGenerator.Next();
         }
 
         //By using a custom flatten here, we avoid an Enumerable/LINQ allocation
