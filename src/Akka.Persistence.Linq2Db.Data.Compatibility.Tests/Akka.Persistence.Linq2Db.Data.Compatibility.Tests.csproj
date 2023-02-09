@@ -24,7 +24,7 @@
         
         <PackageReference Include="Npgsql" Version="$(PostgreSqlVersion)" />
         <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
-        <PackageReference Include="System.Data.SQLite" Version="1.0.116" />
+        <PackageReference Include="System.Data.SQLite" Version="1.0.117" />
         <PackageReference Include="xunit" Version="$(XunitVersion)" />
         <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitRunnerVersion)">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
