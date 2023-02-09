@@ -151,9 +151,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                                 var tagTable = conn.GetTable<JournalTagRow>();
                                 var query =
                                     from r in journalTable
-                                    from lp in tagTable.Where(jtr => 
-                                        jtr.OrderingId == r.Ordering 
-                                        && jtr.PersistenceId == r.PersistenceId).DefaultIfEmpty()
+                                    from lp in tagTable.Where(jtr => jtr.OrderingId == r.Ordering ).DefaultIfEmpty()
                                     where lp.OrderingId > input.offset
                                           && lp.OrderingId <= input.maxOffset
                                           && !r.Deleted
