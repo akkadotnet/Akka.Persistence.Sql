@@ -90,7 +90,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
         
         private async Task<List<JournalRow>> AddTagDataIfNeeded(List<JournalRow> toAdd, DataConnection context)
         {
-            if (_readJournalConfig.PluginConfig.TagReadMode != TagReadMode.Csv)
+            if (_readJournalConfig.PluginConfig.TagReadMode == TagReadMode.TagTable)
             {
                 await AddTagDataFromTagTable(toAdd, context);
             }
@@ -107,9 +107,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             foreach (var journalRow in toAdd)
             {
                 journalRow.TagArr = tagRows
-                    .Where(r => 
-                        r.OrderingId == journalRow.Ordering
-                        && r.PersistenceId == journalRow.PersistenceId)
+                    .Where(r => r.OrderingId == journalRow.Ordering)
                     .Select(r => r.TagValue).ToArray();
             }
         }
