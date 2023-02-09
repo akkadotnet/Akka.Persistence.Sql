@@ -15,10 +15,14 @@ public class TagTableColumnNames: IEquatable<TagTableColumnNames>
         var cfg = config.GetConfig("columns");
         OrderingId = cfg.GetString("ordering-id", "ordering_id");
         Tag = cfg.GetString("tag-value", "tag");
+        SequenceNumber = cfg.GetString("sequence-nr", "sequence_nr");
+        PersistenceId = cfg.GetString("persistence-id", "persistence_id");
     }
     
     public string OrderingId { get; }
     public string Tag { get; }
+    public string SequenceNumber { get; }
+    public string PersistenceId { get; }
 
     public bool Equals(TagTableColumnNames other)
     {

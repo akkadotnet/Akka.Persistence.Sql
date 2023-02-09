@@ -1,12 +1,7 @@
 ﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Threading;
 using Akka.Persistence.Sql.Linq2Db.Config;
-using Akka.Persistence.Sql.Linq2Db.Journal;
 using Akka.Persistence.Sql.Linq2Db.Journal.Types;
 using Akka.Persistence.Sql.Linq2Db.Snapshot;
-using Akka.Util;
 using LinqToDB;
 using LinqToDB.Configuration;
 using LinqToDB.Data;
@@ -199,13 +194,33 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                     .IsColumn().IsNullable(false)
                     .HasLength(64)
                     .IsPrimaryKey()
-                    .Member(r => r.JournalOrderingId).HasColumnName(tagColumns.OrderingId)
-                    .IsColumn().IsPrimaryKey();
+                    .Member(r => r.SequenceNumber).HasColumnName(tagColumns.SequenceNumber)
+                    .IsColumn().IsNullable(false)
+                    .Member(r => r.PersistenceId).HasColumnName(tagColumns.PersistenceId)
+                    .HasLength(255)
+                    .IsColumn().IsNullable(false).IsPrimaryKey();
                 
                 if (config.ProviderName.ToLower().Contains("sqlite"))
                 {
-                    rowBuilder.Member(r => r.JournalOrderingId)
-                        .HasDbType("INTEGER");
+                    rowBuilder.Member(r => r.OrderingId)
+                        .HasColumnName(tagColumns.OrderingId)
+                        .HasDbType("INTEGER")
+                        .IsColumn().IsNullable(false)
+                        .IsPrimaryKey();
+                    rowBuilder.Member(r => r.SequenceNumber)
+                        .HasColumnName(tagColumns.SequenceNumber)
+                        .HasDbType("INTEGER")
+                        .IsColumn().IsNullable(false);
+                }
+                else
+                {
+                    rowBuilder.Member(r => r.OrderingId)
+                        .HasColumnName(tagColumns.OrderingId)
+                        .IsColumn().IsNullable(false)
+                        .IsPrimaryKey();
+                    rowBuilder.Member(r => r.SequenceNumber)
+                        .HasColumnName(tagColumns.SequenceNumber)
+                        .IsColumn().IsNullable(false);
                 }
             }
             

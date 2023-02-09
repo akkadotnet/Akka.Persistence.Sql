@@ -205,8 +205,10 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
                         tagsToInsert.AddRange(
                             journalRow.TagArr.Select(tag => new JournalTagRow
                             {
-                                JournalOrderingId = dbid, 
-                                TagValue = tag
+                                OrderingId = dbid, 
+                                TagValue = tag,
+                                SequenceNumber = journalRow.SequenceNumber,
+                                PersistenceId = journalRow.PersistenceId
                             }));
                     }
                     
@@ -332,6 +334,13 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
                         .Where(r =>
                             r.PersistenceId == persistenceId &&
                             r.SequenceNumber < maxMarkedDeletion)
+                        .DeleteAsync();
+                }
+
+                if (JournalConfig.TableConfig.TagWriteMode != TagWriteMode.Csv)
+                {
+                    await db.GetTable<JournalTagRow>()
+                        .Where(r => r.SequenceNumber <= maxSequenceNr && r.PersistenceId == persistenceId)
                         .DeleteAsync();
                 }
 

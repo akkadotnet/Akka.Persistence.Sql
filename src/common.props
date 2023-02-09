@@ -15,19 +15,21 @@
     <NBenchVersion>1.2.2</NBenchVersion>
     <XunitVersion>2.4.2</XunitVersion>
     <XunitRunnerVersion>2.4.5</XunitRunnerVersion>
-    <TestSdkVersion>17.4.0</TestSdkVersion>
+    <TestSdkVersion>17.4.1</TestSdkVersion>
+    <FluentAssertionVersion>6.9.0</FluentAssertionVersion>
     <CoverletVersion>3.2.0</CoverletVersion>
     <RedisInsideVersion>3.3.0</RedisInsideVersion>
+    <FluentMigratorVersion>3.3.1</FluentMigratorVersion>
     
     <AkkaVersion>1.4.49</AkkaVersion>
-    <AkkaHostingVersion>0.5.2-beta1</AkkaHostingVersion>
+    <AkkaHostingVersion>1.0.3</AkkaHostingVersion>
     <AkkaPostgresSqlVersion>1.4.46</AkkaPostgresSqlVersion>
     <AkkaRedisVersion>1.4.35</AkkaRedisVersion>
     <AkkaSqlServerVersion>1.4.35</AkkaSqlServerVersion>
     
     <PostgreSqlVersion>6.0.7</PostgreSqlVersion>
-    
-    <SqlClientVersion>4.8.4</SqlClientVersion>
+    <SqliteVersion>1.0.117</SqliteVersion>
+    <SqlClientVersion>4.8.5</SqlClientVersion>
     <DockerDotNetVersion>3.125.12</DockerDotNetVersion>
   </PropertyGroup>
   <!-- SourceLink support for all Akka.NET projects -->
