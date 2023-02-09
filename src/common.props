@@ -19,7 +19,7 @@
     <CoverletVersion>3.2.0</CoverletVersion>
     <RedisInsideVersion>3.3.0</RedisInsideVersion>
     
-    <AkkaVersion>1.4.46</AkkaVersion>
+    <AkkaVersion>1.4.49</AkkaVersion>
     <AkkaHostingVersion>0.5.2-beta1</AkkaHostingVersion>
     <AkkaPostgresSqlVersion>1.4.46</AkkaPostgresSqlVersion>
     <AkkaRedisVersion>1.4.35</AkkaRedisVersion>
