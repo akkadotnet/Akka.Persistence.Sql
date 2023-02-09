@@ -15,6 +15,7 @@
         <PackageReference Include="Akka" Version="$(AkkaVersion)" />
         <PackageReference Include="Akka.Persistence.PostgreSql" Version="$(AkkaPostgresSqlVersion)" />
         <PackageReference Include="Akka.Persistence.Redis" Version="$(AkkaRedisVersion)" />
+        <PackageReference Include="Npgsql" Version="$(PostgreSqlVersion)" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
         <PackageReference Include="redis-inside" Version="$(RedisInsideVersion)" />
         <PackageReference Include="xunit" Version="$(XunitVersion)" />

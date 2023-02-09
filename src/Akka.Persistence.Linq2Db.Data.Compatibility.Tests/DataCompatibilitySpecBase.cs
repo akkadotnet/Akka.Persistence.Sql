@@ -9,6 +9,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
+using Akka.Cluster.Sharding;
+using Akka.Cluster.Tools.Singleton;
 using Akka.Configuration;
 using Akka.Hosting;
 using Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Internal;
@@ -48,9 +50,9 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests
             Fixture = new T();
         }
 
-        private Config Config()
+        protected Config Config()
         {
-            return (Config) $@"
+            return ((Config) $@"
 akka.persistence {{
 	journal {{
 		plugin = ""akka.persistence.journal.linq2db""
@@ -100,26 +102,29 @@ akka.persistence {{
             }}" : "")}
 		}}
 	}}
-}}";
+}}")
+                .WithFallback(Linq2DbPersistence.DefaultConfiguration)
+                .WithFallback(ClusterSharding.DefaultConfig())
+                .WithFallback(ClusterSingletonManager.DefaultConfig());
         }
 
-        protected virtual void CustomSetup(AkkaConfigurationBuilder builder, IServiceProvider provider)
+        protected virtual Task InitializeTestAsync()
         {
+            return Task.CompletedTask;
         }
 
         protected abstract void Setup(AkkaConfigurationBuilder builder, IServiceProvider provider);
         
         private void InternalSetup(AkkaConfigurationBuilder builder, IServiceProvider provider)
         {
-            builder.AddHocon(
-                Config().WithFallback(Linq2DbPersistence.DefaultConfiguration), 
-                HoconAddMode.Prepend);
+            builder.AddHocon(Config(), HoconAddMode.Prepend);
             Setup(builder, provider);
         }
 
         public async Task InitializeAsync()
         {
             await Fixture.InitializeAsync();
+            await InitializeTestAsync();
             TestCluster = new TestCluster(InternalSetup, "linq2db", Output);
             await TestCluster.StartAsync();
         }
@@ -134,35 +139,21 @@ akka.persistence {{
         protected async Task TruncateEventsToLastSnapshot()
         {
             var region = TestCluster!.ShardRegions[0];
-            var cts = new CancellationTokenSource(10.Seconds());
-            try
+            using var cts = new CancellationTokenSource(10.Seconds());
+            foreach (var id in Enumerable.Range(0, 100))
             {
-                var tasks = Enumerable.Range(0, 100).Select(id =>
-                    region.Ask<(string, StateSnapshot?)>(new Truncate(id), cts.Token)).ToList();
-                while (tasks.Count > 0)
-                {
-                    var task = await Task.WhenAny(tasks);
-                    if (cts.Token.IsCancellationRequested)
-                        break;
-
-                    tasks.Remove(task);
-                    var (id, lastSnapshot) = task.Result;
-                    if (lastSnapshot is { })
-                        Output.WriteLine(
-                            $"{id} data truncated. " +
-                            $"Snapshot: [Total: {lastSnapshot.Total}, Persisted: {lastSnapshot.Persisted}]");
-                    else
-                        throw new XunitException($"Failed to truncate events for entity {id}");
-                }
-
-                if (cts.IsCancellationRequested)
-                {
-                    throw new TimeoutException("Failed to truncate all data within 10 seconds");
-                }
+                var (_, lastSnapshot) = await region.Ask<(string, StateSnapshot?)>(new Truncate(id), cts.Token);
+                if (lastSnapshot is { })
+                    Output.WriteLine(
+                        $"{id} data truncated. " +
+                        $"Snapshot: [Total: {lastSnapshot.Total}, Persisted: {lastSnapshot.Persisted}]");
+                else
+                    throw new XunitException($"Failed to truncate events for entity {id}");
             }
-            finally
+
+            if (cts.IsCancellationRequested)
             {
-                cts.Dispose();
+                throw new TimeoutException("Failed to truncate all data within 10 seconds");
             }
         }
         

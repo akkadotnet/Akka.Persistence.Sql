@@ -12,6 +12,7 @@
     </PropertyGroup>
     
     <ItemGroup>
+        <PackageReference Include="Npgsql" Version="$(PostgreSqlVersion)" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
         <PackageReference Include="xunit" Version="$(XunitVersion)" />
         <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitRunnerVersion)">
