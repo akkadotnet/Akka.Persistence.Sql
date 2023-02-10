@@ -1,12 +1,7 @@
 ﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Threading;
 using Akka.Persistence.Sql.Linq2Db.Config;
-using Akka.Persistence.Sql.Linq2Db.Journal;
 using Akka.Persistence.Sql.Linq2Db.Journal.Types;
 using Akka.Persistence.Sql.Linq2Db.Snapshot;
-using Akka.Util;
 using LinqToDB;
 using LinqToDB.Configuration;
 using LinqToDB.Data;
@@ -81,8 +76,10 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
         {
             var tableConfig = config.TableConfig;
             var snapshotConfig = tableConfig.SnapshotTable;
-            var builder = fmb.Entity<SnapshotRow>()
-                .HasSchemaName(tableConfig.SchemaName)
+            var builder = fmb.Entity<SnapshotRow>();
+            if(tableConfig.SchemaName is { })
+                builder.HasSchemaName(tableConfig.SchemaName);
+            builder
                 .HasTableName(snapshotConfig.Name)
                 .Member(r => r.Created)
                 .HasColumnName(snapshotConfig.ColumnNames.Created)
@@ -121,16 +118,16 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
             var tableConfig = config.TableConfig;
             var journalConfig = tableConfig.EventJournalTable;
             var columnNames = journalConfig.ColumnNames;
-            var journalRowBuilder = fmb.Entity<JournalRow>()
-                .HasSchemaName(tableConfig.SchemaName)
+            var journalRowBuilder = fmb.Entity<JournalRow>();
+            if(tableConfig.SchemaName is { })
+                journalRowBuilder.HasSchemaName(tableConfig.SchemaName);
+            journalRowBuilder
                 .HasTableName(journalConfig.Name)
                 .Member(r => r.Deleted).HasColumnName(columnNames.Deleted)
                 .Member(r => r.Manifest).HasColumnName(columnNames.Manifest)
                 .HasLength(500)
                 .Member(r => r.Message).HasColumnName(columnNames.Message).IsNullable(false)
                 .Member(r => r.Ordering).HasColumnName(columnNames.Ordering)
-                .Member(r => r.Tags).HasLength(100)
-                .HasColumnName(columnNames.Tags)
                 .Member(r => r.Identifier)
                 .HasColumnName(columnNames.Identifier)
                 .Member(r => r.PersistenceId)
@@ -138,13 +135,23 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                 .Member(r => r.SequenceNumber)
                 .HasColumnName(columnNames.SequenceNumber)
                 .Member(r => r.Timestamp)
-                .HasColumnName(columnNames.Created);
+                .HasColumnName(columnNames.Created)
+                // TODO: Disabling this for now, will need a migration script to support this
+                .Member(r => r.WriteUuid)
+                .IsNotColumn();
 
-            //We can skip writing tags the old way by ignoring the column in mapping.
             journalRowBuilder.Member(r => r.TagArr).IsNotColumn();
+            //We can skip writing tags the old way by ignoring the column in mapping.
             if (tableConfig.TagWriteMode == TagWriteMode.TagTable)
             {
-                journalRowBuilder.Member(r => r.Tags).IsNotColumn();
+                journalRowBuilder.Member(r => r.Tags)
+                    .IsNotColumn();
+            }
+            else
+            {
+                journalRowBuilder.Member(r => r.Tags)
+                    .HasColumnName(columnNames.Tags)
+                    .HasLength(100);
             }
             
             if (config.ProviderName.ToLower().Contains("sqlite"))
@@ -173,54 +180,59 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                     .IsNotColumn();   
             }
             
-            if (config.TableConfig.TagWriteMode == TagWriteMode.TagTable)
+            if (config.TableConfig.TagWriteMode is not TagWriteMode.Csv)
             {
                 var tagConfig = tableConfig.TagTable;
                 var tagColumns = tagConfig.ColumnNames;
-                
-                var tagTableBuilder = fmb.Entity<JournalTagRow>()
-                    .HasSchemaName(tableConfig.SchemaName)
+
+                var rowBuilder = fmb.Entity<JournalTagRow>();
+                if(tableConfig.SchemaName is { })
+                    rowBuilder.HasSchemaName(tableConfig.SchemaName);
+                rowBuilder
                     .HasTableName(tagConfig.Name)
                     .Member(r => r.TagValue).HasColumnName(tagColumns.Tag)
                     .IsColumn().IsNullable(false)
                     .HasLength(64)
                     .IsPrimaryKey()
-                    .Member(r => r.JournalOrderingId).HasColumnName(tagColumns.OrderingId)
-                    .IsColumn().IsPrimaryKey();
-            
-                if (config.TableConfig.TagTableMode == TagTableMode.SequentialUuid)
+                    .Member(r => r.SequenceNumber).HasColumnName(tagColumns.SequenceNumber)
+                    .IsColumn().IsNullable(false)
+                    .Member(r => r.PersistenceId).HasColumnName(tagColumns.PersistenceId)
+                    .HasLength(255)
+                    .IsColumn().IsNullable(false).IsPrimaryKey();
+                
+                if (config.ProviderName.ToLower().Contains("sqlite"))
                 {
-                    tagTableBuilder.Member(r => r.JournalOrderingId)
-                        .IsNotColumn();
-                    tagTableBuilder.Member(r => r.WriteUuid).HasColumnName(tagColumns.WriteUuid)
-                        .IsColumn().IsPrimaryKey();
+                    rowBuilder.Member(r => r.OrderingId)
+                        .HasColumnName(tagColumns.OrderingId)
+                        .HasDbType("INTEGER")
+                        .IsColumn().IsNullable(false)
+                        .IsPrimaryKey();
+                    rowBuilder.Member(r => r.SequenceNumber)
+                        .HasColumnName(tagColumns.SequenceNumber)
+                        .HasDbType("INTEGER")
+                        .IsColumn().IsNullable(false);
                 }
                 else
                 {
-                    tagTableBuilder.Member(r => r.WriteUuid)
-                        .IsNotColumn();
+                    rowBuilder.Member(r => r.OrderingId)
+                        .HasColumnName(tagColumns.OrderingId)
+                        .IsColumn().IsNullable(false)
+                        .IsPrimaryKey();
+                    rowBuilder.Member(r => r.SequenceNumber)
+                        .HasColumnName(tagColumns.SequenceNumber)
+                        .IsColumn().IsNullable(false);
                 }
-            }
-            
-            // column compatibility
-            if (config.TableConfig.TagTableMode == TagTableMode.SequentialUuid)
-            {
-                journalRowBuilder.Member(r => r.WriteUuid)
-                    .IsColumn();
-            }
-            else
-            {
-                journalRowBuilder.Member(r => r.WriteUuid)
-                    .IsNotColumn();
             }
             
             //Probably overkill, but we only set Metadata Mapping if specified
             //That we are in delete compatibility mode.
             if (config.IDaoConfig.SqlCommonCompatibilityMode)
             {
-                fmb.Entity<JournalMetaData>()
+                var rowBuilder = fmb.Entity<JournalMetaData>();
+                if(tableConfig.SchemaName is { })
+                    rowBuilder.HasSchemaName(tableConfig.SchemaName);
+                rowBuilder
                     .HasTableName(tableConfig.MetadataTable.Name)
-                    .HasSchemaName(tableConfig.SchemaName)
                     .Member(r => r.PersistenceId)
                     .HasColumnName(tableConfig.MetadataTable.ColumnNames.PersistenceId)
                     .HasLength(255)

@@ -7,19 +7,14 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
     {
         Csv,
         TagTable,
-    }
-    
-    public enum TagTableMode
-    {
-        OrderingId,
-        SequentialUuid
+        Both
     }
     
     public class JournalTableConfig : IEquatable<JournalTableConfig>
     {
         public string SchemaName { get; }
         public TagWriteMode TagWriteMode { get; }
-        public TagTableMode TagTableMode { get; } = TagTableMode.OrderingId;
+        // TODO: implement this settings
         public bool UseEventManifestColumn { get; } = false;
         public EventJournalTableConfig EventJournalTable { get; }
         public MetadataTableConfig MetadataTable { get; }
@@ -30,10 +25,10 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
             if (string.IsNullOrEmpty(mappingPath))
                 throw new ConfigurationException("The configuration property akka.persistence.journal.linq2db.table-mapping is null or empty");
             
-            var s = config.GetString("tag-write-mode", "csv").ToLowerInvariant();
+            var s = config.GetString("tag-write-mode", "TagTable").ToLowerInvariant();
             if (!Enum.TryParse(s, true, out TagWriteMode res))
             {
-                res = TagWriteMode.Csv;
+                res = TagWriteMode.TagTable;
             }
             TagWriteMode = res;
             
