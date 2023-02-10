@@ -1,0 +1,15 @@
+akka.persistence.journal.linq2db {
+  testGen {
+    class = "Akka.Persistence.Sql.Linq2Db.Journal.Linq2DbWriteJournal, Akka.Persistence.Sql.Linq2Db"
+    provider-name = "SqlServer"
+    connection-string = "connStr"
+    tables {
+      journal {
+        auto-init = true
+        warn-on-auto-init-fail = false
+        table-name = "journalTbl"
+        metadata-table-name = "metadataTbl"
+      }
+    }
+  }
+}
