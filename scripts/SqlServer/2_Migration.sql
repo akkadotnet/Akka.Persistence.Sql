@@ -1,8 +1,8 @@
 INSERT INTO [dbo].[tags]([ordering_id], [tag], [sequence_nr], [persistence_id])
     SELECT * FROM (
-        SELECT a.[Ordering], b.[items], a.SequenceNr, a.PersistenceId FROM
-            [dbo].[EventJournal] AS a
-            CROSS APPLY [dbo].[Split](a.Tags, ';') b
+        SELECT records.[Ordering], cross_product.[items], records.SequenceNr, records.PersistenceId FROM
+            [dbo].[EventJournal] AS records
+            CROSS APPLY [dbo].[Split](records.Tags, ';') cross_product
     ) AS s([ordering_id], [tag], [sequence_nr], [persistence_id])
     WHERE NOT EXISTS (
         SELECT * FROM [dbo].[tags] t WITH (updlock)
