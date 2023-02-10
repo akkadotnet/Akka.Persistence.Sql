@@ -4,7 +4,9 @@ BEGIN
     CREATE TABLE [dbo].[tags](
         ordering_id BIGINT NOT NULL,
         tag NVARCHAR(64) NOT NULL,
-        PRIMARY KEY (ordering_id, tag)
+        sequence_nr BIGINT NOT NULL,
+        persistence_id VARCHAR(255) NOT NULL,
+        PRIMARY KEY (ordering_id, tag, persistence_id)
     );
 END
 GO
@@ -52,13 +54,13 @@ BEGIN
     WHILE @from_id <= @max_id
     BEGIN
         BEGIN TRAN;
-        INSERT INTO [dbo].[tags]([ordering_id], [tag])
-        SELECT * FROM (SELECT records.[Ordering], cross_product.[items] FROM (
-            SELECT *
-            FROM [dbo].[EventJournal] AS ej
-            WHERE ej.[Ordering] >= @from_id AND ej.[Ordering] <= @from_id + 1000
-        ) AS records CROSS APPLY [dbo].[Split](records.Tags, ';') cross_product) AS s([ordering_id], [tag])
-        WHERE NOT EXISTS (
+        INSERT INTO [dbo].[tags]([ordering_id], [tag], [sequence_nr], [persistence_id])
+            SELECT * FROM (
+                SELECT records.[Ordering], cross_product.[items], records.SequenceNr, records.PersistenceId FROM
+                    [dbo].[EventJournal] AS records
+                    CROSS APPLY [dbo].[Split](records.Tags, ';') cross_product
+            ) AS s([ordering_id], [tag], [sequence_nr], [persistence_id])
+            WHERE NOT EXISTS (
                 SELECT * FROM [dbo].[tags] t WITH (updlock)
                 WHERE s.[ordering_id] = t.[ordering_id] AND s.[tag] = t.[tag]
             );
