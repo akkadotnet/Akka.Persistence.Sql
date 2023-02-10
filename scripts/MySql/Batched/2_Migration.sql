@@ -1,0 +1,1 @@
+CALL AkkaMigration_BatchedMigration(0);

@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS "public"."tags"(
     PRIMARY KEY (ordering_id, tag)
 );
 
-CREATE OR REPLACE PROCEDURE "public"."Split"(id bigint, tags varchar(8000), seq_nr bigint, pid varchar(255)) AS $$
+CREATE OR REPLACE PROCEDURE "public"."AkkaMigration_Split"(id bigint, tags varchar(8000), seq_nr bigint, pid varchar(255)) AS $$
 DECLARE var_t record;
 BEGIN
     FOR var_t IN(SELECT unnest(string_to_array(tags, ';')) AS t) 
@@ -19,7 +19,7 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE PROCEDURE "public"."Normalize"(IN fromId BIGINT, IN toId BIGINT) AS $$
+CREATE OR REPLACE PROCEDURE "public"."AkkaMigration_Normalize"(IN fromId BIGINT, IN toId BIGINT) AS $$
 DECLARE var_r record;
 BEGIN
     FOR var_r IN(
@@ -28,12 +28,12 @@ BEGIN
         WHERE ej.ordering >= fromId AND ej.ordering <= toId
         ORDER BY "ordering") 
     LOOP
-        CALL "public"."Split"(var_r.id, var_r.tags, var_r.seq_nr, var_r.pid);
+        CALL "public"."AkkaMigration_Split"(var_r.id, var_r.tags, var_r.seq_nr, var_r.pid);
     END LOOP;
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE PROCEDURE "public"."BatchedMigration"(IN from_id BIGINT) AS $$
+CREATE OR REPLACE PROCEDURE "public"."AkkaMigration_BatchedMigration"(IN from_id BIGINT) AS $$
 DECLARE max_id BIGINT;
 BEGIN
     max_id := (SELECT MAX(ej."ordering")
@@ -46,7 +46,7 @@ BEGIN
     LOOP 
         EXIT WHEN from_id > max_id;
 
-        CALL "public"."Normalize"(from_id, from_id + 1000);
+        CALL "public"."AkkaMigration_Normalize"(from_id, from_id + 1000);
         COMMIT;
         
         from_id := from_id + 1000;
