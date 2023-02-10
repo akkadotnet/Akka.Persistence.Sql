@@ -4,7 +4,9 @@ BEGIN
     CREATE TABLE [dbo].[tags](
         ordering_id BIGINT NOT NULL,
         tag NVARCHAR(64) NOT NULL,
-        PRIMARY KEY (ordering_id, tag)
+        sequence_nr BIGINT NOT NULL,
+        persistence_id VARCHAR(255) NOT NULL,
+        PRIMARY KEY (ordering_id, tag, persistence_id)
     );
 END
 GO

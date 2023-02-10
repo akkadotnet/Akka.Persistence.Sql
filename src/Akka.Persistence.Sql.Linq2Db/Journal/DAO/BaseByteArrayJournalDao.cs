@@ -235,7 +235,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
                 var dbid = await dc.InsertWithInt64IdentityAsync(journalRow);
                 foreach (var s1 in journalRow.TagArr)
                 {
-                    tagsToInsert.Add(new JournalTagRow{ JournalOrderingId = dbid, TagValue = s1 });
+                    tagsToInsert.Add(new JournalTagRow{ OrderingId = dbid, TagValue = s1 });
                 }
             }
             await dc.GetTable<JournalTagRow>().BulkCopyAsync(new BulkCopyOptions
@@ -352,6 +352,13 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
                         .Where(r =>
                             r.PersistenceId == persistenceId &&
                             r.SequenceNumber < maxMarkedDeletion)
+                        .DeleteAsync();
+                }
+
+                if (JournalConfig.TableConfig.TagWriteMode != TagWriteMode.Csv)
+                {
+                    await db.GetTable<JournalTagRow>()
+                        .Where(r => r.SequenceNumber <= maxSequenceNr && r.PersistenceId == persistenceId)
                         .DeleteAsync();
                 }
 

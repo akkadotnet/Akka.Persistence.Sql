@@ -6,6 +6,7 @@
 
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using Akka.Hosting;
 using Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Internal;
 using Xunit.Abstractions;
@@ -20,14 +21,20 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests
         {
         }
 
-        protected override void Setup(AkkaConfigurationBuilder builder, IServiceProvider provider)
+        protected override async Task InitializeTestAsync()
         {
+            await base.InitializeTestAsync();
+            
             var workingDir = Path.GetDirectoryName(GetType().Assembly.Location);
-            var migrationSetup = File.ReadAllText(Path.Combine(workingDir!, ScriptFolder, "1_Migration_Setup.sql"));
-            var migration = File.ReadAllText(Path.Combine(workingDir!, ScriptFolder, "2_Migration.sql"));
-            var migrationCleanup = File.ReadAllText(Path.Combine(workingDir!, ScriptFolder, "3_Post_Migration_Cleanup.sql"));
+            var migrationSetup = await File.ReadAllTextAsync(Path.Combine(workingDir!, ScriptFolder, "1_Migration_Setup.sql"));
+            var migration = await File.ReadAllTextAsync(Path.Combine(workingDir!, ScriptFolder, "2_Migration.sql"));
+            var migrationCleanup = await File.ReadAllTextAsync(Path.Combine(workingDir!, ScriptFolder, "3_Post_Migration_Cleanup.sql"));
             
             ExecuteSqlScripts(migrationSetup, migration, migrationCleanup);
+        }
+
+        protected override void Setup(AkkaConfigurationBuilder builder, IServiceProvider provider)
+        {
             
             base.Setup(builder, provider);
             builder.AddHocon(@"
