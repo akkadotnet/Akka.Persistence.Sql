@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS "public"."tags"(
     PRIMARY KEY (ordering_id, tag, persistence_id)
 );
 
-CREATE OR REPLACE PROCEDURE "public"."Split"(id bigint, tags varchar(8000), seq_nr bigint, pid varchar(255)) AS $$
+CREATE OR REPLACE PROCEDURE "public"."AkkaMigration_Split"(id bigint, tags varchar(8000), seq_nr bigint, pid varchar(255)) AS $$
 DECLARE var_t record;
 BEGIN
     FOR var_t IN(SELECT unnest(string_to_array(tags, ';')) AS t) 
@@ -19,12 +19,12 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE PROCEDURE "public"."Normalize"() AS $$
+CREATE OR REPLACE PROCEDURE "public"."AkkaMigration_Normalize"() AS $$
 DECLARE var_r record;
 BEGIN
     FOR var_r IN(SELECT ej."ordering" AS id, ej."tags", ej."sequence_nr" as seq_nr, ej."persistence_id" AS pid FROM "public"."event_journal" AS ej ORDER BY "ordering") 
     LOOP 
-		CALL "public"."Split"(var_r.id, var_r.tags, var_r.seq_nr, var_r.pid);
+		CALL "public"."AkkaMigration_Split"(var_r.id, var_r.tags, var_r.seq_nr, var_r.pid);
     END LOOP;
 END
 $$ LANGUAGE plpgsql;

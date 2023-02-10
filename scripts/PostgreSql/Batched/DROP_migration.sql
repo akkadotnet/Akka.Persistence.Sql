@@ -1,4 +1,4 @@
 DROP TABLE IF EXISTS "public"."TagTable";
-DROP PROCEDURE IF EXISTS "public"."Split";
-DROP PROCEDURE IF EXISTS "public"."Normalize";
-DROP PROCEDURE IF EXISTS "public"."BatchedMigration";
+DROP PROCEDURE IF EXISTS "public"."AkkaMigration_Split";
+DROP PROCEDURE IF EXISTS "public"."AkkaMigration_Normalize";
+DROP PROCEDURE IF EXISTS "public"."AkkaMigration_BatchedMigration";

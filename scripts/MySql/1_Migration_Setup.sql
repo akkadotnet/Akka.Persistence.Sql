@@ -6,10 +6,10 @@ CREATE TABLE IF NOT EXISTS tags(
     PRIMARY KEY (ordering_id, tag, persistence_id)
 );
 
-DROP PROCEDURE IF EXISTS Split;
+DROP PROCEDURE IF EXISTS AkkaMigration_Split;
 
 DELIMITER ??
-CREATE PROCEDURE Split()
+CREATE PROCEDURE AkkaMigration_Split()
 BEGIN
 
     DECLARE v_cursor_done TINYINT UNSIGNED DEFAULT 0;

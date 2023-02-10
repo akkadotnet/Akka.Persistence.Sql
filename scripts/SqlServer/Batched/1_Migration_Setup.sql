@@ -11,7 +11,7 @@ BEGIN
 END
 GO
 
-CREATE OR ALTER FUNCTION [dbo].[Split](@String VARCHAR(8000), @Delimiter CHAR(1))
+CREATE OR ALTER FUNCTION [dbo].[AkkaMigration_Split](@String VARCHAR(8000), @Delimiter CHAR(1))
     RETURNS @temptable TABLE (items VARCHAR(8000)) AS
 BEGIN
     DECLARE @idx INT
@@ -40,7 +40,7 @@ BEGIN
 END;
 GO
 
-CREATE OR ALTER PROCEDURE [dbo].[BatchedMigration](@from_id BIGINT) AS
+CREATE OR ALTER PROCEDURE [dbo].[AkkaMigration_BatchedMigration](@from_id BIGINT) AS
 BEGIN
     DECLARE @max_id BIGINT;
     
@@ -58,7 +58,7 @@ BEGIN
             SELECT * FROM (
                 SELECT records.[Ordering], cross_product.[items], records.SequenceNr, records.PersistenceId FROM
                     [dbo].[EventJournal] AS records
-                    CROSS APPLY [dbo].[Split](records.Tags, ';') cross_product
+                    CROSS APPLY [dbo].[AkkaMigration_Split](records.Tags, ';') cross_product
             ) AS s([ordering_id], [tag], [sequence_nr], [persistence_id])
             WHERE NOT EXISTS (
                 SELECT * FROM [dbo].[tags] t WITH (updlock)

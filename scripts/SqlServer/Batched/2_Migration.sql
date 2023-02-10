@@ -1,1 +1,1 @@
-EXEC [dbo].[BatchedMigration] @from_id = 0;
+EXEC [dbo].[AkkaMigration_BatchedMigration] @from_id = 0;

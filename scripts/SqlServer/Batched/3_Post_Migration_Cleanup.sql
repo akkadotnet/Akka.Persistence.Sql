@@ -1,2 +1,2 @@
-DROP FUNCTION IF EXISTS [dbo].[Split];
-DROP PROCEDURE IF EXISTS [dbo].[BatchedMigration];
+DROP FUNCTION IF EXISTS [dbo].[AkkaMigration_Split];
+DROP PROCEDURE IF EXISTS [dbo].[AkkaMigration_BatchedMigration];

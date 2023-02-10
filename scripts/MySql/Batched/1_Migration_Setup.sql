@@ -6,10 +6,10 @@ CREATE TABLE IF NOT EXISTS tags(
     PRIMARY KEY (ordering_id, tag, persistence_id)
 );
 
-DROP PROCEDURE IF EXISTS Split;
+DROP PROCEDURE IF EXISTS AkkaMigration_Split;
 
 DELIMITER ??
-CREATE PROCEDURE Split(IN fromId INT, IN toId INT)
+CREATE PROCEDURE AkkaMigration_Split(IN fromId INT, IN toId INT)
 BEGIN
 
     DECLARE v_cursor_done TINYINT UNSIGNED DEFAULT 0;
@@ -61,7 +61,7 @@ BEGIN
 
 END??
 
-CREATE PROCEDURE BatchedMigration(IN fromId BIGINT)
+CREATE PROCEDURE AkkaMigration_BatchedMigration(IN fromId BIGINT)
 BEGIN
     DECLARE maxId BIGINT UNSIGNED;
     DECLARE oldCommitValue TINYINT DEFAULT @@autocommit;
@@ -80,7 +80,7 @@ BEGIN
 
         SET autocommit = 0;
         START TRANSACTION;
-        CALL Split(fromId, fromId + 1000);
+        CALL AkkaMigration_Split(fromId, fromId + 1000);
         COMMIT;
         SET autocommit = oldCommitValue;
 

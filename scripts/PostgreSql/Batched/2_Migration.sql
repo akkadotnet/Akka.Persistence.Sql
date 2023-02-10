@@ -1,1 +1,1 @@
-CALL "public"."BatchedMigration"(0);
+CALL "public"."AkkaMigration_BatchedMigration"(0);

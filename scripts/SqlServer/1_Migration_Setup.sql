@@ -11,7 +11,7 @@ BEGIN
 END
 GO
 
-CREATE OR ALTER FUNCTION [dbo].[Split](@String VARCHAR(8000), @Delimiter CHAR(1))
+CREATE OR ALTER FUNCTION [dbo].[AkkaMigration_Split](@String VARCHAR(8000), @Delimiter CHAR(1))
     RETURNS @temptable TABLE (items VARCHAR(8000)) AS
 BEGIN
     DECLARE @idx INT
