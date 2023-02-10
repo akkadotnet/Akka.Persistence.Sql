@@ -232,11 +232,14 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
             // We're forced to insert the rows one by one.
             foreach (var journalRow in xs)
             {
-                var dbid = await dc.InsertWithInt64IdentityAsync(journalRow);
-                foreach (var s1 in journalRow.TagArr)
+                var dbId = await dc.InsertWithInt64IdentityAsync(journalRow);
+                tagsToInsert.AddRange(journalRow.TagArr.Select(s1 => new JournalTagRow
                 {
-                    tagsToInsert.Add(new JournalTagRow{ OrderingId = dbid, TagValue = s1 });
-                }
+                    OrderingId = dbId, 
+                    TagValue = s1,
+                    PersistenceId = journalRow.PersistenceId,
+                    SequenceNumber = journalRow.SequenceNumber
+                }));
             }
             await dc.GetTable<JournalTagRow>().BulkCopyAsync(new BulkCopyOptions
             {
