@@ -16,7 +16,7 @@
     <XunitVersion>2.4.2</XunitVersion>
     <XunitRunnerVersion>2.4.5</XunitRunnerVersion>
     <TestSdkVersion>17.4.1</TestSdkVersion>
-    <FluentAssertionVersion>6.9.0</FluentAssertionVersion>
+    <FluentAssertionVersion>6.10.0</FluentAssertionVersion>
     <CoverletVersion>3.2.0</CoverletVersion>
     <RedisInsideVersion>3.3.0</RedisInsideVersion>
     <FluentMigratorVersion>3.3.1</FluentMigratorVersion>
