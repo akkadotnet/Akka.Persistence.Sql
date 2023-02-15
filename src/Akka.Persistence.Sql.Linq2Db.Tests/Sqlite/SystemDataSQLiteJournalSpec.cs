@@ -1,45 +1,36 @@
-using System;
-using System.Data.SQLite;
-using Akka.Util.Internal;
+using System.Threading.Tasks;
+using Akka.Persistence.Linq2Db.Tests.Common;
+using Akka.Persistence.TCK.Journal;
 using LinqToDB;
+using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Sql.Linq2Db.Tests
+namespace Akka.Persistence.Sql.Linq2Db.Tests.Sqlite
 {
-    public class SystemDataSqliteJournalSpec : Akka.Persistence.TCK.Journal.JournalSpec
+    [Collection("PersistenceSpec")]
+    public class SystemDataSqliteJournalSpec : JournalSpec, IAsyncLifetime
     {
-        private static readonly AtomicCounter Counter = new AtomicCounter(0);
-        private static readonly string ConnString = $"FullUri=file:memdb{Counter.IncrementAndGet()}?mode=memory&cache=shared";
-        private static readonly SQLiteConnection HeldSqliteConnection = new SQLiteConnection(ConnString);
-
-        public SystemDataSqliteJournalSpec(ITestOutputHelper outputHelper) 
-            : base(SqLiteJournalSpecConfig.Create(ConnString, ProviderName.SQLiteClassic), "linq2dbJournalSpec", output: outputHelper)
+        private readonly TestFixture _fixture;
+        
+        public SystemDataSqliteJournalSpec(ITestOutputHelper output, TestFixture fixture)
+            : base(
+                SqLiteJournalSpecConfig.Create(fixture.ConnectionString(Database.SqLite), ProviderName.SQLiteClassic), 
+                nameof(SystemDataSqliteJournalSpec), output)
         {
-            try
-            {
-                HeldSqliteConnection.Open();
-            }
-            catch
-            {
-                // no-op
-            }
-            //DataConnection.OnTrace = info =>
-            //{
-            //    outputHelper.WriteLine(info.SqlText);
-            //    if (info.Exception != null)
-            //    {
-            //        outputHelper.WriteLine(info.Exception.ToString());
-            //    }
-            //
-            //    if (!string.IsNullOrWhiteSpace(info.CommandText))
-            //    {
-            //        outputHelper.WriteLine(info.CommandText);
-            //    }
-            //};
-            Initialize();
-            GC.KeepAlive(HeldSqliteConnection);
+            _fixture = fixture;
         }
         // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
         protected override bool SupportsSerialization => false;
+    
+        public async Task InitializeAsync()
+        {
+            await _fixture.InitializeDbAsync(Database.SqLite);
+            Initialize();
+        }
+
+        public Task DisposeAsync()
+        {
+            return Task.CompletedTask;
+        }
     }
 }
