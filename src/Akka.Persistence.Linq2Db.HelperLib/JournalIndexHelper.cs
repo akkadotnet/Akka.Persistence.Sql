@@ -1,7 +1,6 @@
-﻿using System;
-using FluentMigrator.Model;
+﻿using FluentMigrator.Model;
 
-namespace Akka.Persistence.Linq2Db.IndexHelperLib
+namespace Akka.Persistence.Linq2Db.HelperLib
 {
     public class JournalIndexHelper
     {

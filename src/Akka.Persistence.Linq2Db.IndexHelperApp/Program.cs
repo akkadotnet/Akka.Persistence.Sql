@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using Akka.Configuration;
-using Akka.Persistence.Linq2Db.IndexHelperLib;
+using Akka.Persistence.Linq2Db.HelperLib;
 using Akka.Persistence.Sql.Linq2Db;
 using Akka.Persistence.Sql.Linq2Db.Config;
 using Akka.Persistence.Sql.Linq2Db.Tests;
