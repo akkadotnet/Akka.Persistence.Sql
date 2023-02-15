@@ -6,11 +6,17 @@ using Akka.Persistence.TCK.Journal;
 using LinqToDB;
 using Xunit;
 using Xunit.Abstractions;
+#if !DEBUG
+using Akka.Persistence.Sql.Linq2Db.Tests.Internal.Xunit;
+#endif
 
 namespace Akka.Persistence.Sql.Linq2Db.Tests.Postgres
 {
+#if !DEBUG
+    [SkipWindows]
+#endif
     [Collection("PersistenceSpec")]
-    public class DockerLinq2DbPostgreSqlJournalSpec : JournalSpec, IAsyncLifetime
+    public class Linq2DbPostgreSqlJournalSpec : JournalSpec, IAsyncLifetime
     {
         public static Configuration.Config Configuration(TestFixture fixture)
         {
@@ -33,8 +39,8 @@ akka.persistence {{
         
         private readonly TestFixture _fixture;
         
-        public DockerLinq2DbPostgreSqlJournalSpec(ITestOutputHelper output, TestFixture fixture) 
-            : base(Configuration(fixture), nameof(DockerLinq2DbPostgreSqlJournalSpec), output)
+        public Linq2DbPostgreSqlJournalSpec(ITestOutputHelper output, TestFixture fixture) 
+            : base(Configuration(fixture), nameof(Linq2DbPostgreSqlJournalSpec), output)
         {
             _fixture = fixture;
             //DebuggingHelpers.SetupTraceDump(output);
