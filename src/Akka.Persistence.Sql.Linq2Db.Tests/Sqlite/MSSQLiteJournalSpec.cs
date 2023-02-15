@@ -1,40 +1,45 @@
-﻿using System;
-using Akka.Util.Internal;
+﻿using System.Threading.Tasks;
+using Akka.Persistence.Linq2Db.Tests.Common;
+using Akka.Persistence.TCK.Journal;
 using LinqToDB;
-using LinqToDB.Data;
-using Microsoft.Data.Sqlite;
+using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Sql.Linq2Db.Tests
+namespace Akka.Persistence.Sql.Linq2Db.Tests.Sqlite
 {
+    [Collection("PersistenceSpec")]
     public class MsSqliteNativeConfigSpec : MsSqliteJournalSpec
     {
-        public MsSqliteNativeConfigSpec(ITestOutputHelper outputHelper) : base(outputHelper, true)
+        public MsSqliteNativeConfigSpec(ITestOutputHelper output, TestFixture fixture) : base(output, fixture, nameof(MsSqliteNativeConfigSpec), true)
         {
         }
     }
-    public class MsSqliteJournalSpec : Akka.Persistence.TCK.Journal.JournalSpec
+    
+    [Collection("PersistenceSpec")]
+    public class MsSqliteJournalSpec : JournalSpec, IAsyncLifetime
     {
-        private static readonly AtomicCounter Counter = new AtomicCounter(0);
-        private static readonly string ConnString = $"Filename=file:memdb-journal-{Counter.IncrementAndGet()}.db;Mode=Memory;Cache=Shared";
-        private static readonly SqliteConnection HeldSqliteConnection = new SqliteConnection(ConnString);
-
-        public MsSqliteJournalSpec(ITestOutputHelper outputHelper, bool nativeMode = false) : base(SqLiteJournalSpecConfig.Create(ConnString, ProviderName.SQLiteMS, nativeMode),
-            "linq2dbJournalSpec",
-            output: outputHelper)
+        private readonly TestFixture _fixture;
+        
+        public MsSqliteJournalSpec(ITestOutputHelper output, TestFixture fixture, string name = nameof(MsSqliteJournalSpec), bool nativeMode = false) 
+            : base(
+                SqLiteJournalSpecConfig.Create(fixture.ConnectionString(Database.MsSqLite), ProviderName.SQLiteMS, nativeMode),
+                name, output)
         {
-            try
-            {
-                HeldSqliteConnection.Open();
-            }
-            catch
-            {
-                // no-op
-            }
-            Initialize();
-            GC.KeepAlive(HeldSqliteConnection);
+            _fixture = fixture;
         }
+        
         // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
         protected override bool SupportsSerialization => false;
+    
+        public async Task InitializeAsync()
+        {
+            await _fixture.InitializeDbAsync(Database.MsSqLite);
+            Initialize();
+        }
+
+        public Task DisposeAsync()
+        {
+            return Task.CompletedTask;
+        }
     }
 }
