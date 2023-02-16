@@ -1,4 +1,4 @@
-﻿namespace Akka.Persistence.Linq2Db.BenchmarkTests
+﻿namespace Akka.Persistence.Linq2Db.Benchmark.Tests
 {
     public static class TestConstants
     {

@@ -15,17 +15,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Sql.Linq2D
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Sql.Linq2Db", "src\Akka.Persistence.Sql.Linq2Db\Akka.Persistence.Sql.Linq2Db.csproj", "{D10C2941-AD62-4E17-8C2C-4917D4C82B07}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Sql.Linq2Db.DockerTests", "src\Akka.Persistence.Sql.Linq2Db.DockerTests\Akka.Persistence.Sql.Linq2Db.DockerTests.csproj", "{4D749F93-F57E-405F-94F7-EECF87299CC8}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.Journal.Query.Tests", "src\Akka.Persistence.Linq2Db.Journal.Query.Tests\Akka.Persistence.Linq2Db.Journal.Query.Tests.csproj", "{FA174DBA-14FB-418F-85C5-A1B89198796F}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.Benchmark.Tests", "src\Akka.Persistence.Linq2Db.Benchmark.Tests\Akka.Persistence.Linq2Db.Benchmark.Tests.csproj", "{6AE959E1-440C-4407-B080-64B1018A96A3}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.Benchmark.DockerTests", "src\Akka.Persistence.Linq2Db.Benchmark.DockerTests\Akka.Persistence.Linq2Db.Benchmark.DockerTests.csproj", "{46F25C80-8610-4C54-875F-8C1FE2055129}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.Compatibility.Tests", "src\Akka.Persistence.Linq2Db.Compatibility.Tests\Akka.Persistence.Linq2Db.Compatibility.Tests.csproj", "{29571BB6-CE0F-4614-8465-A876CFF0242F}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.Compatibility.DockerTests", "src\Akka.Persistence.Linq2Db.Compatibility.DockerTests\Akka.Persistence.Linq2Db.Compatibility.DockerTests.csproj", "{095E392C-C439-4EBC-ABCB-6AA87FCBD9E9}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_", "_", "{20C26B2D-59EA-421C-9F64-BFFCE3D96260}"
 ProjectSection(SolutionItems) = preProject
@@ -33,8 +23,6 @@ ProjectSection(SolutionItems) = preProject
 	README.md = README.md
 	RELEASE_NOTES.md = RELEASE_NOTES.md
 EndProjectSection
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.Benchmark.DockerComparisonTests", "src\Akka.Persistence.Linq2Db.Benchmark.DockerComparisonTests\Akka.Persistence.Linq2Db.Benchmark.DockerComparisonTests.csproj", "{170698FA-DA1E-40BC-896D-AFA67976C0EB}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build-system", "build-system", "{7537908B-6A42-4E34-889F-6004A97D4987}"
 	ProjectSection(SolutionItems) = preProject
@@ -105,6 +93,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utils", "Utils", "{C59D2898
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.TagTableMigration", "src\Akka.Persistence.Linq2Db.TagTableMigration\Akka.Persistence.Linq2Db.TagTableMigration.csproj", "{4ACEF3FD-F5B4-4C07-B85A-AD4D6AB68F4D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Linq2Db.Tests.Common", "src\Akka.Persistence.Linq2Db.Tests.Common\Akka.Persistence.Linq2Db.Tests.Common.csproj", "{BDF8A537-A9D3-45A4-81EA-4B77DBD544D6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -119,34 +109,10 @@ Global
 		{D10C2941-AD62-4E17-8C2C-4917D4C82B07}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D10C2941-AD62-4E17-8C2C-4917D4C82B07}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D10C2941-AD62-4E17-8C2C-4917D4C82B07}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4D749F93-F57E-405F-94F7-EECF87299CC8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4D749F93-F57E-405F-94F7-EECF87299CC8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4D749F93-F57E-405F-94F7-EECF87299CC8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4D749F93-F57E-405F-94F7-EECF87299CC8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FA174DBA-14FB-418F-85C5-A1B89198796F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FA174DBA-14FB-418F-85C5-A1B89198796F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FA174DBA-14FB-418F-85C5-A1B89198796F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FA174DBA-14FB-418F-85C5-A1B89198796F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6AE959E1-440C-4407-B080-64B1018A96A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{6AE959E1-440C-4407-B080-64B1018A96A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6AE959E1-440C-4407-B080-64B1018A96A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6AE959E1-440C-4407-B080-64B1018A96A3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{46F25C80-8610-4C54-875F-8C1FE2055129}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{46F25C80-8610-4C54-875F-8C1FE2055129}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{46F25C80-8610-4C54-875F-8C1FE2055129}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{46F25C80-8610-4C54-875F-8C1FE2055129}.Release|Any CPU.Build.0 = Release|Any CPU
-		{29571BB6-CE0F-4614-8465-A876CFF0242F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{29571BB6-CE0F-4614-8465-A876CFF0242F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{29571BB6-CE0F-4614-8465-A876CFF0242F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{29571BB6-CE0F-4614-8465-A876CFF0242F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{095E392C-C439-4EBC-ABCB-6AA87FCBD9E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{095E392C-C439-4EBC-ABCB-6AA87FCBD9E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{095E392C-C439-4EBC-ABCB-6AA87FCBD9E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{095E392C-C439-4EBC-ABCB-6AA87FCBD9E9}.Release|Any CPU.Build.0 = Release|Any CPU
-		{170698FA-DA1E-40BC-896D-AFA67976C0EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{170698FA-DA1E-40BC-896D-AFA67976C0EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{170698FA-DA1E-40BC-896D-AFA67976C0EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{170698FA-DA1E-40BC-896D-AFA67976C0EB}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7B03FDD2-45CC-4F83-B23F-66B4EE82437A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7B03FDD2-45CC-4F83-B23F-66B4EE82437A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7B03FDD2-45CC-4F83-B23F-66B4EE82437A}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -163,6 +129,10 @@ Global
 		{4ACEF3FD-F5B4-4C07-B85A-AD4D6AB68F4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4ACEF3FD-F5B4-4C07-B85A-AD4D6AB68F4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4ACEF3FD-F5B4-4C07-B85A-AD4D6AB68F4D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BDF8A537-A9D3-45A4-81EA-4B77DBD544D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BDF8A537-A9D3-45A4-81EA-4B77DBD544D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BDF8A537-A9D3-45A4-81EA-4B77DBD544D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BDF8A537-A9D3-45A4-81EA-4B77DBD544D6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

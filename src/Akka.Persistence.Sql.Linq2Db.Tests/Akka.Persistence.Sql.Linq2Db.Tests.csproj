@@ -14,6 +14,7 @@
         <PackageReference Include="Akka" Version="$(AkkaVersion)" />
         <PackageReference Include="Akka.Persistence.Sqlite" Version="$(AkkaVersion)" />
         <PackageReference Include="Akka.Persistence.SqlServer" Version="$(AkkaSqlServerVersion)" />
+        <PackageReference Include="Akka.Persistence.PostgreSql" Version="$(AkkaPostgresSqlVersion)" />
         <PackageReference Include="Akka.Persistence.TCK" Version="$(AkkaVersion)" />
         <PackageReference Include="Akka.Persistence.TestKit" Version="$(AkkaVersion)" />
         <PackageReference Include="Akka.Serialization.Hyperion" Version="$(AkkaVersion)" />
@@ -33,6 +34,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Akka.Persistence.Linq2Db.Tests.Common\Akka.Persistence.Linq2Db.Tests.Common.csproj" />
       <ProjectReference Include="..\Akka.Persistence.Sql.Linq2Db\Akka.Persistence.Sql.Linq2Db.csproj" />
     </ItemGroup>
 

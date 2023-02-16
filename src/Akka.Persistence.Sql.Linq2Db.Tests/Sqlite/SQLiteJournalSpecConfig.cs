@@ -3,7 +3,7 @@ using Akka.Persistence.Sql.Linq2Db.Journal;
 using Akka.Persistence.Sql.Linq2Db.Snapshot;
 using LinqToDB;
 
-namespace Akka.Persistence.Sql.Linq2Db.Tests
+namespace Akka.Persistence.Sql.Linq2Db.Tests.Sqlite
 {
     public static class SqLiteSnapshotSpecConfig
     {
