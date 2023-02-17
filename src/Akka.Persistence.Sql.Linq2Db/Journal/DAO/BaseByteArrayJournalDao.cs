@@ -178,48 +178,32 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
 
         private async Task InsertMultiple(Seq<JournalRow> xs)
         {
-            var config = JournalConfig.DaoConfig;
-            
             await using var db = ConnectionFactory.GetConnection();
             await using var tx = await db.BeginTransactionAsync(IsolationLevel.ReadCommitted);
             try
             {
                 if (_tagWriteMode == TagWriteMode.Csv)
                 {
-                    await db.GetTable<JournalRow>().BulkCopyAsync(new BulkCopyOptions
-                    {
-                        BulkCopyType = xs.Count > config.MaxRowByRowSize ? BulkCopyType.Default : BulkCopyType.MultipleRows,
-                        UseParameters = config.PreferParametersOnMultiRowInsert,
-                        MaxBatchSize = config.DbRoundTripBatchSize
-                    }, xs);
+                    await BulkInsertNoTagTableTags(db, xs, JournalConfig.DaoConfig);
                 } 
                 else
                 {
-                    // We could not do bulk copy and retrieve the inserted ids
-                    // Issue: https://github.com/linq2db/linq2db/issues/2960
-                    // We're forced to insert the rows one by one.
-                    var tagsToInsert = new List<JournalTagRow>();
-                    foreach (var journalRow in xs)
+                    var config = JournalConfig.DaoConfig;
+                    var tail = xs;
+                    while (tail.Count > 0)
                     {
-                        var dbid = await db.InsertWithInt64IdentityAsync(journalRow);
-                        tagsToInsert.AddRange(
-                            journalRow.TagArr.Select(tag => new JournalTagRow
-                            {
-                                OrderingId = dbid, 
-                                TagValue = tag,
-                                SequenceNumber = journalRow.SequenceNumber,
-                                PersistenceId = journalRow.PersistenceId
-                            }));
+                        (var noTags, tail) = tail.Span(r => r.TagArr.Length == 0);
+                        if (noTags.Count > 0)
+                        {
+                            await BulkInsertNoTagTableTags(db, noTags, config);
+                        }
+
+                        (var hasTags, tail) = tail.Span(r => r.TagArr.Length > 0);
+                        if (hasTags.Count > 0)
+                        {
+                            await InsertWithOrderingAndBulkInsertTags(db, hasTags, config);
+                        }
                     }
-                    
-                    await db.GetTable<JournalTagRow>().BulkCopyAsync(new BulkCopyOptions
-                    {
-                        BulkCopyType = tagsToInsert.Count > config.MaxRowByRowSize
-                            ? BulkCopyType.Default
-                            : BulkCopyType.MultipleRows,
-                        UseParameters = config.PreferParametersOnMultiRowInsert,
-                        MaxBatchSize = config.DbRoundTripTagBatchSize
-                    }, tagsToInsert);
                 }
                 
                 await db.CommitTransactionAsync();
@@ -239,6 +223,43 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static async Task InsertWithOrderingAndBulkInsertTags(DataConnection dc, Seq<JournalRow> xs, BaseByteArrayJournalDaoConfig config)
+        {
+            var tagsToInsert = new List<JournalTagRow>(xs.Count);
+            // We could not do bulk copy and retrieve the inserted ids
+            // Issue: https://github.com/linq2db/linq2db/issues/2960
+            // We're forced to insert the rows one by one.
+            foreach (var journalRow in xs)
+            {
+                var dbId = await dc.InsertWithInt64IdentityAsync(journalRow);
+                tagsToInsert.AddRange(journalRow.TagArr.Select(s1 => new JournalTagRow
+                {
+                    OrderingId = dbId, 
+                    TagValue = s1,
+                    PersistenceId = journalRow.PersistenceId,
+                    SequenceNumber = journalRow.SequenceNumber
+                }));
+            }
+            await dc.GetTable<JournalTagRow>().BulkCopyAsync(new BulkCopyOptions
+            {
+                BulkCopyType = BulkCopyType.MultipleRows,
+                UseParameters = config.PreferParametersOnMultiRowInsert,
+                MaxBatchSize = config.DbRoundTripTagBatchSize
+            }, tagsToInsert);
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static async Task BulkInsertNoTagTableTags(DataConnection dc, Seq<JournalRow> xs, BaseByteArrayJournalDaoConfig config)
+        {
+            await dc.GetTable<JournalRow>().BulkCopyAsync(new BulkCopyOptions
+            {
+                BulkCopyType = xs.Count > config.MaxRowByRowSize ? BulkCopyType.Default : BulkCopyType.MultipleRows,
+                UseParameters = config.PreferParametersOnMultiRowInsert,
+                MaxBatchSize = config.DbRoundTripBatchSize
+            }, xs);
+        }
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static Guid NextUuid()
         {
