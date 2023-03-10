@@ -1,6 +1,3 @@
-# Release task for PbLib projects
-# See https://docs.microsoft.com/en-us/azure/devops/pipelines/yaml-schema for reference
-
 pool:
   vmImage: windows-latest
   demands: Cmd
