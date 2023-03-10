@@ -37,7 +37,7 @@ Working:
         - PersistAll groups larger than `batch-size` will still be done as a single contiguous write
 
 - Linq2Db usage for easier swapping of backend DBs.
-    - `provider-name` is a `LinqToDb.ProviderName`
+    - `provider-name` is a [`LinqToDb.ProviderName`](https://linq2db.github.io/api/LinqToDB.ProviderName.html)
         - This handles DB Type mapping and Dialect-specific query building
 
 - language-ext is used in place of Systems.Collections.Immutable where appropriate
@@ -137,7 +137,7 @@ Updated Performance numbers pending.
 
 Please note that you -must- provide a Connection String (`connection-string`) and Provider name (`provider-name`).
 
-- Refer to the Members of `LinqToDb.ProviderName` for included providers.
+- Refer to the Members of [`LinqToDb.ProviderName`](https://linq2db.github.io/api/LinqToDB.ProviderName.html) for included providers.
     - Note: For best performance, one should use the most specific provider name possible. i.e. `LinqToDB.ProviderName.SqlServer2012` instead of `LinqToDB.ProviderName.SqlServer`. Otherwise certain provider detections have to run more frequently which may impair performance slightly.
 
 - `parallelism` controls the number of Akka.Streams Queues used to write to the DB.
