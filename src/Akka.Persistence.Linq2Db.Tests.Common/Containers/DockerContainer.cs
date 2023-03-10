@@ -36,15 +36,15 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
         public bool Initialized { get; private set; }
 
         public abstract string ConnectionString { get; }
-        
+
         public string DatabaseName { get; } = $"linq2db_tests_{Guid.NewGuid():N}";
 
         private string ImageName { get; }
-        
+
         private string Tag { get; }
-        
+
         private string FullImageName => $"{ImageName}:{Tag}";
-        
+
         public string ContainerName { get; }
 
         protected virtual string? ReadyMarker => null;
@@ -52,7 +52,7 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
         protected virtual int ReadyCount => 1;
 
         protected virtual TimeSpan ReadyTimeout { get; } = TimeSpan.FromMinutes(1);
-        
+
         public DockerClient Client { get; }
 
         public event EventHandler<OutputReceivedArgs> OnStdOut;
@@ -61,9 +61,9 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
         {
             if (Initialized || _initializing)
                 return;
-            
+
             _initializing = true;
-            
+
             var images = await Client.Images.ListImagesAsync(new ImagesListParameters
             {
                 Filters = new Dictionary<string, IDictionary<string, bool>>
@@ -76,7 +76,7 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
                         }
                     }
                 }
-            }); 
+            });
 
             if (images.Count == 0)
                 await Client.Images.CreateImageAsync(
@@ -87,20 +87,20 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
                             ? message.ErrorMessage
                             : $"{message.ID} {message.Status} {message.ProgressMessage}");
                     }));
-            
+
             // configure container parameters
             var options = new CreateContainerParameters();
             ConfigureContainer(options);
             options.Image = FullImageName;
             options.Name = ContainerName;
             options.Tty = true;
-            
+
             // create the container
             await Client.Containers.CreateContainerAsync(options);
-            
+
             // start the container
             await Client.Containers.StartContainerAsync(ContainerName, new ContainerStartParameters());
-            
+
             // Create streams
             _stream = await Client.Containers.GetContainerLogsAsync(
                 id: ContainerName,
@@ -161,14 +161,14 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
                 OnStdOut -= LineProcessor;
             }
         }
-        
+
         private async Task ReadDockerStreamAsync()
         {
             using var reader = new StreamReader(_stream!);
 
             var tcs = new TaskCompletionSource<Done>();
             _logsCts.Token.Register(() => tcs.SetResult(Done.Instance));
-            
+
             while (!_logsCts.IsCancellationRequested)
             {
                 var task = reader.ReadLineAsync();
@@ -187,7 +187,7 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
         {
             // Perform async cleanup.
             await DisposeAsyncCore().ConfigureAwait(false);
-            
+
             Dispose(false);
             GC.SuppressFinalize(this);
         }
@@ -205,10 +205,10 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
 
             _logsCts.Cancel();
             _logsCts.Dispose();
-            
+
             if (_readDockerTask is { })
                 await _readDockerTask;
-            
+
             if(_stream is { })
                 await _stream.DisposeAsync();
 
@@ -231,7 +231,7 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
                 Client.Dispose();
             }
         }
-        
+
         protected virtual void Dispose(bool disposing)
         {
             if (disposing)
@@ -243,14 +243,14 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
                 _logsCts.Dispose();
                 _readDockerTask?.GetAwaiter().GetResult();
                 _stream?.Dispose();
-                
+
                 try
                 {
                     Client.Containers.StopContainerAsync(
-                            id: ContainerName, 
+                            id: ContainerName,
                             parameters: new ContainerStopParameters())
                         .GetAwaiter().GetResult();
-                    
+
                     Client.Containers.RemoveContainerAsync(ContainerName, new ContainerRemoveParameters { Force = true })
                         .GetAwaiter().GetResult();
                 }
@@ -266,6 +266,6 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
         }
 
         public abstract Task InitializeDbAsync();
-    }    
+    }
 }
 

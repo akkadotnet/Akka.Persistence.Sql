@@ -32,12 +32,11 @@ let versionFromReleaseNotes =
     | Some r -> r.Origin
     | None -> ""
 
-let versionSuffix = 
+let versionSuffix =
     match (getBuildParam "nugetprerelease") with
     | "dev" -> preReleaseVersionSuffix
     | "" -> versionFromReleaseNotes
     | str -> str
-    
 
 // Directories
 let toolsDir = __SOURCE_DIRECTORY__ @@ "tools"
@@ -57,21 +56,20 @@ Target "Clean" (fun _ ->
 )
 
 Target "AssemblyInfo" (fun _ ->
-    XmlPokeInnerText "./src/common.props" "//Project/PropertyGroup/VersionPrefix" releaseNotes.AssemblyVersion    
-    XmlPokeInnerText "./src/common.props" "//Project/PropertyGroup/PackageReleaseNotes" (releaseNotes.Notes |> String.concat "\n")
+    XmlPokeInnerText "./src/Directory.Generated.props" "//Project/PropertyGroup/VersionPrefix" releaseNotes.AssemblyVersion
+    XmlPokeInnerText "./src/Directory.Generated.props" "//Project/PropertyGroup/PackageReleaseNotes" (releaseNotes.Notes |> String.concat "\n")
 )
 
-Target "Build" (fun _ ->          
+Target "Build" (fun _ ->
     DotNetCli.Build
-        (fun p -> 
+        (fun p ->
             { p with
                 Project = solutionFile
-                Configuration = configuration }) // "Rebuild"  
+                Configuration = configuration }) // "Rebuild"
 )
 
-
 //--------------------------------------------------------------------------------
-// Tests targets 
+// Tests targets
 //--------------------------------------------------------------------------------
 module internal ResultHandling =
     let (|OK|Failure|) = function
@@ -92,8 +90,8 @@ module internal ResultHandling =
         >> Option.iter (failBuildWithMessage errorLevel)
 
 Target "RunTests" (fun _ ->
-    let projects = 
-        match (isWindows) with 
+    let projects =
+        match (isWindows) with
         | true -> !! "./src/**/*.Tests.csproj"
                   -- "./src/**/*.Benchmark.*.csproj"
                   -- "./src/**/*.Data.Compatibility.Tests.csproj" // All of the data docker images are Linux only
@@ -110,17 +108,17 @@ Target "RunTests" (fun _ ->
         let result = ExecProcess(fun info ->
             info.FileName <- "dotnet"
             info.WorkingDirectory <- (Directory.GetParent project).FullName
-            info.Arguments <- arguments) (TimeSpan.FromMinutes 30.0) 
-        
-        ResultHandling.failBuildIfXUnitReportedError TestRunnerErrorLevel.Error result  
+            info.Arguments <- arguments) (TimeSpan.FromMinutes 30.0)
+
+        ResultHandling.failBuildIfXUnitReportedError TestRunnerErrorLevel.Error result
 
     projects |> Seq.iter (log)
     projects |> Seq.iter (runSingleProject)
 )
 
 Target "NBench" <| fun _ ->
-    let projects = 
-        match (isWindows) with 
+    let projects =
+        match (isWindows) with
         | true -> !! "./src/**/*.Tests.Performance.csproj"
         | _ -> !! "./src/**/*.Tests.Performance.csproj" // if you need to filter specs for Linux vs. Windows, do it here
 
@@ -134,12 +132,11 @@ Target "NBench" <| fun _ ->
         let result = ExecProcess(fun info ->
             info.FileName <- "dotnet"
             info.WorkingDirectory <- (Directory.GetParent project).FullName
-            info.Arguments <- arguments) (TimeSpan.FromMinutes 30.0) 
-        
-        ResultHandling.failBuildIfXUnitReportedError TestRunnerErrorLevel.Error result
-    
-    projects |> Seq.iter runSingleProject
+            info.Arguments <- arguments) (TimeSpan.FromMinutes 30.0)
 
+        ResultHandling.failBuildIfXUnitReportedError TestRunnerErrorLevel.Error result
+
+    projects |> Seq.iter runSingleProject
 
 //--------------------------------------------------------------------------------
 // Code signing targets
@@ -148,7 +145,7 @@ Target "SignPackages" (fun _ ->
     let canSign = hasBuildParam "SignClientSecret" && hasBuildParam "SignClientUser"
     if(canSign) then
         log "Signing information is available."
-        
+
         let assemblies = !! (outputNuGet @@ "*.*upkg")
 
         let signPath =
@@ -163,7 +160,7 @@ Target "SignPackages" (fun _ ->
             let args = StringBuilder()
                     |> append "sign"
                     |> append "--config"
-                    |> append (__SOURCE_DIRECTORY__ @@ "appsettings.json") 
+                    |> append (__SOURCE_DIRECTORY__ @@ "appsettings.json")
                     |> append "-i"
                     |> append assembly
                     |> append "-r"
@@ -178,7 +175,7 @@ Target "SignPackages" (fun _ ->
                     |> append signingUrl
                     |> toText
 
-            let result = ExecProcess(fun info -> 
+            let result = ExecProcess(fun info ->
                 info.FileName <- signPath
                 info.WorkingDirectory <- __SOURCE_DIRECTORY__
                 info.Arguments <- args) (System.TimeSpan.FromMinutes 5.0) (* Reasonably long-running task. *)
@@ -190,21 +187,21 @@ Target "SignPackages" (fun _ ->
 )
 
 //--------------------------------------------------------------------------------
-// Nuget targets 
+// Nuget targets
 //--------------------------------------------------------------------------------
-
 let overrideVersionSuffix (project:string) =
     match project with
     | _ -> versionSuffix // add additional matches to publish different versions for different projects in solution
-Target "CreateNuget" (fun _ ->    
-    let projects = !! "src/**/*.csproj" 
+
+Target "CreateNuget" (fun _ ->
+    let projects = !! "src/**/*.csproj"
                    -- "src/**/*Tests.csproj" // Don't publish unit tests
                    -- "src/**/*Tests*.csproj"
                    -- "src/**/*.Benchmark.*.csproj"
 
     let runSingleProject project =
         DotNetCli.Pack
-            (fun p -> 
+            (fun p ->
                 { p with
                     Project = project
                     Configuration = configuration
@@ -216,7 +213,7 @@ Target "CreateNuget" (fun _ ->
 )
 
 Target "PublishNuget" (fun _ ->
-    let projects = !! "./bin/nuget/*.nupkg" 
+    let projects = !! "./bin/nuget/*.nupkg"
     let apiKey = getBuildParamOrDefault "nugetkey" ""
     let source = getBuildParamOrDefault "nugetpublishurl" ""
     let symbolSource = source
@@ -225,8 +222,8 @@ Target "PublishNuget" (fun _ ->
     if (not (source = "") && not (apiKey = "") && shouldPublishSymbolsPackages) then
         let runSingleProject project =
             DotNetCli.RunCommand
-                (fun p -> 
-                    { p with 
+                (fun p ->
+                    { p with
                         TimeOut = TimeSpan.FromMinutes 10. })
                 (sprintf "nuget push %s --api-key %s --source %s" project apiKey source)
 
@@ -234,28 +231,27 @@ Target "PublishNuget" (fun _ ->
 )
 
 //--------------------------------------------------------------------------------
-// Documentation 
-//--------------------------------------------------------------------------------  
+// Documentation
+//--------------------------------------------------------------------------------
 Target "DocFx" (fun _ ->
     DotNetCli.Restore (fun p -> { p with Project = solutionFile })
     DotNetCli.Build (fun p -> { p with Project = solutionFile; Configuration = configuration })
 
     let docsPath = "./docs"
 
-    DocFx (fun p -> 
-                { p with 
-                    Timeout = TimeSpan.FromMinutes 30.0; 
-                    WorkingDirectory  = docsPath; 
+    DocFx (fun p ->
+                { p with
+                    Timeout = TimeSpan.FromMinutes 30.0;
+                    WorkingDirectory  = docsPath;
                     DocFxJson = docsPath @@ "docfx.json" })
 )
 
 //--------------------------------------------------------------------------------
 // Cleanup
 //--------------------------------------------------------------------------------
-
 FinalTarget "KillCreatedProcesses" (fun _ ->
     log "Shutting down dotnet build-server"
-    let result = ExecProcess(fun info -> 
+    let result = ExecProcess(fun info ->
             info.FileName <- "dotnet"
             info.WorkingDirectory <- __SOURCE_DIRECTORY__
             info.Arguments <- "build-server shutdown") (System.TimeSpan.FromMinutes 2.0)
@@ -263,9 +259,8 @@ FinalTarget "KillCreatedProcesses" (fun _ ->
 )
 
 //--------------------------------------------------------------------------------
-// Help 
+// Help
 //--------------------------------------------------------------------------------
-
 Target "Help" <| fun _ ->
     List.iter printfn [
       "usage:"
@@ -280,13 +275,12 @@ Target "Help" <| fun _ ->
       " * DocFx         Creates a DocFx-based website for this solution"
       ""
       " Other Targets"
-      " * Help       Display this help" 
+      " * Help       Display this help"
       ""]
 
 //--------------------------------------------------------------------------------
 //  Target dependencies
 //--------------------------------------------------------------------------------
-
 Target "BuildRelease" DoNothing
 Target "All" DoNothing
 Target "Nuget" DoNothing

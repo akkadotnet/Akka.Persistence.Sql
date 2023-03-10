@@ -8,7 +8,6 @@ Please read the documentation carefully. Some features may be specific to use ca
 
 ## Status
 
-
 - Implements the following for `Akka.Persistence.Query`:
     - IPersistenceIdsQuery
     - ICurrentPersistenceIdsQuery
@@ -27,7 +26,6 @@ Working:
 - Persistence
 - Recovery
 - Snapshots
-
 
 ## Features/Architecture:
 
@@ -105,7 +103,6 @@ DB Compatibility:
 - MySql: Not Tested Yet
 - Firebird: Not Tested Yet
 
-
 Compatibility with existing Providers is partially implemented via `table-compatibility-mode` flag. Please note there are not tests for compatibility with Sql.Common Query journals at this time:
 
 - SQL Server: Basic Persist and Recovery tests pass for both Snapshot and Journal.
@@ -168,15 +165,17 @@ Please note that you -must- provide a Connection String (`connection-string`) an
         - multiple round-trips will still be contained in a single transaction.
         - You will want to Keep this number higher than `batch-size`, if you are persisting lots of events with `PersistAll/(Async)`.
     - `prefer-parameters-on-multirow-insert` controls whether Linq2Db will try to use parameters instead of building raw strings for inserts.
-        - Linq2Db is incredibly speed and memory efficent at building binary strings. In most cases, this will be faster than the cost of parsing/marshalling parameters by ADO and the DB.    
+        - Linq2Db is incredibly speed and memory efficent at building binary strings. In most cases, this will be faster than the cost of parsing/marshalling parameters by ADO and the DB.
 - For Table Configuration:
     - Note that Tables/Columns will be created with the casing provided, and selected in the same way (i.e. if using a DB with case sensitive columns, be careful!)
 
 ```hocon
 akka.persistence {
   publish-plugin-commands = on
+
   journal {
     plugin = "akka.persistence.journal.linq2db"
+
     linq2db {
       class = "Akka.Persistence.Sql.Linq2Db.Journal.Linq2DbWriteJournal, Akka.Persistence.Sql.Linq2Db"
       plugin-dispatcher = "akka.persistence.dispatchers.default-plugin-dispatcher"
@@ -184,31 +183,31 @@ akka.persistence {
 
       # This dispatcher will be used for the Stream Materializers
       materializer-dispatcher = "akka.actor.default-dispatcher"
-      
+
       # Provider name is required.
       # Refer to LinqToDb.ProviderName for values
       # Always use a specific version if possible
       # To avoid provider detection performance penalty
       # Don't worry if your DB is newer than what is listed;
       # Just pick the newest one (if yours is still newer)
-      provider-name = "" 
-      
+      provider-name = ""
+
       # If True, Deletes are done by updating Journal records
       # Rather than actual physical deletions
       logical-delete = false
 
       # If true, journal_metadata is created
-      delete-compatibility-mode = true 
+      delete-compatibility-mode = true
 
       # If "sqlite" or "sqlserver", and column names are compatible with
       # Akka.Persistence.Sql Default Column names.
-      # You still -MUST- Set your appropriate table names!                       
+      # You still -MUST- Set your appropriate table names!
       table-compatibility-mode = null
 
       #If more entries than this are pending, writes will be rejected.
       #This setting is higher than JDBC because smaller batch sizes
       #Work better in testing and we want to add more buffer to make up
-      #For that penalty. 
+      #For that penalty.
       buffer-size = 5000
 
       #Batch size refers to the number of items included in a batch to DB
@@ -221,7 +220,7 @@ akka.persistence {
       #In a single round trip to the DB. This is different than the -actual- batch size,
       #And intentionally set larger than batch-size,
       #to help atomicwrites be faster
-      #Note that Linq2Db may use a lower number per round-trip in some cases. 
+      #Note that Linq2Db may use a lower number per round-trip in some cases.
       db-round-trip-max-batch-size = 1000
 
       #Linq2Db by default will use a built string for multi-row inserts
@@ -237,9 +236,9 @@ akka.persistence {
 
       # Number of Concurrennt writers.
       # On larger servers with more cores you can increase this number
-      # But in most cases 2-4 is a safe bet. 
+      # But in most cases 2-4 is a safe bet.
       parallelism = 3
-      
+
       #If a batch is larger than this number,
       #Plugin will utilize Linq2db's
       #Default bulk copy rather than row-by-row.
@@ -248,37 +247,34 @@ akka.persistence {
       #SQL Server testing indicates that under this number of rows, (or thereabouts,)
       #MultiRow is faster than Row-By-Row.
       max-row-by-row-size = 100
-      
+
       #Only set to TRUE if unit tests pass with the connection string you intend to use!
       #This setting will go away once https://github.com/linq2db/linq2db/issues/2466 is resolved
       use-clone-connection = false
-      
-      tables.journal {
 
+      tables.journal {
         #if delete-compatibility-mode is true, both tables are created
         #if delete-compatibility-mode is false, only journal table will be created.
         auto-init = true
 
-        #
         table-name = "journal"
         metadata-table-name = "journal_metadata"
-        
+
         #If you want to specify a schema for your tables, you can do so here.
         schema-name = null
-        
 
-        
         column-names {
           "ordering" = "ordering"
-          "deleted" = "deleted"  
+          "deleted" = "deleted"
           "persistenceId" = "persistence_id"
-          "sequenceNumber" = "sequence_number" 
-          "created" = "created" 
+          "sequenceNumber" = "sequence_number"
+          "created" = "created"
           "tags" = "tags"
           "message" = "message"
-          "identifier" = "identifier" 
+          "identifier" = "identifier"
           "manifest" = "manifest"
         }
+
         sqlserver-compat-column-names {
           "ordering" = "ordering"
           "deleted" = "isdeleted"
@@ -290,6 +286,7 @@ akka.persistence {
           "identifier" = "serializerid"
           "manifest" = "manifest"
         }
+
         sqlite-compat-column-names {
           "ordering" = "ordering"
           "deleted" = "is_deleted"
@@ -301,10 +298,12 @@ akka.persistence {
           "identifier" = "serializer_id"
           "manifest" = "manifest"
         }
+
         metadata-column-names {
           "persistenceId" = "persistenceId"
           "sequenceNumber" = "sequenceNr"
         }
+
         sqlite-compat-metadata-column-names {
           "persistenceId" = "persistence_Id"
           "sequenceNumber" = "sequence_nr"
@@ -313,7 +312,6 @@ akka.persistence {
     }
   }
 }
-
 ```
 
 ### Snapshot Store:
@@ -322,36 +320,37 @@ Please note that you -must- provide a Connection String and Provider name.
 
 - Refer to the Members of `LinqToDb.ProviderName` for included providers.
     - Note: For best performance, one should use the most specific provider name possible. i.e. `LinqToDB.ProviderName.SqlServer2012` instead of `LinqToDB.ProviderName.SqlServer`. Otherwise certain provider detections have to run more frequently which may impair performance slightly.
+
 ```hocon
 akka.persistence {
-  snapshot-store
-    {
-      plugin = "akka.persistence.snapshot-store.linq2db"
-      linq2db {
-        class = "Akka.Persistence.Sql.Linq2Db.Snapshot.Linq2DbSnapshotStore"
-        plugin-dispatcher = "akka.persistence.dispatchers.default-plugin-dispatcher"
-        connection-string = ""
-        provider-name = ""
-        use-clone-connection = false
-          
-        #sqlserver, postgres, sqlite  
-        table-compatibility-mode = false
-        tables.snapshot
-          {
-            schema-name = null
-            table-name = "snapshot"
-            auto-init = true
-            column-names {
-              persistenceId = "persistence_id"
-              sequenceNumber = "sequence_number"
-              created = "created"
-              snapshot = "snapshot"
-              manifest = "manifest"
-              serializerId = "serializer_id"
-            }
-          }
+  snapshot-store {
+    plugin = "akka.persistence.snapshot-store.linq2db"
+
+    linq2db {
+      class = "Akka.Persistence.Sql.Linq2Db.Snapshot.Linq2DbSnapshotStore"
+      plugin-dispatcher = "akka.persistence.dispatchers.default-plugin-dispatcher"
+      connection-string = ""
+      provider-name = ""
+      use-clone-connection = false
+
+      #sqlserver, postgres, sqlite
+      table-compatibility-mode = false
+      tables.snapshot {
+        schema-name = null
+        table-name = "snapshot"
+        auto-init = true
+
+        column-names {
+          persistenceId = "persistence_id"
+          sequenceNumber = "sequence_number"
+          created = "created"
+          snapshot = "snapshot"
+          manifest = "manifest"
+          serializerId = "serializer_id"
+        }
       }
     }
+  }
 }
 ```
 
@@ -380,11 +379,11 @@ The attached build script will automatically do the following based on the conve
 * Any project meeting neither of these conventions will be treated as a NuGet packaging target and its `.nupkg` file will automatically be placed in the `bin\nuget` folder upon running the `build.[cmd|sh] all` command.
 
 ### DocFx for Documentation
-This solution also supports [DocFx](http://dotnet.github.io/docfx/) for generating both API documentation and articles to describe the behavior, output, and usages of your project. 
+This solution also supports [DocFx](http://dotnet.github.io/docfx/) for generating both API documentation and articles to describe the behavior, output, and usages of your project.
 
 All of the relevant articles you wish to write should be added to the `/docs/articles/` folder and any API documentation you might need will also appear there.
 
-All of the documentation will be statically generated and the output will be placed in the `/docs/_site/` folder. 
+All of the documentation will be statically generated and the output will be placed in the `/docs/_site/` folder.
 
 #### Previewing Documentation
 To preview the documentation for this project, execute the following command at the root of this folder:

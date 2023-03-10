@@ -14,13 +14,13 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Internal
     public interface ITestContainer: IDisposable, IAsyncDisposable
     {
         public string ConnectionString { get; }
-        
+
         public virtual string DatabaseName => "akka_persistence_tests";
-        
+
         public string ContainerName { get; }
-        
+
         public event EventHandler<OutputReceivedArgs> OnStdOut;
-        
+
         public DockerClient? Client { get; }
 
         public Task InitializeAsync();

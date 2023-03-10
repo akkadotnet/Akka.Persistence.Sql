@@ -1,41 +1,38 @@
 <Project Sdk="Microsoft.NET.Sdk">
-    <Import Project="..\common.props" />
+  <PropertyGroup>
+    <TargetFramework>$(NetCoreTestVersion)</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
 
-    <PropertyGroup>
-        <IsPackable>false</IsPackable>
-        <TargetFramework>netcoreapp3.1</TargetFramework>
-    </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugType>full</DebugType>
+  </PropertyGroup>
 
-    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-      <DebugType>full</DebugType>
-    </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Akka" />
+    <PackageReference Include="Akka.Persistence.Sqlite" />
+    <PackageReference Include="Akka.Persistence.SqlServer" />
+    <PackageReference Include="Akka.Persistence.PostgreSql" />
+    <PackageReference Include="Akka.Persistence.TCK" />
+    <PackageReference Include="Akka.Persistence.TestKit" />
+    <PackageReference Include="Akka.Serialization.Hyperion" />
+    <PackageReference Include="Docker.DotNet" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="System.Data.SqlClient" />
+    <PackageReference Include="System.Data.SQLite.Core" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
 
-    <ItemGroup>
-        <PackageReference Include="Akka" Version="$(AkkaVersion)" />
-        <PackageReference Include="Akka.Persistence.Sqlite" Version="$(AkkaVersion)" />
-        <PackageReference Include="Akka.Persistence.SqlServer" Version="$(AkkaSqlServerVersion)" />
-        <PackageReference Include="Akka.Persistence.PostgreSql" Version="$(AkkaPostgresSqlVersion)" />
-        <PackageReference Include="Akka.Persistence.TCK" Version="$(AkkaVersion)" />
-        <PackageReference Include="Akka.Persistence.TestKit" Version="$(AkkaVersion)" />
-        <PackageReference Include="Akka.Serialization.Hyperion" Version="$(AkkaVersion)" />
-        <PackageReference Include="Docker.DotNet" Version="$(DockerDotNetVersion)" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
-        <PackageReference Include="System.Data.SqlClient" Version="$(SqlClientVersion)" />
-        <PackageReference Include="System.Data.SQLite.Core" Version="$(SqliteVersion)" />
-        <PackageReference Include="xunit" Version="$(XunitVersion)" />
-        <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitRunnerVersion)">
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-            <PrivateAssets>all</PrivateAssets>
-        </PackageReference>
-        <PackageReference Include="coverlet.collector" Version="$(CoverletVersion)">
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-            <PrivateAssets>all</PrivateAssets>
-        </PackageReference>
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\Akka.Persistence.Linq2Db.Tests.Common\Akka.Persistence.Linq2Db.Tests.Common.csproj" />
-      <ProjectReference Include="..\Akka.Persistence.Sql.Linq2Db\Akka.Persistence.Sql.Linq2Db.csproj" />
-    </ItemGroup>
-
+  <ItemGroup>
+    <ProjectReference Include="..\Akka.Persistence.Linq2Db.Tests.Common\Akka.Persistence.Linq2Db.Tests.Common.csproj" />
+    <ProjectReference Include="..\Akka.Persistence.Sql.Linq2Db\Akka.Persistence.Sql.Linq2Db.csproj" />
+  </ItemGroup>
 </Project>

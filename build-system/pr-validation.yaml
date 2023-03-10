@@ -23,6 +23,7 @@ jobs:
       scriptArgs: all
       outputDirectory: 'bin/nuget'
       artifactName: 'nuget_pack-$(Build.BuildId)'
+
   - template: azure-pipeline.template.yaml
     parameters:
       name: 'linux_pr'
