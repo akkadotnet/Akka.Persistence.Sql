@@ -8,7 +8,7 @@ Please read the documentation carefully. Some features may be specific to use ca
 
 ## Status
 
-- Implements the following for `Akka.Persistence.Query`:
+- Implements the following from `Akka.Persistence.Query`:
     - IPersistenceIdsQuery
     - ICurrentPersistenceIdsQuery
     - IEventsByPersistenceIdQuery
@@ -91,7 +91,7 @@ Working:
 - Tests for Schema Usage
 - Some Akka.NET specfic Journal Queries (those not mentioned above)
 - Cleanup of Configuration classes/fallbacks.
-    - Should still be usable in most common scenarios including multiple configuration instances: see `SqlServerCustomConfigSpec` for test and examples.
+    - Should still be usable in most common scenarios including multiple configuration instances: see [`SqlServerCustomConfigSpec`](src/Akka.Persistence.Sql.Linq2Db.Tests/SqlServer/SQLServerJournalCustomConfigSpec.cs) for test and examples.
 
 DB Compatibility:
 
