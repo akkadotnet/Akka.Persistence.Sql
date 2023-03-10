@@ -1,8 +1,8 @@
 # Akka.Persistence.Linq2Db
 
-A Cross-SQL-DB Engine Akka.Persistence plugin with broad database compatibility thanks to Linq2Db.
+A Cross-SQL-DB Engine Akka.Persistence plugin with broad database compatibility thanks to [Linq2Db](https://linq2db.github.io/).
 
-This is a port of the amazing akka-persistence-jdbc package from Scala, with a few improvements based on C# as well as our choice of data library.
+This is a port of the amazing [akka-persistence-jdbc](https://github.com/akka/akka-persistence-jdbc) package from Scala, with a few improvements based on C# as well as our choice of data library.
 
 Please read the documentation carefully. Some features may be specific to use case and have trade-offs (namely, compatibility modes)
 
@@ -124,7 +124,7 @@ Updated Performance numbers pending.
     - This mode will utilize a `journal_metadata` table containing the last sequence number
     - The main table delete is done the same way regardless of delete compatibility mode
 
-###   *Delete Compatibility mode is expensive.*
+### *Delete Compatibility mode is expensive.*
 
 - Normal Deletes involve first marking the deleted records as deleted, and then deleting them
     - Table compatibility mode adds an additional InsertOrUpdate and Delete
@@ -395,13 +395,7 @@ C:\> serve-docs.cmd
 This will use the built-in `docfx.console` binary that is installed as part of the NuGet restore process from executing any of the usual `build.cmd` or `build.sh` steps to preview the fully-rendered documentation. For best results, do this immediately after calling `build.cmd buildRelease`.
 
 ### Release Notes, Version Numbers, Etc
-This project will automatically populate its release notes in all of its modules via the entries written inside [`RELEASE_NOTES.md`](RELEASE_NOTES.md) and will automatically update the versions of all assemblies and NuGet packages via the metadata included inside [`common.props`](src/common.props).
-
-If you add any new projects to the solution created with this template, be sure to add the following line to each one of them in order to ensure that you can take advantage of `common.props` for standardization purposes:
-
-```
-<Import Project="..\common.props" />
-```
+This project will automatically populate its release notes in all of its modules via the entries written inside [`RELEASE_NOTES.md`](RELEASE_NOTES.md) and will automatically update the versions of all assemblies and NuGet packages via the metadata included inside [`Directory.Build.props`](src/Directory.Build.props).
 
 ### Code Signing via SignService
 This project uses [SignService](https://github.com/onovotny/SignService) to code-sign NuGet packages prior to publication. The `build.cmd` and `build.sh` scripts will automatically download the `SignClient` needed to execute code signing locally on the build agent, but it's still your responsibility to set up the SignService server per the instructions at the linked repository.
