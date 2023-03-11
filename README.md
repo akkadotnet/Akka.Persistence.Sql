@@ -27,7 +27,7 @@ Working:
 - Recovery
 - Snapshots
 
-## Features/Architecture:
+## Features/Architecture
 
 - Akka.Streams used aggressively for tune-able blocking overhead.
     - Up to `parallelism` writers write pushed messages
@@ -76,17 +76,17 @@ Working:
         4. Run Migration App/Script to move existing tags into tag table.
         5. Rolling deploy your system (last one!) with Reads now in 'TagTableOnly' mode.
 
-## Currently Implemented:
+## Currently Implemented
 
 - Journal
-    - With `JournalSpec` and `JournalPerfSpec` passing for MS SQL Server, Microsoft.Data.SQLite, and Postgres
+    - With `JournalSpec` and `JournalPerfSpec` passing for MS SQL Server, Microsoft.Data.SQLite, and PostgreSQL
 - Snapshot Store
-    - With `SnapshotStoreSpec` passing for MS SQL Server, Microsoft.Data.SQLite, Postgres
+    - With `SnapshotStoreSpec` passing for MS SQL Server, Microsoft.Data.SQLite, PostgreSQL
 - Configuration
     - Only Functional tests at this time.
     - Custom provider configurations are supported.
 
-## Incomplete:
+## Incomplete
 
 - Tests for Schema Usage
 - Some Akka.NET specfic Journal Queries (those not mentioned above)
@@ -99,7 +99,7 @@ DB Compatibility:
 - MS SQLite: Tests Pass
 - System.Data.SQLite: Functional tests pass, perf tests partially fail.
 - For whatever reason SDS doesn't cope well here.
-- Postgres: Tests pass
+- PostgreSQL: Tests pass
 - MySql: Not Tested Yet
 - Firebird: Not Tested Yet
 
@@ -108,7 +108,7 @@ Compatibility with existing Providers is partially implemented via `table-compat
 - SQL Server: Basic Persist and Recovery tests pass for both Snapshot and Journal.
     - Still needs Delete tests
 - SQLite: Persist and Recovery tests pass for both Snapshot and Journal.
-- Postgres: Basic Persist and Recovery tests pass for both Snapshot and Journal.
+- PostgreSQL: Basic Persist and Recovery tests pass for both Snapshot and Journal.
     - Only Binary payloads are supported at this time.
     - Note that not all possible permutations of table names have been tested.
         - i.e. there may be concerns around casing
@@ -131,9 +131,9 @@ Updated Performance numbers pending.
 - **This all happens in a transaction**
     - In SQL Server this can cause issues because of pagelocks/etc.
 
-## Configuration:
+## Configuration
 
-### Journal:
+### Journal
 
 Please note that you -must- provide a Connection String (`connection-string`) and Provider name (`provider-name`).
 
@@ -314,7 +314,7 @@ akka.persistence {
 }
 ```
 
-### Snapshot Store:
+### Snapshot Store
 
 Please note that you -must- provide a Connection String and Provider name.
 
@@ -333,7 +333,7 @@ akka.persistence {
       provider-name = ""
       use-clone-connection = false
 
-      # sqlserver, postgres, sqlite
+      # sqlserver, postgresql, sqlite
       table-compatibility-mode = false
       tables.snapshot {
         schema-name = null
@@ -355,6 +355,7 @@ akka.persistence {
 ```
 
 ## Building this solution
+
 To run the build script associated with this solution, execute the following:
 
 **Windows**
@@ -363,7 +364,7 @@ c:\> build.cmd all
 ```
 
 **Linux / OS X**
-```
+```bash
 c:\> build.sh all
 ```
 
@@ -372,6 +373,7 @@ If you need any information on the supported commands, please execute the `build
 This build script is powered by [FAKE](https://fake.build/); please see their API documentation should you need to make any changes to the [`build.fsx`](build.fsx) file.
 
 ### Conventions
+
 The attached build script will automatically do the following based on the conventions of the project names added to this project:
 
 * Any project name ending with `.Tests` will automatically be treated as a [XUnit2](https://xunit.github.io/) project and will be included during the test stages of this build script;
@@ -379,6 +381,7 @@ The attached build script will automatically do the following based on the conve
 * Any project meeting neither of these conventions will be treated as a NuGet packaging target and its `.nupkg` file will automatically be placed in the `bin\nuget` folder upon running the `build.[cmd|sh] all` command.
 
 ### DocFx for Documentation
+
 This solution also supports [DocFx](http://dotnet.github.io/docfx/) for generating both API documentation and articles to describe the behavior, output, and usages of your project.
 
 All of the relevant articles you wish to write should be added to the `/docs/articles/` folder and any API documentation you might need will also appear there.
@@ -386,6 +389,7 @@ All of the relevant articles you wish to write should be added to the `/docs/art
 All of the documentation will be statically generated and the output will be placed in the `/docs/_site/` folder.
 
 #### Previewing Documentation
+
 To preview the documentation for this project, execute the following command at the root of this folder:
 
 ```
@@ -395,9 +399,11 @@ C:\> serve-docs.cmd
 This will use the built-in `docfx.console` binary that is installed as part of the NuGet restore process from executing any of the usual `build.cmd` or `build.sh` steps to preview the fully-rendered documentation. For best results, do this immediately after calling `build.cmd buildRelease`.
 
 ### Release Notes, Version Numbers, Etc
+
 This project will automatically populate its release notes in all of its modules via the entries written inside [`RELEASE_NOTES.md`](RELEASE_NOTES.md) and will automatically update the versions of all assemblies and NuGet packages via the metadata included inside [`Directory.Build.props`](src/Directory.Build.props).
 
 ### Code Signing via SignService
+
 This project uses [SignService](https://github.com/onovotny/SignService) to code-sign NuGet packages prior to publication. The `build.cmd` and `build.sh` scripts will automatically download the `SignClient` needed to execute code signing locally on the build agent, but it's still your responsibility to set up the SignService server per the instructions at the linked repository.
 
 Once you've gone through the ropes of setting up a code-signing server, you'll need to set a few configuration options in your project in order to use the `SignClient`:

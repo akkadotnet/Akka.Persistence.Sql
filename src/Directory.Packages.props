@@ -49,7 +49,7 @@
 
     <!-- PostgreSql dependencies -->
     <ItemGroup>
-      <PackageVersion Include="Akka.Persistence.PostgreSql" Version="$(AkkaPostgresSqlVersion)" />
+      <PackageVersion Include="Akka.Persistence.PostgreSql" Version="$(AkkaPostgreSqlVersion)" />
       <PackageVersion Include="Npgsql" Version="$(PostgreSqlVersion)" />
     </ItemGroup>
 
