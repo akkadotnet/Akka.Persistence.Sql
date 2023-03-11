@@ -35,8 +35,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Akka.Persistence.Linq2Db.HelperLib\Akka.Persistence.Linq2Db.HelperLib.csproj" />
-    <ProjectReference Include="..\Akka.Persistence.Sql.Linq2Db\Akka.Persistence.Sql.Linq2Db.csproj" />
+    <ProjectReference Include="..\Akka.Persistence.Sql.HelperLib\Akka.Persistence.Sql.HelperLib.csproj" />
+    <ProjectReference Include="..\Akka.Persistence.Sql\Akka.Persistence.Sql.csproj" />
   </ItemGroup>
 
   <ItemGroup>

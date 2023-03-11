@@ -8,6 +8,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Akka.Persistence.Sql.Linq2Db\Akka.Persistence.Sql.Linq2Db.csproj" />
+    <ProjectReference Include="..\Akka.Persistence.Sql\Akka.Persistence.Sql.csproj" />
   </ItemGroup>
 </Project>

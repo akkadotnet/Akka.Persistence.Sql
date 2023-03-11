@@ -4,16 +4,22 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <ServerGarbageCollection>false</ServerGarbageCollection>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugType>full</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Akka" />
+    <PackageReference Include="Akka.Persistence.Sqlite" />
+    <PackageReference Include="Akka.Persistence.SqlServer" />
     <PackageReference Include="Akka.Persistence.PostgreSql" />
-    <PackageReference Include="Akka.Persistence.Redis" />
+    <PackageReference Include="Akka.Persistence.TCK" />
+    <PackageReference Include="Akka.Persistence.TestKit" />
+    <PackageReference Include="Akka.Serialization.Hyperion" />
+    <PackageReference Include="Docker.DotNet" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="redis-inside" />
-    <PackageReference Include="JetBrains.dotMemoryUnit" />
+    <PackageReference Include="System.Data.SqlClient" />
+    <PackageReference Include="System.Data.SQLite.Core" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -26,6 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Akka.Persistence.Sql.Linq2Db.Tests\Akka.Persistence.Sql.Linq2Db.Tests.csproj" />
+    <ProjectReference Include="..\Akka.Persistence.Sql.Tests.Common\Akka.Persistence.Sql.Tests.Common.csproj" />
+    <ProjectReference Include="..\Akka.Persistence.Sql\Akka.Persistence.Sql.csproj" />
   </ItemGroup>
 </Project>

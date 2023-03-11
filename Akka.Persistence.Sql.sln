@@ -11,11 +11,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{79D71264
 		build.sh = build.sh
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.Persistence.Sql.Linq2Db.Tests", "src\Akka.Persistence.Sql.Linq2Db.Tests\Akka.Persistence.Sql.Linq2Db.Tests.csproj", "{6EA372D5-DB48-48E7-839A-2E9D18D6CE79}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.Persistence.Sql.Tests", "src\Akka.Persistence.Sql.Tests\Akka.Persistence.Sql.Tests.csproj", "{6EA372D5-DB48-48E7-839A-2E9D18D6CE79}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.Persistence.Sql.Linq2Db", "src\Akka.Persistence.Sql.Linq2Db\Akka.Persistence.Sql.Linq2Db.csproj", "{D10C2941-AD62-4E17-8C2C-4917D4C82B07}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.Persistence.Sql", "src\Akka.Persistence.Sql\Akka.Persistence.Sql.csproj", "{D10C2941-AD62-4E17-8C2C-4917D4C82B07}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.Persistence.Linq2Db.Benchmark.Tests", "src\Akka.Persistence.Linq2Db.Benchmark.Tests\Akka.Persistence.Linq2Db.Benchmark.Tests.csproj", "{6AE959E1-440C-4407-B080-64B1018A96A3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.Persistence.Sql.Benchmark.Tests", "src\Akka.Persistence.Sql.Benchmark.Tests\Akka.Persistence.Sql.Benchmark.Tests.csproj", "{6AE959E1-440C-4407-B080-64B1018A96A3}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_", "_", "{20C26B2D-59EA-421C-9F64-BFFCE3D96260}"
 	ProjectSection(SolutionItems) = preProject
@@ -30,11 +30,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build-system", "build-syste
 		build-system\windows-release.yaml = build-system\windows-release.yaml
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.Persistence.Linq2Db.IndexHelperApp", "src\Akka.Persistence.Linq2Db.IndexHelperApp\Akka.Persistence.Linq2Db.IndexHelperApp.csproj", "{7B03FDD2-45CC-4F83-B23F-66B4EE82437A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.Persistence.Sql.IndexHelperApp", "src\Akka.Persistence.Sql.IndexHelperApp\Akka.Persistence.Sql.IndexHelperApp.csproj", "{7B03FDD2-45CC-4F83-B23F-66B4EE82437A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.Persistence.Linq2Db.HelperLib", "src\Akka.Persistence.Linq2Db.HelperLib\Akka.Persistence.Linq2Db.HelperLib.csproj", "{FD78AE77-C95F-4D5D-90EC-923935BAC580}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.Persistence.Sql.HelperLib", "src\Akka.Persistence.Sql.HelperLib\Akka.Persistence.Sql.HelperLib.csproj", "{FD78AE77-C95F-4D5D-90EC-923935BAC580}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.Persistence.Linq2Db.Data.Compatibility.Tests", "src\Akka.Persistence.Linq2Db.Data.Compatibility.Tests\Akka.Persistence.Linq2Db.Data.Compatibility.Tests.csproj", "{5240D81C-0F6C-4F4A-85A1-6442C6D6ECBF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.Persistence.Sql.Data.Compatibility.Tests", "src\Akka.Persistence.Sql.Data.Compatibility.Tests\Akka.Persistence.Sql.Data.Compatibility.Tests.csproj", "{5240D81C-0F6C-4F4A-85A1-6442C6D6ECBF}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sql Scripts", "Sql Scripts", "{C4AC49FF-9ECF-4D38-A201-1105BBF7E628}"
 EndProject
@@ -66,9 +66,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Benchmarks", "Benchmarks", 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utils", "Utils", "{C59D2898-1994-4C40-B152-1798060051ED}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.Persistence.Linq2Db.TagTableMigration", "src\Akka.Persistence.Linq2Db.TagTableMigration\Akka.Persistence.Linq2Db.TagTableMigration.csproj", "{4ACEF3FD-F5B4-4C07-B85A-AD4D6AB68F4D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.Persistence.Sql.TagTableMigration", "src\Akka.Persistence.Sql.TagTableMigration\Akka.Persistence.Sql.TagTableMigration.csproj", "{4ACEF3FD-F5B4-4C07-B85A-AD4D6AB68F4D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.Persistence.Linq2Db.Tests.Common", "src\Akka.Persistence.Linq2Db.Tests.Common\Akka.Persistence.Linq2Db.Tests.Common.csproj", "{BDF8A537-A9D3-45A4-81EA-4B77DBD544D6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.Persistence.Sql.Tests.Common", "src\Akka.Persistence.Sql.Tests.Common\Akka.Persistence.Sql.Tests.Common.csproj", "{BDF8A537-A9D3-45A4-81EA-4B77DBD544D6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
