@@ -56,7 +56,7 @@ jobs:
         displayName: 'Copy Build Output'
         inputs:
           sourceFolder: ${{ parameters.outputDirectory }}
-          contents: '**\*'
+          contents: '**/*'
           targetFolder: $(Build.ArtifactStagingDirectory)
           continueOnError: false
 
