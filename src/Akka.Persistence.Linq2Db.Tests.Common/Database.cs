@@ -10,9 +10,9 @@ namespace Akka.Persistence.Linq2Db.Tests.Common
     public enum Database
     {
         SqlServer,
-        Postgres,
+        PostgreSql,
         MySql,
-        SqLite,
-        MsSqLite
+        Sqlite,
+        MsSqlite
     }
 }

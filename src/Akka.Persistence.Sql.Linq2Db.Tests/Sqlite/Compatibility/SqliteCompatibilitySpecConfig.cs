@@ -29,7 +29,7 @@ akka.persistence {{
 			table-name = ""{tableName}""
 			auto-initialize = on
 		}}
-	
+
 		linq2db {{
 			class = ""{typeof(Linq2DbSnapshotStore).AssemblyQualifiedName}""
             plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
@@ -39,7 +39,7 @@ akka.persistence {{
             auto-initialize = true
             sqlite {{
                 snapshot {{
-                    table-name = ""{tableName}"" 
+                    table-name = ""{tableName}""
                 }}
             }}
 		}}
@@ -49,7 +49,7 @@ akka.persistence {{
             return ConfigurationFactory.ParseString(specString)
 	            .WithFallback(Linq2DbPersistence.DefaultConfiguration);
         }
-        
+
         public static Configuration.Config InitJournalConfig(string tableName, string metadataTableName, string connectionString)
         {
             var specString = $@"
@@ -77,10 +77,10 @@ akka.persistence {{
             auto-initialize = true
             sqlite {{
                 journal {{
-                    table-name = ""{tableName}"" 
+                    table-name = ""{tableName}""
                 }}
                 metadata {{
-                    table-name = ""{metadataTableName}"" 
+                    table-name = ""{metadataTableName}""
                 }}
 			}}
 		}}

@@ -17,7 +17,7 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
     public sealed class MsSqliteContainer : ITestContainer
     {
         private static SqliteConnection? _heldConnection;
-        
+
         public string ConnectionString { get; }
         public string DatabaseName { get; } = $"linq2db_tests_{Guid.NewGuid():N}";
 
@@ -32,7 +32,7 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
         public MsSqliteContainer()
         {
             ConnectionString = $"Filename=file:memdb-{DatabaseName}.db;Mode=Memory;Cache=Shared";
-            
+
             if(_heldConnection is null)
             {
                 _heldConnection = new SqliteConnection(ConnectionString);
@@ -40,7 +40,7 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
                 GC.KeepAlive(_heldConnection);
             }
         }
-        
+
         public Task InitializeAsync()
         {
             return Task.CompletedTask;
@@ -50,7 +50,7 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
         {
             await using var conn = new SqliteConnection(ConnectionString);
             conn.Open();
-            
+
             await using var cmd = new SqliteCommand
             {
                 CommandText = @"
@@ -63,7 +63,7 @@ DROP TABLE IF EXISTS tags;
 ",
                 Connection = conn
             };
-            
+
             await cmd.ExecuteNonQueryAsync();
         }
 

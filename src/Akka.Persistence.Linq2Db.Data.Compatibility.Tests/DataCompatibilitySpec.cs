@@ -7,7 +7,6 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Akka.Actor;
 using Akka.Hosting;
 using Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Internal;
 using Akka.Persistence.Query;
@@ -31,7 +30,7 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests
         protected override void Setup(AkkaConfigurationBuilder builder, IServiceProvider provider)
         {
         }
-        
+
         [Fact(DisplayName = "Linq2Db should recover data created using other persistence plugins")]
         public async Task RecoveryValidationTest()
         {
@@ -42,7 +41,7 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests
         public async Task PersistenceIdQueryValidationTest()
         {
             var system = TestCluster!.ActorSystems[0];
-            
+
             var readJournal = PersistenceQuery.Get(system)
                 .ReadJournalFor<Linq2DbReadJournal>(Linq2DbReadJournal.Identifier);
 
@@ -88,7 +87,7 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests
         {
             await ValidateTags(TestCluster!.ActorSystems[0], 2);
         }
-        
+
         [Fact(DisplayName = "Linq2Db query events by tag should correctly read tags after event deletion")]
         public async Task TagQueryEventDeletionValidationTest()
         {
@@ -97,7 +96,7 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests
 
             // Truncate all entity events
             await TruncateEventsToLastSnapshot();
-            
+
             // Assert that events were deleted
             var system = TestCluster!.ActorSystems[0];
             var readJournal = PersistenceQuery.Get(system)

@@ -30,14 +30,14 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
                 ["User Id"] = User,
                 ["Password"] = Password
             }.ToString();
-        
+
             Console.WriteLine($"Connection string: [{ConnectionString}]");
         }
 
         public override string ConnectionString { get; }
-        
+
         private int Port { get; } = ThreadLocalRandom.Current.Next(9000, 10000);
-    
+
         private const string User = "postgres";
 
         private const string Password = "postgres";
@@ -51,6 +51,7 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
             {
                 ["5432/tcp"] = new()
             };
+
             parameters.HostConfig = new HostConfig
             {
                 PortBindings = new Dictionary<string, IList<PortBinding>>
@@ -58,16 +59,15 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
                     ["5432/tcp"] = new List<PortBinding> { new() { HostPort = $"{Port}" } }
                 }
             };
+
             parameters.Env = new[]
             {
                 $"POSTGRES_PASSWORD={Password}",
                 $"POSTGRES_USER={User}",
-                $"POSTGRES_DB={DatabaseName}"
-                // "PGDATA=/data"
+                $"POSTGRES_DB={DatabaseName}",
             };
-            //parameters.Cmd = new List<string> { "postgres", "-c", "max_connections=300" };
         }
-    
+
         public override async Task InitializeDbAsync()
         {
             await using var conn = new NpgsqlConnection(ConnectionString);
@@ -88,9 +88,9 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
             {
                 await DoCreateAsync(conn, DatabaseName);
             }
-            
+
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static async Task DoCreateAsync(NpgsqlConnection conn, string databaseName)
         {

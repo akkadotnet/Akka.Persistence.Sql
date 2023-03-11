@@ -26,7 +26,7 @@ akka.persistence {{
 }}");
         }
     }
-    
+
     public static class SqlServerSnapshotSpecConfig
     {
         public static Configuration.Config Create(string connString, string tableName, int batchSize = 100, int parallelism = 2)

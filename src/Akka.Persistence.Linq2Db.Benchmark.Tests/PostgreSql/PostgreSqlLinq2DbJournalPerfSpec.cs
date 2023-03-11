@@ -6,10 +6,10 @@ using LinqToDB;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Linq2Db.Benchmark.Tests.Postgres
+namespace Akka.Persistence.Linq2Db.Benchmark.Tests.PostgreSql
 {
     [Collection("BenchmarkSpec")]
-    public class PostgresLinq2DbJournalPerfSpec : L2dbJournalPerfSpec, IAsyncLifetime
+    public class PostgreSqlLinq2DbJournalPerfSpec : L2dbJournalPerfSpec, IAsyncLifetime
     {
         private static Config Configuration(string connString)
         {
@@ -29,7 +29,7 @@ akka.persistence {{
             warn-on-auto-init-fail = false
             default {{
                 journal {{
-                    table-name = testPerfTable 
+                    table-name = testPerfTable
                 }}
             }}
         }}
@@ -38,14 +38,14 @@ akka.persistence {{
         }
 
         private readonly TestFixture _fixture;
-        
-        public PostgresLinq2DbJournalPerfSpec(ITestOutputHelper output,
-            TestFixture fixture) : base(Configuration(fixture.ConnectionString(Database.Postgres)),
-            nameof(PostgresLinq2DbJournalPerfSpec), output, 40, eventsCount: TestConstants.DockerNumMessages)
+
+        public PostgreSqlLinq2DbJournalPerfSpec(ITestOutputHelper output,
+            TestFixture fixture) : base(Configuration(fixture.ConnectionString(Database.PostgreSql)),
+            nameof(PostgreSqlLinq2DbJournalPerfSpec), output, 40, eventsCount: TestConstants.DockerNumMessages)
         {
             _fixture = fixture;
         }
-        
+
         [Fact]
         public void PersistenceActor_Must_measure_PersistGroup1000()
         {
@@ -54,7 +54,7 @@ akka.persistence {{
 
         public async Task InitializeAsync()
         {
-            await _fixture.InitializeDbAsync(Database.Postgres);
+            await _fixture.InitializeDbAsync(Database.PostgreSql);
         }
 
         public Task DisposeAsync()

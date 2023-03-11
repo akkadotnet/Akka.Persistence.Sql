@@ -35,7 +35,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
         public int ReplayBatchSize { get; }
 
         public int BufferSize { get; }
-        
+
         public bool SqlCommonCompatibilityMode { get; }
         public int DbRoundTripTagBatchSize { get; }
     }

@@ -15,7 +15,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.SqlServer.Compatibility
     public class SqlServerSqlCommonJournalCompatibilitySpec : SqlCommonJournalCompatibilitySpec
     {
         private readonly TestFixture _fixture;
-        
+
         public SqlServerSqlCommonJournalCompatibilitySpec(ITestOutputHelper outputHelper, TestFixture fixture) : base(outputHelper)
         {
             _fixture = fixture;

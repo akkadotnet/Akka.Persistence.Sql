@@ -40,7 +40,7 @@ akka.persistence {{
             table-mapping = sqlite
             plugin-dispatcher = ""akka.actor.default-dispatcher""
             auto-initialize = on
-            connection-string = ""{fixture.ConnectionString(Database.MsSqLite)}""
+            connection-string = ""{fixture.ConnectionString(Database.MsSqlite)}""
             refresh-interval = 200ms
         }}
     }}
@@ -51,19 +51,19 @@ akka.persistence {{
             plugin-dispatcher = ""akka.actor.default-dispatcher""
             table-name = snapshot_store
             auto-initialize = on
-            connection-string = ""{fixture.ConnectionString(Database.MsSqLite)}""
+            connection-string = ""{fixture.ConnectionString(Database.MsSqlite)}""
         }}
     }}
 }}
 akka.persistence.query.journal.linq2db {{
     provider-name = ""{ProviderName.SQLiteMS}""
     table-mapping = sqlite
-    connection-string = ""{fixture.ConnectionString(Database.MsSqLite)}""
+    connection-string = ""{fixture.ConnectionString(Database.MsSqlite)}""
     auto-initialize = on
     write-plugin = ""akka.persistence.journal.linq2db""
 }}
 akka.test.single-expect-default = 10s")
-                    .WithFallback(Linq2DbPersistence.DefaultConfiguration);            
+                    .WithFallback(Linq2DbPersistence.DefaultConfiguration);
         }
 
         /*
@@ -74,16 +74,16 @@ akka.test.single-expect-default = 10s")
         */
 
         private readonly TestFixture _fixture;
-        
+
         public SqlitePersistenceIdsSpec(ITestOutputHelper output, TestFixture fixture) : base(Config(fixture),
             nameof(SqlitePersistenceIdsSpec), output)
         {
             _fixture = fixture;
         }
-        
+
         public async Task InitializeAsync()
         {
-            await _fixture.InitializeDbAsync(Database.MsSqLite);
+            await _fixture.InitializeDbAsync(Database.MsSqlite);
             ReadJournal = Sys.ReadJournalFor<Linq2DbReadJournal>(Linq2DbReadJournal.Identifier);
         }
 

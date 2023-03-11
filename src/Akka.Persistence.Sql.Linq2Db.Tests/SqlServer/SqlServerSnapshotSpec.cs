@@ -1,7 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Akka.Persistence.Linq2Db.Tests.Common;
-using Akka.Persistence.TCK.Journal;
-using LinqToDB;
+using Akka.Persistence.TCK.Snapshot;
 using Xunit;
 using Xunit.Abstractions;
 #if !DEBUG
@@ -14,29 +13,20 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.SqlServer
     [SkipWindows]
 #endif
     [Collection("PersistenceSpec")]
-    public class SqlServerJournalCustomConfigSpec : JournalSpec, IAsyncLifetime
+    public class SqlServerSnapshotSpec : SnapshotStoreSpec, IAsyncLifetime
     {
         private static Configuration.Config Configuration(TestFixture fixture)
-            => Linq2DbJournalDefaultSpecConfig.GetCustomConfig(
-                "customSpec",
-                "customJournalTable", 
-                "customMetadataTable",
-                ProviderName.SqlServer2017, 
-                fixture.ConnectionString(Database.SqlServer),
-                true);
-        
+            => SqlServerSnapshotSpecConfig.Create(fixture.ConnectionString(Database.SqlServer),"snapshotSpec");
+
         private readonly TestFixture _fixture;
-        
-        public SqlServerJournalCustomConfigSpec(ITestOutputHelper output, TestFixture fixture)
-            : base(Configuration(fixture), nameof(SqlServerJournalCustomConfigSpec), output)
+
+        public SqlServerSnapshotSpec(ITestOutputHelper output, TestFixture fixture)
+            : base(Configuration(fixture), nameof(SqlServerSnapshotSpec), output)
         {
             _fixture = fixture;
             //DebuggingHelpers.SetupTraceDump(output);
         }
-        
-        // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
-        protected override bool SupportsSerialization => false;
-        
+
         public async Task InitializeAsync()
         {
             await _fixture.InitializeDbAsync(Database.SqlServer);

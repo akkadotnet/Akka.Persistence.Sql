@@ -12,7 +12,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
         public bool SqlCommonCompatibilityMode { get; }
         public int Parallelism { get; } = 0;
     }
-    
+
     public class SnapshotConfig : IProviderConfig<SnapshotTableConfiguration>
     {
         public SnapshotConfig(Configuration.Config config)
@@ -31,26 +31,26 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
         }
 
         public string ProviderName { get; }
-        
+
         public string ConnectionString { get; }
-        
+
         public SnapshotTableConfiguration TableConfig { get; }
-        
+
         public IDaoConfig IDaoConfig { get; }
-        
+
         public bool UseCloneConnection { get; }
-        
+
         public string DefaultSerializer { get; }
 
         public string UseSharedDb { get; }
 
         public SnapshotPluginConfig PluginConfig { get; }
-        
+
         /// <summary>
         /// Flag determining in in case of event journal or metadata table missing, they should be automatically initialized.
         /// </summary>
         public bool AutoInitialize { get; }
-        
+
         public bool WarnOnAutoInitializeFail { get; }
     }
 }

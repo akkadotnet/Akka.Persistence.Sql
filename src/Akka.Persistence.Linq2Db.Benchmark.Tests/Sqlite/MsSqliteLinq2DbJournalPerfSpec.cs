@@ -14,7 +14,7 @@ namespace Akka.Persistence.Linq2Db.Benchmark.Tests.Sqlite
         
         public MsSqliteLinq2DbJournalPerfSpec(ITestOutputHelper output, TestFixture fixture)
             : base(
-                SqLiteJournalSpecConfig.Create(fixture.ConnectionString(Database.MsSqLite), ProviderName.SQLiteMS), 
+                SqliteJournalSpecConfig.Create(fixture.ConnectionString(Database.MsSqlite), ProviderName.SQLiteMS), 
                 nameof(MsSqliteLinq2DbJournalPerfSpec), output, eventsCount: TestConstants.NumMessages)
         {
             _fixture = fixture;
@@ -22,7 +22,7 @@ namespace Akka.Persistence.Linq2Db.Benchmark.Tests.Sqlite
 
         public async Task InitializeAsync()
         {
-            await _fixture.InitializeDbAsync(Database.MsSqLite);
+            await _fixture.InitializeDbAsync(Database.MsSqlite);
         }
 
         public Task DisposeAsync()

@@ -17,7 +17,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
     public class JournalConfigSpec
     {
         private readonly Configuration.Config _defaultConfig;
-        
+
         public JournalConfigSpec()
         {
             _defaultConfig = Linq2DbPersistence.DefaultConfiguration;
@@ -28,7 +28,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
         {
             var journal = _defaultConfig.GetConfig("akka.persistence.journal.linq2db");
             journal.Should().NotBeNull();
-            
+
             var stringType = journal.GetString("class");
             var type = Type.GetType(stringType);
             type.Should().Be(typeof(Linq2DbWriteJournal));
@@ -65,7 +65,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             var metadataTable = journalTables.GetConfig("metadata");
             metadataTable.GetString("table-name", "invalid").Should().Be("journal_metadata");
         }
-        
+
         [Fact(DisplayName = "Default journal config should contain default values")]
         public void DefaultJournalConfigTest()
         {
@@ -75,7 +75,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             var journal = new JournalConfig(journalHocon);
             // assert default values
             AssertDefaultJournalConfig(journal);
-            
+
             var tableConfig = journal.TableConfig;
             var journalTable = tableConfig.EventJournalTable;
             var metadataTable = tableConfig.MetadataTable;
@@ -83,7 +83,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             tableConfig.SchemaName.Should().BeNullOrEmpty();
             journalTable.Name.Should().Be("journal");
             metadataTable.Name.Should().Be("journal_metadata");
-            
+
             // assert default journal column names
             var journalColumns = journalTable.ColumnNames;
             journalColumns.Ordering.Should().Be("ordering");
@@ -95,7 +95,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             journalColumns.Message.Should().Be("message");
             journalColumns.Identifier.Should().Be("identifier");
             journalColumns.Manifest.Should().Be("manifest");
-            
+
             // assert default metadata column names
             var metaColumns = metadataTable.ColumnNames;
             metaColumns.PersistenceId.Should().Be("persistence_id");
@@ -110,11 +110,11 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
                 .WithFallback(_defaultConfig)
                 .GetConfig("akka.persistence.journal.linq2db");
             journalHocon.Should().NotBeNull();
-            
+
             var journal = new JournalConfig(journalHocon);
             // assert default values
             AssertDefaultJournalConfig(journal);
-            
+
             var tableConfig = journal.TableConfig;
             var journalTable = tableConfig.EventJournalTable;
             var metadataTable = tableConfig.MetadataTable;
@@ -122,7 +122,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             tableConfig.SchemaName.Should().Be("dbo");
             journalTable.Name.Should().Be("EventJournal");
             metadataTable.Name.Should().Be("Metadata");
-            
+
             // assert default journal column names
             var journalColumns = journalTable.ColumnNames;
             journalColumns.Ordering.Should().Be("Ordering");
@@ -134,7 +134,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             journalColumns.Message.Should().Be("Payload");
             journalColumns.Identifier.Should().Be("SerializerId");
             journalColumns.Manifest.Should().Be("Manifest");
-            
+
             // assert default metadata column names
             var metaColumns = metadataTable.ColumnNames;
             metaColumns.PersistenceId.Should().Be("PersistenceId");
@@ -149,11 +149,11 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
                 .WithFallback(_defaultConfig)
                 .GetConfig("akka.persistence.journal.linq2db");
             journalHocon.Should().NotBeNull();
-            
+
             var journal = new JournalConfig(journalHocon);
             // assert default values
             AssertDefaultJournalConfig(journal);
-            
+
             var tableConfig = journal.TableConfig;
             var journalTable = tableConfig.EventJournalTable;
             var metadataTable = tableConfig.MetadataTable;
@@ -161,7 +161,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             tableConfig.SchemaName.Should().BeNullOrEmpty();
             journalTable.Name.Should().Be("event_journal");
             metadataTable.Name.Should().Be("journal_metadata");
-            
+
             // assert default journal column names
             var journalColumns = journalTable.ColumnNames;
             journalColumns.Ordering.Should().Be("ordering");
@@ -173,7 +173,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             journalColumns.Message.Should().Be("payload");
             journalColumns.Identifier.Should().Be("serializer_id");
             journalColumns.Manifest.Should().Be("manifest");
-            
+
             // assert default metadata column names
             var metaColumns = metadataTable.ColumnNames;
             metaColumns.PersistenceId.Should().Be("persistence_id");
@@ -188,11 +188,11 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
                 .WithFallback(_defaultConfig)
                 .GetConfig("akka.persistence.journal.linq2db");
             journalHocon.Should().NotBeNull();
-            
+
             var journal = new JournalConfig(journalHocon);
             // assert default values
             AssertDefaultJournalConfig(journal);
-            
+
             var tableConfig = journal.TableConfig;
             var journalTable = tableConfig.EventJournalTable;
             var metadataTable = tableConfig.MetadataTable;
@@ -212,7 +212,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             journalColumns.Message.Should().Be("payload");
             journalColumns.Identifier.Should().Be("serializer_id");
             journalColumns.Manifest.Should().Be("manifest");
-            
+
             // assert default metadata column names
             var metaColumns = metadataTable.ColumnNames;
             metaColumns.PersistenceId.Should().Be("persistence_id");
@@ -227,15 +227,15 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
                 .WithFallback(_defaultConfig)
                 .GetConfig("akka.persistence.journal.linq2db");
             journalHocon.Should().NotBeNull();
-            
+
             var journal = new JournalConfig(journalHocon);
             // assert default values
             AssertDefaultJournalConfig(journal);
-            
+
             var tableConfig = journal.TableConfig;
             var journalTable = tableConfig.EventJournalTable;
             var metadataTable = tableConfig.MetadataTable;
-            
+
             tableConfig.SchemaName.Should().BeNullOrEmpty();
             journalTable.Name.Should().Be("event_journal");
             metadataTable.Name.Should().Be("metadata");
@@ -251,7 +251,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             journalColumns.Message.Should().Be("payload");
             journalColumns.Identifier.Should().Be("serializer_id");
             journalColumns.Manifest.Should().Be("manifest");
-            
+
             // assert default metadata column names
             var metaColumns = metadataTable.ColumnNames;
             metaColumns.PersistenceId.Should().Be("persistence_id");

@@ -1,8 +1,4 @@
-﻿using Akka.Configuration;
-using Akka.Persistence.Sql.Linq2Db.Journal;
-using Akka.Persistence.Sql.Linq2Db.Journal.Types;
-
-namespace Akka.Persistence.Sql.Linq2Db.Config
+﻿namespace Akka.Persistence.Sql.Linq2Db.Config
 {
     public class JournalConfig : IProviderConfig<JournalTableConfig>
     {
@@ -21,13 +17,13 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
             AutoInitialize = config.GetBoolean("auto-initialize");
             WarnOnAutoInitializeFail = config.GetBoolean("warn-on-auto-init-fail");
         }
-        
+
         public string MaterializerDispatcher { get; }
-        
+
         public string UseSharedDb { get; }
 
         public BaseByteArrayJournalDaoConfig DaoConfig { get; }
-        
+
         public IDaoConfig IDaoConfig => DaoConfig;
 
         public JournalPluginConfig PluginConfig { get; }
@@ -35,40 +31,40 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
         public JournalTableConfig TableConfig { get; }
 
         public string DefaultSerializer { get; }
-        
+
         public string ProviderName { get; }
-        
+
         public string ConnectionString { get; }
-        
+
         public bool UseCloneConnection { get; }
-        
+
         /// <summary>
         /// Flag determining in in case of event journal or metadata table missing, they should be automatically initialized.
         /// </summary>
         public bool AutoInitialize { get; }
-        
+
         public bool WarnOnAutoInitializeFail { get; }
     }
 
     public interface IProviderConfig<TTable>
     {
         string ProviderName { get; }
-        
+
         string ConnectionString { get; }
-        
+
         TTable TableConfig { get; }
-        
+
         IDaoConfig IDaoConfig { get; }
-        
+
         bool UseCloneConnection { get; }
-        
+
         string DefaultSerializer { get; }
     }
 
     public interface IDaoConfig
     {
         bool SqlCommonCompatibilityMode { get; }
-        
+
         int Parallelism { get; }
     }
 }

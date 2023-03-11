@@ -35,14 +35,14 @@ akka.persistence.journal.linq2db {{
     provider-name = ""{ProviderName.SQLiteMS}""
     table-mapping = sqlite
     auto-initialize = on
-    connection-string = ""{fixture.ConnectionString(Database.MsSqLite)}""
+    connection-string = ""{fixture.ConnectionString(Database.MsSqlite)}""
     refresh-interval = 1s
 }}
 akka.persistence.query.journal.linq2db
 {{
     provider-name = ""{ProviderName.SQLiteMS}""
     table-mapping = sqlite
-    connection-string = ""{fixture.ConnectionString(Database.MsSqLite)}""
+    connection-string = ""{fixture.ConnectionString(Database.MsSqlite)}""
     auto-initialize = on
 }}
 akka.test.single-expect-default = 10s")
@@ -50,15 +50,15 @@ akka.test.single-expect-default = 10s")
         }
 
         private readonly TestFixture _fixture;
-        
+
         public SqliteEventsByTagSpec(ITestOutputHelper output, TestFixture fixture) : base(Config(fixture), nameof(SqliteEventsByTagSpec), output)
         {
             _fixture = fixture;
         }
-        
+
         public async Task InitializeAsync()
         {
-            await _fixture.InitializeDbAsync(Database.MsSqLite);
+            await _fixture.InitializeDbAsync(Database.MsSqlite);
             ReadJournal = Sys.ReadJournalFor<Linq2DbReadJournal>(Linq2DbReadJournal.Identifier);
         }
 

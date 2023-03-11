@@ -6,9 +6,9 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
     public class MetadataTableColumnNames: IEquatable<MetadataTableColumnNames>
     {
         public string PersistenceId { get; }
-        
+
         public string SequenceNumber { get; }
-        
+
         public MetadataTableColumnNames(Configuration.Config config)
         {
             var cfg = config.GetConfig("columns");

@@ -6,7 +6,7 @@ using Xunit.Abstractions;
 using Akka.Persistence.Sql.Linq2Db.Tests.Internal.Xunit;
 #endif
 
-namespace Akka.Persistence.Sql.Linq2Db.Tests.Postgres.Compatibility
+namespace Akka.Persistence.Sql.Linq2Db.Tests.PostgreSql.Compatibility
 {
 #if !DEBUG
     [SkipWindows]
@@ -15,14 +15,14 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Postgres.Compatibility
     public class PostgreSqlCommonJournalCompatibilitySpec : SqlCommonJournalCompatibilitySpec
     {
         private readonly TestFixture _fixture;
-        
+
         protected override Configuration.Config Config { get; }
 
         protected override string OldJournal => "akka.persistence.journal.postgresql";
 
         protected override string NewJournal => "akka.persistence.journal.linq2db";
 
-        public PostgreSqlCommonJournalCompatibilitySpec(ITestOutputHelper output, TestFixture fixture) 
+        public PostgreSqlCommonJournalCompatibilitySpec(ITestOutputHelper output, TestFixture fixture)
             : base( output)
         {
             _fixture = fixture;
@@ -32,7 +32,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Postgres.Compatibility
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            await _fixture.InitializeDbAsync(Database.Postgres);
+            await _fixture.InitializeDbAsync(Database.PostgreSql);
         }
     }
 }

@@ -4,7 +4,6 @@ using Akka.Configuration;
 using Akka.Persistence.Linq2Db.HelperLib;
 using Akka.Persistence.Sql.Linq2Db;
 using Akka.Persistence.Sql.Linq2Db.Config;
-using Akka.Persistence.Sql.Linq2Db.Tests;
 using CommandLine;
 using FluentMigrator.Expressions;
 using FluentMigrator.Runner.Generators;
@@ -16,9 +15,7 @@ using FluentMigrator.Runner.Generators.Postgres92;
 using FluentMigrator.Runner.Generators.SQLite;
 using FluentMigrator.Runner.Generators.SqlServer;
 using FluentMigrator.Runner.Processors.Postgres;
-using LinqToDB;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 
 namespace Akka.Persistence.Linq2Db.IndexHelperApp
 {
@@ -45,9 +42,9 @@ namespace Akka.Persistence.Linq2Db.IndexHelperApp
         }
 
         private static void GeneratePerOptions(
-            Options opts, 
+            Options opts,
             JournalIndexHelper helper,
-            JournalConfig journalConf, 
+            JournalConfig journalConf,
             GenericGenerator generator)
         {
             if (opts.GeneratePidSeqNo)
@@ -87,7 +84,7 @@ namespace Akka.Persistence.Linq2Db.IndexHelperApp
 
         private static void GenerateWithHeaderAndFooter(
             GenericGenerator generator,
-            CreateIndexExpression expr, 
+            CreateIndexExpression expr,
             string indexType)
         {
             Console.WriteLine("-------");
@@ -100,11 +97,12 @@ namespace Akka.Persistence.Linq2Db.IndexHelperApp
         private static GenericGenerator GetGenerator(string dbArg)
         {
             const StringComparison comp = StringComparison.InvariantCultureIgnoreCase;
+
             return dbArg switch
             {
                 _ when dbArg.StartsWith("sqlserver", comp) => new SqlServer2008Generator(),
                 _ when dbArg.Contains("sqlite", comp) => new SQLiteGenerator(),
-                _ when dbArg.Contains("postgres", comp) =>
+                _ when dbArg.Contains("postgresql", comp) =>
                     new Postgres92Generator(
                         new PostgresQuoter(new PostgresOptions()),
                         new OptionsWrapper<GeneratorOptions>(new GeneratorOptions())),

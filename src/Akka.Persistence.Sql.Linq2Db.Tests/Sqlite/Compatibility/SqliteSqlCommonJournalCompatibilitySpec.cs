@@ -9,12 +9,12 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Sqlite.Compatibility
     public class SqliteSqlCommonJournalCompatibilitySpec : SqlCommonJournalCompatibilitySpec
     {
         private readonly TestFixture _fixture;
-        
+
         public SqliteSqlCommonJournalCompatibilitySpec(ITestOutputHelper outputHelper, TestFixture fixture) : base(outputHelper)
         {
             _fixture = fixture;
             Config = SqliteCompatibilitySpecConfig.InitJournalConfig(
-                "journal_compat", "journal_metadata_compat", _fixture.ConnectionString(Database.MsSqLite));
+                "journal_compat", "journal_metadata_compat", _fixture.ConnectionString(Database.MsSqlite));
         }
 
         protected override string OldJournal => "akka.persistence.journal.sqlite";
@@ -26,7 +26,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Sqlite.Compatibility
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            await _fixture.InitializeDbAsync(Database.MsSqLite);
+            await _fixture.InitializeDbAsync(Database.MsSqlite);
         }
     }
 }

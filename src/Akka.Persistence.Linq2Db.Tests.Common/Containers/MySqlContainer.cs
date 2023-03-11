@@ -30,20 +30,20 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
                 ["User Id"] = User,
                 ["Password"] = Password
             }.ToString();
-        
+
             Console.WriteLine($"Connection string: [{ConnectionString}]");
         }
 
         public override string ConnectionString { get; }
-        
+
         private int Port { get; } = ThreadLocalRandom.Current.Next(9000, 10000);
-    
+
         private const string User = "root";
 
         private const string Password = "Password12!";
 
         protected override string ReadyMarker => "ready for connections. Version";
-    
+
         protected override void ConfigureContainer(CreateContainerParameters parameters)
         {
             parameters.ExposedPorts = new Dictionary<string, EmptyStruct>
@@ -63,7 +63,7 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
                 $"MYSQL_DATABASE={DatabaseName}",
             };
         }
-    
+
         public override async Task InitializeDbAsync()
         {
             await using var conn = new MySqlConnection(ConnectionString);
@@ -86,7 +86,7 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
                 await DoCreateAsync(conn, DatabaseName);
             }
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static async Task DoCreateAsync(MySqlConnection conn, string databaseName)
         {
@@ -113,8 +113,8 @@ DROP TABLE IF EXISTS tags;
 DROP TABLE IF EXISTS snapshot;",
                 Connection = conn
             };
-            
+
             await cmd.ExecuteNonQueryAsync();
-        }        
+        }
     }
 }

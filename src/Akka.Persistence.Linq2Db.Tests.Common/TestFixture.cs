@@ -23,9 +23,9 @@ namespace Akka.Persistence.Linq2Db.Tests.Common
             {
                 [Database.SqlServer] = new SqlServerContainer(),
                 [Database.MySql] = new MySqlContainer(),
-                [Database.Postgres] = new PostgreSqlContainer(),
-                [Database.SqLite] = new SqliteContainer(),
-                [Database.MsSqLite] = new MsSqliteContainer()
+                [Database.PostgreSql] = new PostgreSqlContainer(),
+                [Database.Sqlite] = new SqliteContainer(),
+                [Database.MsSqlite] = new MsSqliteContainer()
             };
         }
 

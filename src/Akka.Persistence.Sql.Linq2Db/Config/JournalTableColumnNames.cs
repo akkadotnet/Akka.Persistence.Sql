@@ -27,15 +27,15 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
         public string Message { get; }
         public string Identifier { get; }
         public string Manifest { get; }
-        
+
         public bool Equals(JournalTableColumnNames other)
         {
             return other is { } &&
-                Ordering == other.Ordering && 
+                Ordering == other.Ordering &&
                 Deleted == other.Deleted &&
                 PersistenceId == other.PersistenceId &&
                 SequenceNumber == other.SequenceNumber &&
-                Created == other.Created && 
+                Created == other.Created &&
                 Tags == other.Tags &&
                 Message == other.Message &&
                 Identifier == other.Identifier &&

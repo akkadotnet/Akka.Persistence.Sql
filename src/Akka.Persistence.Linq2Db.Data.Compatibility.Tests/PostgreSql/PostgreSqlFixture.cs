@@ -26,13 +26,13 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.PostgreSql
 
         private string _connectionString = "";
         public override string ConnectionString => _connectionString;
-        
+
         private int Port { get; } = ThreadLocalRandom.Current.Next(9000, 10000);
-    
+
         private string User { get; } = "postgres";
-    
+
         private string Password { get; } = "postgres";
-    
+
         protected override string ReadyMarker => "ready to accept connections";
 
         protected override void ConfigureContainer(CreateContainerParameters parameters)
@@ -41,6 +41,7 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.PostgreSql
             {
                 {"5432/tcp", new ()}
             };
+
             parameters.HostConfig = new HostConfig
             {
                 PortBindings = new Dictionary<string, IList<PortBinding>>
@@ -48,15 +49,14 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.PostgreSql
                     ["5432/tcp"] = new List<PortBinding> { new() { HostPort = $"{Port}" } }
                 }
             };
+
             parameters.Env = new[]
             {
                 $"POSTGRES_PASSWORD={Password}",
                 $"POSTGRES_USER={User}",
-                // "PGDATA=/data"
             };
-            //parameters.Cmd = new List<string> { "postgres", "-c", "max_connections=300" };
         }
-    
+
         protected override Task AfterContainerStartedAsync()
         {
             var builder = new DbConnectionStringBuilder
@@ -69,9 +69,9 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.PostgreSql
             };
 
             _connectionString = builder.ToString();
-        
+
             Console.WriteLine($"Connection string: [{_connectionString}]");
-            
+
             return Task.CompletedTask;
         }
 
