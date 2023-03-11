@@ -42,7 +42,7 @@
     <AkkaMySqlVersion>1.4.42</AkkaMySqlVersion>
     <MySqlVersion>8.0.32</MySqlVersion>
 
-    <FluentMigratorVersion>3.3.1</FluentMigratorVersion>
+    <FluentMigratorVersion>3.3.2</FluentMigratorVersion>
     <DockerDotNetVersion>3.125.12</DockerDotNetVersion>
     <TestSdkVersion>17.4.1</TestSdkVersion>
     <XunitVersion>2.4.2</XunitVersion>
