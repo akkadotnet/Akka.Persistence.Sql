@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using Docker.DotNet;
 using Xunit;
 
-namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Internal
+namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
 {
     public interface ITestContainer: IDisposable, IAsyncDisposable
     {

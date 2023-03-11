@@ -8,7 +8,7 @@ using Npgsql;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.PostgreSql
+namespace Akka.Persistence.Sql.Data.Compatibility.Tests.PostgreSql
 {
     [Collection("SqlCompatSpec")]
     public class PostgreSqlScriptCompatibilitySpec : SqlScriptCompatibilitySpec<PostgreSqlFixture>

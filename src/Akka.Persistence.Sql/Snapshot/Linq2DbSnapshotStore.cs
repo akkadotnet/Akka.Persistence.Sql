@@ -4,37 +4,37 @@ using Akka.Actor;
 using Akka.Configuration;
 using Akka.Event;
 using Akka.Persistence.Snapshot;
-using Akka.Persistence.Sql.Linq2Db.Config;
-using Akka.Persistence.Sql.Linq2Db.Db;
-using Akka.Persistence.Sql.Linq2Db.Journal;
-using Akka.Persistence.Sql.Linq2Db.Utility;
+using Akka.Persistence.Sql.Config;
+using Akka.Persistence.Sql.Db;
+using Akka.Persistence.Sql.Journal;
+using Akka.Persistence.Sql.Utility;
 using Akka.Streams;
 using Akka.Util;
 
-namespace Akka.Persistence.Sql.Linq2Db.Snapshot
+namespace Akka.Persistence.Sql.Snapshot
 {
     public class Linq2DbSnapshotStore : SnapshotStore
     {
         [Obsolete(message: "Use Linq2DbPersistence.Get(ActorSystem).DefaultConfig instead")]
         public static readonly Configuration.Config DefaultConfiguration =
-            ConfigurationFactory.FromResource<Linq2DbSnapshotStore>("Akka.Persistence.Sql.Linq2Db.snapshot.conf");
-        
+            ConfigurationFactory.FromResource<Linq2DbSnapshotStore>("Akka.Persistence.Sql.snapshot.conf");
+
         private readonly SnapshotConfig _snapshotConfig;
-        
+
         private readonly ByteArraySnapshotDao _dao;
 
         public Linq2DbSnapshotStore(Configuration.Config snapshotConfig)
         {
             var config = snapshotConfig.WithFallback(Linq2DbPersistence.DefaultSnapshotConfiguration);
-            
+
             _snapshotConfig = new SnapshotConfig(config);
-            
+
             _dao = new ByteArraySnapshotDao(
                 connectionFactory: new AkkaPersistenceDataConnectionFactory(_snapshotConfig),
                 snapshotConfig: _snapshotConfig, serialization: Context.System.Serialization,
-                mat: Materializer.CreateSystemMaterializer((ExtendedActorSystem)Context.System), 
+                mat: Materializer.CreateSystemMaterializer((ExtendedActorSystem)Context.System),
                 logger: Context.GetLogger());
-            
+
             if (_snapshotConfig.AutoInitialize)
             {
                 try
@@ -48,7 +48,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Snapshot
                 }
             }
         }
-        
+
         protected override async Task<SelectedSnapshot> LoadAsync(string persistenceId, SnapshotSelectionCriteria criteria)
         {
             switch (criteria.MaxSequenceNr)
@@ -61,7 +61,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Snapshot
                 {
                     return criteria.MaxTimeStamp == DateTime.MaxValue
                         ? (await _dao.SnapshotForMaxSequenceNr(
-                            persistenceId: persistenceId, 
+                            persistenceId: persistenceId,
                             sequenceNr: criteria.MaxSequenceNr)).GetOrElse(null)
                         : (await _dao.SnapshotForMaxSequenceNrAndMaxTimestamp(
                             persistenceId: persistenceId,

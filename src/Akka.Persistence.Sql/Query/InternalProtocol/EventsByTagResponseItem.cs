@@ -1,6 +1,6 @@
 ﻿using System.Collections.Immutable;
 
-namespace Akka.Persistence.Sql.Linq2Db.Query.InternalProtocol
+namespace Akka.Persistence.Sql.Query.InternalProtocol
 {
     public sealed class EventsByTagResponseItem
     {

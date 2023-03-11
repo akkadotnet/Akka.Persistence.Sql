@@ -4,7 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Sqlite
+namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Sqlite
 {
     public sealed class SqliteSpecSettings: TestSettings
     {
@@ -13,7 +13,7 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Sqlite
         private SqliteSpecSettings()
         {
         }
-        
+
         public override string ProviderName => LinqToDB.ProviderName.SQLite;
 
         public override string TableMapping => "sqlite";

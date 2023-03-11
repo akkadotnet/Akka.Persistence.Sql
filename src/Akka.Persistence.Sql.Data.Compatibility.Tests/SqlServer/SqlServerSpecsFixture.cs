@@ -8,12 +8,12 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading.Tasks;
-using Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Internal;
+using Akka.Persistence.Sql.Data.Compatibility.Tests.Internal;
 using Akka.Util;
 using Docker.DotNet.Models;
 using Xunit;
 
-namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.SqlServer
+namespace Akka.Persistence.Sql.Data.Compatibility.Tests.SqlServer
 {
     /// <summary>
     ///     Fixture used to run SQL Server
@@ -26,15 +26,15 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.SqlServer
 
         private string _connectionString = "";
         public override string ConnectionString => _connectionString;
-        
+
         private int Port { get; } = ThreadLocalRandom.Current.Next(9000, 10000);
-    
+
         private string User { get; } = "sa";
-    
+
         private string Password { get; } = "Password12!";
-    
+
         protected override string ReadyMarker => "Recovery is complete.";
-    
+
         protected override void ConfigureContainer(CreateContainerParameters parameters)
         {
             parameters.ExposedPorts = new Dictionary<string, EmptyStruct>
@@ -55,7 +55,7 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.SqlServer
                 "MSSQL_PID=Express"
             };
         }
-    
+
         protected override Task AfterContainerStartedAsync()
         {
             var builder = new DbConnectionStringBuilder
@@ -68,9 +68,9 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.SqlServer
             };
 
             _connectionString = builder.ToString();
-        
+
             Console.WriteLine($"Connection string: [{_connectionString}]");
-            
+
             return Task.CompletedTask;
         }
 

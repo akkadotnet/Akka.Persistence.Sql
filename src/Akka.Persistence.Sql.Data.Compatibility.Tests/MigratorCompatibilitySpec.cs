@@ -6,13 +6,12 @@
 
 using System;
 using System.Threading.Tasks;
-using Akka.Configuration;
 using Akka.Hosting;
-using Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Internal;
-using Akka.Persistence.Linq2Db.HelperLib;
+using Akka.Persistence.Sql.Data.Compatibility.Tests.Internal;
+using Akka.Persistence.Sql.HelperLib;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests
+namespace Akka.Persistence.Sql.Data.Compatibility.Tests
 {
     public abstract class MigratorCompatibilitySpec<T>: DataCompatibilitySpec<T> where T: ITestContainer, new()
     {
@@ -20,7 +19,7 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests
         {
         }
 
-        private readonly Config _config = @"
+        private readonly Configuration.Config _config = @"
 akka.persistence.journal.linq2db.tag-write-mode = Both
 akka.persistence.query.journal.linq2db.tag-read-mode = TagTable";
 

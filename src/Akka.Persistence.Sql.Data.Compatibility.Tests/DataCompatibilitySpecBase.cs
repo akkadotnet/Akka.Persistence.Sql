@@ -11,13 +11,11 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Cluster.Sharding;
 using Akka.Cluster.Tools.Singleton;
-using Akka.Configuration;
 using Akka.Hosting;
-using Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Internal;
+using Akka.Persistence.Sql.Data.Compatibility.Tests.Internal;
 using Akka.Persistence.Query;
 using Akka.Persistence.Sql.Compat.Common;
-using Akka.Persistence.Sql.Linq2Db;
-using Akka.Persistence.Sql.Linq2Db.Query;
+using Akka.Persistence.Sql.Query;
 using Akka.Streams;
 using FluentAssertions;
 using LanguageExt.UnitsOfMeasure;
@@ -25,7 +23,7 @@ using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
-namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests
+namespace Akka.Persistence.Sql.Data.Compatibility.Tests
 {
     public abstract class TestSettings
     {
@@ -50,9 +48,9 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests
             Fixture = new T();
         }
 
-        protected Config Config()
+        protected Configuration.Config Config()
         {
-            return ((Config) $@"
+            return ((Configuration.Config) $@"
 akka.persistence {{
 	journal {{
 		plugin = ""akka.persistence.journal.linq2db""

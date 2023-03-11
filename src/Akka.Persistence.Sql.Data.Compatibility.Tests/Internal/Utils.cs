@@ -7,7 +7,7 @@
 using System;
 using Akka.Persistence.Journal;
 
-namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Internal
+namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
 {
     public static class Utils
     {
@@ -22,7 +22,7 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Internal
         {
             if (msg is null)
                 throw new ArgumentNullException(nameof(msg));
-        
+
             return (value % TaggedVariants) switch
             {
                 0 => msg,
@@ -33,6 +33,6 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Internal
 
         public static string ToEntityId(this int msg)
             => ((msg / 3) % MaxEntities).ToString();
-    }    
+    }
 }
 

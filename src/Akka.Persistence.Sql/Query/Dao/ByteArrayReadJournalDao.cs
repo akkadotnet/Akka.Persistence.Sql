@@ -1,11 +1,11 @@
 ﻿using Akka.Actor;
-using Akka.Persistence.Sql.Linq2Db.Config;
-using Akka.Persistence.Sql.Linq2Db.Db;
-using Akka.Persistence.Sql.Linq2Db.Journal.Types;
-using Akka.Persistence.Sql.Linq2Db.Serialization;
+using Akka.Persistence.Sql.Config;
+using Akka.Persistence.Sql.Db;
+using Akka.Persistence.Sql.Journal.Types;
+using Akka.Persistence.Sql.Serialization;
 using Akka.Streams;
 
-namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
+namespace Akka.Persistence.Sql.Query.Dao
 {
     public class ByteArrayReadJournalDao : BaseByteReadArrayJournalDao
     {
@@ -14,7 +14,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             IMaterializer materializer,
             AkkaPersistenceDataConnectionFactory connectionFactory,
             ReadJournalConfig readJournalConfig,
-            FlowPersistentReprSerializer<JournalRow> serializer) 
+            FlowPersistentReprSerializer<JournalRow> serializer)
             : base(scheduler, materializer, connectionFactory, readJournalConfig, serializer)
         {
         }

@@ -6,7 +6,7 @@
 
 using Akka.Configuration;
 
-namespace Akka.Persistence.Linq2Db.TagTableMigration;
+namespace Akka.Persistence.Sql.TagTableMigration;
 
 public enum DatabaseType
 {
@@ -74,8 +74,8 @@ public static class Extensions
             _ => throw new ArgumentException($"Unknown provider type: {type}")
         };
 
-    public static Config ToHocon(this Options opt)
-        => (Config)$@"
+    public static Configuration.Config ToHocon(this Options opt)
+        => (Configuration.Config)$@"
 akka.persistence {{
 	journal {{
 		plugin = ""akka.persistence.journal.linq2db""

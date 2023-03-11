@@ -1,18 +1,18 @@
 ﻿using Akka.Configuration;
-using Akka.Persistence.Sql.Linq2Db.Journal;
+using Akka.Persistence.Sql.Journal;
 
-namespace Akka.Persistence.Sql.Linq2Db.Tests
+namespace Akka.Persistence.Sql.Tests
 {
     public static class Linq2DbJournalDefaultSpecConfig
     {
         public static string CustomConfig(
             string customJournalName,
-            string journalTableName, 
+            string journalTableName,
             string metadataTableName,
             string providerName,
             string connectionString) => $@"
 akka.persistence.journal.{customJournalName} {{
-    class = ""Akka.Persistence.Sql.Linq2Db.Journal.Linq2DbWriteJournal, Akka.Persistence.Sql.Linq2Db""
+    class = ""Akka.Persistence.Sql.Journal.Linq2DbWriteJournal, Akka.Persistence.Sql""
     provider-name = ""{providerName}""
     connection-string = ""{connectionString}""
     auto-initialize = true
@@ -25,7 +25,7 @@ akka.persistence.journal.{customJournalName} {{
         }}
     }}
 }}";
-        
+
         public static string JournalBaseConfig(
             string tableName,
             string metadataTableName,
@@ -48,23 +48,23 @@ akka.persistence.journal.linq2db {{
         public static Configuration.Config GetCustomConfig(
             string configName,
             string journalTableName,
-            string metadataTableName, 
+            string metadataTableName,
             string providerName,
-            string connectionString, 
+            string connectionString,
             bool asDefault)
         {
             return ConfigurationFactory.ParseString(
                 CustomConfig(
                     configName,
-                    journalTableName, 
-                    metadataTableName, 
+                    journalTableName,
+                    metadataTableName,
                     providerName,
                     connectionString) + (asDefault ? $@"
 akka{{
   persistence {{
     journal {{
       plugin = akka.persistence.journal.{configName}
-    }}      
+    }}
   }}
 }}" : ""));
         }

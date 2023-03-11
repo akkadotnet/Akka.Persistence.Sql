@@ -7,7 +7,7 @@
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.SqlServer
+namespace Akka.Persistence.Sql.Data.Compatibility.Tests.SqlServer
 {
     [Collection("SqlCompatSpec")]
     public class SqlServerMigratorCompatibilitySpec: MigratorCompatibilitySpec<SqlServerFixture>

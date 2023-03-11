@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace Akka.Persistence.Sql.Linq2Db.Journal.Types
+namespace Akka.Persistence.Sql.Journal.Types
 {
     public sealed class WriteFinished
     {
@@ -9,9 +9,9 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Types
             PersistenceId = persistenceId;
             Future = future;
         }
-        
+
         public string PersistenceId { get; }
-        
+
         public Task Future { get; }
     }
 }

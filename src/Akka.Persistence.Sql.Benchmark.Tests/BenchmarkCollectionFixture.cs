@@ -4,14 +4,14 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using Akka.Persistence.Linq2Db.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common;
 using Xunit;
 
-namespace Akka.Persistence.Linq2Db.Benchmark.Tests
+namespace Akka.Persistence.Sql.Benchmark.Tests
 {
     [CollectionDefinition("BenchmarkSpec")]
     public class BenchmarkCollectionFixture: ICollectionFixture<TestFixture>
     {
-        
+
     }
 }

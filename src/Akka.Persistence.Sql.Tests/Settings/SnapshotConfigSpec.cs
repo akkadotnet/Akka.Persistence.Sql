@@ -6,18 +6,18 @@
 
 using System;
 using Akka.Configuration;
-using Akka.Persistence.Sql.Linq2Db.Config;
-using Akka.Persistence.Sql.Linq2Db.Journal.Dao;
-using Akka.Persistence.Sql.Linq2Db.Snapshot;
+using Akka.Persistence.Sql.Config;
+using Akka.Persistence.Sql.Journal.Dao;
+using Akka.Persistence.Sql.Snapshot;
 using FluentAssertions;
 using Xunit;
 
-namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
+namespace Akka.Persistence.Sql.Tests.Settings
 {
     public class SnapshotConfigSpec
     {
         private readonly Configuration.Config _defaultConfig;
-        
+
         public SnapshotConfigSpec()
         {
             _defaultConfig = Linq2DbPersistence.DefaultConfiguration;
@@ -28,7 +28,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
         {
             var snapshot = _defaultConfig.GetConfig("akka.persistence.snapshot-store.linq2db");
             snapshot.Should().NotBeNull();
-            
+
             var stringType = snapshot.GetString("class");
             var type = Type.GetType(stringType);
             type.Should().Be(typeof(Linq2DbSnapshotStore));
@@ -41,18 +41,18 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             snapshot.GetString("table-mapping", "invalid").Should().Be("default");
             snapshot.GetString("serializer", "invalid").Should().BeNullOrEmpty();
             snapshot.GetString("dao", "invalid").Should()
-                .Be("Akka.Persistence.Sql.Linq2Db.Snapshot.ByteArraySnapshotDao, Akka.Persistence.Sql.Linq2Db");
+                .Be("Akka.Persistence.Sql.Snapshot.ByteArraySnapshotDao, Akka.Persistence.Sql");
             snapshot.GetBoolean("auto-initialize").Should().BeFalse();
             snapshot.GetBoolean("warn-on-auto-init-fail").Should().BeTrue();
-            
+
             var snapshotConfig = snapshot.GetConfig("default");
             snapshotConfig.Should().NotBeNull();
             snapshotConfig.GetString("schema-name", "invalid").Should().BeNullOrEmpty();
-            
+
             var table = snapshotConfig.GetConfig("snapshot");
             table.GetString("table-name", "invalid").Should().Be("snapshot");
         }
-        
+
         [Fact(DisplayName = "Default snapshot config should contain default values")]
         public void DefaultSnapshotConfigTest()
         {
@@ -62,7 +62,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             var snapshot = new SnapshotConfig(snapshotHocon);
             // assert default values
             AssertDefaultSnapshotConfig(snapshot);
-            
+
             var tableConfig = snapshot.TableConfig;
             tableConfig.SchemaName.Should().BeNullOrEmpty();
             tableConfig.SnapshotTable.Name.Should().Be("snapshot");
@@ -89,7 +89,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             var snapshot = new SnapshotConfig(snapshotHocon);
             // assert default values
             AssertDefaultSnapshotConfig(snapshot);
-            
+
             var tableConfig = snapshot.TableConfig;
             tableConfig.SchemaName.Should().Be("dbo");
             tableConfig.SnapshotTable.Name.Should().Be("SnapshotStore");
@@ -116,7 +116,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             var snapshot = new SnapshotConfig(snapshotHocon);
             // assert default values
             AssertDefaultSnapshotConfig(snapshot);
-            
+
             var tableConfig = snapshot.TableConfig;
             tableConfig.SchemaName.Should().BeNullOrEmpty();
             tableConfig.SnapshotTable.Name.Should().Be("snapshot");
@@ -143,7 +143,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             var snapshot = new SnapshotConfig(snapshotHocon);
             // assert default values
             AssertDefaultSnapshotConfig(snapshot);
-            
+
             var tableConfig = snapshot.TableConfig;
             tableConfig.SchemaName.Should().Be("public");
             tableConfig.SnapshotTable.Name.Should().Be("snapshot_store");
@@ -170,7 +170,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             var snapshot = new SnapshotConfig(snapshotHocon);
             // assert default values
             AssertDefaultSnapshotConfig(snapshot);
-            
+
             var tableConfig = snapshot.TableConfig;
             tableConfig.SchemaName.Should().BeNullOrEmpty();
             tableConfig.SnapshotTable.Name.Should().Be("snapshot_store");
@@ -192,7 +192,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             snapshot.UseCloneConnection.Should().BeFalse();
             snapshot.DefaultSerializer.Should().BeNullOrEmpty();
             snapshot.UseSharedDb.Should().BeNullOrEmpty();
-            
+
             var pluginConfig = snapshot.PluginConfig;
             var daoType = Type.GetType(pluginConfig.Dao);
             daoType.Should().Be(typeof(ByteArraySnapshotDao));

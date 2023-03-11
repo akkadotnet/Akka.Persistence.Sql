@@ -3,15 +3,15 @@ using System.Collections.Immutable;
 using System.Linq;
 using Akka.Actor;
 using Akka.Event;
-using Akka.Persistence.Sql.Linq2Db.Config;
-using Akka.Persistence.Sql.Linq2Db.Query.InternalProtocol;
-using Akka.Persistence.Sql.Linq2Db.Utility;
+using Akka.Persistence.Sql.Config;
+using Akka.Persistence.Sql.Query.InternalProtocol;
+using Akka.Persistence.Sql.Utility;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Util.Extensions;
 using Akka.Util.Internal;
 
-namespace Akka.Persistence.Sql.Linq2Db.Query
+namespace Akka.Persistence.Sql.Query
 {
     public class JournalSequenceActor : ActorBase, IWithTimers
     {
@@ -21,7 +21,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
         private readonly int _maxTries;
         private readonly ILoggingAdapter _log;
         private readonly ActorMaterializer _mat;
-        
+
         public ITimerScheduler Timers { get; set; }
 
         public JournalSequenceActor(IReadJournalDao readJournalDao,
@@ -31,7 +31,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
                 context: (ExtendedActorSystem)Context.System,
                 settings: ActorMaterializerSettings.Create(Context.System),
                 namePrefix: "linq2db-query");
-            
+
             _readJournalDao = readJournalDao;
             _config = config;
             _queryDelay = config.QueryDelay;
@@ -56,22 +56,22 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
                 case ScheduleAssumeMaxOrderingId s:
                     var delay = _queryDelay.Multiply(_maxTries);
                     Timers.StartSingleTimer(
-                        key: AssumeMaxOrderingIdTimerKey.Instance, 
-                        msg: new AssumeMaxOrderingId(s.MaxInDatabase), 
+                        key: AssumeMaxOrderingIdTimerKey.Instance,
+                        msg: new AssumeMaxOrderingId(s.MaxInDatabase),
                         timeout: delay);
                     return true;
-                
+
                 case AssumeMaxOrderingId a:
                     if (currentMaxOrdering < a.Max)
                     {
                         Become(o => ReceiveHandler(o, _maxTries, missingByCounter, moduloCounter, previousDelay));
                     }
                     return true;
-                
+
                 case GetMaxOrderingId:
                     Sender.Tell(new MaxOrderingId(currentMaxOrdering));
                     return true;
-                
+
                 case QueryOrderingIds:
                     _readJournalDao
                         .JournalSequence(currentMaxOrdering, _config.BatchSize)
@@ -81,15 +81,15 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
                             sender: Self,
                             success: res => new NewOrderingIds(currentMaxOrdering, res));
                     return true;
-                
+
                 case NewOrderingIds nids when nids.MaxOrdering < currentMaxOrdering:
                     Self.Tell(QueryOrderingIds.Instance);
                     return true;
-                
+
                 case NewOrderingIds nids:
                     FindGaps(nids.Elements, currentMaxOrdering, missingByCounter, moduloCounter);
                     return true;
-                
+
                 case Status.Failure t:
                     var newDelay = _config.MaxBackoffQueryDelay.Min(previousDelay.Multiply(2));
                     if (newDelay == _config.MaxBackoffQueryDelay)
@@ -100,7 +100,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
                     ScheduleQuery(newDelay);
                     Context.Become(o => ReceiveHandler(o, currentMaxOrdering, missingByCounter, moduloCounter, newDelay));
                     return true;
-                
+
                 default:
                     return false;
             }
@@ -114,7 +114,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
         {
             var givenUp = missingByCounter.ContainsKey(moduloCounter)
                 ? missingByCounter[moduloCounter] : MissingElements.Empty;
-            
+
             var (nextMax, _, missingElems) = elements.Aggregate(
                 (currentMax: currentMaxOrdering, previousElement: currentMaxOrdering, missing: MissingElements.Empty),
                 (agg, currentElement) =>
@@ -142,7 +142,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
 
                     return (newMax, currentElement, newMissing);
                 });
-            
+
             var newMissingByCounter = missingByCounter.SetItem(moduloCounter, missingElems);
             var noGapsFound = missingElems.Isempty;
             var isFullBatch = elements.Count == _config.BatchSize;

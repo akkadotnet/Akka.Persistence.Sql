@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using LanguageExt;
 
-namespace Akka.Persistence.Sql.Linq2Db.Journal.Types
+namespace Akka.Persistence.Sql.Journal.Types
 {
     public sealed class WriteQueueEntry
     {

@@ -1,7 +1,7 @@
 ﻿using System;
-using Akka.Persistence.Sql.Linq2Db.Config;
-using Akka.Persistence.Sql.Linq2Db.Journal.Types;
-using Akka.Persistence.Sql.Linq2Db.Snapshot;
+using Akka.Persistence.Sql.Config;
+using Akka.Persistence.Sql.Journal.Types;
+using Akka.Persistence.Sql.Snapshot;
 using LinqToDB;
 using LinqToDB.Configuration;
 using LinqToDB.Data;
@@ -9,7 +9,7 @@ using LinqToDB.Data.RetryPolicy;
 using LinqToDB.DataProvider.SqlServer;
 using LinqToDB.Mapping;
 
-namespace Akka.Persistence.Sql.Linq2Db.Db
+namespace Akka.Persistence.Sql.Db
 {
     public class AkkaPersistenceDataConnectionFactory
     {

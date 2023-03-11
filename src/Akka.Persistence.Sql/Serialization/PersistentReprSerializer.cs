@@ -4,7 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Akka.Persistence.Journal;
 
-namespace Akka.Persistence.Sql.Linq2Db.Serialization
+namespace Akka.Persistence.Sql.Serialization
 {
     public abstract class PersistentReprSerializer<T>
     {
@@ -25,7 +25,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Serialization
                             $"{aw.PersistenceId} received empty payload for sequenceNr range " +
                             $"{aw.LowestSequenceNr} - {aw.HighestSequenceNr}"));
                 }
-                
+
                 //Preallocate our list; In the common case
                 //This saves a tiny bit of garbage
                 var retList = new T[payloads.Count];
@@ -86,7 +86,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Serialization
             }
 
             return new Util.Try<T[]>(retList);
-        }        
+        }
 
         public Util.Try<T> Serialize(IPersistentRepresentation persistentRepr, long timeStamp = 0)
         {

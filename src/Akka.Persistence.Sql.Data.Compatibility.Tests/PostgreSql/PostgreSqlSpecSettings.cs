@@ -4,7 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.PostgreSql
+namespace Akka.Persistence.Sql.Data.Compatibility.Tests.PostgreSql
 {
     public sealed class PostgreSqlSpecSettings: TestSettings
     {

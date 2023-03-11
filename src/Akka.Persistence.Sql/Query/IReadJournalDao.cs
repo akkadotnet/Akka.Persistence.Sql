@@ -1,16 +1,16 @@
 ﻿using System.Collections.Immutable;
 using System.Threading.Tasks;
-using Akka.Persistence.Sql.Linq2Db.Journal.Dao;
+using Akka.Persistence.Sql.Journal.Dao;
 using Akka.Streams.Dsl;
 
-namespace Akka.Persistence.Sql.Linq2Db.Query
+namespace Akka.Persistence.Sql.Query
 {
     public interface IReadJournalDao : IJournalDaoWithReadMessages
     {
         Source<string, NotUsed> AllPersistenceIdsSource(long max);
 
         Source<Util.Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, NotUsed> EventsByTag(
-            string tag, 
+            string tag,
             long offset,
             long maxOffset,
             long max);

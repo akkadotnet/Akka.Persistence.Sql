@@ -6,7 +6,7 @@
 
 using System;
 
-namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Internal
+namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
 {
     public class OutputReceivedArgs : EventArgs
     {

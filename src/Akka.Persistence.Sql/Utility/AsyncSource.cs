@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Akka.Streams.Dsl;
 
-namespace Akka.Persistence.Sql.Linq2Db.Utility
+namespace Akka.Persistence.Sql.Utility
 {
     /// <summary>
     /// Creates Sources from Async Functions
@@ -13,7 +13,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Utility
     /// <typeparam name="TElem"></typeparam>
     public static class AsyncSource<TElem>
     {
-        
+
         /// <summary>
         /// Creates a Source using an Async function's result as input
         /// The Async function is evaluated once per each materialization
@@ -36,7 +36,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Utility
         {
             return AsyncSource.From(state, func);
         }
-        
+
         /// <summary>
         /// Creates a Source using an Async function's result as input,
         /// Flattening an enumerable out to a stream of individual elements
@@ -48,7 +48,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Utility
         {
             return AsyncSource.FromEnumerable(func);
         }
-        
+
         /// <summary>
         /// Creates a Source using an Async function's result as input,
         /// Flattening an enumerable out to a stream of individual elements
@@ -62,7 +62,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Utility
             return AsyncSource.FromEnumerable(state, func);
         }
     }
-    
+
     public static class AsyncSource
     {
         /// <summary>
@@ -76,7 +76,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Utility
             return Source.Single(NotUsed.Instance)
                 .SelectAsync(1,  _ => func());
         }
-        
+
         /// <summary>
         /// Creates a Source using an Async function's result as input
         /// The Async function is evaluated once per each materialization
@@ -102,7 +102,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Utility
                 .SelectAsync(1, _ => func())
                 .SelectMany(r => r);
         }
-        
+
         /// <summary>
         /// Creates a Source using an Async function's result as input,
         /// Flattening an enumerable out to a stream of individual elements

@@ -1,11 +1,11 @@
 ﻿using System.Threading.Tasks;
-using Akka.Persistence.Linq2Db.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common;
 using Akka.Persistence.TCK.Snapshot;
 using LinqToDB;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Sql.Linq2Db.Tests.Sqlite
+namespace Akka.Persistence.Sql.Tests.Sqlite
 {
     [Collection("PersistenceSpec")]
     public class MsSqliteSnapshotSpec : SnapshotStoreSpec, IAsyncLifetime

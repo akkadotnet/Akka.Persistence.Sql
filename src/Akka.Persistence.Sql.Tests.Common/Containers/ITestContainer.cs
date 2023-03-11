@@ -8,7 +8,7 @@ using System;
 using System.Threading.Tasks;
 using Docker.DotNet;
 
-namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
+namespace Akka.Persistence.Sql.Tests.Common.Containers
 {
     public interface ITestContainer: IDisposable, IAsyncDisposable
     {

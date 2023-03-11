@@ -8,11 +8,11 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading.Tasks;
-using Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Internal;
+using Akka.Persistence.Sql.Data.Compatibility.Tests.Internal;
 using Akka.Util;
 using Docker.DotNet.Models;
 
-namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.MySql
+namespace Akka.Persistence.Sql.Data.Compatibility.Tests.MySql
 {
     /// <summary>
     ///     Fixture used to run MySql SQL Server
@@ -25,15 +25,15 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.MySql
 
         private string _connectionString = "";
         public override string ConnectionString => _connectionString;
-        
+
         private int Port { get; } = ThreadLocalRandom.Current.Next(9000, 10000);
-    
+
         private string User { get; } = "root";
-    
+
         private string Password { get; } = "Password12!";
-    
+
         protected override string ReadyMarker => "ready for connections. Version";
-    
+
         protected override void ConfigureContainer(CreateContainerParameters parameters)
         {
             parameters.ExposedPorts = new Dictionary<string, EmptyStruct>
@@ -53,7 +53,7 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.MySql
                 $"MYSQL_DATABASE={DatabaseName}",
             };
         }
-    
+
         protected override Task AfterContainerStartedAsync()
         {
             var builder = new DbConnectionStringBuilder
@@ -66,9 +66,9 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.MySql
             };
 
             _connectionString = builder.ToString();
-        
+
             Console.WriteLine($"Connection string: [{_connectionString}]");
-            
+
             return Task.CompletedTask;
         }
 

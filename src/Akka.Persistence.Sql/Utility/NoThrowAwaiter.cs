@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
-namespace Akka.Persistence.Sql.Linq2Db.Utility
+namespace Akka.Persistence.Sql.Utility
 {
     /// <summary>
     /// An awaiter that never throws.

@@ -6,4 +6,4 @@
 
 using Xunit;
 
-[assembly: TestFramework("Akka.Persistence.Sql.Linq2Db.Tests.Internal.Xunit.Linq2DbTestFramework", "Akka.Persistence.Sql.Linq2Db.Tests")]
+[assembly: TestFramework("Akka.Persistence.Sql.Tests.Internal.Xunit.Linq2DbTestFramework", "Akka.Persistence.Sql.Tests")]

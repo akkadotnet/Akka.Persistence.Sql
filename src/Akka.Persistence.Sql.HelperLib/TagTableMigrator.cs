@@ -10,15 +10,14 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Akka.Configuration;
-using Akka.Persistence.Sql.Linq2Db;
-using Akka.Persistence.Sql.Linq2Db.Config;
-using Akka.Persistence.Sql.Linq2Db.Db;
-using Akka.Persistence.Sql.Linq2Db.Journal.Types;
+using Akka.Persistence.Sql.Config;
+using Akka.Persistence.Sql.Db;
+using Akka.Persistence.Sql.Journal.Types;
 using LinqToDB;
 using LinqToDB.Data;
 using LinqToDB.Tools;
 
-namespace Akka.Persistence.Linq2Db.HelperLib
+namespace Akka.Persistence.Sql.HelperLib
 {
     public class TagTableMigrator
     {
@@ -26,7 +25,7 @@ namespace Akka.Persistence.Linq2Db.HelperLib
         private readonly JournalConfig _journalConfig;
         private readonly string _separator;
 
-        public TagTableMigrator(Config config)
+        public TagTableMigrator(Configuration.Config config)
         {
             config = config
                 .WithFallback(Linq2DbPersistence.DefaultConfiguration)

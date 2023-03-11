@@ -1,7 +1,7 @@
 ﻿using System;
 using Akka.Configuration;
 
-namespace Akka.Persistence.Sql.Linq2Db.Config
+namespace Akka.Persistence.Sql.Config
 {
     public enum TagWriteMode
     {

@@ -4,7 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.MySql
+namespace Akka.Persistence.Sql.Data.Compatibility.Tests.MySql
 {
     public sealed class MySqlSpecSettings : TestSettings
     {
@@ -13,9 +13,9 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.MySql
         private MySqlSpecSettings()
         {
         }
-        
+
         public override string ProviderName => LinqToDB.ProviderName.MySql;
-        
+
         public override string TableMapping => "mysql";
 
     }

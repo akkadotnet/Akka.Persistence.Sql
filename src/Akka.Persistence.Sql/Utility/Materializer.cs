@@ -4,11 +4,11 @@ using Akka.Streams;
 using Akka.Streams.Implementation;
 using Akka.Util;
 
-namespace Akka.Persistence.Sql.Linq2Db.Utility
+namespace Akka.Persistence.Sql.Utility
 {
     public static class Materializer
     {
-        
+
         private static ActorSystem ActorSystemOf(IActorRefFactory context)
         {
             return context switch

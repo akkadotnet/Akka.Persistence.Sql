@@ -2,29 +2,29 @@
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Pattern;
-using Akka.Persistence.Sql.Linq2Db.Db;
-using Akka.Persistence.Sql.Linq2Db.Journal.Types;
-using Akka.Persistence.Sql.Linq2Db.Streams;
+using Akka.Persistence.Sql.Db;
+using Akka.Persistence.Sql.Journal.Types;
+using Akka.Persistence.Sql.Streams;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using LanguageExt;
 using LinqToDB.Data;
 
-namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
+namespace Akka.Persistence.Sql.Journal.Dao
 {
     public abstract class BaseJournalDaoWithReadMessages : IJournalDaoWithReadMessages
     {
         protected readonly AkkaPersistenceDataConnectionFactory ConnectionFactory;
         protected BaseJournalDaoWithReadMessages(
             IAdvancedScheduler scheduler,
-            IMaterializer materializer, 
+            IMaterializer materializer,
             AkkaPersistenceDataConnectionFactory connectionFactory)
         {
             Scheduler = scheduler;
             Materializer = materializer;
             ConnectionFactory = connectionFactory;
         }
-        
+
         protected readonly IAdvancedScheduler Scheduler;
         protected readonly IMaterializer Materializer;
 
@@ -34,7 +34,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
             long fromSequenceNr,
             long toSequenceNr,
             long max);
-        
+
         public Source<Util.Try<ReplayCompletion>, NotUsed> MessagesWithBatch(
             string persistenceId,
             long fromSequenceNr,
@@ -61,7 +61,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
                         {
                             Seq<Util.Try<ReplayCompletion>> msg;
                             msg = await BatchFromDb(persistenceId, toSequenceNr, batchSize, fromSeq);
-                            
+
                             var hasMoreEvents = msg.Count == batchSize;
                             //var lastMsg = msg.IsEmpty.LastOrDefault();
                             var lastSeq = Util.Option<long>.None;
@@ -69,7 +69,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
                             {
                                 lastSeq = msg.Last.Get().Repr.SequenceNr;
                             }
-                            
+
                             FlowControlEnum nextControl;
                             if ((lastSeq.HasValue && lastSeq.Value >= toSequenceNr) || opt.Item1 > toSequenceNr)
                             {
@@ -99,14 +99,14 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
 
                         return opt.flowControl switch
                         {
-                            FlowControlEnum.Stop => 
+                            FlowControlEnum.Stop =>
                                 Util.Option<((long, FlowControlEnum), Seq<Util.Try<ReplayCompletion>>)>.None,
-                            
+
                             FlowControlEnum.Continue => await RetrieveNextBatch(opt.seqNr),
-                            
-                            FlowControlEnum.ContinueDelayed when refreshInterval.HasValue => 
+
+                            FlowControlEnum.ContinueDelayed when refreshInterval.HasValue =>
                                 await FutureTimeoutSupport.After(refreshInterval.Value.Item1, refreshInterval.Value.Item2, () => RetrieveNextBatch(opt.seqNr)),
-                            
+
                             _ => InvalidFlowThrowHelper(opt)
                         };
                     })

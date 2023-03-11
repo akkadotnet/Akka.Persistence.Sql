@@ -1,6 +1,6 @@
 ﻿using LanguageExt;
 
-namespace Akka.Persistence.Sql.Linq2Db.Query.InternalProtocol
+namespace Akka.Persistence.Sql.Query.InternalProtocol
 {
     public sealed class MissingElements
     {
@@ -21,7 +21,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.InternalProtocol
 
         public bool Isempty => Elements.IsEmpty;
         public Seq<NumericRangeEntry> Elements { get; }
-        
+
         public static readonly MissingElements Empty = new( Seq<NumericRangeEntry>.Empty );
     }
 }

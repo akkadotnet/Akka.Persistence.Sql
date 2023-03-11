@@ -1,13 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Akka.Actor;
-using Akka.Persistence.Sql.Linq2Db.Tests.Internal.Events;
+using Akka.Persistence.Sql.Tests.Internal.Events;
 
-namespace Akka.Persistence.Sql.Linq2Db.Tests.Internal
+namespace Akka.Persistence.Sql.Tests.Internal
 {
     public class GetSequenceNr
     {
-        
+
     }
 
     public class DeleteUpToSequenceNumber

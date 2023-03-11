@@ -9,7 +9,7 @@ using System.Linq;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
-namespace Akka.Persistence.Sql.Linq2Db.Tests.Internal.Xunit
+namespace Akka.Persistence.Sql.Tests.Internal.Xunit
 {
     public class Linq2DbFrameworkDiscoverer: XunitTestFrameworkDiscoverer
     {
@@ -17,14 +17,14 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Internal.Xunit
             IAssemblyInfo assemblyInfo,
             ISourceInformationProvider sourceProvider,
             IMessageSink diagnosticMessageSink,
-            IXunitTestCollectionFactory collectionFactory = null) 
+            IXunitTestCollectionFactory collectionFactory = null)
             : base(assemblyInfo, sourceProvider, diagnosticMessageSink, collectionFactory)
         {
         }
 
         protected override bool IsValidTestClass(ITypeInfo type)
         {
-            var isUnix = Environment.OSVersion.Platform == PlatformID.Unix; 
+            var isUnix = Environment.OSVersion.Platform == PlatformID.Unix;
             var skipLinux = type.GetCustomAttributes(typeof(SkipLinuxAttribute)).Any() && isUnix;
             var skipWindows = type.GetCustomAttributes(typeof(SkipWindowsAttribute)).Any() && !isUnix;
             return !type.IsAbstract || type.IsSealed || skipLinux || skipWindows;
@@ -36,10 +36,10 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Internal.Xunit
             IMessageBus messageBus,
             ITestFrameworkDiscoveryOptions discoveryOptions)
         {
-            var isUnix = Environment.OSVersion.Platform == PlatformID.Unix; 
+            var isUnix = Environment.OSVersion.Platform == PlatformID.Unix;
             var skipLinux = testClass.Class.GetCustomAttributes(typeof(SkipLinuxAttribute)).Any() && isUnix;
             var skipWindows = testClass.Class.GetCustomAttributes(typeof(SkipWindowsAttribute)).Any() && !isUnix;
-            
+
             return !skipLinux && !skipWindows && base.FindTestsForType(testClass, includeSourceInformation, messageBus, discoveryOptions);
         }
     }

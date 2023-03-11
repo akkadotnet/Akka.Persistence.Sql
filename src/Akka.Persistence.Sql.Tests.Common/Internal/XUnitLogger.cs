@@ -8,7 +8,7 @@ using System;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Linq2Db.Tests.Common.Internal
+namespace Akka.Persistence.Sql.Tests.Common.Internal
 {
     public class XUnitLogger: ILogger
     {
@@ -32,7 +32,7 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Internal
 
             if (!TryFormatMessage(state, exception, formatter, out var formattedMessage))
                 return;
-            
+
             WriteLogEntry(logLevel, eventId, formattedMessage, exception);
         }
 
@@ -48,13 +48,13 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Internal
                 LogLevel.Trace => "DBG",
                 _ => "???"
             };
-            
+
             var msg = $"{DateTime.Now}:{level}:{_category}:{eventId} {message}";
             if (exception != null)
                 msg += $"\n{exception.GetType()} {exception.Message}\n{exception.StackTrace}";
             _helper.WriteLine(msg);
         }
-        
+
         public bool IsEnabled(LogLevel logLevel)
         {
             return logLevel switch
@@ -68,7 +68,7 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Internal
         {
             throw new NotImplementedException();
         }
-        
+
         private static bool TryFormatMessage<TState>(
             TState state,
             Exception exception,
@@ -76,17 +76,17 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Internal
             out string result)
         {
             formatter = formatter ?? throw new ArgumentNullException(nameof(formatter));
-            
+
             var formattedMessage = formatter(state, exception);
             if (formattedMessage == NullFormatted)
             {
                 result = "";
                 return false;
             }
-            
+
             result = formattedMessage;
             return true;
         }
-    }    
+    }
 }
 

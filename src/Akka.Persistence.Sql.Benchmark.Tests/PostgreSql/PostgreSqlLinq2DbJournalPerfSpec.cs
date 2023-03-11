@@ -1,17 +1,17 @@
 ﻿using System.Threading.Tasks;
 using Akka.Configuration;
-using Akka.Persistence.Linq2Db.Tests.Common;
-using Akka.Persistence.Sql.Linq2Db.Journal;
+using Akka.Persistence.Sql.Tests.Common;
+using Akka.Persistence.Sql.Journal;
 using LinqToDB;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Linq2Db.Benchmark.Tests.PostgreSql
+namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
 {
     [Collection("BenchmarkSpec")]
     public class PostgreSqlLinq2DbJournalPerfSpec : L2dbJournalPerfSpec, IAsyncLifetime
     {
-        private static Config Configuration(string connString)
+        private static Configuration.Config Configuration(string connString)
         {
             return ConfigurationFactory.ParseString($@"
 akka.persistence {{

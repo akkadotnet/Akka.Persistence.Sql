@@ -6,16 +6,16 @@
 
 using System.Threading.Tasks;
 using Akka.Configuration;
-using Akka.Persistence.Linq2Db.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common;
 using Akka.Persistence.Query;
-using Akka.Persistence.Sql.Linq2Db.Journal;
-using Akka.Persistence.Sql.Linq2Db.Query;
+using Akka.Persistence.Sql.Journal;
+using Akka.Persistence.Sql.Query;
 using Akka.Persistence.TCK.Query;
 using LinqToDB;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Sql.Linq2Db.Tests.Query.Sqlite
+namespace Akka.Persistence.Sql.Tests.Query.Sqlite
 {
     [Collection("PersistenceSpec")]
     public class SqliteCurrentEventsByTagSpec : CurrentEventsByTagSpec, IAsyncLifetime

@@ -1,14 +1,14 @@
 ﻿using System.Threading.Tasks;
-using Akka.Persistence.Linq2Db.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common;
 using Akka.Persistence.TCK.Journal;
 using LinqToDB;
 using Xunit;
 using Xunit.Abstractions;
 #if !DEBUG
-using Akka.Persistence.Sql.Linq2Db.Tests.Internal.Xunit;
+using Akka.Persistence.Sql.Tests.Internal.Xunit;
 #endif
 
-namespace Akka.Persistence.Sql.Linq2Db.Tests.SqlServer
+namespace Akka.Persistence.Sql.Tests.SqlServer
 {
 #if !DEBUG
     [SkipWindows]

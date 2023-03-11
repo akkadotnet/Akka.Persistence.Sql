@@ -5,10 +5,10 @@
 //-----------------------------------------------------------------------
 
 using Akka.Configuration;
-using Akka.Persistence.Sql.Linq2Db.Journal;
-using Akka.Persistence.Sql.Linq2Db.Snapshot;
+using Akka.Persistence.Sql.Journal;
+using Akka.Persistence.Sql.Snapshot;
 
-namespace Akka.Persistence.Sql.Linq2Db.Tests.Sqlite.Compatibility
+namespace Akka.Persistence.Sql.Tests.Sqlite.Compatibility
 {
     public class SqliteCompatibilitySpecConfig
     {

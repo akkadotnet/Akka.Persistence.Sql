@@ -9,7 +9,7 @@ using MySql.Data.MySqlClient;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.MySql
+namespace Akka.Persistence.Sql.Data.Compatibility.Tests.MySql
 {
     [Collection("SqlCompatSpec")]
     public class MySqlScriptCompatibilitySpec : SqlScriptCompatibilitySpec<MySqlFixture>
@@ -24,13 +24,13 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.MySql
         {
             using var conn = new MySqlConnection(Fixture.ConnectionString);
             var script = new MySqlScript(conn);
-            
+
             script.Query = setup;
             script.Execute();
-            
+
             script.Query = migration;
             script.Execute();
-            
+
             script.Query = cleanup;
             script.Execute();
         }

@@ -7,7 +7,7 @@
 using System;
 using Akka.Persistence.Journal;
 
-namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Internal
+namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
 {
     public sealed class EventAdapter: IWriteEventAdapter
     {
@@ -21,9 +21,9 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Internal
                 string str => int.Parse(str),
                 _ => throw new Exception($"Unknown type: {evt.GetType()}")
             };
-        
+
             return evt.ToTagged(value);
         }
-    }    
+    }
 }
 

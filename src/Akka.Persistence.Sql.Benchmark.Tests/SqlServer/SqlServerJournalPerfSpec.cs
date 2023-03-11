@@ -1,25 +1,25 @@
 ﻿using System.Threading.Tasks;
 using Akka.Configuration;
-using Akka.Persistence.Linq2Db.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Linq2Db.Benchmark.Tests.SqlServer
+namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
 {
     [Collection("BenchmarkSpec")]
     public class SqlServerJournalPerfSpec : L2dbJournalPerfSpec, IAsyncLifetime
     {
         private readonly TestFixture _fixture;
-        
-        public SqlServerJournalPerfSpec(ITestOutputHelper output, TestFixture fixture) 
-            : base( 
-                Configuration(fixture), nameof(SqlServerJournalPerfSpec), 
+
+        public SqlServerJournalPerfSpec(ITestOutputHelper output, TestFixture fixture)
+            : base(
+                Configuration(fixture), nameof(SqlServerJournalPerfSpec),
                 output, 40, eventsCount: TestConstants.DockerNumMessages)
         {
             _fixture = fixture;
         }
-        
-        private static Config Configuration(TestFixture fixture)
+
+        private static Configuration.Config Configuration(TestFixture fixture)
         {
             var specString = $@"
 akka.persistence {{

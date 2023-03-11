@@ -1,10 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Akka.Configuration;
-using Akka.Persistence.Linq2Db.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Linq2Db.Benchmark.Tests.PostgreSql
+namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
 {
     [Collection("BenchmarkSpec")]
     public class PostgreSqlJournalPerfSpec : L2dbJournalPerfSpec, IAsyncLifetime
@@ -17,7 +17,7 @@ namespace Akka.Persistence.Linq2Db.Benchmark.Tests.PostgreSql
             _fixture = fixture;
         }
 
-        public static Config InitConfig(TestFixture fixture)
+        public static Configuration.Config InitConfig(TestFixture fixture)
         {
             //need to make sure db is created before the tests start
             var specString = $@"

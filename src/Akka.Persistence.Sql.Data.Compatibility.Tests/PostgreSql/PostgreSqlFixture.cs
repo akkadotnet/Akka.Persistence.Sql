@@ -8,12 +8,12 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading.Tasks;
-using Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Internal;
+using Akka.Persistence.Sql.Data.Compatibility.Tests.Internal;
 using Akka.Util;
 using Docker.DotNet.Models;
 using Xunit;
 
-namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.PostgreSql
+namespace Akka.Persistence.Sql.Data.Compatibility.Tests.PostgreSql
 {
     /// <summary>
     ///     Fixture used to run Postgre SQL Server

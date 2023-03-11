@@ -13,7 +13,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
-using Akka.Configuration;
 using Akka.Routing;
 using Akka.TestKit;
 using Akka.Util;
@@ -23,7 +22,7 @@ using JetBrains.dotMemoryUnit.Kernel;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Linq2Db.Benchmark.Tests
+namespace Akka.Persistence.Sql.Benchmark.Tests
 {
     public abstract class L2dbJournalPerfSpec : Akka.TestKit.Xunit2.TestKit
     {
@@ -40,30 +39,30 @@ namespace Akka.Persistence.Linq2Db.Benchmark.Tests
         private readonly TimeSpan _expectDuration;
 
         protected L2dbJournalPerfSpec(
-            Config config,
+            Configuration.Config config,
             string actorSystem,
             ITestOutputHelper output,
             int timeoutDurationSeconds = 30,
             int eventsCount = 10000)
-            : base(config ?? Config.Empty, actorSystem, output)
+            : base(config ?? Configuration.Config.Empty, actorSystem, output)
         {
             ThreadPool.SetMinThreads(12, 12);
             _eventsCount = eventsCount;
             _expectDuration = TimeSpan.FromSeconds(timeoutDurationSeconds);
             _testProbe = CreateTestProbe();
         }
-        
+
         internal IActorRef BenchActor(string pid, int replyAfter)
         {
             return Sys.ActorOf(Props.Create(() => new BenchActor(pid, _testProbe, _eventsCount)));;
         }
-        
+
         internal (IActorRef aut,TestProbe probe) BenchActorNewProbe(string pid, int replyAfter)
         {
             var tp = CreateTestProbe();
             return (Sys.ActorOf(Props.Create(() => new BenchActor(pid, tp, _eventsCount))), tp);
         }
-        
+
         internal (IActorRef aut,TestProbe probe) BenchActorNewProbeGroup(string pid, int numActors, int numMsgs)
         {
             var tp = CreateTestProbe();
@@ -73,7 +72,7 @@ namespace Akka.Persistence.Linq2Db.Benchmark.Tests
                         new BenchActor(pid, tp, numMsgs, false))
                     .WithRouter(new RoundRobinPool(numActors))), tp);
         }
-        
+
         internal void FeedAndExpectLastRouterSet(
             (IActorRef actor, TestProbe probe) autSet, string mode, IReadOnlyList<int> commands, int numExpect)
         {
@@ -81,7 +80,7 @@ namespace Akka.Persistence.Linq2Db.Benchmark.Tests
 
             for (var i = 0; i < numExpect; i++)
             {
-                autSet.probe.ExpectMsg(commands.Last(), _expectDuration);    
+                autSet.probe.ExpectMsg(commands.Last(), _expectDuration);
             }
         }
 
@@ -104,14 +103,14 @@ namespace Akka.Persistence.Linq2Db.Benchmark.Tests
                 aut.probe.ExpectMsg(commands.Last(), _expectDuration);
             }
         }
-        
+
         internal void FeedAndExpectLastSpecific((IActorRef actor, TestProbe probe) aut, string mode, IReadOnlyList<int> commands)
         {
             commands.ForEach(c => aut.actor.Tell(new Cmd(mode, c)));
-            
+
             aut.probe.ExpectMsg(commands.Last(), _expectDuration);
         }
-        
+
         internal void Measure(Func<TimeSpan, string> msg, Action block)
         {
             var measurements = new List<TimeSpan>(MeasurementIterations);
@@ -131,10 +130,10 @@ namespace Akka.Persistence.Linq2Db.Benchmark.Tests
 
             var avgTime = measurements.Select(c => c.TotalMilliseconds).Sum() / MeasurementIterations;
             var msgPerSec = (_eventsCount / avgTime) * 1000;
-            
+
             Output.WriteLine($"Average time: {avgTime} ms, {msgPerSec} msg/sec");
         }
-        
+
         internal void MeasureGroup(Func<TimeSpan, string> msg, Action block, int numMsg,int numGroup)
         {
             var measurements = new List<TimeSpan>(MeasurementIterations);
@@ -158,15 +157,15 @@ namespace Akka.Persistence.Linq2Db.Benchmark.Tests
             var msgPerSecTotal = (numMsg*numGroup / avgTime) * 1000;
             Output.WriteLine($"Workers: {numGroup} , Average time: {avgTime} ms, {msgPerSec} msg/sec/actor, {msgPerSecTotal} total msg/sec.");
         }
-        
+
         [DotMemoryUnit(CollectAllocations=true, FailIfRunWithoutSupport = false)]
         [Fact]
         public void DotMemory_PersistenceActor_performance_must_measure_Persist()
         {
             dotMemory.Check();
-            
+
             var p1 = BenchActor("DotMemoryPersistPid", _eventsCount);
-            
+
             dotMemory.Check((mem) =>
                 {
                     Measure(
@@ -191,16 +190,16 @@ namespace Akka.Persistence.Linq2Db.Benchmark.Tests
             );
             dotMemoryApi.SaveCollectedData(@"c:\temp\dotmemory");
         }
-        
+
         [DotMemoryUnit(CollectAllocations=true, FailIfRunWithoutSupport = false)]
         [Fact]
         public void DotMemory_PersistenceActor_performance_must_measure_PersistGroup400()
         {
             dotMemory.Check();
-            
+
             const int numGroup = 400;
             var numCommands = Math.Min(_eventsCount/100,500);
-            
+
             dotMemory.Check((mem) =>
                 {
                     RunGroupBenchmark(numGroup, numCommands);
@@ -213,14 +212,14 @@ namespace Akka.Persistence.Linq2Db.Benchmark.Tests
             );
             dotMemoryApi.SaveCollectedData(@"c:\temp\dotmemory");
         }
-        
-        
+
+
         [Fact]
         public void PersistenceActor_performance_must_measure_Persist()
         {
-            
+
             var p1 = BenchActor("PersistPid", _eventsCount);
-            
+
             //dotMemory.Check((mem) =>
             //{
                 Measure(
@@ -235,14 +234,14 @@ namespace Akka.Persistence.Linq2Db.Benchmark.Tests
             //);
             //dotMemoryApi.SaveCollectedData(@"c:\temp\dotmemory");
         }
-        
+
         //[DotMemoryUnit(CollectAllocations=true, FailIfRunWithoutSupport = false)]
         /*
         [Fact]
         public void PersistenceActor_performance_must_measure_PersistDouble()
         {
             //  dotMemory.Check();
-            
+
             var p1 = BenchActorNewProbe("DoublePersistPid1", EventsCount);
             var p2 = BenchActorNewProbe("DoublePersistPid2", EventsCount);
             //dotMemory.Check((mem) =>
@@ -265,9 +264,9 @@ namespace Akka.Persistence.Linq2Db.Benchmark.Tests
         [Fact]
         public void PersistenceActor_performance_must_measure_PersistTriple()
         {
-            
+
             //  dotMemory.Check();
-            
+
             var p1 = BenchActorNewProbe("TriplePersistPid1", EventsCount);
             var p2 = BenchActorNewProbe("TriplePersistPid2", EventsCount);
             var p3 = BenchActorNewProbe("TriplePersistPid3", EventsCount);
@@ -301,7 +300,7 @@ namespace Akka.Persistence.Linq2Db.Benchmark.Tests
             var numCommands = Math.Min(_eventsCount/10,1000);
             RunGroupBenchmark(numGroup, numCommands);
         }
-        
+
         [Fact]
         public void PersistenceActor_performance_must_measure_PersistGroup25()
         {
@@ -309,7 +308,7 @@ namespace Akka.Persistence.Linq2Db.Benchmark.Tests
             var numCommands = Math.Min(_eventsCount/25,1000);
             RunGroupBenchmark(numGroup, numCommands);
         }
-        
+
         [Fact]
         public void PersistenceActor_performance_must_measure_PersistGroup50()
         {
@@ -317,7 +316,7 @@ namespace Akka.Persistence.Linq2Db.Benchmark.Tests
             var numCommands = Math.Min(_eventsCount/50,1000);
             RunGroupBenchmark(numGroup, numCommands);
         }
-        
+
         [Fact]
         public void PersistenceActor_performance_must_measure_PersistGroup100()
         {
@@ -325,7 +324,7 @@ namespace Akka.Persistence.Linq2Db.Benchmark.Tests
             var numCommands = Math.Min(_eventsCount/100,1000);
             RunGroupBenchmark(numGroup, numCommands);
         }
-        
+
         [Fact]
         public void PersistenceActor_performance_must_measure_PersistGroup200()
         {
@@ -333,7 +332,7 @@ namespace Akka.Persistence.Linq2Db.Benchmark.Tests
             var numCommands = Math.Min(_eventsCount/100,500);
             RunGroupBenchmark(numGroup, numCommands);
         }
-        
+
         [Fact]
         public void PersistenceActor_performance_must_measure_PersistGroup400()
         {
@@ -361,7 +360,7 @@ namespace Akka.Persistence.Linq2Db.Benchmark.Tests
         public void PersistenceActor_performance_must_measure_PersistQuad()
         {
             //  dotMemory.Check();
-            
+
             var p1 = BenchActorNewProbe("QuadPersistPid1", EventsCount);
             var p2 = BenchActorNewProbe("QuadPersistPid2", EventsCount);
             var p3 = BenchActorNewProbe("QuadPersistPid3", EventsCount);
@@ -383,12 +382,12 @@ namespace Akka.Persistence.Linq2Db.Benchmark.Tests
             //);
             //dotMemoryApi.SaveCollectedData(@"c:\temp\dotmemory");
         }
-        
+
         [Fact]
         public void PersistenceActor_performance_must_measure_PersistOct()
         {
             //  dotMemory.Check();
-            
+
             var p1 = BenchActorNewProbe("OctPersistPid1", EventsCount);
             var p2 = BenchActorNewProbe("OctPersistPid2", EventsCount);
             var p3 = BenchActorNewProbe("OctPersistPid3", EventsCount);
@@ -419,7 +418,7 @@ namespace Akka.Persistence.Linq2Db.Benchmark.Tests
             //dotMemoryApi.SaveCollectedData(@"c:\temp\dotmemory");
         }
 */
-        
+
 
         [Fact]
         public void PersistenceActor_performance_must_measure_PersistAll()
@@ -466,7 +465,7 @@ namespace Akka.Persistence.Linq2Db.Benchmark.Tests
                 _testProbe.ExpectMsg(Commands.Last(), _expectDuration);
             });
         }
-        
+
         [Fact]
         public void PersistenceActor_performance_must_measure_RecoveringTwo()
         {
@@ -621,7 +620,7 @@ namespace Akka.Persistence.Linq2Db.Benchmark.Tests
         private int _counter = 0;
         private const int BatchSize = 50;
         private List<Cmd> _batch = new List<Cmd>(BatchSize);
-        
+
         public BenchActor(string persistenceId, IActorRef replyTo, int replyAfter, bool groupName)
         {
             PersistenceId = persistenceId + MurmurHash.StringHash(Context.Parent.Path.Name + Context.Self.Path.Name);
@@ -668,7 +667,7 @@ namespace Akka.Persistence.Linq2Db.Benchmark.Tests
 
                     if (_batch.Count % BatchSize == 0)
                     {
-                        
+
                         PersistAll(_batch, d =>
                         {
                             _counter += 1;

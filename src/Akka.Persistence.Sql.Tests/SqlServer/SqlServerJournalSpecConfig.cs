@@ -1,8 +1,8 @@
 ﻿using Akka.Configuration;
-using Akka.Persistence.Sql.Linq2Db.Journal;
-using Akka.Persistence.Sql.Linq2Db.Snapshot;
+using Akka.Persistence.Sql.Journal;
+using Akka.Persistence.Sql.Snapshot;
 
-namespace Akka.Persistence.Sql.Linq2Db.Tests.SqlServer
+namespace Akka.Persistence.Sql.Tests.SqlServer
 {
     public static class SqlServerJournalSpecConfig
     {

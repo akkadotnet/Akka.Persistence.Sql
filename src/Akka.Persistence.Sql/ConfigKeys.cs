@@ -1,4 +1,4 @@
-﻿namespace Akka.Persistence.Sql.Linq2Db
+﻿namespace Akka.Persistence.Sql
 {
     public class ConfigKeys
     {

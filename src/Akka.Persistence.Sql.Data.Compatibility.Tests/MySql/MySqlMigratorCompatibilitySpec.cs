@@ -6,7 +6,7 @@
 
 using Xunit;
 using Xunit.Abstractions;
-namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.MySql
+namespace Akka.Persistence.Sql.Data.Compatibility.Tests.MySql
 {
     [Collection("SqlCompatSpec")]
     public class MySqlMigratorCompatibilitySpec: MigratorCompatibilitySpec<MySqlFixture>

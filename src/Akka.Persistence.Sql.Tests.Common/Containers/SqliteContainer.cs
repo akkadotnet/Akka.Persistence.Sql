@@ -9,7 +9,7 @@ using System.Data.SQLite;
 using System.Threading.Tasks;
 using Docker.DotNet;
 
-namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
+namespace Akka.Persistence.Sql.Tests.Common.Containers
 {
     /// <summary>
     ///     Fixture used to run SQL Server

@@ -9,7 +9,7 @@ using Akka.Event;
 using Akka.Persistence.Journal;
 using Akka.Persistence.Sql.Compat.Common;
 
-namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Internal
+namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
 {
     public sealed class Truncate: IHasEntityId
     {
@@ -20,7 +20,7 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Internal
 
         public string EntityId { get; }
     }
-    
+
     public sealed class Start: IHasEntityId
     {
         public Start(int entityId)
@@ -30,7 +30,7 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Internal
 
         public string EntityId { get; }
     }
-    
+
     public sealed class EntityActor : ReceivePersistentActor
     {
         public static Props Props(string id) => Actor.Props.Create(() => new EntityActor(id));
@@ -48,9 +48,9 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Internal
         public EntityActor(string persistenceId)
         {
             _log = Context.GetLogger();
-            
+
             PersistenceId = persistenceId;
-            
+
             Command<int>(msg => Persist(msg, i =>
             {
                 _total += i;
@@ -111,12 +111,12 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Internal
             {
                 Sender.Tell((PersistenceId, _lastSnapshot, _total, _persisted));
             });
-            
+
             Command<Finish>(_ =>
             {
                 Sender.Tell((PersistenceId, _lastSnapshot, _total, _persisted));
             });
-            
+
             Command<Truncate>(_ =>
             {
                 _sender = Sender;
@@ -130,19 +130,19 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Internal
                 _savingSnapshot = new StateSnapshot(_total, _persisted);
                 SaveSnapshot(_savingSnapshot);
             });
-            
+
             Command<TakeSnapshot>(_ =>
             {
                 _sender = Sender;
                 _savingSnapshot = new StateSnapshot(_total, _persisted);
                 SaveSnapshot(_savingSnapshot);
             });
-            
+
             Command<SaveSnapshotSuccess>(msg =>
             {
                 _lastSnapshot = _savingSnapshot;
                 _savingSnapshot = StateSnapshot.Empty;
-                
+
                 if(!_clearing)
                 {
                     _sender.Tell((PersistenceId, _lastSnapshot));
@@ -152,19 +152,19 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Internal
                 _clearing = false;
                 DeleteMessages(msg.Metadata.SequenceNr);
             });
-            
+
             Command<SaveSnapshotFailure>(fail =>
             {
                 _log.Error(fail.Cause, "SaveSnapshot failed!");
                 _savingSnapshot = StateSnapshot.Empty;
                 _sender.Tell((PersistenceId, (StateSnapshot?) null));
             });
-            
+
             Command<DeleteMessagesSuccess>(_ =>
             {
                 _sender.Tell((PersistenceId, _lastSnapshot));
             });
-            
+
             Command<DeleteMessagesFailure>(fail =>
             {
                 _log.Error(fail.Cause, "DeleteMessages failed!");
@@ -176,7 +176,7 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Internal
                 _log.Info($"{persistenceId}: Recovery completed. State: [Total:{_total}, Persisted:{_persisted}.]");
                 _sender?.Tell(Done.Instance);
             });
-            
+
             Recover<SnapshotOffer>(offer =>
             {
                 _lastSnapshotMetadata = offer.Metadata;
@@ -186,25 +186,25 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Internal
                 _log.Info($"{persistenceId}: Snapshot loaded. State: [Total:{_total}, Persisted:{_persisted}.] " +
                           $"Metadata: [SequenceNr:{offer.Metadata.SequenceNr}, Timestamp:{offer.Metadata.Timestamp}]");
             });
-            
+
             Recover<int>(msg =>
             {
                 _total += msg;
                 _persisted++;
             });
-            
+
             Recover<string>(msg =>
             {
                 _total += int.Parse(msg);
                 _persisted++;
             });
-            
+
             Recover<ShardedMessage>(msg =>
             {
                 _total += msg.Message;
                 _persisted++;
             });
-            
+
             Recover<CustomShardedMessage>(msg =>
             {
                 _total += msg.Message;
@@ -219,6 +219,6 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Internal
             _log.Debug($"EntityActor({PersistenceId}) started");
             base.PreStart();
         }
-    }    
+    }
 }
 

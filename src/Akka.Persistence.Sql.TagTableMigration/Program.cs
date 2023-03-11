@@ -5,9 +5,9 @@
 // -----------------------------------------------------------------------
 
 using System.CommandLine;
-using Akka.Persistence.Linq2Db.HelperLib;
+using Akka.Persistence.Sql.HelperLib;
 
-namespace Akka.Persistence.Linq2Db.TagTableMigration;
+namespace Akka.Persistence.Sql.TagTableMigration;
 
 public static class Program
 {
@@ -64,7 +64,7 @@ public static class Program
 
     public static async Task<int> Main(params string[] args)
     {
-        var root = new RootCommand("A helper application to migrate legacy Akka.Persistence.Sql database tables to Akka.Persistence.Linq2Db");
+        var root = new RootCommand("A helper application to migrate legacy Akka.Persistence.Sql database tables to Akka.Persistence.Sql");
         root.AddOption(ConnectionString);
         root.AddOption(TableMapping);
         root.AddOption(Provider);

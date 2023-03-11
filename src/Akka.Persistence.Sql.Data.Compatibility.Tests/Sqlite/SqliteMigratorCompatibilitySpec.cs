@@ -9,7 +9,7 @@ using Xunit;
 using Xunit.Abstractions;
 
 
-namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Sqlite
+namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Sqlite
 {
     [Collection("SqlCompatSpec")]
     public class SqliteMigratorCompatibilitySpec: MigratorCompatibilitySpec<SqliteFixture>

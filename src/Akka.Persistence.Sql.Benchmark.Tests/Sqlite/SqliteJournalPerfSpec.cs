@@ -1,18 +1,16 @@
 ﻿using System.Threading.Tasks;
 using Akka.Configuration;
-using Akka.Persistence.Linq2Db.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common;
 using Xunit;
-using Akka.Persistence.Sql.Linq2Db.Tests.Sqlite;
-using LinqToDB;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Linq2Db.Benchmark.Tests.Sqlite
+namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
 {
     [Collection("BenchmarkSpec")]
     public class SqliteJournalPerfSpec : L2dbJournalPerfSpec, IAsyncLifetime
     {
         private readonly TestFixture _fixture;
-        
+
         public SqliteJournalPerfSpec(ITestOutputHelper output, TestFixture fixture)
             : base(
                 CreateSpecConfig(fixture.ConnectionString(Database.MsSqlite)),
@@ -21,7 +19,7 @@ namespace Akka.Persistence.Linq2Db.Benchmark.Tests.Sqlite
             _fixture = fixture;
         }
 
-        private static Config CreateSpecConfig(string connectionString)
+        private static Configuration.Config CreateSpecConfig(string connectionString)
         {
             return ConfigurationFactory.ParseString(@$"
                 akka.persistence {{

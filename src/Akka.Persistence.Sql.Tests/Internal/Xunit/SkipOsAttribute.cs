@@ -6,13 +6,13 @@
 
 using System;
 
-namespace Akka.Persistence.Sql.Linq2Db.Tests.Internal.Xunit
+namespace Akka.Persistence.Sql.Tests.Internal.Xunit
 {
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
     public class SkipLinuxAttribute: Attribute
     {
     }
-    
+
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
     public class SkipWindowsAttribute: Attribute
     {

@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
+namespace Akka.Persistence.Sql.Journal.Dao
 {
     public interface IJournalDaoWithUpdates : IJournalDao
     {

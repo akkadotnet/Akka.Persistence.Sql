@@ -55,7 +55,7 @@
      },
     "dest": "_site",
     "globalMetadata": {
-      "_appTitle": "Akka.Persistence.Linq2Db",
+      "_appTitle": "Akka.Persistence.Sql",
       "_disableContribution": "true",
       "_appLogoPath": "/images/icon.png",
     },

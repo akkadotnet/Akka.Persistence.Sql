@@ -1,15 +1,15 @@
 ﻿using System.Threading.Tasks;
 using Akka.Configuration;
-using Akka.Persistence.Linq2Db.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common;
 using Akka.Persistence.Query;
-using Akka.Persistence.Sql.Linq2Db.Query;
+using Akka.Persistence.Sql.Query;
 using Akka.Persistence.TCK.Query;
 using Akka.Util.Internal;
 using LinqToDB;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Sql.Linq2Db.Tests.Query.Sqlite
+namespace Akka.Persistence.Sql.Tests.Query.Sqlite
 {
     [Collection("PersistenceSpec")]
     public class SqliteAllEventsSpec : AllEventsSpec, IAsyncLifetime

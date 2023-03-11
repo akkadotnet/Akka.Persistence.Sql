@@ -1,7 +1,7 @@
 ﻿using Akka.Configuration;
-using Akka.Persistence.Sql.Linq2Db.Snapshot;
+using Akka.Persistence.Sql.Snapshot;
 
-namespace Akka.Persistence.Sql.Linq2Db.Config
+namespace Akka.Persistence.Sql.Config
 {
     public class SnapshotDaoConfig : IDaoConfig
     {

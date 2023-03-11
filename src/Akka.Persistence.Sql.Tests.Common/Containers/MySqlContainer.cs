@@ -13,7 +13,7 @@ using Akka.Util;
 using Docker.DotNet.Models;
 using MySql.Data.MySqlClient;
 
-namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
+namespace Akka.Persistence.Sql.Tests.Common.Containers
 {
     /// <summary>
     ///     Fixture used to run MySql SQL Server

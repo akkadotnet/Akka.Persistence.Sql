@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace Akka.Persistence.Sql.Linq2Db.Query
+namespace Akka.Persistence.Sql.Query
 {
     /// <summary>
     /// A Class used to store ranges of numbers held
@@ -15,7 +15,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query
             From = from;
             Until = until;
         }
-        
+
         public long From { get; }
         public long Until { get;}
 

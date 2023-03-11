@@ -1,10 +1,10 @@
 using Akka.Configuration;
-using Akka.Persistence.Linq2Db.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common;
 using Akka.Persistence.PostgreSql.Snapshot;
-using Akka.Persistence.Sql.Linq2Db.Journal;
-using Akka.Persistence.Sql.Linq2Db.Snapshot;
+using Akka.Persistence.Sql.Journal;
+using Akka.Persistence.Sql.Snapshot;
 
-namespace Akka.Persistence.Sql.Linq2Db.Tests.PostgreSql.Compatibility
+namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
 {
     public class PostgreSqlCompatibilitySpecConfig
     {

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.IO;
 using Akka.Configuration;
-using Akka.Persistence.Linq2Db.HelperLib;
-using Akka.Persistence.Sql.Linq2Db;
-using Akka.Persistence.Sql.Linq2Db.Config;
+using Akka.Persistence.Sql.HelperLib;
+using Akka.Persistence.Sql;
+using Akka.Persistence.Sql.Config;
 using CommandLine;
 using FluentMigrator.Expressions;
 using FluentMigrator.Runner.Generators;
@@ -17,7 +17,7 @@ using FluentMigrator.Runner.Generators.SqlServer;
 using FluentMigrator.Runner.Processors.Postgres;
 using Microsoft.Extensions.Options;
 
-namespace Akka.Persistence.Linq2Db.IndexHelperApp
+namespace Akka.Persistence.Sql.IndexHelperApp
 {
     public static class Program
     {

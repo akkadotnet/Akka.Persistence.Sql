@@ -9,17 +9,17 @@ using Akka.Actor;
 using Akka.Configuration;
 using Akka.Event;
 using Akka.Persistence.Journal;
-using Akka.Persistence.Sql.Linq2Db.Config;
-using Akka.Persistence.Sql.Linq2Db.Db;
-using Akka.Persistence.Sql.Linq2Db.Journal.Dao;
-using Akka.Persistence.Sql.Linq2Db.Journal.Types;
-using Akka.Persistence.Sql.Linq2Db.Utility;
+using Akka.Persistence.Sql.Config;
+using Akka.Persistence.Sql.Db;
+using Akka.Persistence.Sql.Journal.Dao;
+using Akka.Persistence.Sql.Journal.Types;
+using Akka.Persistence.Sql.Utility;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Util.Internal;
 using LanguageExt;
 
-namespace Akka.Persistence.Sql.Linq2Db.Journal
+namespace Akka.Persistence.Sql.Journal
 {
     public class DateTimeHelpers
     {

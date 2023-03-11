@@ -4,7 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-namespace Akka.Persistence.Linq2Db.Tests.Common.Internal
+namespace Akka.Persistence.Sql.Tests.Common.Internal
 {
     public static class Const
     {

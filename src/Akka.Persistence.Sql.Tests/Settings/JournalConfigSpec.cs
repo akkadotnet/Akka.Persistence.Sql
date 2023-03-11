@@ -6,13 +6,13 @@
 
 using System;
 using Akka.Configuration;
-using Akka.Persistence.Sql.Linq2Db.Config;
-using Akka.Persistence.Sql.Linq2Db.Journal;
-using Akka.Persistence.Sql.Linq2Db.Journal.Dao;
+using Akka.Persistence.Sql.Config;
+using Akka.Persistence.Sql.Journal;
+using Akka.Persistence.Sql.Journal.Dao;
 using FluentAssertions;
 using Xunit;
 
-namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
+namespace Akka.Persistence.Sql.Tests.Settings
 {
     public class JournalConfigSpec
     {
@@ -51,7 +51,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Settings
             journal.GetString("serializer", "invalid").Should().BeNullOrEmpty();
             journal.GetString("tag-separator", "invalid").Should().Be(";");
             journal.GetString("dao", "invalid").Should()
-                .Be("Akka.Persistence.Sql.Linq2Db.Journal.Dao.ByteArrayJournalDao, Akka.Persistence.Sql.Linq2Db");
+                .Be("Akka.Persistence.Sql.Journal.Dao.ByteArrayJournalDao, Akka.Persistence.Sql");
             journal.GetBoolean("auto-initialize").Should().BeFalse();
             journal.GetBoolean("warn-on-auto-init-fail").Should().BeTrue();
 

@@ -1,18 +1,18 @@
 ﻿using System.Threading.Tasks;
 using Akka.Configuration;
-using Akka.Persistence.Linq2Db.Tests.Common;
-using Akka.Persistence.Sql.Linq2Db.Journal;
+using Akka.Persistence.Sql.Tests.Common;
+using Akka.Persistence.Sql.Journal;
 using LinqToDB;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Linq2Db.Benchmark.Tests.SqlServer
+namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
 {
-    
+
     [Collection("BenchmarkSpec")]
     public class SqlServerLinq2DbJournalPerfSpec : L2dbJournalPerfSpec, IAsyncLifetime
     {
-        private static Config Configure(string connString)
+        private static Configuration.Config Configure(string connString)
         {
             return ConfigurationFactory.ParseString($@"
 akka.persistence {{
@@ -30,7 +30,7 @@ akka.persistence {{
             warn-on-auto-init-fail = false
             default {{
                 journal {{
-                    table-name = testPerfTable 
+                    table-name = testPerfTable
                 }}
             }}
         }}
@@ -39,15 +39,15 @@ akka.persistence {{
         }
 
         private readonly TestFixture _fixture;
-        
-        public SqlServerLinq2DbJournalPerfSpec(ITestOutputHelper output, TestFixture fixture) 
+
+        public SqlServerLinq2DbJournalPerfSpec(ITestOutputHelper output, TestFixture fixture)
             : base(
-                Configure(fixture.ConnectionString(Database.SqlServer)), 
+                Configure(fixture.ConnectionString(Database.SqlServer)),
                 nameof(SqlServerLinq2DbJournalPerfSpec), output, 40, eventsCount: TestConstants.DockerNumMessages)
         {
             _fixture = fixture;
         }
-            
+
         [Fact]
         public void PersistenceActor_Must_measure_PersistGroup1000()
         {

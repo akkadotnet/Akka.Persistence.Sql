@@ -4,7 +4,7 @@ using Akka.Streams;
 using Akka.Streams.Stage;
 using LanguageExt;
 
-namespace Akka.Persistence.Sql.Linq2Db.Streams
+namespace Akka.Persistence.Sql.Streams
 {
     public sealed class ExtSeqStage<T> : GraphStageWithMaterializedValue<SinkShape<T>, Task<Seq<T>>>
     {
@@ -68,7 +68,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Streams
         /// TBD
         /// </summary>
         protected override Attributes InitialAttributes { get; } = Attributes.CreateName("languageExtSeqSink");
-        
+
         /// <summary>
         /// TBD
         /// </summary>

@@ -5,12 +5,12 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Akka.Actor;
-using Akka.Persistence.Sql.Linq2Db.Config;
-using Akka.Persistence.Sql.Linq2Db.Db;
-using Akka.Persistence.Sql.Linq2Db.Journal.Dao;
-using Akka.Persistence.Sql.Linq2Db.Journal.Types;
-using Akka.Persistence.Sql.Linq2Db.Serialization;
-using Akka.Persistence.Sql.Linq2Db.Utility;
+using Akka.Persistence.Sql.Config;
+using Akka.Persistence.Sql.Db;
+using Akka.Persistence.Sql.Journal.Dao;
+using Akka.Persistence.Sql.Journal.Types;
+using Akka.Persistence.Sql.Serialization;
+using Akka.Persistence.Sql.Utility;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Util;
@@ -18,9 +18,9 @@ using LinqToDB;
 using LinqToDB.Data;
 using LinqToDB.Tools;
 
-namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
+namespace Akka.Persistence.Sql.Query.Dao
 {
-    
+
     public abstract class BaseByteReadArrayJournalDao : BaseJournalDaoWithReadMessages, IReadJournalDao
     {
         private readonly ReadJournalConfig _readJournalConfig;
@@ -32,7 +32,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
             IMaterializer materializer,
             AkkaPersistenceDataConnectionFactory connectionFactory,
             ReadJournalConfig readJournalConfig,
-            FlowPersistentReprSerializer<JournalRow> serializer) 
+            FlowPersistentReprSerializer<JournalRow> serializer)
             : base(scheduler, materializer, connectionFactory)
         {
             _readJournalConfig = readJournalConfig;
@@ -49,7 +49,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                 async input =>
                 {
                     await using var db = input._connectionFactory.GetConnection();
-                    
+
                     return await db.GetTable<JournalRow>()
                         .Where(r => r.Deleted == false)
                         .Select(r => r.PersistenceId)
@@ -63,22 +63,22 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
         {
             return max > int.MaxValue ? int.MaxValue : (int)max;
         }
-        
+
         public Source<Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, NotUsed> Events(
             long offset,
             long maxOffset,
             long max)
         {
             var maxTake = MaxTake(max);
-            
+
             return AsyncSource<JournalRow>.FromEnumerable(
                 new { _connectionFactory = ConnectionFactory, maxTake, maxOffset, offset},
                 async input=>
                 {
                     await using var conn = input._connectionFactory.GetConnection();
                     var events = await conn.GetTable<JournalRow>()
-                        .Where(r => 
-                            r.Ordering > input.offset && 
+                        .Where(r =>
+                            r.Ordering > input.offset &&
                             r.Ordering <= input.maxOffset &&
                             r.Deleted == false)
                         .OrderBy(r => r.Ordering)
@@ -87,7 +87,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                 }
             ).Via(_deserializeFlow);
         }
-        
+
         private async Task<List<JournalRow>> AddTagDataIfNeeded(List<JournalRow> toAdd, DataConnection context)
         {
             if (_readJournalConfig.PluginConfig.TagReadMode == TagReadMode.TagTable)
@@ -129,9 +129,9 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                             {
                                 var tagValue = $"{separator}{input.tag}{separator}";
                                 await using var conn = input.ConnectionFactory.GetConnection();
-                                
+
                                 return await conn.GetTable<JournalRow>()
-                                    .Where(r => 
+                                    .Where(r =>
                                         r.Tags.Contains(tagValue)
                                         && !r.Deleted
                                         && r.Ordering > input.offset
@@ -140,7 +140,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                                     .Take(input.maxTake).ToListAsync();
                             })
                         .Via(_deserializeFlow);
-                
+
                 case TagReadMode.TagTable:
                     return AsyncSource<JournalRow>.FromEnumerable(
                             new { separator, tag, offset, maxOffset, maxTake, ConnectionFactory },
@@ -168,14 +168,14 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
         }
 
         public override Source<Try<ReplayCompletion>, NotUsed> Messages(
-            DataConnection dc, 
+            DataConnection dc,
             string persistenceId,
             long fromSequenceNr,
             long toSequenceNr,
             long max)
         {
             return AsyncSource<JournalRow>.FromEnumerable(
-                new { dc, persistenceId, fromSequenceNr, toSequenceNr, toTake = MaxTake(max) }, 
+                new { dc, persistenceId, fromSequenceNr, toSequenceNr, toTake = MaxTake(max) },
                 async state =>
                 {
                     var mainRows = await dc.GetTable<JournalRow>()
@@ -215,7 +215,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
                 async input =>
                 {
                     await using var conn = input._connectionFactory.GetConnection();
-                    
+
                     //persistence-jdbc does not filter deleted here.
                     return await conn.GetTable<JournalRow>()
                         .Where(r => r.Ordering > input.offset)
@@ -227,7 +227,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Query.Dao
         public async Task<long> MaxJournalSequenceAsync()
         {
             await using var db = ConnectionFactory.GetConnection();
-            
+
             //persistence-jdbc does not filter deleted here.
             return await db.GetTable<JournalRow>()
                 .Select(r => r.Ordering)

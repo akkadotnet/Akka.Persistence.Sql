@@ -4,10 +4,10 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using Akka.Persistence.Linq2Db.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common;
 using Xunit;
 
-namespace Akka.Persistence.Sql.Linq2Db.Tests
+namespace Akka.Persistence.Sql.Tests
 {
     [CollectionDefinition("PersistenceSpec")]
     public sealed class SpecCollectionFixture: ICollectionFixture<TestFixture>

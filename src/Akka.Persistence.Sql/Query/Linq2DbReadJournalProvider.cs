@@ -1,7 +1,7 @@
 ﻿using Akka.Actor;
 using Akka.Persistence.Query;
 
-namespace Akka.Persistence.Sql.Linq2Db.Query
+namespace Akka.Persistence.Sql.Query
 {
     public class Linq2DbReadJournalProvider : IReadJournalProvider
     {

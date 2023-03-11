@@ -14,7 +14,7 @@ using Docker.DotNet;
 using Docker.DotNet.Models;
 using LanguageExt.UnitsOfMeasure;
 
-namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
+namespace Akka.Persistence.Sql.Tests.Common.Containers
 {
     public abstract class DockerContainer: ITestContainer
     {

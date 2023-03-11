@@ -1,13 +1,13 @@
 ﻿using System;
 using Akka.Actor;
 using Akka.Event;
-using Akka.Persistence.Sql.Linq2Db.Config;
-using Akka.Persistence.Sql.Linq2Db.Db;
-using Akka.Persistence.Sql.Linq2Db.Journal.Types;
+using Akka.Persistence.Sql.Config;
+using Akka.Persistence.Sql.Db;
+using Akka.Persistence.Sql.Journal.Types;
 using Akka.Streams;
 using LinqToDB;
 
-namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
+namespace Akka.Persistence.Sql.Journal.Dao
 {
     public sealed class ByteArrayJournalDao : BaseByteArrayJournalDao
     {
@@ -16,13 +16,13 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
             IMaterializer mat,
             AkkaPersistenceDataConnectionFactory connection,
             JournalConfig journalConfig,
-            Akka.Serialization.Serialization serializer, 
-            ILoggingAdapter logger) 
+            Akka.Serialization.Serialization serializer,
+            ILoggingAdapter logger)
             : base(
                 scheduler: scheduler,
                 materializer: mat,
                 connectionFactory: connection,
-                config: journalConfig, 
+                config: journalConfig,
                 serializer: new ByteArrayJournalSerializer(journalConfig, serializer, journalConfig.PluginConfig.TagSeparator),
                 logger: logger)
         {
@@ -32,7 +32,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
         public void InitializeTables()
         {
             using var conn = ConnectionFactory.GetConnection();
-            
+
             try
             {
                 conn.CreateTable<JournalRow>();
@@ -43,7 +43,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
             {
                 if (JournalConfig.WarnOnAutoInitializeFail)
                 {
-                    Logger.Warning(e,$"Could not Create Journal Table {JournalConfig.TableConfig.EventJournalTable.Name} as requested by config.");    
+                    Logger.Warning(e,$"Could not Create Journal Table {JournalConfig.TableConfig.EventJournalTable.Name} as requested by config.");
                 }
             }
 
@@ -57,7 +57,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
                 {
                     if (JournalConfig.WarnOnAutoInitializeFail)
                     {
-                        Logger.Warning(e,$"Could not Create Journal Metadata Table {JournalConfig.TableConfig.MetadataTable.Name} as requested by config.");    
+                        Logger.Warning(e,$"Could not Create Journal Metadata Table {JournalConfig.TableConfig.MetadataTable.Name} as requested by config.");
                     }
                 }
             }

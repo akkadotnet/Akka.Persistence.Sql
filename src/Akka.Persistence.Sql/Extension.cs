@@ -6,10 +6,10 @@
 
 using Akka.Actor;
 using Akka.Configuration;
-using Akka.Persistence.Sql.Linq2Db.Journal;
-using Akka.Persistence.Sql.Linq2Db.Snapshot;
+using Akka.Persistence.Sql.Journal;
+using Akka.Persistence.Sql.Snapshot;
 
-namespace Akka.Persistence.Sql.Linq2Db
+namespace Akka.Persistence.Sql
 {
     public sealed class Linq2DbPersistence : IExtension
     {
@@ -30,8 +30,8 @@ namespace Akka.Persistence.Sql.Linq2Db
 
         static Linq2DbPersistence()
         {
-            var journalConfig =  ConfigurationFactory.FromResource<Linq2DbWriteJournal>("Akka.Persistence.Sql.Linq2Db.persistence.conf");
-            var snapshotConfig = ConfigurationFactory.FromResource<Linq2DbSnapshotStore>("Akka.Persistence.Sql.Linq2Db.snapshot.conf");
+            var journalConfig = ConfigurationFactory.FromResource<Linq2DbWriteJournal>("Akka.Persistence.Sql.persistence.conf");
+            var snapshotConfig = ConfigurationFactory.FromResource<Linq2DbSnapshotStore>("Akka.Persistence.Sql.snapshot.conf");
 
             DefaultConfiguration = journalConfig.WithFallback(snapshotConfig);
 

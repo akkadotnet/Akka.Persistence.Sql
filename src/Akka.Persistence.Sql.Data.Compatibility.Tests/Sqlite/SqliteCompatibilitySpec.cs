@@ -7,13 +7,13 @@
 using System;
 using Akka.Configuration;
 using Akka.Hosting;
-using Akka.Persistence.Sql.Linq2Db;
-using Akka.Persistence.Sql.Linq2Db.Journal;
-using Akka.Persistence.Sql.Linq2Db.Snapshot;
+using Akka.Persistence.Sql;
+using Akka.Persistence.Sql.Journal;
+using Akka.Persistence.Sql.Snapshot;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Sqlite
+namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Sqlite
 {
     [Collection("SqlCompatSpec")]
     public class SqliteCompatibilitySpec: DataCompatibilitySpec<SqliteFixture>
@@ -21,7 +21,7 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Sqlite
         public SqliteCompatibilitySpec(ITestOutputHelper helper): base(helper)
         {
         }
-        
+
         protected override TestSettings Settings => SqliteSpecSettings.Instance;
     }
 }

@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Akka.Actor;
-using Akka.Persistence.Sql.Linq2Db.Journal.Types;
+using Akka.Persistence.Sql.Journal.Types;
 using Akka.Streams.Dsl;
 using Akka.Util;
 using LinqToDB.Data;
 
-namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
+namespace Akka.Persistence.Sql.Journal.Dao
 {
     public interface IJournalDaoWithReadMessages
     {
@@ -16,7 +16,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
             long fromSequenceNr,
             long toSequenceNr,
             long max);
-        
+
         Source<Try<ReplayCompletion>,NotUsed> MessagesWithBatch(
             string persistenceId,
             long fromSequenceNr,

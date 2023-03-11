@@ -1,6 +1,6 @@
 ﻿using FluentMigrator.Model;
 
-namespace Akka.Persistence.Linq2Db.HelperLib
+namespace Akka.Persistence.Sql.HelperLib
 {
     public class JournalIndexHelper
     {

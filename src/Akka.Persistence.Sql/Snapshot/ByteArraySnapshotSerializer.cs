@@ -1,9 +1,9 @@
 ﻿using System;
-using Akka.Persistence.Sql.Linq2Db.Config;
+using Akka.Persistence.Sql.Config;
 using Akka.Serialization;
 using Akka.Util;
 
-namespace Akka.Persistence.Sql.Linq2Db.Snapshot
+namespace Akka.Persistence.Sql.Snapshot
 {
     public class ByteArraySnapshotSerializer : ISnapshotSerializer<SnapshotRow>
     {
@@ -25,7 +25,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Snapshot
         {
             return Try<SelectedSnapshot>.From(() => ReadSnapshot(t));
         }
-        
+
         protected SelectedSnapshot ReadSnapshot(SnapshotRow reader)
         {
             var metadata = new SnapshotMetadata(reader.PersistenceId, reader.SequenceNumber, reader.Created);
@@ -48,11 +48,11 @@ namespace Akka.Persistence.Sql.Linq2Db.Snapshot
                     state: (serializer: _serialization.FindSerializerForType(type, _config.DefaultSerializer), binary, type),
                     action: state => state.serializer.FromBinary(state.binary, state.type));
             }
-            
+
             var serializerId = reader.SerializerId.Value;
             return _serialization.Deserialize(binary, serializerId, manifest);
         }
-        
+
         private SnapshotRow ToSnapshotEntry(SnapshotMetadata metadata, object snapshot)
         {
             var snapshotType = snapshot.GetType();
@@ -61,7 +61,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Snapshot
                 system: _serialization.System,
                 state: (serializer, snapshot),
                 action: state => state.serializer.ToBinary(state.snapshot));
-            
+
             var manifest = "";
             if (serializer is SerializerWithStringManifest stringManifest)
             {
@@ -71,7 +71,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Snapshot
             {
                 manifest = snapshotType.TypeQualifiedName();
             }
-            
+
             return new SnapshotRow
             {
                 PersistenceId = metadata.PersistenceId,

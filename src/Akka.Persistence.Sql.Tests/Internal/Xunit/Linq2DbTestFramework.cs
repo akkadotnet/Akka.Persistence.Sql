@@ -7,7 +7,7 @@
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
-namespace Akka.Persistence.Sql.Linq2Db.Tests.Internal.Xunit
+namespace Akka.Persistence.Sql.Tests.Internal.Xunit
 {
     public class Linq2DbTestFramework: XunitTestFramework
     {

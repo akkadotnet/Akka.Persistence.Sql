@@ -8,17 +8,17 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Akka.Hosting;
-using Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Internal;
+using Akka.Persistence.Sql.Data.Compatibility.Tests.Internal;
 using Akka.Persistence.Query;
 using Akka.Persistence.Sql.Compat.Common;
-using Akka.Persistence.Sql.Linq2Db.Query;
+using Akka.Persistence.Sql.Query;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests
+namespace Akka.Persistence.Sql.Data.Compatibility.Tests
 {
     // Default compatibility spec, logical delete turned off
     public abstract class DataCompatibilitySpec<T> : DataCompatibilitySpecBase<T> where T: ITestContainer, new()

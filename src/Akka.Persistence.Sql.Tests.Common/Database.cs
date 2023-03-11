@@ -5,7 +5,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-namespace Akka.Persistence.Linq2Db.Tests.Common
+namespace Akka.Persistence.Sql.Tests.Common
 {
     public enum Database
     {

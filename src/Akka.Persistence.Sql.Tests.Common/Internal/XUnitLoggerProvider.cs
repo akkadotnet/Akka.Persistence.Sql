@@ -7,7 +7,7 @@
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Linq2Db.Tests.Common.Internal
+namespace Akka.Persistence.Sql.Tests.Common.Internal
 {
     public class XUnitLoggerProvider : ILoggerProvider
     {
@@ -29,6 +29,6 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Internal
         {
             return new XUnitLogger(categoryName, _helper, _logLevel);
         }
-    }    
+    }
 }
 

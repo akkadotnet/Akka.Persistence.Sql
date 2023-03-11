@@ -3,16 +3,16 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Akka.Actor;
-using Akka.Persistence.Sql.Linq2Db.Config;
-using Akka.Persistence.Sql.Linq2Db.Journal.Types;
-using Akka.Persistence.Sql.Linq2Db.Serialization;
+using Akka.Persistence.Sql.Config;
+using Akka.Persistence.Sql.Journal.Types;
+using Akka.Persistence.Sql.Serialization;
 using Akka.Serialization;
 using Akka.Util;
 
-namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
+namespace Akka.Persistence.Sql.Journal.Dao
 {
     /// <summary>
-    /// Serializes <see cref="IPersistentRepresentation"/> 
+    /// Serializes <see cref="IPersistentRepresentation"/>
     /// </summary>
     public sealed class ByteArrayJournalSerializer : FlowPersistentReprSerializer<JournalRow>
     {
@@ -32,7 +32,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
         }
 
         /// <summary>
-        /// Concatenates a set of tags using a provided separator. 
+        /// Concatenates a set of tags using a provided separator.
         /// </summary>
         /// <param name="tags"></param>
         /// <param name="separator"></param>
@@ -42,7 +42,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
         {
             return tags.Count == 0 ? "" : $"{separator}{string.Join(separator, tags)}{separator}";
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static JournalRow CreateJournalRow(
             IImmutableSet<string> tags,
@@ -58,21 +58,21 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
                     Tags = StringSep(tags, separator),
                     Timestamp = representation.Timestamp == 0 ? timestamp : representation.Timestamp
                 },
-                
+
                 TagWriteMode.TagTable => new JournalRow
                 {
                     Tags = "",
                     TagArr = tags.ToArray(),
                     Timestamp = representation.Timestamp == 0 ? timestamp : representation.Timestamp
                 },
-                
+
                 TagWriteMode.Both => new JournalRow
                 {
                     Tags = StringSep(tags, separator),
                     TagArr = tags.ToArray(),
                     Timestamp = representation.Timestamp == 0 ? timestamp : representation.Timestamp
                 },
-                
+
                 _ => throw new Exception($"Invalid Tag Write Mode! Was: {tagWriteMode}")
             };
         }
@@ -87,9 +87,9 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
                 // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
                 return Akka.Serialization.Serialization
                     .WithTransport(
-                        system: _serializer.System, 
+                        system: _serializer.System,
                         state: (
-                            persistentRepr, 
+                            persistentRepr,
                             _serializer.FindSerializerForType(persistentRepr.Payload.GetType(), _journalConfig.DefaultSerializer),
                             CreateJournalRow(tTags, persistentRepr, timeStamp, _tagWriteMode, _separator)
                         ),
@@ -114,7 +114,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
                             row.Identifier = serializer.Identifier;
                             row.SequenceNumber = representation.SequenceNr;
                             row.EventManifest = representation.Manifest;
-                                
+
                             return new Try<JournalRow>(row);
                         });
             }
@@ -138,29 +138,29 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
                     return new Try<(IPersistentRepresentation, IImmutableSet<string>, long)>((
                         new Persistent(
                             payload: Akka.Serialization.Serialization.WithTransport(
-                                system: _serializer.System, 
+                                system: _serializer.System,
                                 state: (_serializer.FindSerializerForType(type,_journalConfig.DefaultSerializer), message: t.Message, type),
-                                action: state => state.Item1.FromBinary(state.message, state.type)), 
+                                action: state => state.Item1.FromBinary(state.message, state.type)),
                             sequenceNr: t.SequenceNumber,
                             persistenceId: t.PersistenceId,
-                            manifest: t.EventManifest ?? t.Manifest, 
-                            isDeleted: t.Deleted, 
+                            manifest: t.EventManifest ?? t.Manifest,
+                            isDeleted: t.Deleted,
                             sender: ActorRefs.NoSender,
-                            writerGuid: null, 
+                            writerGuid: null,
                             timestamp: t.Timestamp),
                         t.Tags?
                             .Split(_separatorArray, StringSplitOptions.RemoveEmptyEntries)
                             .ToImmutableHashSet() ?? t.TagArr?.ToImmutableHashSet()?? ImmutableHashSet<string>.Empty,
                         t.Ordering));
                 }
-                
+
                 // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
                 return new Try<(IPersistentRepresentation, IImmutableSet<string>, long)>((
                     new Persistent(
-                        payload: _serializer.Deserialize(t.Message, identifierMaybe.Value, t.Manifest), 
+                        payload: _serializer.Deserialize(t.Message, identifierMaybe.Value, t.Manifest),
                         sequenceNr: t.SequenceNumber,
                         persistenceId: t.PersistenceId,
-                        manifest: t.EventManifest ?? t.Manifest, 
+                        manifest: t.EventManifest ?? t.Manifest,
                         isDeleted: t.Deleted,
                         sender: ActorRefs.NoSender,
                         writerGuid: null,
@@ -174,7 +174,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal.Dao
             {
                 return new Try<(IPersistentRepresentation, IImmutableSet<string>, long)>(e);
             }
-            
+
         }
     }
 }

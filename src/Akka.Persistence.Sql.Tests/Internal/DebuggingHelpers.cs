@@ -4,7 +4,7 @@ using System.Text;
 using LinqToDB.Data;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Sql.Linq2Db.Tests.Internal
+namespace Akka.Persistence.Sql.Tests.Internal
 {
     public static class DebuggingHelpers
     {

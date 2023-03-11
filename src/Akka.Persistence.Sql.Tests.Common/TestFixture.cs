@@ -8,10 +8,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Akka.Persistence.Linq2Db.Tests.Common.Containers;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using Xunit;
 
-namespace Akka.Persistence.Linq2Db.Tests.Common
+namespace Akka.Persistence.Sql.Tests.Common
 {
     public class TestFixture: IAsyncLifetime
     {

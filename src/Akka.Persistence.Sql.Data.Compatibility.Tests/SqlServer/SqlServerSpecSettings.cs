@@ -4,7 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.SqlServer
+namespace Akka.Persistence.Sql.Data.Compatibility.Tests.SqlServer
 {
     public sealed class SqlServerSpecSettings: TestSettings
     {
@@ -13,9 +13,9 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.SqlServer
         private SqlServerSpecSettings()
         {
         }
-        
+
         public override string ProviderName => LinqToDB.ProviderName.SqlServer2017;
-        
+
         public override string TableMapping => "sql-server";
     }
 }

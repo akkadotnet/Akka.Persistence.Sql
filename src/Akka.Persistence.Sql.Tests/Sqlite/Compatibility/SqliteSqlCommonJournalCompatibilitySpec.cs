@@ -1,9 +1,9 @@
 ﻿using System.Threading.Tasks;
-using Akka.Persistence.Linq2Db.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Sql.Linq2Db.Tests.Sqlite.Compatibility
+namespace Akka.Persistence.Sql.Tests.Sqlite.Compatibility
 {
     [Collection("PersistenceSpec")]
     public class SqliteSqlCommonJournalCompatibilitySpec : SqlCommonJournalCompatibilitySpec

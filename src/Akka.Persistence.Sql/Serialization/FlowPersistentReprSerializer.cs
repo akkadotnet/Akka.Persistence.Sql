@@ -2,7 +2,7 @@
 using Akka.Streams.Dsl;
 using Akka.Util;
 
-namespace Akka.Persistence.Sql.Linq2Db.Serialization
+namespace Akka.Persistence.Sql.Serialization
 {
     public abstract class FlowPersistentReprSerializer<T> : PersistentReprSerializer<T>
     {

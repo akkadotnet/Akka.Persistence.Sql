@@ -10,7 +10,7 @@ using Microsoft.SqlServer.Management.Smo;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.SqlServer
+namespace Akka.Persistence.Sql.Data.Compatibility.Tests.SqlServer
 {
     [Collection("SqlCompatSpec")]
     public class SqlServerScriptCompatibilitySpec: SqlScriptCompatibilitySpec<SqlServerFixture>
@@ -21,7 +21,7 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.SqlServer
 
         protected override TestSettings Settings => SqlServerSpecSettings.Instance;
         protected override string ScriptFolder => "SqlServer";
-        
+
         protected override void ExecuteSqlScripts(string setup, string migration, string cleanup)
         {
             using var conn = new SqlConnection(Fixture.ConnectionString);

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Akka.Persistence.Sql.Linq2Db.Config
+namespace Akka.Persistence.Sql.Config
 {
     public class ReadJournalConfig : IProviderConfig<JournalTableConfig>
     {

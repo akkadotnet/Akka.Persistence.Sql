@@ -1,4 +1,4 @@
-# Akka.Persistence.Linq2Db
+# Akka.Persistence.Sql
 
 A Cross-SQL-DB Engine Akka.Persistence plugin with broad database compatibility thanks to [Linq2Db](https://linq2db.github.io/).
 
@@ -94,7 +94,7 @@ Working:
 - Tests for Schema Usage
 - Some Akka.NET specfic Journal Queries (those not mentioned above)
 - Cleanup of Configuration classes/fallbacks.
-  - Should still be usable in most common scenarios including multiple configuration instances: see [`SqlServerCustomConfigSpec`](src/Akka.Persistence.Sql.Linq2Db.Tests/SqlServer/SQLServerJournalCustomConfigSpec.cs) for test and examples.
+  - Should still be usable in most common scenarios including multiple configuration instances: see [`SqlServerCustomConfigSpec`](src/Akka.Persistence.Sql.Tests/SqlServer/SQLServerJournalCustomConfigSpec.cs) for test and examples.
 
 DB Compatibility:
 
@@ -202,7 +202,7 @@ akka.persistence {
     plugin = "akka.persistence.journal.linq2db"
 
     linq2db {
-      class = "Akka.Persistence.Sql.Linq2Db.Journal.Linq2DbWriteJournal, Akka.Persistence.Sql.Linq2Db"
+      class = "Akka.Persistence.Sql.Journal.Linq2DbWriteJournal, Akka.Persistence.Sql"
       plugin-dispatcher = "akka.persistence.dispatchers.default-plugin-dispatcher"
       connection-string = "" # Connection String is Required!
 
@@ -379,7 +379,7 @@ akka.persistence {
     plugin = "akka.persistence.snapshot-store.linq2db"
 
     linq2db {
-      class = "Akka.Persistence.Sql.Linq2Db.Snapshot.Linq2DbSnapshotStore"
+      class = "Akka.Persistence.Sql.Snapshot.Linq2DbSnapshotStore"
       plugin-dispatcher = "akka.persistence.dispatchers.default-plugin-dispatcher"
       connection-string = ""
       provider-name = ""

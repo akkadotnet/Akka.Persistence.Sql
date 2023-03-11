@@ -7,10 +7,10 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Internal;
+using Akka.Persistence.Sql.Data.Compatibility.Tests.Internal;
 using Docker.DotNet;
 
-namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Sqlite
+namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Sqlite
 {
     /// <summary>
     ///     Fixture used to run SQL Server
@@ -32,7 +32,7 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests.Sqlite
             File.Copy("./db/akka-persistence-sqlite-test-data.latest.db", "database.db");
 
             ConnectionString = "DataSource=database.db";
-            
+
             return Task.CompletedTask;
         }
 

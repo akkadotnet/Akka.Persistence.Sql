@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 using Akka.Util;
 using Docker.DotNet.Models;
 
-namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
+namespace Akka.Persistence.Sql.Tests.Common.Containers
 {
     /// <summary>
     ///     Fixture used to run SQL Server
