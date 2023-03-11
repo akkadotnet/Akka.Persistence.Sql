@@ -30,20 +30,20 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
                 ["Password"] = Password,
                 ["TrustServerCertificate"] = "true"
             }.ToString();
-        
+
             Console.WriteLine($"Connection string: [{ConnectionString}]");
         }
 
         public override string ConnectionString { get; }
-        
+
         private int Port { get; } = ThreadLocalRandom.Current.Next(9000, 10000);
-    
+
         private const string User = "sa";
 
         private const string Password = "Password12!";
 
         protected override string ReadyMarker => "Recovery is complete.";
-    
+
         protected override void ConfigureContainer(CreateContainerParameters parameters)
         {
             parameters.ExposedPorts = new Dictionary<string, EmptyStruct>
@@ -64,7 +64,7 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
                 "MSSQL_PID=Express"
             };
         }
-    
+
         public override async Task InitializeDbAsync()
         {
             var connectionBuilder = new SqlConnectionStringBuilder(ConnectionString)
@@ -91,7 +91,7 @@ END",
 
             await DropTablesAsync(conn, DatabaseName);
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static async Task DropTablesAsync(SqlConnection conn, string databaseName)
         {

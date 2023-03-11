@@ -46,16 +46,16 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal
     {
         [Obsolete(message: "Use Linq2DbPersistence.DefaultConfiguration or Linq2DbPersistence.Get(ActorSystem).DefaultConfig instead")]
         public static readonly Configuration.Config DefaultConfiguration = Linq2DbPersistence.DefaultConfiguration;
-        
+
         private readonly ActorMaterializer _mat;
         private readonly JournalConfig _journalConfig;
         private readonly ByteArrayJournalDao _journal;
         private readonly ILoggingAdapter _log;
-        
+
         public Linq2DbWriteJournal(Configuration.Config journalConfig)
         {
             _log = Context.GetLogger();
-            
+
             try
             {
                 var config = journalConfig.WithFallback(Linq2DbPersistence.DefaultJournalConfiguration);
@@ -67,15 +67,15 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal
                         .WithDispatcher(_journalConfig.MaterializerDispatcher),
                     namePrefix: "l2dbWriteJournal"
                 );
-                
+
                 try
                 {
                     _journal = new ByteArrayJournalDao(
-                        scheduler: Context.System.Scheduler.Advanced, 
+                        scheduler: Context.System.Scheduler.Advanced,
                         mat: _mat,
                         connection: new AkkaPersistenceDataConnectionFactory(_journalConfig),
-                        journalConfig: _journalConfig, 
-                        serializer: Context.System.Serialization, 
+                        journalConfig: _journalConfig,
+                        serializer: Context.System.Serialization,
                         logger: Context.GetLogger());
                 }
                 catch (Exception e)
@@ -105,9 +105,9 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal
 
         protected override bool ReceivePluginInternal(object message)
         {
-            if (message is not WriteFinished wf) 
+            if (message is not WriteFinished wf)
                 return false;
-            
+
             if (writeInProgress.TryGetValue(wf.PersistenceId, out var latestPending) & latestPending == wf.Future)
             {
                 writeInProgress.Remove(wf.PersistenceId);
@@ -155,19 +155,19 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal
             }
             return await _journal.HighestSequenceNr(persistenceId, fromSequenceNr);
         }
-        
+
         private readonly Dictionary<string,Task> writeInProgress = new ();
-        
+
         protected override Task<IImmutableList<Exception>> WriteMessagesAsync(IEnumerable<AtomicWrite> messages)
         {
             //TODO: CurrentTimeMillis;
             var currentTime = DateTime.UtcNow.Ticks;
             var persistenceId = messages.Head().PersistenceId;
             var future = _journal.AsyncWriteMessages(messages,currentTime);
-            
+
             writeInProgress[persistenceId] = future;
             var self = Self;
-            
+
             //When we are done, we want to send a 'WriteFinished' so that
             //Sequence Number reads won't block/await/etc.
             future.ContinueWith(
@@ -175,7 +175,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Journal
                 cancellationToken: CancellationToken.None,
                 continuationOptions: TaskContinuationOptions.ExecuteSynchronously,
                 scheduler: TaskScheduler.Default);
-            
+
             //But we still want to return the future from `AsyncWriteMessages`
             return future;
         }

@@ -15,13 +15,13 @@ namespace Akka.Persistence.Sql.Linq2Db
     {
         public const string JournalConfigPath = "akka.persistence.journal.linq2db";
         public const string SnapshotStoreConfigPath = "akka.persistence.snapshot-store.linq2db";
-    
+
         public static readonly Configuration.Config DefaultJournalConfiguration;
         public static readonly Configuration.Config DefaultSnapshotConfiguration;
         public static readonly Configuration.Config DefaultConfiguration;
         public static readonly Configuration.Config DefaultJournalMappingConfiguration;
         public static readonly Configuration.Config DefaultSnapshotMappingConfiguration;
-        
+
         public readonly Configuration.Config DefaultJournalConfig = DefaultJournalConfiguration;
         public readonly Configuration.Config DefaultSnapshotConfig = DefaultSnapshotConfiguration;
         public readonly Configuration.Config DefaultConfig = DefaultConfiguration;
@@ -46,7 +46,7 @@ namespace Akka.Persistence.Sql.Linq2Db
         {
             system.Settings.InjectTopLevelFallback(DefaultConfig);
         }
-    
+
         public static Linq2DbPersistence Get(ActorSystem system)
         {
             return system.WithExtension<Linq2DbPersistence, Linq2DbPersistenceProvider>();
@@ -62,5 +62,5 @@ namespace Akka.Persistence.Sql.Linq2Db
         {
             return new Linq2DbPersistence(system);
         }
-    }    
+    }
 }

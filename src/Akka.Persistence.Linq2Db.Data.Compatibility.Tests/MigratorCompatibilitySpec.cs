@@ -23,7 +23,7 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests
         private readonly Config _config = @"
 akka.persistence.journal.linq2db.tag-write-mode = Both
 akka.persistence.query.journal.linq2db.tag-read-mode = TagTable";
-        
+
         protected override async Task InitializeTestAsync()
         {
             await base.InitializeTestAsync();

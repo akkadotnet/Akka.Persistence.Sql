@@ -31,11 +31,11 @@ namespace Akka.Persistence.Linq2Db.HelperLib
             config = config
                 .WithFallback(Linq2DbPersistence.DefaultConfiguration)
                 .GetConfig("akka.persistence.journal.linq2db");
-            
+
             var mapping = config.GetString("table-mapping");
             if(string.IsNullOrWhiteSpace(mapping) || mapping == "default")
                 throw new ConfigurationException("akka.persistence.journal.linq2db.table-mapping must not be empty or 'default'");
-            
+
             _journalConfig = new JournalConfig(config);
             if (_journalConfig.TableConfig.TagWriteMode != TagWriteMode.Both)
                 throw new ConfigurationException("akka.persistence.journal.linq2db.tag-write-mode has to be 'Both'");
@@ -47,7 +47,7 @@ namespace Akka.Persistence.Linq2Db.HelperLib
         public async Task Migrate(long startOffset, int batchSize, long? endOffset = null)
         {
             var config = _journalConfig.DaoConfig;
-            
+
             await using var db = _connectionFactory.GetConnection();
 
             // Create the tag table if it doesn't exist
@@ -57,7 +57,7 @@ namespace Akka.Persistence.Linq2Db.HelperLib
             {
                 await db.CreateTableAsync<JournalTagRow>();
             }
-            
+
             long maxId;
             if (endOffset is null)
             {
@@ -78,7 +78,7 @@ namespace Akka.Persistence.Linq2Db.HelperLib
             {
                 maxId = endOffset.Value;
             }
-            
+
             Console.WriteLine($"Attempting to migrate tags from {_journalConfig.TableConfig.EventJournalTable.Name} table starting from ordering number {startOffset} to {maxId}");
 
             while (startOffset <= maxId)
@@ -103,7 +103,7 @@ namespace Akka.Persistence.Linq2Db.HelperLib
                             var tags = row.Tags
                                 .Split(new [] {_separator}, StringSplitOptions.RemoveEmptyEntries)
                                 .Where(s => !string.IsNullOrWhiteSpace(s));
-                            
+
                             tagList.AddRange(tags.Select(tag => new JournalTagRow
                             {
                                 OrderingId = row.Ordering,
@@ -136,7 +136,7 @@ namespace Akka.Persistence.Linq2Db.HelperLib
                                 e2, e1);
                         }
                         throw new Exception(
-                            $"Migration failed on offset {startOffset} to {startOffset + batchSize}, Rollback successful.", 
+                            $"Migration failed on offset {startOffset} to {startOffset + batchSize}, Rollback successful.",
                             e1);
                     }
                 }

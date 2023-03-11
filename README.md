@@ -329,7 +329,7 @@ akka.persistence {
           "manifest" = "manifest"
         }
 
-        postgres-compat-column-names {
+        postgresql-compat-column-names {
           "ordering" = "ordering"
           "deleted" = "is_deleted"
           "persistenceId" = "persistence_id"
@@ -356,7 +356,7 @@ akka.persistence {
           "sequenceNumber" = "sequence_nr"
         }
 
-        postgres-compat-metadata-column-names {
+        postgresql-compat-metadata-column-names {
           "persistenceId" = "persistence_id"
           "sequenceNumber" = "sequence_nr"
         }

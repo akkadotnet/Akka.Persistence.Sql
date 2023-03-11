@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using Akka.Configuration;
-using Akka.Persistence.Sql.Linq2Db;
 
 namespace Akka.Persistence.Linq2Db.TagTableMigration;
 
@@ -74,7 +73,7 @@ public static class Extensions
             ProviderType.SqliteMs => LinqToDB.ProviderName.SQLiteMS,
             _ => throw new ArgumentException($"Unknown provider type: {type}")
         };
-    
+
     public static Config ToHocon(this Options opt)
         => (Config)$@"
 akka.persistence {{

@@ -9,16 +9,15 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Sqlite.Compatibility
     public class SqliteSqlCommonSnapshotCompatibilitySpec : SqlCommonSnapshotCompatibilitySpec
     {
         private readonly TestFixture _fixture;
-        
+
         public SqliteSqlCommonSnapshotCompatibilitySpec(ITestOutputHelper outputHelper, TestFixture fixture) : base(outputHelper)
         {
             _fixture = fixture;
             Config = SqliteCompatibilitySpecConfig.InitSnapshotConfig(
-                "snapshot_compat", fixture.ConnectionString(Database.MsSqLite));
+                "snapshot_compat", fixture.ConnectionString(Database.MsSqlite));
         }
 
         protected override Configuration.Config Config { get; }
-            
 
         protected override string OldSnapshot => "akka.persistence.snapshot-store.sqlite";
 
@@ -27,7 +26,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Sqlite.Compatibility
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            await _fixture.InitializeDbAsync(Database.MsSqLite);
+            await _fixture.InitializeDbAsync(Database.MsSqlite);
         }
     }
 }

@@ -5,7 +5,7 @@ using LinqToDB;
 
 namespace Akka.Persistence.Sql.Linq2Db.Tests.Sqlite
 {
-    public static class SqLiteSnapshotSpecConfig
+    public static class SqliteSnapshotSpecConfig
     {
         public static Configuration.Config Create(string connString, string providerName)
         {
@@ -29,8 +29,8 @@ akka.persistence {{
 }}");
         }
     }
-    
-    public static class SqLiteJournalSpecConfig
+
+    public static class SqliteJournalSpecConfig
     {
         public static Configuration.Config Create(string connString, string providerName, bool nativeMode = false)
         {

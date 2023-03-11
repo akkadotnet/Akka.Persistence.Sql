@@ -17,7 +17,7 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
     public sealed class SqliteContainer : ITestContainer
     {
         private static SQLiteConnection? _heldConnection;
-        
+
         public string ConnectionString { get; }
         public string DatabaseName { get; } = $"linq2db_tests_{Guid.NewGuid():N}";
 
@@ -33,7 +33,7 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
         {
             ConnectionString = $"FullUri=file:{DatabaseName}?mode=memory&cache=shared";
         }
-        
+
         public async Task InitializeAsync()
         {
             if(!Initialized)
@@ -49,7 +49,7 @@ namespace Akka.Persistence.Linq2Db.Tests.Common.Containers
         {
             await using var conn = new SQLiteConnection(ConnectionString);
             conn.Open();
-            
+
             await using var cmd = new SQLiteCommand
             {
                 CommandText = @"
@@ -60,7 +60,7 @@ DROP TABLE IF EXISTS journal;
 DROP TABLE IF EXISTS tags;",
                 Connection = conn
             };
-            
+
             await cmd.ExecuteNonQueryAsync();
         }
 

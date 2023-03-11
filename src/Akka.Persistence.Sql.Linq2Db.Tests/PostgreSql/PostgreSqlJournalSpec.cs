@@ -10,7 +10,7 @@ using Xunit.Abstractions;
 using Akka.Persistence.Sql.Linq2Db.Tests.Internal.Xunit;
 #endif
 
-namespace Akka.Persistence.Sql.Linq2Db.Tests.Postgres
+namespace Akka.Persistence.Sql.Linq2Db.Tests.PostgreSql
 {
 #if !DEBUG
     [SkipWindows]
@@ -28,7 +28,7 @@ akka.persistence {{
         linq2db {{
             class = ""{typeof(Linq2DbWriteJournal).AssemblyQualifiedName}""
             plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
-            connection-string = ""{fixture.ConnectionString(Database.Postgres)}""
+            connection-string = ""{fixture.ConnectionString(Database.PostgreSql)}""
             provider-name = ""{ProviderName.PostgreSQL95}""
             use-clone-connection = true
             auto-initialize = true
@@ -36,21 +36,21 @@ akka.persistence {{
     }}
 }}");
         }
-        
+
         private readonly TestFixture _fixture;
-        
-        public Linq2DbPostgreSqlJournalSpec(ITestOutputHelper output, TestFixture fixture) 
+
+        public Linq2DbPostgreSqlJournalSpec(ITestOutputHelper output, TestFixture fixture)
             : base(Configuration(fixture), nameof(Linq2DbPostgreSqlJournalSpec), output)
         {
             _fixture = fixture;
             //DebuggingHelpers.SetupTraceDump(output);
         }
-            
+
         protected override bool SupportsSerialization => false;
-    
+
         public async Task InitializeAsync()
         {
-            await _fixture.InitializeDbAsync(Database.Postgres);
+            await _fixture.InitializeDbAsync(Database.PostgreSql);
             Initialize();
         }
 

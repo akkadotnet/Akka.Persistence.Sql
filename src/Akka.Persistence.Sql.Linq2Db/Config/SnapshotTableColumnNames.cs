@@ -15,19 +15,19 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
             Manifest = cfg.GetString("manifest", "manifest");
             SerializerId = cfg.GetString("serializerId", "serializer_id");
         }
-        
+
         public string PersistenceId { get; }
-        
+
         public string SequenceNumber { get; }
-        
+
         public string Created { get; }
-        
+
         public string Snapshot { get; }
-        
+
         public string Manifest { get; }
-        
+
         public string SerializerId { get; }
-        
+
         public override int GetHashCode()
         {
             return HashCode.Combine(PersistenceId, SequenceNumber, Created, Snapshot, Manifest, SerializerId);

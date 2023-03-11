@@ -11,20 +11,21 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.Sqlite
     public class SystemDataSqliteJournalSpec : JournalSpec, IAsyncLifetime
     {
         private readonly TestFixture _fixture;
-        
+
         public SystemDataSqliteJournalSpec(ITestOutputHelper output, TestFixture fixture)
             : base(
-                SqLiteJournalSpecConfig.Create(fixture.ConnectionString(Database.SqLite), ProviderName.SQLiteClassic), 
+                SqliteJournalSpecConfig.Create(fixture.ConnectionString(Database.Sqlite), ProviderName.SQLiteClassic),
                 nameof(SystemDataSqliteJournalSpec), output)
         {
             _fixture = fixture;
         }
+
         // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
         protected override bool SupportsSerialization => false;
-    
+
         public async Task InitializeAsync()
         {
-            await _fixture.InitializeDbAsync(Database.SqLite);
+            await _fixture.InitializeDbAsync(Database.Sqlite);
             Initialize();
         }
 

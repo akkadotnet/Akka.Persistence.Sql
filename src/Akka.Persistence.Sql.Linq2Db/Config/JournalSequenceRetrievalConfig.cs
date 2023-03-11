@@ -25,8 +25,8 @@ namespace Akka.Persistence.Sql.Linq2Db.Config
 
         public static JournalSequenceRetrievalConfig Apply(Configuration.Config config)
         {
-            return new JournalSequenceRetrievalConfig(config);   
+            return new JournalSequenceRetrievalConfig(config);
         }
-        
+
     }
 }

@@ -24,7 +24,7 @@ akka.persistence {{
 
 			sequential-access = off
 		}}
-	
+
         linq2db {{
             class = ""{typeof(Linq2DbSnapshotStore).AssemblyQualifiedName}""
             plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
@@ -34,7 +34,7 @@ akka.persistence {{
             auto-initialize = true
             sql-server {{
                 snapshot {{
-                    table-name = ""{tableName}"" 
+                    table-name = ""{tableName}""
                 }}
             }}
         }}
@@ -43,7 +43,7 @@ akka.persistence {{
 
             return ConfigurationFactory.ParseString(specString);
         }
-        
+
         public static Configuration.Config InitJournalConfig(TestFixture fixture, string tableName, string metadataTableName)
         {
             var specString = $@"
@@ -71,10 +71,10 @@ akka.persistence {{
             auto-initialize = true
             sql-server {{
                 journal {{
-                    table-name = ""{tableName}"" 
+                    table-name = ""{tableName}""
                 }}
                 metadata {{
-                    table-name = ""{metadataTableName}"" 
+                    table-name = ""{metadataTableName}""
                 }}
             }}
         }}

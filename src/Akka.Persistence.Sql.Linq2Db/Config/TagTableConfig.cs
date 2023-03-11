@@ -16,8 +16,9 @@ public class TagTableConfig : IEquatable<TagTableConfig>
         Name = journalConfig.GetString("table-name");
         ColumnNames = new TagTableColumnNames(journalConfig);
     }
-    
+
     public string Name { get; }
+
     public TagTableColumnNames ColumnNames { get; }
 
     public bool Equals(TagTableConfig other)

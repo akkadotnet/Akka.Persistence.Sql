@@ -1,6 +1,5 @@
 ﻿namespace Akka.Persistence.Sql.Linq2Db.Config
 {
-    
     public class Linq2DbConfiguration
     {
         public Linq2DbConfiguration(Configuration.Config config)

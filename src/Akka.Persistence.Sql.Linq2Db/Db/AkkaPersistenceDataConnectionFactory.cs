@@ -17,12 +17,12 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
         private readonly string _connString;
         private readonly MappingSchema _mappingSchema;
         private readonly LinqToDbConnectionOptions _opts;
-        
+
         public AkkaPersistenceDataConnectionFactory(IProviderConfig<JournalTableConfig> config)
         {
             _providerName = config.ProviderName;
             _connString = config.ConnectionString;
-            
+
             //Build Mapping Schema to be used for all connections.
             //Make a unique mapping schema name here to avoid problems
             //with multiple configurations using different schemas.
@@ -35,19 +35,19 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
             _opts = new LinqToDbConnectionOptionsBuilder()
                 .UseConnectionString(_providerName, _connString)
                 .UseMappingSchema(_mappingSchema).Build();
-            
+
             if (_providerName.ToLower().StartsWith("sqlserver"))
             {
                 _policy = new SqlServerRetryPolicy();
             }
             _cloneConnection = new Lazy<DataConnection>(()=>new DataConnection(_opts));
         }
-        
+
         public AkkaPersistenceDataConnectionFactory(IProviderConfig<SnapshotTableConfiguration> config)
         {
             _providerName = config.ProviderName;
             _connString = config.ConnectionString;
-            
+
             //Build Mapping Schema to be used for all connections.
             //Make a unique mapping schema name here to avoid problems
             //with multiple configurations using different schemas.
@@ -62,7 +62,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
             _opts = new LinqToDbConnectionOptionsBuilder()
                 .UseConnectionString(_providerName, _connString)
                 .UseMappingSchema(_mappingSchema).Build();
-            
+
             if (_providerName.ToLower().StartsWith("sqlserver"))
             {
                 _policy = new SqlServerRetryPolicy();
@@ -95,17 +95,17 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                 .Member(r => r.PersistenceId)
                 .HasColumnName(snapshotConfig.ColumnNames.PersistenceId)
                 .HasLength(255);
-            
-            if (config.ProviderName.ToLower().Contains("sqlite") || config.ProviderName.ToLower().Contains("postgres"))
+
+            if (config.ProviderName.ToLower().Contains("sqlite") || config.ProviderName.ToLower().Contains("postgresql"))
             {
                 builder.Member(r => r.Created)
                     .HasDataType(DataType.Int64)
                     .HasConversion(r => r.Ticks, r => new DateTime(r));
             }
-            
+
             if (config.IDaoConfig.SqlCommonCompatibilityMode)
             {
-                
+
                 //builder.Member(r => r.Created)
                 //    .HasConversion(l => DateTimeHelpers.FromUnixEpochMillis(l),
                 //        dt => DateTimeHelpers.ToUnixEpochMillis(dt));
@@ -153,7 +153,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                     .HasColumnName(columnNames.Tags)
                     .HasLength(100);
             }
-            
+
             if (config.ProviderName.ToLower().Contains("sqlite"))
             {
                 journalRowBuilder
@@ -168,7 +168,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                     .Member(r=>r.PersistenceId).IsPrimaryKey()
                     .Member(r=>r.SequenceNumber).IsPrimaryKey();
             }
-            
+
             if (config.TableConfig.UseEventManifestColumn)
             {
                 journalRowBuilder.Member(r => r.EventManifest)
@@ -177,9 +177,9 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
             else
             {
                 journalRowBuilder.Member(r => r.EventManifest)
-                    .IsNotColumn();   
+                    .IsNotColumn();
             }
-            
+
             if (config.TableConfig.TagWriteMode is not TagWriteMode.Csv)
             {
                 var tagConfig = tableConfig.TagTable;
@@ -199,7 +199,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                     .Member(r => r.PersistenceId).HasColumnName(tagColumns.PersistenceId)
                     .HasLength(255)
                     .IsColumn().IsNullable(false).IsPrimaryKey();
-                
+
                 if (config.ProviderName.ToLower().Contains("sqlite"))
                 {
                     rowBuilder.Member(r => r.OrderingId)
@@ -223,7 +223,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                         .IsColumn().IsNullable(false);
                 }
             }
-            
+
             //Probably overkill, but we only set Metadata Mapping if specified
             //That we are in delete compatibility mode.
             if (config.IDaoConfig.SqlCommonCompatibilityMode)
@@ -253,7 +253,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Db
                 conn.RetryPolicy = _policy;
                 return conn;
             }
-            
+
             return new DataConnection(_opts) { RetryPolicy = _policy};
         }
     }

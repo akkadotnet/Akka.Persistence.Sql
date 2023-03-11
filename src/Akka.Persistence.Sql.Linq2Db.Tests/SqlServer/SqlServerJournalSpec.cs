@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Akka.Persistence.Linq2Db.Tests.Common;
-using Akka.Persistence.TCK.Snapshot;
+using Akka.Persistence.TCK.Journal;
 using Xunit;
 using Xunit.Abstractions;
 #if !DEBUG
@@ -13,20 +13,23 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.SqlServer
     [SkipWindows]
 #endif
     [Collection("PersistenceSpec")]
-    public class SqlServerSnapshotSpec : SnapshotStoreSpec, IAsyncLifetime
+    public class SqlServerJournalSpec : JournalSpec, IAsyncLifetime
     {
         private static Configuration.Config Configuration(TestFixture fixture)
-            => SqlServerSnapshotSpecConfig.Create(fixture.ConnectionString(Database.SqlServer),"snapshotSpec");
+            => SqlServerJournalSpecConfig.Create(fixture.ConnectionString(Database.SqlServer), "journalSpec");
 
         private readonly TestFixture _fixture;
-        
-        public SqlServerSnapshotSpec(ITestOutputHelper output, TestFixture fixture) 
-            : base(Configuration(fixture), nameof(SqlServerSnapshotSpec), output)
+
+        public SqlServerJournalSpec(ITestOutputHelper output, TestFixture fixture)
+            : base(Configuration(fixture), nameof(SqlServerJournalSpec), output)
         {
             _fixture = fixture;
             //DebuggingHelpers.SetupTraceDump(output);
         }
-        
+
+        // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
+        protected override bool SupportsSerialization => false;
+
         public async Task InitializeAsync()
         {
             await _fixture.InitializeDbAsync(Database.SqlServer);

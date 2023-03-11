@@ -8,7 +8,7 @@ using System;
 
 namespace Akka.Persistence.Sql.Linq2Db.Config;
 
-public class TagTableColumnNames: IEquatable<TagTableColumnNames>
+public class TagTableColumnNames : IEquatable<TagTableColumnNames>
 {
     public TagTableColumnNames(Configuration.Config config)
     {
@@ -18,7 +18,7 @@ public class TagTableColumnNames: IEquatable<TagTableColumnNames>
         SequenceNumber = cfg.GetString("sequence-nr", "sequence_nr");
         PersistenceId = cfg.GetString("persistence-id", "persistence_id");
     }
-    
+
     public string OrderingId { get; }
     public string Tag { get; }
     public string SequenceNumber { get; }

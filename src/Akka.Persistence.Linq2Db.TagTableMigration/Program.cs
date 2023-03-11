@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System.CommandLine;
-using System.Reflection;
 using Akka.Persistence.Linq2Db.HelperLib;
 
 namespace Akka.Persistence.Linq2Db.TagTableMigration;
@@ -23,7 +22,7 @@ public static class Program
     static Program()
     {
         ConnectionString = new Option<string>(
-            aliases: new[] { "--connection-string", "-c" }, 
+            aliases: new[] { "--connection-string", "-c" },
             description: "Database connection string")
         {
             IsRequired = true
@@ -31,7 +30,7 @@ public static class Program
 
         TableMapping = new Option<DatabaseType>(
             aliases: new[] { "--database", "-d" },
-            description: "Target database being migrated") 
+            description: "Target database being migrated")
         {
             IsRequired = true
         };
@@ -62,7 +61,7 @@ public static class Program
             description: "Optional. Batch size per migration transaction",
             getDefaultValue: () => 1000);
     }
-    
+
     public static async Task<int> Main(params string[] args)
     {
         var root = new RootCommand("A helper application to migrate legacy Akka.Persistence.Sql database tables to Akka.Persistence.Linq2Db");
@@ -73,7 +72,7 @@ public static class Program
         root.AddOption(StartOffset);
         root.AddOption(EndOffset);
         root.AddOption(BatchSize);
-        
+
         root.SetHandler(async (connectionString, tableMapping, provider, schema, offset, endOffset, batchSize) =>
         {
             var opt = new Options
@@ -93,4 +92,4 @@ public static class Program
         return await root.InvokeAsync(args);
     }
 }
-    
+

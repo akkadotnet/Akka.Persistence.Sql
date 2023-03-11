@@ -7,9 +7,9 @@
             TagSeparator = config.GetString("tag-separator", ";");
             Dao = config.GetString("dao", "Akka.Persistence.Sql.Linq2Db.Journal.Dao.ByteArrayJournalDao, Akka.Persistence.Sql.Linq2Db");
         }
-        
+
         public string TagSeparator { get; }
-        
+
         public string Dao { get; }
     }
 }

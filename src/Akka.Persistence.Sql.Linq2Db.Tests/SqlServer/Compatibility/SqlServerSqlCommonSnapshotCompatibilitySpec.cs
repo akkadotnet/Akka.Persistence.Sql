@@ -15,7 +15,7 @@ namespace Akka.Persistence.Sql.Linq2Db.Tests.SqlServer.Compatibility
     public class SqlServerSqlCommonSnapshotCompatibilitySpec : SqlCommonSnapshotCompatibilitySpec
     {
         private readonly TestFixture _fixture;
-        
+
         public SqlServerSqlCommonSnapshotCompatibilitySpec(ITestOutputHelper output, TestFixture fixture) : base(output)
         {
             _fixture = fixture;
