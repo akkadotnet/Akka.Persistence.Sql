@@ -8,6 +8,7 @@ Please read the documentation carefully. Some features may be specific to use ca
 
 ## Status
 
+- Usable for basic Read/Writes
 - Implements the following from `Akka.Persistence.Query`:
     - IPersistenceIdsQuery
     - ICurrentPersistenceIdsQuery
@@ -19,7 +20,9 @@ Please read the documentation carefully. Some features may be specific to use ca
     - ICurrentAllEventsQuery
 - Snapshot Store Support
 
-See something you want to add or improve? **Pull Requests are Welcome!**
+#### This is still a WORK IN PROGRESS
+
+ **Pull Requests are Welcome** but please note this is still considered 'work in progress' and only used if one understands the risks. While the TCK Specs pass you should still test in a 'safe' non-production environment carefully before deciding to fully deploy.
 
 Working:
 
@@ -30,32 +33,32 @@ Working:
 ## Features/Architecture
 
 - Akka.Streams used aggressively for tune-able blocking overhead.
-    - Up to `parallelism` writers write pushed messages
-    - While writers are busy, messages are buffered up to `buffer-size` entries
-    - Batches are flushed to Database at up to `batch-size`
-        - For most DBs this will be done in a single built Multi-row-insert statement
-        - PersistAll groups larger than `batch-size` will still be done as a single contiguous write
+  - Up to `parallelism` writers write pushed messages
+  - While writers are busy, messages are buffered up to `buffer-size` entries
+  - Batches are flushed to Database at up to `batch-size`
+    - For most DBs this will be done in a single built Multi-row-insert statement
+    - PersistAll groups larger than `batch-size` will still be done as a single contiguous write
 
 - Linq2Db usage for easier swapping of backend DBs.
-    - `provider-name` is a [`LinqToDb.ProviderName`](https://linq2db.github.io/api/LinqToDB.ProviderName.html)
-        - This handles DB Type mapping and Dialect-specific query building
+  - `provider-name` is a [`LinqToDb.ProviderName`](https://linq2db.github.io/api/LinqToDB.ProviderName.html)
+    - This handles DB Type mapping and Dialect-specific query building
 
 - language-ext is used in place of Systems.Collections.Immutable where appropriate
-    - Lower memory allocations, improve performance
+  - Lower memory allocations, improve performance
 
 - Recovery is also batched:
-    - Up to `replay-batch-size` messages are fetched at a time
-    - This is to both lower size of records fetched in single pass, as well as to prevent pulling too much data into memory at once.
-    - If more messages are to be recovered, additional passes will be made.
+  - Up to `replay-batch-size` messages are fetched at a time
+  - This is to both lower size of records fetched in single pass, as well as to prevent pulling too much data into memory at once.
+  - If more messages are to be recovered, additional passes will be made.
 
 - Attempts to stay in spirit and Structure of JDBC Port with a few differences:
-    - Linq2Db isn't a Reactive Streams Compatible DB Provider (I don't know of any that are at this time for .NET)
-        - This means Some of the Query architecture is different, to deal with required semantic changes (i.e. Connection scoping)
-    - Both due to above and differences between Scala and C#, Some changes have been made for optimal performance (i.e. memory, GC)
-        - Classes used in place of ValueTuples in certain areas
-        - We don't have separate Query classes at this time. This can definitely be improved in future
-        - A couple of places around `WriteMessagesAsync` have had their logic moved to facilitate performance (i.e. use of `await` instead of `ContinueWith`)
-    - Backwards Compatibility mode is implemented, to interoperate with existing journals and snapshot stores.
+  - Linq2Db isn't a Reactive Streams Compatible DB Provider (I don't know of any that are at this time for .NET)
+    - This means Some of the Query architecture is different, to deal with required semantic changes (i.e. Connection scoping)
+  - Both due to above and differences between Scala and C#, Some changes have been made for optimal performance (i.e. memory, GC)
+    - Classes used in place of ValueTuples in certain areas
+    - We don't have separate Query classes at this time. This can definitely be improved in future
+    - A couple of places around `WriteMessagesAsync` have had their logic moved to facilitate performance (i.e. use of `await` instead of `ContinueWith`)
+  - Backwards Compatibility mode is implemented, to interoperate with existing journals and snapshot stores.
 
 - Tag Table Support (Alpha):
     - Allows the writing of tags to a separate table to allow for different performance strategies when working with tags.
@@ -79,26 +82,26 @@ Working:
 ## Currently Implemented
 
 - Journal
-    - With `JournalSpec` and `JournalPerfSpec` passing for MS SQL Server, Microsoft.Data.SQLite, and PostgreSQL
+  - With `JournalSpec` and `JournalPerfSpec` passing for MS SQL Server, Microsoft.Data.SQLite, and PostgreSQL
 - Snapshot Store
-    - With `SnapshotStoreSpec` passing for MS SQL Server, Microsoft.Data.SQLite, PostgreSQL
+  - With `SnapshotStoreSpec` passing for MS SQL Server, Microsoft.Data.SQLite, PostgreSQL
 - Configuration
-    - Only Functional tests at this time.
-    - Custom provider configurations are supported.
+  - Only Functional tests at this time.
+  - Custom provider configurations are supported.
 
 ## Incomplete
 
 - Tests for Schema Usage
 - Some Akka.NET specfic Journal Queries (those not mentioned above)
 - Cleanup of Configuration classes/fallbacks.
-    - Should still be usable in most common scenarios including multiple configuration instances: see [`SqlServerCustomConfigSpec`](src/Akka.Persistence.Sql.Linq2Db.Tests/SqlServer/SQLServerJournalCustomConfigSpec.cs) for test and examples.
+  - Should still be usable in most common scenarios including multiple configuration instances: see [`SqlServerCustomConfigSpec`](src/Akka.Persistence.Sql.Linq2Db.Tests/SqlServer/SQLServerJournalCustomConfigSpec.cs) for test and examples.
 
 DB Compatibility:
 
 - SQL Server: Tests Pass
 - MS SQLite: Tests Pass
 - System.Data.SQLite: Functional tests pass, perf tests partially fail.
-- For whatever reason SDS doesn't cope well here.
+  - For whatever reason SDS doesn't cope well here.
 - PostgreSQL: Tests pass
 - MySql: Not Tested Yet
 - Firebird: Not Tested Yet
@@ -106,30 +109,50 @@ DB Compatibility:
 Compatibility with existing Providers is partially implemented via `table-compatibility-mode` flag. Please note there are not tests for compatibility with Sql.Common Query journals at this time:
 
 - SQL Server: Basic Persist and Recovery tests pass for both Snapshot and Journal.
-    - Still needs Delete tests
+  - Still needs Delete tests
 - SQLite: Persist and Recovery tests pass for both Snapshot and Journal.
 - PostgreSQL: Basic Persist and Recovery tests pass for both Snapshot and Journal.
-    - Only Binary payloads are supported at this time.
-    - Note that not all possible permutations of table names have been tested.
-        - i.e. there may be concerns around casing
+  - Only Binary payloads are supported at this time.
+  - Note that not all possible permutations of table names have been tested.
+    - i.e. there may be concerns around casing
 - MySql: Not Implemented yet
 
 # Performance
 
-Updated Performance numbers pending.
+Tests based on i-7 8750H, 32GB Ram, 2TB SSD, Windows 10 version Version 10.0.19041.630.
+Databases running on Docker WSL2.
+
+All numbers are in msg/sec.
+
+|Test |SqlServer (normal)       |  SqlServer Batching     | Linq2Db     |vs Normal| vs Batching|
+|:-------------  |:------------- | :----------: | -----------: | -----------: | -----------: |
+|Persist |  164|427| 235|143.29%|55.04%|
+|PersistAll |  782|875| 5609|717.26%|641.03%|
+|PersistAsync |  630|846| 16099|2555.40%|1902.96%|
+|PersistAllAsync |  2095|902| 15681|748.50%|1738.47%|
+|PersistGroup10 |  590|680| 1069|181.19%|157.21%|
+|PersistGroup100 |  607|965| 5537|912.19%|573.78%|
+|PersistGroup200 |  628|1356| 7966|1268.47%|587.46%|
+|PersistGroup25 |  629|675| 2189|348.01%|324.30%|
+|PersistGroup400 |  612|1011| 7237|1182.52%|715.83%|
+|PersistGroup50 |  612|654| 3867|631.86%|591.28%|
+|Recovering |  41903|38766| 42592|101.64%|109.87%|
+|Recovering8 |  75466|65515| 63960|84.75%|97.63%|
+|RecoveringFour |  59259|51355| 58437|98.61%|113.79%|
+|RecoveringTwo |  41745|35512| 41108|98.47%|115.76%|
 
 ## Sql.Common Compatibility modes
 
 - Delete Compatibility mode is available.
-    - This mode will utilize a `journal_metadata` table containing the last sequence number
-    - The main table delete is done the same way regardless of delete compatibility mode
+  - This mode will utilize a `journal_metadata` table containing the last sequence number
+  - The main table delete is done the same way regardless of delete compatibility mode
 
 ### *Delete Compatibility mode is expensive.*
 
 - Normal Deletes involve first marking the deleted records as deleted, and then deleting them
-    - Table compatibility mode adds an additional InsertOrUpdate and Delete
+  - Table compatibility mode adds an additional InsertOrUpdate and Delete
 - **This all happens in a transaction**
-    - In SQL Server this can cause issues because of pagelocks/etc.
+  - In SQL Server this can cause issues because of pagelocks/etc.
 
 ## Configuration
 
@@ -141,33 +164,35 @@ Please note that you -must- provide a Connection String (`connection-string`) an
     - Note: For best performance, one should use the most specific provider name possible. i.e. `LinqToDB.ProviderName.SqlServer2012` instead of `LinqToDB.ProviderName.SqlServer`. Otherwise certain provider detections have to run more frequently which may impair performance slightly.
 
 - `parallelism` controls the number of Akka.Streams Queues used to write to the DB.
-    - Default in JVM is `8`. We use `3`
-        - For SQL Server, Based on testing `3` is a fairly optimal number in .NET and thusly chosen as the default. You may wish to adjust up if you are dealing with a large number of actors.
-            - Testing indicates that `2` will provide performance on par or better than both batching and non-batching journal.
-        - For SQLite, you may want to just put `1` here, because SQLite allows at most a single writer at a time even in WAL mode.
-            - Keep in mind there may be some latency/throughput trade-offs if your write-set gets large.
-    - Note that unless `materializer-dispatcher` is changed, by default these run on the threadpool, not on dedicated threads. Setting this number too high may steal work from other actors.
-        - It's worth noting that LinqToDb's Bulk Copy implementations are very efficient here, since under many DBs the batch can be done in a single async round-trip.
+  - Default in JVM is `8`. We use `3`
+    - For SQL Server, Based on testing `3` is a fairly optimal number in .NET and thusly chosen as the default. You may wish to adjust up if you are dealing with a large number of actors.
+      - Testing indicates that `2` will provide performance on par or better than both batching and non-batching journal.
+    - For SQLite, you may want to just put `1` here, because SQLite allows at most a single writer at a time even in WAL mode.
+      - Keep in mind there may be some latency/throughput trade-offs if your write-set gets large.
+  - Note that unless `materializer-dispatcher` is changed, by default these run on the threadpool, not on dedicated threads. Setting this number too high may steal work from other actors.
+    - It's worth noting that LinqToDb's Bulk Copy implementations are very efficient here, since under many DBs the batch can be done in a single async round-trip.
 - `materializer-dispatcher` may be used to change the dispatcher that the Akka.Streams Queues use for scheduling.
-    - You can define a different dispatcher here if worried about stealing from the thread-pool, for instance a Dedicated thread-pool dispatcher.
+  - You can define a different dispatcher here if worried about stealing from the thread-pool, for instance a Dedicated thread-pool dispatcher.
 - `logical-delete` if `true` will only set the deleted flag for items, i.e. will not actually delete records from DB.
-    - if `false` all records are set as deleted, and then all but the top record is deleted. This top record is used for sequence number tracking in case no other records exist in the table.
+  - if `false` all records are set as deleted, and then all but the top record is deleted. This top record is used for sequence number tracking in case no other records exist in the table.
 - `delete-compatibility-mode` specifies to perform deletes in a way that is compatible with Akka.Persistence.Sql.Common.
-    - This will use a Journal_Metadata table (or otherwise defined )
-    - Note that this setting is independent of `logical-delete`
+  - This will use a Journal_Metadata table (or otherwise defined )
+  - Note that this setting is independent of `logical-delete`
 - `use-clone-connection` is a bit of a hack. Currently Linq2Db has a performance penalty for custom mapping schemas. Cloning the connection is faster but may not work for all scenarios.
-    - tl;dr - If a password or similar is in the connection string, leave `use-clone-connection` set to `false`.
-    - If you don't have a password or similar, run some tests with it set to `true`. You'll see improved write and read performance.
+  - tl;dr - If a password or similar is in the connection string, leave `use-clone-connection` set to `false`.
+  - If you don't have a password or similar, run some tests with it set to `true`. You'll see improved write and read performance.
+
 - Batching options:
-    - `batch-size` controls the maximum size of the batch used in the Akka.Streams Batch. A single batch is written to the DB in a transaction, with 1 or more round trips.
-        - If more than `batch-size` is in a single `AtomicWrite`, That atomic write will still be atomic, just treated as it's own batch.
-    - `db-round-trip-max-batch-size` tries to hint to Linq2Db multirow insert the maximum number of rows to send in a round-trip to the DB.
-        - multiple round-trips will still be contained in a single transaction.
-        - You will want to Keep this number higher than `batch-size`, if you are persisting lots of events with `PersistAll/(Async)`.
-    - `prefer-parameters-on-multirow-insert` controls whether Linq2Db will try to use parameters instead of building raw strings for inserts.
-        - Linq2Db is incredibly speed and memory efficent at building binary strings. In most cases, this will be faster than the cost of parsing/marshalling parameters by ADO and the DB.
+  - `batch-size` controls the maximum size of the batch used in the Akka.Streams Batch. A single batch is written to the DB in a transaction, with 1 or more round trips.
+    - If more than `batch-size` is in a single `AtomicWrite`, That atomic write will still be atomic, just treated as it's own batch.
+  - `db-round-trip-max-batch-size` tries to hint to Linq2Db multirow insert the maximum number of rows to send in a round-trip to the DB.
+    - multiple round-trips will still be contained in a single transaction.
+    - You will want to Keep this number higher than `batch-size`, if you are persisting lots of events with `PersistAll/(Async)`.
+  - `prefer-parameters-on-multirow-insert` controls whether Linq2Db will try to use parameters instead of building raw strings for inserts.
+    - Linq2Db is incredibly speed and memory efficent at building binary strings. In most cases, this will be faster than the cost of parsing/marshalling parameters by ADO and the DB.
+
 - For Table Configuration:
-    - Note that Tables/Columns will be created with the casing provided, and selected in the same way (i.e. if using a DB with case sensitive columns, be careful!)
+  - Note that Tables/Columns will be created with the casing provided, and selected in the same way (i.e. if using a DB with case sensitive columns, be careful!)
 
 ```hocon
 akka.persistence {
@@ -182,6 +207,10 @@ akka.persistence {
       connection-string = "" # Connection String is Required!
 
       # This dispatcher will be used for the Stream Materializers
+      # Note that while all calls will be Async to Linq2Db,
+      # If your provider for some reason does not support async,
+      # or you are a very heavily loaded system,
+      # You may wish to provide a dedicated dispatcher instead
       materializer-dispatcher = "akka.actor.default-dispatcher"
 
       # Provider name is required.
@@ -199,7 +228,8 @@ akka.persistence {
       # If true, journal_metadata is created
       delete-compatibility-mode = true
 
-      # If "sqlite" or "sqlserver", and column names are compatible with
+      # If "sqlite", "sqlserver", or "postgresql"
+      # column names are compatible with
       # Akka.Persistence.Sql Default Column names.
       # You still -MUST- Set your appropriate table names!
       table-compatibility-mode = null
@@ -210,7 +240,7 @@ akka.persistence {
       # For that penalty.
       buffer-size = 5000
 
-      # Batch size refers to the number of items included in a batch to DB
+      # Batch size refers to the maximum number of items included in a batch (transaction) to DB
       # JDBC Default is/was 400 but testing against scenarios indicates
       # 100 is better for overall latency. That said,
       # larger batches may be better if you have A fast/local DB.
@@ -299,13 +329,35 @@ akka.persistence {
           "manifest" = "manifest"
         }
 
+        postgres-compat-column-names {
+          "ordering" = "ordering"
+          "deleted" = "is_deleted"
+          "persistenceId" = "persistence_id"
+          "sequenceNumber" = "sequence_nr"
+          "created" = "created_at"
+          "tags" = "tags"
+          "message" = "payload"
+          "identifier" = "serializer_id"
+          "manifest" = "manifest"
+        }
+
         metadata-column-names {
+          "persistenceId" = "persistenceId"
+          "sequenceNumber" = "sequenceNr"
+        }
+
+        sqlserver-compat-metadata-column-names {
           "persistenceId" = "persistenceId"
           "sequenceNumber" = "sequenceNr"
         }
 
         sqlite-compat-metadata-column-names {
           "persistenceId" = "persistence_Id"
+          "sequenceNumber" = "sequence_nr"
+        }
+
+        postgres-compat-metadata-column-names {
+          "persistenceId" = "persistence_id"
           "sequenceNumber" = "sequence_nr"
         }
       }
@@ -319,7 +371,7 @@ akka.persistence {
 Please note that you -must- provide a Connection String and Provider name.
 
 - Refer to the Members of `LinqToDb.ProviderName` for included providers.
-    - Note: For best performance, one should use the most specific provider name possible. i.e. `LinqToDB.ProviderName.SqlServer2012` instead of `LinqToDB.ProviderName.SqlServer`. Otherwise certain provider detections have to run more frequently which may impair performance slightly.
+  - Note: For best performance, one should use the most specific provider name possible. i.e. `LinqToDB.ProviderName.SqlServer2012` instead of `LinqToDB.ProviderName.SqlServer`. Otherwise certain provider detections have to run more frequently which may impair performance slightly.
 
 ```hocon
 akka.persistence {
