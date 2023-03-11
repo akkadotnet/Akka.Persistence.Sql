@@ -1,16 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
-    <Import Project="..\common.props" />
-    <PropertyGroup>
-        <TargetFramework>netstandard2.0</TargetFramework>
-        <LangVersion>10</LangVersion>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFrameworks>$(NetStandardLibVersion)</TargetFrameworks>
+  </PropertyGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\Akka.Persistence.Sql.Linq2Db\Akka.Persistence.Sql.Linq2Db.csproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="FluentMigrator" />
+  </ItemGroup>
 
-    <ItemGroup>
-      <PackageReference Include="FluentMigrator" Version="$(FluentMigratorVersion)" />
-    </ItemGroup>
-
+  <ItemGroup>
+    <ProjectReference Include="..\Akka.Persistence.Sql.Linq2Db\Akka.Persistence.Sql.Linq2Db.csproj" />
+  </ItemGroup>
 </Project>

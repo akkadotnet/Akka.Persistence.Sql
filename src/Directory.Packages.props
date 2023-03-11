@@ -1,0 +1,89 @@
+<Project>
+    <PropertyGroup>
+      <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    </PropertyGroup>
+
+    <!-- Akka dependencies -->
+    <ItemGroup>
+      <PackageVersion Include="Akka" Version="$(AkkaVersion)" />
+      <PackageVersion Include="Akka.Cluster.Hosting" Version="$(AkkaHostingVersion)" />
+      <PackageVersion Include="Akka.Cluster.Sharding" Version="$(AkkaVersion)" />
+      <PackageVersion Include="Akka.Hosting" Version="$(AkkaHostingVersion)" />
+      <PackageVersion Include="Akka.Persistence" Version="$(AkkaVersion)" />
+      <PackageVersion Include="Akka.Persistence.Sql.Compat.Common" Version="0.1.0" />
+      <PackageVersion Include="Akka.Persistence.TCK" Version="$(AkkaVersion)" />
+      <PackageVersion Include="Akka.Persistence.TestKit" Version="$(AkkaVersion)" />
+      <PackageVersion Include="Akka.Persistence.Query" Version="$(AkkaVersion)" />
+      <PackageVersion Include="Akka.Serialization.Hyperion" Version="$(AkkaVersion)" />
+      <PackageVersion Include="Akka.Streams" Version="$(AkkaVersion)" />
+    </ItemGroup>
+
+    <!-- App dependencies -->
+    <ItemGroup>
+      <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+      <PackageVersion Include="System.Linq.Async" Version="4.1.1" />
+      <PackageVersion Include="System.Reactive.Linq" Version="4.4.1" />
+      <PackageVersion Include="Microsoft.Bcl.HashCode" Version="1.1.0" />
+
+      <PackageVersion Include="CommandLineParser" Version="2.9.1" />
+      <PackageVersion Include="LanguageExt.Core" Version="$(LanguageExtVersion)" />
+      <PackageVersion Include="linq2db" Version="$(Linq2DbVersion)" />
+      <PackageVersion Include="FluentMigrator" Version="$(FluentMigratorVersion)" />
+      <PackageVersion Include="FluentMigrator.Runner" Version="$(FluentMigratorVersion)" />
+    </ItemGroup>
+
+    <!-- SQL Server dependencies -->
+    <ItemGroup>
+      <PackageVersion Include="Akka.Persistence.SqlServer" Version="$(AkkaSqlServerVersion)" />
+      <PackageVersion Include="System.Data.SqlClient" Version="$(SqlClientVersion)" />
+      <PackageVersion Include="Microsoft.SqlServer.SqlManagementObjects" Version="$(SqlManagementObjectsVersion)" />
+    </ItemGroup>
+
+    <!-- Sqlite dependencies -->
+    <ItemGroup>
+      <PackageVersion Include="Akka.Persistence.Sqlite" Version="$(AkkaSqliteVersion)" />
+      <PackageVersion Include="System.Data.SQLite" Version="$(SqliteVersion)" />
+      <PackageVersion Include="System.Data.SQLite.Core" Version="$(SqliteVersion)" />
+      <PackageVersion Include="Microsoft.Data.Sqlite.Core" Version="$(MicrosoftSqliteVersion)" />
+    </ItemGroup>
+
+    <!-- PostgreSql dependencies -->
+    <ItemGroup>
+      <PackageVersion Include="Akka.Persistence.PostgreSql" Version="$(AkkaPostgreSqlVersion)" />
+      <PackageVersion Include="Npgsql" Version="$(PostgreSqlVersion)" />
+    </ItemGroup>
+
+    <!-- Redis dependencies -->
+    <ItemGroup>
+      <PackageVersion Include="Akka.Persistence.Redis" Version="$(AkkaRedisVersion)" />
+      <PackageVersion Include="redis-inside" Version="$(RedisInsideVersion)" />
+    </ItemGroup>
+
+    <!-- MySql dependencies -->
+    <ItemGroup>
+      <PackageVersion Include="Akka.Persistence.MySql" Version="$(AkkaMySqlVersion)" />
+      <PackageVersion Include="MySql.Data" Version="$(MySqlVersion)" />
+    </ItemGroup>
+
+    <!-- Test dependencies -->
+    <ItemGroup>
+      <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
+      <PackageVersion Include="Docker.DotNet" Version="$(DockerDotNetVersion)" />
+      <PackageVersion Include="FluentAssertions" Version="$(FluentAssertionVersion)" />
+      <PackageVersion Include="JetBrains.dotMemoryUnit" Version="3.1.20200127.214830" />
+      <PackageVersion Include="xunit" Version="$(XunitVersion)" />
+      <PackageVersion Include="xunit.runner.visualstudio" Version="$(XunitRunnerVersion)">
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+          <PrivateAssets>all</PrivateAssets>
+      </PackageVersion>
+      <PackageVersion Include="coverlet.collector" Version="$(CoverletVersion)">
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+          <PrivateAssets>all</PrivateAssets>
+      </PackageVersion>
+    </ItemGroup>
+
+    <!-- SourceLink support for all Akka.NET projects -->
+    <ItemGroup>
+      <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="1.1.1" />
+    </ItemGroup>
+  </Project>

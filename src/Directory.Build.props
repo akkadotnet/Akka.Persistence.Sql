@@ -1,0 +1,65 @@
+<Project>
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Generated.props', '$(MSBuildThisFileDirectory)'))" />
+
+  <PropertyGroup>
+    <Copyright>Copyright © 2013-2023 Akka.NET Team</Copyright>
+    <Authors>Akka.NET Team</Authors>
+    <PackageIconUrl>http://getakka.net/images/akkalogo.png</PackageIconUrl>
+    <PackageProjectUrl>https://github.com/akkadotnet/Akka.Persistence.Linq2Db</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/akkadotnet/Akka.Persistence.Linq2Db/blob/dev/LICENSE.md</PackageLicenseUrl>
+    <PackageTags>akka;actors;actor model;Akka;concurrency</PackageTags>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <NetStandardLibVersion>netstandard2.0</NetStandardLibVersion>
+    <NetCoreTestVersion>net7.0</NetCoreTestVersion>
+
+    <AkkaVersion>1.4.49</AkkaVersion>
+    <AkkaHostingVersion>1.0.3</AkkaHostingVersion>
+
+    <Linq2DbVersion>3.4.1</Linq2DbVersion>
+    <LanguageExtVersion>3.4.15</LanguageExtVersion>
+
+    <AkkaSqlServerVersion>1.4.35</AkkaSqlServerVersion>
+    <SqlClientVersion>4.8.5</SqlClientVersion>
+    <SqlManagementObjectsVersion>170.13.0</SqlManagementObjectsVersion>
+
+    <AkkaSqliteVersion>1.4.49</AkkaSqliteVersion>
+    <SqliteVersion>1.0.117</SqliteVersion>
+    <MicrosoftSqliteVersion>6.0.4</MicrosoftSqliteVersion>
+
+    <AkkaPostgreSqlVersion>1.4.46</AkkaPostgreSqlVersion>
+    <PostgreSqlVersion>6.0.7</PostgreSqlVersion>
+
+    <AkkaRedisVersion>1.4.35</AkkaRedisVersion>
+    <RedisInsideVersion>3.3.0</RedisInsideVersion>
+
+    <AkkaMySqlVersion>1.4.42</AkkaMySqlVersion>
+    <MySqlVersion>8.0.32</MySqlVersion>
+
+    <FluentMigratorVersion>3.3.1</FluentMigratorVersion>
+    <DockerDotNetVersion>3.125.12</DockerDotNetVersion>
+    <TestSdkVersion>17.4.1</TestSdkVersion>
+    <XunitVersion>2.4.2</XunitVersion>
+    <XunitRunnerVersion>2.4.5</XunitRunnerVersion>
+    <FluentAssertionVersion>6.10.0</FluentAssertionVersion>
+    <CoverletVersion>3.2.0</CoverletVersion>
+    <NBenchVersion>1.2.2</NBenchVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+    <!-- Optional: Embed source files that are not tracked by the source control manager in the PDB -->
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+
+    <!-- Optional: Build symbol package (.snupkg) to distribute the PDB containing Source Link -->
+    <IncludeSymbols>true</IncludeSymbols>
+  </PropertyGroup>
+</Project>
