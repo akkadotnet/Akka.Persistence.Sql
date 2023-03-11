@@ -30,12 +30,12 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests
     public abstract class TestSettings
     {
         public abstract string ProviderName { get; }
-        
+
         public abstract string TableMapping { get; }
-        
+
         public virtual string? SchemaName { get; } = null;
     }
-    
+
     public abstract class DataCompatibilitySpecBase<T>: IAsyncLifetime where T: ITestContainer, new()
     {
         protected TestCluster? TestCluster { get; private set; }
@@ -43,7 +43,7 @@ namespace Akka.Persistence.Linq2Db.Data.Compatibility.Tests
         protected ITestOutputHelper Output { get; }
 
         protected abstract TestSettings Settings { get; }
-        
+
         protected DataCompatibilitySpecBase(ITestOutputHelper output)
         {
             Output = output;
@@ -64,7 +64,7 @@ akka.persistence {{
             warn-on-auto-init-fail = true
             tag-write-mode = Csv
 
-            # Testing for https://github.com/akkadotnet/Akka.Persistence.Linq2Db/pull/117#discussion_r1027345449
+            # Testing for https://github.com/akkadotnet/Akka.Persistence.Sql/pull/117#discussion_r1027345449
             batch-size = 3
             db-round-trip-max-batch-size = 6
             replay-batch-size = 6
@@ -83,7 +83,7 @@ akka.persistence {{
         warn-on-auto-init-fail = true
         tag-read-mode = Csv
 
-        # Testing for https://github.com/akkadotnet/Akka.Persistence.Linq2Db/pull/117#discussion_r1027345449
+        # Testing for https://github.com/akkadotnet/Akka.Persistence.Sql/pull/117#discussion_r1027345449
         batch-size = 3
         replay-batch-size = 6
 	}}
@@ -114,7 +114,7 @@ akka.persistence {{
         }
 
         protected abstract void Setup(AkkaConfigurationBuilder builder, IServiceProvider provider);
-        
+
         private void InternalSetup(AkkaConfigurationBuilder builder, IServiceProvider provider)
         {
             builder.AddHocon(Config(), HoconAddMode.Prepend);
@@ -156,7 +156,7 @@ akka.persistence {{
                 throw new TimeoutException("Failed to truncate all data within 10 seconds");
             }
         }
-        
+
         protected static void ValidateState(string persistentId, StateSnapshot lastSnapshot, int count, int persisted)
         {
             persisted.Should().Be(36, "Entity {0} should have persisted 36 events", persistentId);
@@ -177,7 +177,7 @@ akka.persistence {{
             var roundTotal = Enumerable.Range(0, 300)
                 .Where(i => i % 3 == 2)
                 .Aggregate(0, (accum, val) => accum + val);
-            
+
             var events = await readJournal.CurrentEventsByTag("Tag2", Offset.NoOffset())
                 .RunAsAsyncEnumerable(system.Materializer()).ToListAsync();
             events.Count.Should().Be(400 * rounds);
@@ -185,43 +185,43 @@ akka.persistence {{
             var intMessages = events.Where(e => e.Event is int).Select(e => (int)e.Event).ToList();
             intMessages.Count.Should().Be(100 * rounds);
             intMessages.Aggregate(0, (accum, val) => accum + val).Should().Be(roundTotal * rounds);
-            
+
             var strMessages = events.Where(e => e.Event is string).Select(e => int.Parse((string)e.Event)).ToList();
             strMessages.Count.Should().Be(100 * rounds);
             strMessages.Aggregate(0, (accum, val) => accum + val).Should().Be(roundTotal * rounds);
-            
+
             var shardMessages = events.Where(e => e.Event is ShardedMessage)
                 .Select(e => ((ShardedMessage)e.Event).Message).ToList();
             shardMessages.Count.Should().Be(100 * rounds);
             shardMessages.Aggregate(0, (accum, val) => accum + val).Should().Be(roundTotal * rounds);
-            
+
             var customShardMessages = events.Where(e => e.Event is CustomShardedMessage)
                 .Select(e => ((CustomShardedMessage)e.Event).Message).ToList();
             customShardMessages.Count.Should().Be(100 * rounds);
             customShardMessages.Aggregate(0, (accum, val) => accum + val).Should().Be(roundTotal * rounds);
-            
+
             // "Tag1" check, there should be twice as much "Tag1" as "Tag2"
             roundTotal = Enumerable.Range(0, 300)
                 .Where(i => i % 3 == 2 || i % 3 == 1)
                 .Aggregate(0, (accum, val) => accum + val);
-            
+
             events = await readJournal.CurrentEventsByTag("Tag1", Offset.NoOffset())
                 .RunAsAsyncEnumerable(system.Materializer()).ToListAsync();
             events.Count.Should().Be(800 * rounds);
-            
+
             intMessages = events.Where(e => e.Event is int).Select(e => (int)e.Event).ToList();
             intMessages.Count.Should().Be(200 * rounds);
             intMessages.Aggregate(0, (accum, val) => accum + val).Should().Be(roundTotal * rounds);
-            
+
             strMessages = events.Where(e => e.Event is string).Select(e => int.Parse((string)e.Event)).ToList();
             strMessages.Count.Should().Be(200 * rounds);
             strMessages.Aggregate(0, (accum, val) => accum + val).Should().Be(roundTotal * rounds);
-            
+
             shardMessages = events.Where(e => e.Event is ShardedMessage)
                 .Select(e => ((ShardedMessage)e.Event).Message).ToList();
             shardMessages.Count.Should().Be(200 * rounds);
             shardMessages.Aggregate(0, (accum, val) => accum + val).Should().Be(roundTotal * rounds);
-            
+
             customShardMessages = events.Where(e => e.Event is CustomShardedMessage)
                 .Select(e => ((CustomShardedMessage)e.Event).Message).ToList();
             customShardMessages.Count.Should().Be(200 * rounds);
