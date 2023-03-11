@@ -6,7 +6,6 @@
 # Define directories.
 SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 TOOLS_DIR=$SCRIPT_DIR/tools
-SIGNCLIENT_DIR=$TOOLS_DIR/signclient
 NUGET_EXE=$TOOLS_DIR/nuget.exe
 NUGET_URL=https://dist.nuget.org/win-x86-commandline/v5.8.0/nuget.exe
 FAKE_VERSION=4.63.0
@@ -87,17 +86,6 @@ if [ ! -f "$DOCFX_EXE" ]; then
     echo "Could not find docfx.exe at '$DOCFX_EXE'."
     exit 1
 fi
-
-###########################################################################
-# INSTALL SignTool
-###########################################################################
-if [ ! -f "$SIGNTOOL_EXE" ]; then
-    "$SCRIPT_DIR/.dotnet/dotnet" tool install SignClient --version 1.0.82 --tool-path "$SIGNCLIENT_DIR"
-    if [ $? -ne 0 ]; then
-        echo "SignClient already installed."
-    fi
-fi
-
 
 ###########################################################################
 # WORKAROUND FOR MONO
