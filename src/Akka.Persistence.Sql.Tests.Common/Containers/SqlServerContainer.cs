@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="SqlServerFixture.cs" company="Akka.NET Project">
-//      Copyright (C) 2013-2022 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  <copyright file="SqlServerContainer.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -20,6 +20,10 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
     /// </summary>
     public sealed class SqlServerContainer : DockerContainer
     {
+        private const string User = "sa";
+
+        private const string Password = "Password12!";
+
         public SqlServerContainer() : base("mcr.microsoft.com/mssql/server", "2019-latest", $"mssql-{Guid.NewGuid():N}")
         {
             ConnectionString = new DbConnectionStringBuilder
@@ -38,10 +42,6 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
 
         private int Port { get; } = ThreadLocalRandom.Current.Next(9000, 10000);
 
-        private const string User = "sa";
-
-        private const string Password = "Password12!";
-
         protected override string ReadyMarker => "Recovery is complete.";
 
         protected override void ConfigureContainer(CreateContainerParameters parameters)
@@ -50,6 +50,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
             {
                 ["1433/tcp"] = new()
             };
+
             parameters.HostConfig = new HostConfig
             {
                 PortBindings = new Dictionary<string, IList<PortBinding>>
@@ -57,6 +58,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
                     ["1433/tcp"] = new List<PortBinding> { new() { HostPort = $"{Port}" } }
                 }
             };
+
             parameters.Env = new[]
             {
                 "ACCEPT_EULA=Y",
@@ -75,27 +77,29 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
 
             var initConnectionString = connectionBuilder.ToString();
 
-            await using var conn = new SqlConnection(initConnectionString);
-            conn.Open();
+            await using var connection = new SqlConnection(initConnectionString);
 
-            await using var cmd = new SqlCommand
+            await connection.OpenAsync();
+
+            await using var command = new SqlCommand
             {
                 CommandText = @$"
 IF db_id('{DatabaseName}') IS NULL
 BEGIN
     CREATE DATABASE {DatabaseName}
 END",
-                Connection = conn
+                Connection = connection
             };
-            cmd.ExecuteScalar();
 
-            await DropTablesAsync(conn, DatabaseName);
+            command.ExecuteScalar();
+
+            await DropTablesAsync(connection, DatabaseName);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static async Task DropTablesAsync(SqlConnection conn, string databaseName)
+        private static async Task DropTablesAsync(SqlConnection connection, string databaseName)
         {
-            await using var cmd = new SqlCommand
+            await using var command = new SqlCommand
             {
                 CommandText = $@"
 USE {databaseName};
@@ -110,9 +114,10 @@ IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AN
 
 IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'customJournalTable') BEGIN DROP TABLE dbo.customJournalTable END;
 IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'customMetadataTable') BEGIN DROP TABLE dbo.customMetadataTable END;",
-                Connection = conn
+                Connection = connection
             };
-            await cmd.ExecuteNonQueryAsync();
+
+            await command.ExecuteNonQueryAsync();
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="SqliteFixture.cs" company="Akka.NET Project">
-//      Copyright (C) 2013-2022 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  <copyright file="MsSqliteContainer.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -12,16 +12,32 @@ using Microsoft.Data.Sqlite;
 namespace Akka.Persistence.Sql.Tests.Common.Containers
 {
     /// <summary>
-    ///     Fixture used to run SQL Server
+    ///     Fixture used to run Sqlite
     /// </summary>
     public sealed class MsSqliteContainer : ITestContainer
     {
         private static SqliteConnection? _heldConnection;
 
+        public MsSqliteContainer()
+        {
+            ConnectionString = $"Filename=file:memdb-{DatabaseName}.db;Mode=Memory;Cache=Shared";
+
+            Console.WriteLine($"Connection string: [{ConnectionString}]");
+
+            if (_heldConnection is not null)
+                return;
+
+            _heldConnection = new SqliteConnection(ConnectionString);
+            _heldConnection.Open();
+
+            GC.KeepAlive(_heldConnection);
+        }
+
         public string ConnectionString { get; }
+
         public string DatabaseName { get; } = $"linq2db_tests_{Guid.NewGuid():N}";
 
-        public string ContainerName => "";
+        public string ContainerName => string.Empty;
 
         public event EventHandler<OutputReceivedArgs>? OnStdOut;
 
@@ -29,29 +45,16 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
 
         public bool Initialized => true;
 
-        public MsSqliteContainer()
-        {
-            ConnectionString = $"Filename=file:memdb-{DatabaseName}.db;Mode=Memory;Cache=Shared";
-
-            if(_heldConnection is null)
-            {
-                _heldConnection = new SqliteConnection(ConnectionString);
-                _heldConnection.Open();
-                GC.KeepAlive(_heldConnection);
-            }
-        }
-
         public Task InitializeAsync()
-        {
-            return Task.CompletedTask;
-        }
+            => Task.CompletedTask;
 
         public async Task InitializeDbAsync()
         {
-            await using var conn = new SqliteConnection(ConnectionString);
-            conn.Open();
+            await using var connection = new SqliteConnection(ConnectionString);
 
-            await using var cmd = new SqliteCommand
+            await connection.OpenAsync();
+
+            await using var command = new SqliteCommand
             {
                 CommandText = @"
 DROP TABLE IF EXISTS event_journal;
@@ -61,21 +64,17 @@ DROP TABLE IF EXISTS snapshot;
 DROP TABLE IF EXISTS journal;
 DROP TABLE IF EXISTS tags;
 ",
-                Connection = conn
+                Connection = connection
             };
 
-            await cmd.ExecuteNonQueryAsync();
+            await command.ExecuteNonQueryAsync();
         }
 
+        // no-op
         public ValueTask DisposeAsync()
-        {
-            // no-op
-            return new ValueTask();
-        }
+            => new();
 
-        public void Dispose()
-        {
-            // no-op
-        }
+        // no-op
+        public void Dispose() { }
     }
 }

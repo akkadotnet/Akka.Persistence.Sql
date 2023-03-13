@@ -4,7 +4,6 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,7 +12,7 @@ using Xunit;
 
 namespace Akka.Persistence.Sql.Tests.Common
 {
-    public class TestFixture: IAsyncLifetime
+    public class TestFixture : IAsyncLifetime
     {
         private readonly Dictionary<Database, ITestContainer> _containers;
 
@@ -29,23 +28,21 @@ namespace Akka.Persistence.Sql.Tests.Common
             };
         }
 
-        public string ConnectionString(Database mode) => _containers[mode].ConnectionString;
-
         public Task InitializeAsync()
-        {
-            return Task.CompletedTask;
-        }
+            => Task.CompletedTask;
 
         public async Task DisposeAsync()
-        {
-            await Task.WhenAll(_containers.Select(kvp => kvp.Value.DisposeAsync().AsTask()));
-        }
+            => await Task.WhenAll(_containers.Select(kvp => kvp.Value.DisposeAsync().AsTask()));
+
+        public string ConnectionString(Database mode)
+            => _containers[mode].ConnectionString;
 
         public async Task InitializeDbAsync(Database mode)
         {
             var container = _containers[mode];
             if (!container.Initialized)
                 await container.InitializeAsync();
+
             await container.InitializeDbAsync();
         }
     }
