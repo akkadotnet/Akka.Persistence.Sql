@@ -1,10 +1,16 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="Program.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using System.IO;
 using Akka.Configuration;
-using Akka.Persistence.Sql.HelperLib;
-using Akka.Persistence.Sql;
 using Akka.Persistence.Sql.Config;
+using Akka.Persistence.Sql.HelperLib;
 using CommandLine;
+using FluentMigrator;
 using FluentMigrator.Expressions;
 using FluentMigrator.Runner.Generators;
 using FluentMigrator.Runner.Generators.Generic;
@@ -24,28 +30,28 @@ namespace Akka.Persistence.Sql.IndexHelperApp
         public static void Main(string[] args)
         {
             Parser.Default.ParseArguments<Options>(args)
-                .WithParsed(opts =>
-                {
-                    //var str = Linq2DbJournalDefaultSpecConfig.customConfig("testGen",
-                    //    "journalTbl", "metadataTbl", ProviderName.SqlServer,
-                    //    "connStr");
-                    var conf = ConfigurationFactory.ParseString(File.ReadAllText(opts.File));
+                .WithParsed(
+                    opts =>
+                    {
+                        var configuration = ConfigurationFactory.ParseString(File.ReadAllText(opts.File));
 
-                    var journalConf = new JournalConfig(conf
-                        .GetConfig(opts.HoconPath)
-                        //.GetConfig("akka.persistence.journal.linq2db.testGen")
-                        .WithFallback(Linq2DbPersistence.DefaultConfiguration));
-                    var generator = GetGenerator(journalConf.ProviderName);
-                    var helper = new JournalIndexHelper();
-                    GeneratePerOptions(opts, helper, journalConf, generator);
-                });
+                        var journalConfig = new JournalConfig(
+                            configuration
+                                .GetConfig(opts.HoconPath)
+                                .WithFallback(Linq2DbPersistence.DefaultConfiguration));
+
+                        var generator = GetGenerator(journalConfig.ProviderName);
+                        var helper = new JournalIndexHelper();
+
+                        GeneratePerOptions(opts, helper, journalConfig, generator);
+                    });
         }
 
         private static void GeneratePerOptions(
             Options opts,
             JournalIndexHelper helper,
             JournalConfig journalConf,
-            GenericGenerator generator)
+            IMigrationGenerator generator)
         {
             if (opts.GeneratePidSeqNo)
             {
@@ -56,6 +62,7 @@ namespace Akka.Persistence.Sql.IndexHelperApp
                         journalConf.TableConfig.EventJournalTable.ColumnNames.Ordering,
                         journalConf.TableConfig.SchemaName)
                 };
+
                 GenerateWithHeaderAndFooter(generator, orderingExpr, "Ordering");
 
                 var indexExpr = new CreateIndexExpression
@@ -66,24 +73,26 @@ namespace Akka.Persistence.Sql.IndexHelperApp
                         journalConf.TableConfig.EventJournalTable.ColumnNames.SequenceNumber,
                         journalConf.TableConfig.SchemaName)
                 };
+
                 GenerateWithHeaderAndFooter(generator, indexExpr, "PidAndSequenceNo");
             }
 
             if (opts.GenerateTimestamp)
             {
-                var timestampExpr = new CreateIndexExpression()
+                var timestampExpr = new CreateIndexExpression
                 {
                     Index = helper.JournalTimestamp(
                         journalConf.TableConfig.EventJournalTable.Name,
                         journalConf.TableConfig.EventJournalTable.ColumnNames.Created,
                         journalConf.TableConfig.SchemaName)
                 };
+
                 GenerateWithHeaderAndFooter(generator, timestampExpr, "Timestamp");
             }
         }
 
         private static void GenerateWithHeaderAndFooter(
-            GenericGenerator generator,
+            IMigrationGenerator generator,
             CreateIndexExpression expr,
             string indexType)
         {
