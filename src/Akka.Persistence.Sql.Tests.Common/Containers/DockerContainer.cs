@@ -233,15 +233,13 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
 
             try
             {
-                await Client.Containers
-                    .StopContainerAsync(
-                        id: ContainerName,
-                        parameters: new ContainerStopParameters());
+                await Client.Containers.StopContainerAsync(
+                    id: ContainerName,
+                    parameters: new ContainerStopParameters());
 
-                await Client.Containers
-                    .RemoveContainerAsync(
-                        id: ContainerName,
-                        parameters: new ContainerRemoveParameters { Force = true });
+                await Client.Containers.RemoveContainerAsync(
+                    id: ContainerName,
+                    parameters: new ContainerRemoveParameters { Force = true });
             }
             catch (Exception e)
             {
@@ -270,14 +268,12 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
 
             try
             {
-                Client.Containers
-                    .StopContainerAsync(
+                Client.Containers.StopContainerAsync(
                         id: ContainerName,
                         parameters: new ContainerStopParameters())
                     .GetAwaiter().GetResult();
 
-                Client.Containers
-                    .RemoveContainerAsync(
+                Client.Containers.RemoveContainerAsync(
                         id: ContainerName,
                         parameters: new ContainerRemoveParameters { Force = true })
                     .GetAwaiter().GetResult();
