@@ -10,8 +10,6 @@ NUGET_EXE=$TOOLS_DIR/nuget.exe
 NUGET_URL=https://dist.nuget.org/win-x86-commandline/v5.8.0/nuget.exe
 FAKE_VERSION=4.63.0
 FAKE_EXE=$TOOLS_DIR/FAKE/tools/FAKE.exe
-DOCFX_VERSION=2.58.9
-DOCFX_EXE=$TOOLS_DIR/docfx.console/tools/docfx.exe
 
 # Define default arguments.
 TARGET="Default"
@@ -67,23 +65,6 @@ fi
 # Make sure that Fake has been installed.
 if [ ! -f "$FAKE_EXE" ]; then
     echo "Could not find Fake.exe at '$FAKE_EXE'."
-    exit 1
-fi
-
-###########################################################################
-# INSTALL DOCFX
-###########################################################################
-if [ ! -f "$DOCFX_EXE" ]; then
-    mono "$NUGET_EXE" install docfx.console -ExcludeVersion -Version $DOCFX_VERSION -OutputDirectory "$TOOLS_DIR"
-    if [ $? -ne 0 ]; then
-        echo "An error occured while installing DocFx."
-        exit 1
-    fi
-fi
-
-# Make sure that DocFx has been installed.
-if [ ! -f "$DOCFX_EXE" ]; then
-    echo "Could not find docfx.exe at '$DOCFX_EXE'."
     exit 1
 fi
 

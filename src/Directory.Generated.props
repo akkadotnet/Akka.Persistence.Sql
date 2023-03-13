@@ -1,6 +1,7 @@
 <Project>
   <PropertyGroup>
-    <VersionPrefix>0.0.1</VersionPrefix>
-    <PackageReleaseNotes>Placeholder</PackageReleaseNotes>
+    <VersionPrefix>1.4.28</VersionPrefix>
+    <PackageReleaseNotes>Perf Enhancements and fixes to failure reporting**
+There was an issue found where persistence failures were being reported as rejections when they should not have. This has been fixed alongside some logic cleanup that should lead to more consistent performance.</PackageReleaseNotes>
   </PropertyGroup>
 </Project>

@@ -7,7 +7,6 @@ open System.Text
 
 open Fake
 open Fake.DotNetCli
-open Fake.DocFxHelper
 
 // Information about the project for Nuget and Assembly info files
 let configuration = "Release"
@@ -47,7 +46,6 @@ Target "Clean" (fun _ ->
     CleanDir outputTests
     CleanDir outputPerfTests
     CleanDir outputNuGet
-    CleanDir "docs/_site"
 )
 
 Target "AssemblyInfo" (fun _ ->
@@ -178,22 +176,6 @@ Target "PublishNuget" (fun _ ->
 )
 
 //--------------------------------------------------------------------------------
-// Documentation
-//--------------------------------------------------------------------------------
-Target "DocFx" (fun _ ->
-    DotNetCli.Restore (fun p -> { p with Project = solutionFile })
-    DotNetCli.Build (fun p -> { p with Project = solutionFile; Configuration = configuration })
-
-    let docsPath = "./docs"
-
-    DocFx (fun p ->
-                { p with
-                    Timeout = TimeSpan.FromMinutes 30.0;
-                    WorkingDirectory  = docsPath;
-                    DocFxJson = docsPath @@ "docfx.json" })
-)
-
-//--------------------------------------------------------------------------------
 // Cleanup
 //--------------------------------------------------------------------------------
 FinalTarget "KillCreatedProcesses" (fun _ ->
@@ -218,7 +200,6 @@ Target "Help" <| fun _ ->
       " * Nuget         Create and optionally publish nugets packages"
       " * RunTests      Runs tests"
       " * All           Builds, run tests, creates and optionally publish nuget packages"
-      " * DocFx         Creates a DocFx-based website for this solution"
       ""
       " Other Targets"
       " * Help       Display this help"
@@ -240,9 +221,6 @@ Target "Nuget" DoNothing
 // nuget dependencies
 "Clean" ==> "Build" ==> "CreateNuget"
 "CreateNuget" ==> "PublishNuget" ==> "Nuget"
-
-// docs
-"Clean" ==> "BuildRelease" ==> "Docfx"
 
 // all
 "BuildRelease" ==> "All"
