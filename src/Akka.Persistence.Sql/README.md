@@ -405,33 +405,3 @@ akka.persistence {
   }
 }
 ```
-
-## Building this solution
-
-To run the build script associated with this solution, execute the following:
-
-**Windows**
-```
-c:\> build.cmd all
-```
-
-**Linux / OS X**
-```bash
-c:\> build.sh all
-```
-
-If you need any information on the supported commands, please execute the `build.[cmd|sh] help` command.
-
-This build script is powered by [FAKE](https://fake.build/); please see their API documentation should you need to make any changes to the [`build.fsx`](build.fsx) file.
-
-### Conventions
-
-The attached build script will automatically do the following based on the conventions of the project names added to this project:
-
-* Any project name ending with `.Tests` will automatically be treated as a [XUnit2](https://xunit.github.io/) project and will be included during the test stages of this build script;
-* Any project name ending with `.Tests` will automatically be treated as a [NBench](https://github.com/petabridge/NBench) project and will be included during the test stages of this build script; and
-* Any project meeting neither of these conventions will be treated as a NuGet packaging target and its `.nupkg` file will automatically be placed in the `bin\nuget` folder upon running the `build.[cmd|sh] all` command.
-
-### Release Notes, Version Numbers, Etc
-
-This project will automatically populate its release notes in all of its modules via the entries written inside [`RELEASE_NOTES.md`](RELEASE_NOTES.md) and will automatically update the versions of all assemblies and NuGet packages via the metadata included inside [`Directory.Build.props`](src/Directory.Build.props).

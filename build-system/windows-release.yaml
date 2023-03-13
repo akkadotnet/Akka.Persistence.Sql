@@ -15,9 +15,9 @@ variables:
   - name: githubConnectionName
     value: AkkaDotNet_Releases
   - name: projectName
-    value: Akka.Persistence.Linq2Db
+    value: Akka.Persistence.Sql
   - name: githubRepositoryName
-    value: akkadotnet/Akka.Persistence.Linq2Db
+    value: akkadotnet/Akka.Persistence.Sql
 
 steps:
 - task: UseDotNet@2

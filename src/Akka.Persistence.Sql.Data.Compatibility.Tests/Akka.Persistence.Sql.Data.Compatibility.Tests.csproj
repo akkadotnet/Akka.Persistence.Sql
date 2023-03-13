@@ -1,0 +1,83 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>$(NetCoreTestVersion)</TargetFramework>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Akka.Cluster.Hosting" />
+    <PackageReference Include="Akka.Cluster.Sharding" />
+    <PackageReference Include="Akka.Hosting" />
+    <PackageReference Include="Akka.Persistence.Sql.Compat.Common" />
+    <PackageReference Include="Docker.DotNet" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+
+    <PackageReference Include="Microsoft.SqlServer.SqlManagementObjects" />
+    <PackageReference Include="System.Data.SqlClient" />
+
+    <PackageReference Include="MySql.Data" />
+
+    <PackageReference Include="Npgsql" />
+
+    <PackageReference Include="System.Data.SQLite" />
+
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Akka.Persistence.Sql.HelperLib\Akka.Persistence.Sql.HelperLib.csproj" />
+    <ProjectReference Include="..\Akka.Persistence.Sql\Akka.Persistence.Sql.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\scripts\SqlServer\1_Migration_Setup.sql">
+      <Link>SqlServer\1_Migration_Setup.sql</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\scripts\SqlServer\2_Migration.sql">
+      <Link>SqlServer\2_Migration.sql</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\scripts\SqlServer\3_Post_Migration_Cleanup.sql">
+      <Link>SqlServer\3_Post_Migration_Cleanup.sql</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\scripts\PostgreSql\1_Migration_Setup.sql">
+      <Link>PostgreSql\1_Migration_Setup.sql</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\scripts\PostgreSql\2_Migration.sql">
+      <Link>PostgreSql\2_Migration.sql</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\scripts\PostgreSql\3_Post_Migration_Cleanup.sql">
+      <Link>PostgreSql\3_Post_Migration_Cleanup.sql</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\scripts\MySql\1_Migration_Setup.sql">
+      <Link>MySql\1_Migration_Setup.sql</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\scripts\MySql\2_Migration.sql">
+      <Link>MySql\2_Migration.sql</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\scripts\MySql\3_Post_Migration_Cleanup.sql">
+      <Link>MySql\3_Post_Migration_Cleanup.sql</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <Content Include="db/*.*">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+</Project>
