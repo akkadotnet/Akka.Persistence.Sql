@@ -32,12 +32,14 @@ namespace Akka.Persistence.Sql.HelperLib
                 .GetConfig("akka.persistence.journal.linq2db");
 
             var mapping = config.GetString("table-mapping");
-            if(string.IsNullOrWhiteSpace(mapping) || mapping == "default")
-                throw new ConfigurationException("akka.persistence.journal.linq2db.table-mapping must not be empty or 'default'");
+            if (string.IsNullOrWhiteSpace(mapping) || mapping == "default")
+                throw new ConfigurationException(
+                    "akka.persistence.journal.linq2db.table-mapping must not be empty or 'default'");
 
             _journalConfig = new JournalConfig(config);
             if (_journalConfig.TableConfig.TagWriteMode != TagWriteMode.Both)
-                throw new ConfigurationException("akka.persistence.journal.linq2db.tag-write-mode has to be 'Both'");
+                throw new ConfigurationException(
+                    "akka.persistence.journal.linq2db.tag-write-mode has to be 'Both'");
 
             _connectionFactory = new AkkaPersistenceDataConnectionFactory(_journalConfig);
             _separator = _journalConfig.PluginConfig.TagSeparator;
@@ -52,10 +54,9 @@ namespace Akka.Persistence.Sql.HelperLib
             // Create the tag table if it doesn't exist
             var schemaProvider = db.DataProvider.GetSchemaProvider();
             var dbSchema = schemaProvider.GetSchema(db);
+
             if (dbSchema.Tables.All(t => t.TableName != _journalConfig.TableConfig.TagTable.Name))
-            {
                 await db.CreateTableAsync<JournalTagRow>();
-            }
 
             long maxId;
             if (endOffset is null)
@@ -66,9 +67,9 @@ namespace Akka.Persistence.Sql.HelperLib
 
                 maxId = await db.GetTable<JournalRow>()
                     .Where(r =>
-                        r.Tags != null
-                        && r.Tags.Length > 0
-                        && r.Ordering.NotIn(jtrQuery))
+                        r.Tags != null &&
+                        r.Tags.Length > 0 &&
+                        r.Ordering.NotIn(jtrQuery))
                     .Select(r => r.Ordering)
                     .OrderByDescending(r => r)
                     .FirstOrDefaultAsync();
@@ -78,11 +79,14 @@ namespace Akka.Persistence.Sql.HelperLib
                 maxId = endOffset.Value;
             }
 
-            Console.WriteLine($"Attempting to migrate tags from {_journalConfig.TableConfig.EventJournalTable.Name} table starting from ordering number {startOffset} to {maxId}");
+            Console.WriteLine(
+                $"Attempting to migrate tags from {_journalConfig.TableConfig.EventJournalTable.Name} table starting from ordering number {startOffset} to {maxId}");
 
             while (startOffset <= maxId)
             {
-                Console.WriteLine($"Migrating offset {startOffset} to {Math.Min(startOffset + batchSize, maxId)}");
+                Console.WriteLine(
+                    $"Migrating offset {startOffset} to {Math.Min(startOffset + batchSize, maxId)}");
+
                 await using (var tx = await db.BeginTransactionAsync(IsolationLevel.ReadCommitted))
                 {
                     try
@@ -90,35 +94,41 @@ namespace Akka.Persistence.Sql.HelperLib
                         var offset = startOffset;
                         var rows = await db.GetTable<JournalRow>()
                             .Where(r =>
-                                r.Ordering >= offset
-                                && r.Ordering < offset + batchSize
-                                && r.Tags != null
-                                && r.Tags.Length > 0)
+                                r.Ordering >= offset &&
+                                r.Ordering < offset + batchSize &&
+                                r.Tags != null &&
+                                r.Tags.Length > 0)
                             .ToListAsync();
 
                         var tagList = new List<JournalTagRow>();
                         foreach (var row in rows)
                         {
                             var tags = row.Tags
-                                .Split(new [] {_separator}, StringSplitOptions.RemoveEmptyEntries)
+                                .Split(new[] { _separator }, StringSplitOptions.RemoveEmptyEntries)
                                 .Where(s => !string.IsNullOrWhiteSpace(s));
 
-                            tagList.AddRange(tags.Select(tag => new JournalTagRow
-                            {
-                                OrderingId = row.Ordering,
-                                TagValue = tag,
-                                SequenceNumber = row.SequenceNumber,
-                                PersistenceId = row.PersistenceId
-                            }));
+                            tagList.AddRange(
+                                tags.Select(
+                                    tag => new JournalTagRow
+                                    {
+                                        OrderingId = row.Ordering,
+                                        TagValue = tag,
+                                        SequenceNumber = row.SequenceNumber,
+                                        PersistenceId = row.PersistenceId
+                                    }));
                         }
 
-                        Console.WriteLine($"Inserting {tagList.Count} tag rows into {_journalConfig.TableConfig.TagTable.Name} table");
-                        await db.GetTable<JournalTagRow>().BulkCopyAsync(new BulkCopyOptions
-                        {
-                            BulkCopyType = BulkCopyType.MultipleRows,
-                            UseParameters = config.PreferParametersOnMultiRowInsert,
-                            MaxBatchSize = config.DbRoundTripTagBatchSize
-                        }, tagList);
+                        Console.WriteLine(
+                            $"Inserting {tagList.Count} tag rows into {_journalConfig.TableConfig.TagTable.Name} table");
+
+                        await db.GetTable<JournalTagRow>().BulkCopyAsync(
+                            new BulkCopyOptions
+                            {
+                                BulkCopyType = BulkCopyType.MultipleRows,
+                                UseParameters = config.PreferParametersOnMultiRowInsert,
+                                MaxBatchSize = config.DbRoundTripTagBatchSize
+                            },
+                            tagList);
 
                         await tx.CommitAsync();
                     }
@@ -132,13 +142,16 @@ namespace Akka.Persistence.Sql.HelperLib
                         {
                             throw new AggregateException(
                                 $"Migration failed on offset {startOffset} to {startOffset + batchSize}, Rollback failed.",
-                                e2, e1);
+                                e2,
+                                e1);
                         }
+
                         throw new Exception(
                             $"Migration failed on offset {startOffset} to {startOffset + batchSize}, Rollback successful.",
                             e1);
                     }
                 }
+
                 startOffset += batchSize;
             }
         }
