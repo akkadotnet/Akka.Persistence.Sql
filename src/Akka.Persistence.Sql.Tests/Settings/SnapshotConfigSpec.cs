@@ -1,13 +1,12 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="SnapshotConfigSpec.cs" company="Akka.NET Project">
-//      Copyright (C) 2013-2022 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
 
 using System;
 using Akka.Configuration;
 using Akka.Persistence.Sql.Config;
-using Akka.Persistence.Sql.Journal.Dao;
 using Akka.Persistence.Sql.Snapshot;
 using FluentAssertions;
 using Xunit;
@@ -19,29 +18,27 @@ namespace Akka.Persistence.Sql.Tests.Settings
         private readonly Configuration.Config _defaultConfig;
 
         public SnapshotConfigSpec()
-        {
-            _defaultConfig = Linq2DbPersistence.DefaultConfiguration;
-        }
+            => _defaultConfig = Linq2DbPersistence.DefaultConfiguration;
 
         [Fact(DisplayName = "Default snapshot HOCON config should contain default values")]
         public void DefaultJournalHoconConfigTest()
         {
-            var snapshot = _defaultConfig.GetConfig("akka.persistence.snapshot-store.linq2db");
+            var snapshot = _defaultConfig.GetConfig(
+                "akka.persistence.snapshot-store.linq2db");
+
             snapshot.Should().NotBeNull();
 
             var stringType = snapshot.GetString("class");
             var type = Type.GetType(stringType);
             type.Should().Be(typeof(Linq2DbSnapshotStore));
 
-            snapshot.GetString("plugin-dispatcher").Should()
-                .Be("akka.persistence.dispatchers.default-plugin-dispatcher");
+            snapshot.GetString("plugin-dispatcher").Should().Be("akka.persistence.dispatchers.default-plugin-dispatcher");
             snapshot.GetString("connection-string", "invalid").Should().BeNullOrEmpty();
             snapshot.GetString("provider-name", "invalid").Should().BeNullOrEmpty();
             snapshot.GetBoolean("use-clone-connection").Should().BeFalse();
             snapshot.GetString("table-mapping", "invalid").Should().Be("default");
             snapshot.GetString("serializer", "invalid").Should().BeNullOrEmpty();
-            snapshot.GetString("dao", "invalid").Should()
-                .Be("Akka.Persistence.Sql.Snapshot.ByteArraySnapshotDao, Akka.Persistence.Sql");
+            snapshot.GetString("dao", "invalid").Should().Be("Akka.Persistence.Sql.Snapshot.ByteArraySnapshotDao, Akka.Persistence.Sql");
             snapshot.GetBoolean("auto-initialize").Should().BeFalse();
             snapshot.GetBoolean("warn-on-auto-init-fail").Should().BeTrue();
 
@@ -56,10 +53,13 @@ namespace Akka.Persistence.Sql.Tests.Settings
         [Fact(DisplayName = "Default snapshot config should contain default values")]
         public void DefaultSnapshotConfigTest()
         {
-            var snapshotHocon = _defaultConfig.GetConfig("akka.persistence.snapshot-store.linq2db");
+            var snapshotHocon = _defaultConfig.GetConfig(
+                "akka.persistence.snapshot-store.linq2db");
+
             snapshotHocon.Should().NotBeNull();
 
             var snapshot = new SnapshotConfig(snapshotHocon);
+
             // assert default values
             AssertDefaultSnapshotConfig(snapshot);
 
@@ -77,16 +77,18 @@ namespace Akka.Persistence.Sql.Tests.Settings
             snapshotColumns.SerializerId.Should().Be("serializer_id");
         }
 
-        [Fact(DisplayName = "Snapshot config with SqlServer compat should contain correct column names")]
+        [Fact(DisplayName = "Snapshot config with SqlServer compatibility should contain correct column names")]
         public void SqlServerSnapshotConfigTest()
         {
             var snapshotHocon = ConfigurationFactory
                 .ParseString("akka.persistence.snapshot-store.linq2db.table-mapping = sql-server")
                 .WithFallback(_defaultConfig)
                 .GetConfig("akka.persistence.snapshot-store.linq2db");
+
             snapshotHocon.Should().NotBeNull();
 
             var snapshot = new SnapshotConfig(snapshotHocon);
+
             // assert default values
             AssertDefaultSnapshotConfig(snapshot);
 
@@ -104,16 +106,18 @@ namespace Akka.Persistence.Sql.Tests.Settings
             snapshotColumns.SerializerId.Should().Be("SerializerId");
         }
 
-        [Fact(DisplayName = "Snapshot config with Sqlite compat should contain correct column names")]
+        [Fact(DisplayName = "Snapshot config with Sqlite compatibility should contain correct column names")]
         public void SqliteSnapshotConfigTest()
         {
             var snapshotHocon = ConfigurationFactory
                 .ParseString("akka.persistence.snapshot-store.linq2db.table-mapping = sqlite")
                 .WithFallback(_defaultConfig)
                 .GetConfig("akka.persistence.snapshot-store.linq2db");
+
             snapshotHocon.Should().NotBeNull();
 
             var snapshot = new SnapshotConfig(snapshotHocon);
+
             // assert default values
             AssertDefaultSnapshotConfig(snapshot);
 
@@ -131,16 +135,18 @@ namespace Akka.Persistence.Sql.Tests.Settings
             snapshotColumns.SerializerId.Should().Be("serializer_id");
         }
 
-        [Fact(DisplayName = "Snapshot config with PostgreSql compat should contain correct column names")]
+        [Fact(DisplayName = "Snapshot config with PostgreSql compatibility should contain correct column names")]
         public void PostgreSqlSnapshotConfigTest()
         {
             var snapshotHocon = ConfigurationFactory
                 .ParseString("akka.persistence.snapshot-store.linq2db.table-mapping = postgresql")
                 .WithFallback(_defaultConfig)
                 .GetConfig("akka.persistence.snapshot-store.linq2db");
+
             snapshotHocon.Should().NotBeNull();
 
             var snapshot = new SnapshotConfig(snapshotHocon);
+
             // assert default values
             AssertDefaultSnapshotConfig(snapshot);
 
@@ -158,16 +164,18 @@ namespace Akka.Persistence.Sql.Tests.Settings
             snapshotColumns.SerializerId.Should().Be("serializer_id");
         }
 
-        [Fact(DisplayName = "Snapshot config with MySql compat should contain correct column names")]
+        [Fact(DisplayName = "Snapshot config with MySql compatibility should contain correct column names")]
         public void MySqlSnapshotConfigTest()
         {
             var snapshotHocon = ConfigurationFactory
                 .ParseString("akka.persistence.snapshot-store.linq2db.table-mapping = mysql")
                 .WithFallback(_defaultConfig)
                 .GetConfig("akka.persistence.snapshot-store.linq2db");
+
             snapshotHocon.Should().NotBeNull();
 
             var snapshot = new SnapshotConfig(snapshotHocon);
+
             // assert default values
             AssertDefaultSnapshotConfig(snapshot);
 

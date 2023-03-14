@@ -1,4 +1,10 @@
-﻿using System.Threading.Tasks;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="MsSqliteSnapshotSpec.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System.Threading.Tasks;
 using Akka.Persistence.Sql.Tests.Common;
 using Akka.Persistence.TCK.Snapshot;
 using LinqToDB;
@@ -12,13 +18,14 @@ namespace Akka.Persistence.Sql.Tests.Sqlite
     {
         private readonly TestFixture _fixture;
 
-        public MsSqliteSnapshotSpec(ITestOutputHelper outputHelper, TestFixture fixture)
+        public MsSqliteSnapshotSpec(
+            ITestOutputHelper outputHelper,
+            TestFixture fixture)
             : base(
                 SqliteSnapshotSpecConfig.Create(fixture.ConnectionString(Database.MsSqlite), ProviderName.SQLiteMS),
-                nameof(MsSqliteSnapshotSpec), outputHelper)
-        {
-            _fixture = fixture;
-        }
+                nameof(MsSqliteSnapshotSpec),
+                outputHelper)
+            => _fixture = fixture;
 
         // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
         protected override bool SupportsSerialization => false;
@@ -30,8 +37,6 @@ namespace Akka.Persistence.Sql.Tests.Sqlite
         }
 
         public Task DisposeAsync()
-        {
-            return Task.CompletedTask;
-        }
+            => Task.CompletedTask;
     }
 }

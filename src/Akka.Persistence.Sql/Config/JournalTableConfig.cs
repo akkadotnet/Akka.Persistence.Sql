@@ -39,9 +39,9 @@ namespace Akka.Persistence.Sql.Config
             TagWriteMode = res;
 
             // backward compatibility
-            var compat = config.GetString("table-compatibility-mode");
-            if (compat != null)
-                mappingPath = compat;
+            var compatibility = config.GetString("table-compatibility-mode");
+            if (compatibility != null)
+                mappingPath = compatibility;
 
             var mappingConfig = config.GetConfig(mappingPath);
             if (mappingConfig is null)

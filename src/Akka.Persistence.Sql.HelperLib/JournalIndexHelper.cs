@@ -21,7 +21,7 @@ namespace Akka.Persistence.Sql.HelperLib
                 schemaName,
                 $"UX_{tableName}_PID_SEQNO");
 
-            //short name for easy compat with all dbs. (*cough* oracle *cough*)
+            //short name for easy compatibility with all dbs. (*cough* oracle *cough*)
             idx.Columns.Add(new IndexColumnDefinition { Name = persistenceIdCol });
             idx.Columns.Add(new IndexColumnDefinition { Name = sequenceNoCol, Direction = Direction.Ascending });
 

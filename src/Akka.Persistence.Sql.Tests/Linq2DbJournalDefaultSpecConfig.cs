@@ -1,5 +1,10 @@
-﻿using Akka.Configuration;
-using Akka.Persistence.Sql.Journal;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="Linq2DbJournalDefaultSpecConfig.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using Akka.Configuration;
 
 namespace Akka.Persistence.Sql.Tests
 {
@@ -10,7 +15,8 @@ namespace Akka.Persistence.Sql.Tests
             string journalTableName,
             string metadataTableName,
             string providerName,
-            string connectionString) => $@"
+            string connectionString)
+            => $@"
 akka.persistence.journal.{customJournalName} {{
     class = ""Akka.Persistence.Sql.Journal.Linq2DbWriteJournal, Akka.Persistence.Sql""
     provider-name = ""{providerName}""
@@ -30,7 +36,8 @@ akka.persistence.journal.{customJournalName} {{
             string tableName,
             string metadataTableName,
             string providerName,
-            string connectionString) => $@"
+            string connectionString)
+            => $@"
 akka.persistence.journal.linq2db {{
     provider-name = ""{providerName}""
     connection-string = ""{connectionString}""
@@ -52,31 +59,33 @@ akka.persistence.journal.linq2db {{
             string providerName,
             string connectionString,
             bool asDefault)
-        {
-            return ConfigurationFactory.ParseString(
+            => ConfigurationFactory.ParseString(
                 CustomConfig(
                     configName,
                     journalTableName,
                     metadataTableName,
                     providerName,
-                    connectionString) + (asDefault ? $@"
+                    connectionString) + (asDefault
+                    ? $@"
 akka{{
   persistence {{
     journal {{
       plugin = akka.persistence.journal.{configName}
     }}
   }}
-}}" : ""));
-        }
+}}"
+                    : string.Empty));
 
         public static Configuration.Config GetConfig(
             string tableName,
             string metadataTableName,
             string providerName,
             string connectionString)
-        {
-            return ConfigurationFactory
-                .ParseString(JournalBaseConfig(tableName, metadataTableName, providerName, connectionString));
-        }
+            => ConfigurationFactory.ParseString(
+                JournalBaseConfig(
+                    tableName,
+                    metadataTableName,
+                    providerName,
+                    connectionString));
     }
 }

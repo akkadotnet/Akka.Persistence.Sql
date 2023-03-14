@@ -15,7 +15,7 @@ using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Sqlite
 {
-    [Collection("SqlCompatSpec")]
+    [Collection("SqlCompatibilitySpec")]
     public class SqliteCompatibilitySpec: DataCompatibilitySpec<SqliteFixture>
     {
         public SqliteCompatibilitySpec(ITestOutputHelper helper): base(helper)

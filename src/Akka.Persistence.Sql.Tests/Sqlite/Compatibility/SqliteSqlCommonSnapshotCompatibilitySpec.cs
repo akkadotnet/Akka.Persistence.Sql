@@ -1,4 +1,10 @@
-﻿using System.Threading.Tasks;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="SqliteSqlCommonSnapshotCompatibilitySpec.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System.Threading.Tasks;
 using Akka.Persistence.Sql.Tests.Common;
 using Xunit;
 using Xunit.Abstractions;
@@ -10,18 +16,26 @@ namespace Akka.Persistence.Sql.Tests.Sqlite.Compatibility
     {
         private readonly TestFixture _fixture;
 
-        public SqliteSqlCommonSnapshotCompatibilitySpec(ITestOutputHelper outputHelper, TestFixture fixture) : base(outputHelper)
+        public SqliteSqlCommonSnapshotCompatibilitySpec(
+            ITestOutputHelper outputHelper,
+            TestFixture fixture)
+            : base(
+                outputHelper)
         {
             _fixture = fixture;
+
             Config = SqliteCompatibilitySpecConfig.InitSnapshotConfig(
-                "snapshot_compat", fixture.ConnectionString(Database.MsSqlite));
+                "snapshot_compat",
+                fixture.ConnectionString(Database.MsSqlite));
         }
 
         protected override Configuration.Config Config { get; }
 
-        protected override string OldSnapshot => "akka.persistence.snapshot-store.sqlite";
+        protected override string OldSnapshot
+            => "akka.persistence.snapshot-store.sqlite";
 
-        protected override string NewSnapshot => "akka.persistence.snapshot-store.linq2db";
+        protected override string NewSnapshot
+            => "akka.persistence.snapshot-store.linq2db";
 
         public override async Task InitializeAsync()
         {

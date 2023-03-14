@@ -1,4 +1,10 @@
-﻿using System.Threading.Tasks;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="SqlServerJournalCustomConfigSpec.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System.Threading.Tasks;
 using Akka.Persistence.Sql.Tests.Common;
 using Akka.Persistence.TCK.Journal;
 using LinqToDB;
@@ -16,24 +22,18 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
     [Collection("PersistenceSpec")]
     public class SqlServerJournalCustomConfigSpec : JournalSpec, IAsyncLifetime
     {
-        private static Configuration.Config Configuration(TestFixture fixture)
-            => Linq2DbJournalDefaultSpecConfig.GetCustomConfig(
-                "customSpec",
-                "customJournalTable",
-                "customMetadataTable",
-                ProviderName.SqlServer2017,
-                fixture.ConnectionString(Database.SqlServer),
-                true);
-
         private readonly TestFixture _fixture;
 
-        public SqlServerJournalCustomConfigSpec(ITestOutputHelper output, TestFixture fixture)
-            : base(Configuration(fixture), nameof(SqlServerJournalCustomConfigSpec), output)
-        {
-            _fixture = fixture;
-            //DebuggingHelpers.SetupTraceDump(output);
-        }
+        public SqlServerJournalCustomConfigSpec(
+            ITestOutputHelper output,
+            TestFixture fixture)
+            : base(
+                Configuration(fixture),
+                nameof(SqlServerJournalCustomConfigSpec),
+                output)
+            => _fixture = fixture;
 
+        //DebuggingHelpers.SetupTraceDump(output);
         // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
         protected override bool SupportsSerialization => false;
 
@@ -44,8 +44,15 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
         }
 
         public Task DisposeAsync()
-        {
-            return Task.CompletedTask;
-        }
+            => Task.CompletedTask;
+
+        private static Configuration.Config Configuration(TestFixture fixture)
+            => Linq2DbJournalDefaultSpecConfig.GetCustomConfig(
+                "customSpec",
+                "customJournalTable",
+                "customMetadataTable",
+                ProviderName.SqlServer2017,
+                fixture.ConnectionString(Database.SqlServer),
+                true);
     }
 }

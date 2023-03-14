@@ -8,7 +8,7 @@ using Xunit;
 using Xunit.Abstractions;
 namespace Akka.Persistence.Sql.Data.Compatibility.Tests.MySql
 {
-    [Collection("SqlCompatSpec")]
+    [Collection("SqlCompatibilitySpec")]
     public class MySqlMigratorCompatibilitySpec: MigratorCompatibilitySpec<MySqlFixture>
     {
         public MySqlMigratorCompatibilitySpec(ITestOutputHelper output) : base(output)

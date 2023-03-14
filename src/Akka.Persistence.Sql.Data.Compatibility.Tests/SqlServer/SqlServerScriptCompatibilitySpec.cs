@@ -12,7 +12,7 @@ using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Data.Compatibility.Tests.SqlServer
 {
-    [Collection("SqlCompatSpec")]
+    [Collection("SqlCompatibilitySpec")]
     public class SqlServerScriptCompatibilitySpec: SqlScriptCompatibilitySpec<SqlServerFixture>
     {
         public SqlServerScriptCompatibilitySpec(ITestOutputHelper output) : base(output)

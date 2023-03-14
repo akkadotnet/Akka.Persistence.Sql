@@ -1,4 +1,10 @@
-﻿using System.Threading.Tasks;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="PostgreSqlCommonJournalCompatibilitySpec.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System.Threading.Tasks;
 using Akka.Persistence.Sql.Tests.Common;
 using Xunit;
 using Xunit.Abstractions;
@@ -16,18 +22,24 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
     {
         private readonly TestFixture _fixture;
 
+        public PostgreSqlCommonJournalCompatibilitySpec(
+            ITestOutputHelper output,
+            TestFixture fixture)
+            : base(output)
+        {
+            _fixture = fixture;
+
+            Config = PostgreSqlCompatibilitySpecConfig.InitJournalConfig(
+                _fixture,
+                "event_journal",
+                "metadata");
+        }
+
         protected override Configuration.Config Config { get; }
 
         protected override string OldJournal => "akka.persistence.journal.postgresql";
 
         protected override string NewJournal => "akka.persistence.journal.linq2db";
-
-        public PostgreSqlCommonJournalCompatibilitySpec(ITestOutputHelper output, TestFixture fixture)
-            : base( output)
-        {
-            _fixture = fixture;
-            Config = PostgreSqlCompatibilitySpecConfig.InitJournalConfig(_fixture, "event_journal", "metadata");
-        }
 
         public override async Task InitializeAsync()
         {

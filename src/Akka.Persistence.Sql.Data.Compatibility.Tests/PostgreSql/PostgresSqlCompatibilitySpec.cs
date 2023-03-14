@@ -15,7 +15,7 @@ using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Data.Compatibility.Tests.PostgreSql
 {
-    [Collection("SqlCompatSpec")]
+    [Collection("SqlCompatibilitySpec")]
     public class PostgreSqlCompatibilitySpec: DataCompatibilitySpec<PostgreSqlFixture>
     {
         public PostgreSqlCompatibilitySpec(ITestOutputHelper helper): base(helper)

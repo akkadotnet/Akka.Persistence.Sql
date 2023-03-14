@@ -305,7 +305,7 @@ akka.persistence {
           "manifest" = "manifest"
         }
 
-        sqlserver-compat-column-names {
+        sqlserver-compatibility-column-names {
           "ordering" = "ordering"
           "deleted" = "isdeleted"
           "persistenceId" = "persistenceId"
@@ -317,7 +317,7 @@ akka.persistence {
           "manifest" = "manifest"
         }
 
-        sqlite-compat-column-names {
+        sqlite-compatibility-column-names {
           "ordering" = "ordering"
           "deleted" = "is_deleted"
           "persistenceId" = "persistence_Id"
@@ -329,7 +329,7 @@ akka.persistence {
           "manifest" = "manifest"
         }
 
-        postgresql-compat-column-names {
+        postgresql-compatibility-column-names {
           "ordering" = "ordering"
           "deleted" = "is_deleted"
           "persistenceId" = "persistence_id"
@@ -346,17 +346,17 @@ akka.persistence {
           "sequenceNumber" = "sequenceNr"
         }
 
-        sqlserver-compat-metadata-column-names {
+        sqlserver-compatibility-metadata-column-names {
           "persistenceId" = "persistenceId"
           "sequenceNumber" = "sequenceNr"
         }
 
-        sqlite-compat-metadata-column-names {
+        sqlite-compatibility-metadata-column-names {
           "persistenceId" = "persistence_Id"
           "sequenceNumber" = "sequence_nr"
         }
 
-        postgresql-compat-metadata-column-names {
+        postgresql-compatibility-metadata-column-names {
           "persistenceId" = "persistence_id"
           "sequenceNumber" = "sequence_nr"
         }
