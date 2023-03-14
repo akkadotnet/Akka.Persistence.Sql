@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="PostgreSqlFixture.cs" company="Akka.NET Project">
-//      Copyright (C) 2013-2022 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -11,20 +11,21 @@ using System.Threading.Tasks;
 using Akka.Persistence.Sql.Data.Compatibility.Tests.Internal;
 using Akka.Util;
 using Docker.DotNet.Models;
-using Xunit;
 
 namespace Akka.Persistence.Sql.Data.Compatibility.Tests.PostgreSql
 {
     /// <summary>
-    ///     Fixture used to run Postgre SQL Server
+    ///     Fixture used to run PostgreSQL
     /// </summary>
     public sealed class PostgreSqlFixture : DockerContainer
     {
-        public PostgreSqlFixture() : base($"{Const.Repository}/akka-persistence-postgresql-test-data", "latest", $"postgresql-{Guid.NewGuid():N}")
-        {
-        }
+        private string _connectionString = string.Empty;
 
-        private string _connectionString = "";
+        public PostgreSqlFixture() : base(
+            $"{Const.Repository}/akka-persistence-postgresql-test-data",
+            "latest",
+            $"postgresql-{Guid.NewGuid():N}") { }
+
         public override string ConnectionString => _connectionString;
 
         private int Port { get; } = ThreadLocalRandom.Current.Next(9000, 10000);
@@ -39,7 +40,7 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.PostgreSql
         {
             parameters.ExposedPorts = new Dictionary<string, EmptyStruct>
             {
-                {"5432/tcp", new ()}
+                { "5432/tcp", new() }
             };
 
             parameters.HostConfig = new HostConfig
@@ -53,7 +54,7 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.PostgreSql
             parameters.Env = new[]
             {
                 $"POSTGRES_PASSWORD={Password}",
-                $"POSTGRES_USER={User}",
+                $"POSTGRES_USER={User}"
             };
         }
 
@@ -74,6 +75,5 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.PostgreSql
 
             return Task.CompletedTask;
         }
-
     }
 }

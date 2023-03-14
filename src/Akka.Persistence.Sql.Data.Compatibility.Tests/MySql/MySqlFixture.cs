@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="MySqlFixture.cs" company="Akka.NET Project">
-//      Copyright (C) 2013-2022 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -15,22 +15,24 @@ using Docker.DotNet.Models;
 namespace Akka.Persistence.Sql.Data.Compatibility.Tests.MySql
 {
     /// <summary>
-    ///     Fixture used to run MySql SQL Server
+    ///     Fixture used to run MySql
     /// </summary>
     public sealed class MySqlFixture : DockerContainer
     {
-        public MySqlFixture() : base($"{Const.Repository}/akka-persistence-mysql-test-data", "latest", $"mysql-{Guid.NewGuid():N}")
-        {
-        }
+        private string _connectionString = string.Empty;
 
-        private string _connectionString = "";
+        public MySqlFixture() : base(
+            $"{Const.Repository}/akka-persistence-mysql-test-data",
+            "latest",
+            $"mysql-{Guid.NewGuid():N}") { }
+
         public override string ConnectionString => _connectionString;
 
         private int Port { get; } = ThreadLocalRandom.Current.Next(9000, 10000);
 
-        private string User { get; } = "root";
+        private string User => "root";
 
-        private string Password { get; } = "Password12!";
+        private string Password => "Password12!";
 
         protected override string ReadyMarker => "ready for connections. Version";
 
@@ -40,6 +42,7 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.MySql
             {
                 ["3306/tcp"] = new()
             };
+
             parameters.HostConfig = new HostConfig
             {
                 PortBindings = new Dictionary<string, IList<PortBinding>>
@@ -47,10 +50,11 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.MySql
                     ["3306/tcp"] = new List<PortBinding> { new() { HostPort = $"{Port}" } }
                 }
             };
+
             parameters.Env = new[]
             {
                 $"MYSQL_ROOT_PASSWORD={Password}",
-                $"MYSQL_DATABASE={DatabaseName}",
+                $"MYSQL_DATABASE={DatabaseName}"
             };
         }
 
@@ -71,6 +75,5 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.MySql
 
             return Task.CompletedTask;
         }
-
     }
 }

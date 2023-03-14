@@ -4,7 +4,6 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using Akka.Configuration;
 using Akka.Persistence.Sql.Journal;
 using Akka.Persistence.Sql.Snapshot;
 using LinqToDB;
@@ -18,8 +17,7 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
             string tableName,
             int batchSize = 100,
             int parallelism = 2)
-            => ConfigurationFactory.ParseString(
-                @$"
+            => @$"
                 akka.persistence {{
                     publish-plugin-commands = on
                     journal {{
@@ -34,7 +32,7 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
                             auto-initialize = true
                         }}
                     }}
-                }}");
+                }}";
     }
 
     public static class SqlServerSnapshotSpecConfig
@@ -44,8 +42,7 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
             string tableName,
             int batchSize = 100,
             int parallelism = 2)
-            => ConfigurationFactory.ParseString(
-                @$"
+            => @$"
                 akka.persistence {{
                     publish-plugin-commands = on
                     snapshot-store {{
@@ -67,6 +64,6 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
                             }}
                         }}
                     }}
-                }}");
+                }}";
     }
 }

@@ -4,8 +4,6 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using Akka.Configuration;
-
 namespace Akka.Persistence.Sql.Tests
 {
     public static class Linq2DbJournalDefaultSpecConfig
@@ -59,14 +57,13 @@ akka.persistence.journal.linq2db {{
             string providerName,
             string connectionString,
             bool asDefault)
-            => ConfigurationFactory.ParseString(
-                CustomConfig(
-                    configName,
-                    journalTableName,
-                    metadataTableName,
-                    providerName,
-                    connectionString) + (asDefault
-                    ? $@"
+            => CustomConfig(
+                configName,
+                journalTableName,
+                metadataTableName,
+                providerName,
+                connectionString) + (asDefault
+                ? $@"
 akka{{
   persistence {{
     journal {{
@@ -74,18 +71,17 @@ akka{{
     }}
   }}
 }}"
-                    : string.Empty));
+                : string.Empty);
 
         public static Configuration.Config GetConfig(
             string tableName,
             string metadataTableName,
             string providerName,
             string connectionString)
-            => ConfigurationFactory.ParseString(
-                JournalBaseConfig(
-                    tableName,
-                    metadataTableName,
-                    providerName,
-                    connectionString));
+            => JournalBaseConfig(
+                tableName,
+                metadataTableName,
+                providerName,
+                connectionString);
     }
 }

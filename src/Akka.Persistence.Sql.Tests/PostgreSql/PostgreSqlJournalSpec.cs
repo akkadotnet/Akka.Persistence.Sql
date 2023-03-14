@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System.Threading.Tasks;
-using Akka.Configuration;
 using Akka.Persistence.Sql.Journal;
 using Akka.Persistence.Sql.Tests.Common;
 using Akka.Persistence.TCK.Journal;
@@ -48,8 +47,7 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql
             => Task.CompletedTask;
 
         public static Configuration.Config Configuration(TestFixture fixture)
-            => ConfigurationFactory.ParseString(
-                @$"
+            => @$"
                 akka.persistence {{
                     publish-plugin-commands = on
                     journal {{
@@ -63,6 +61,6 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql
                             auto-initialize = true
                         }}
                     }}
-                }}");
+                }}";
     }
 }

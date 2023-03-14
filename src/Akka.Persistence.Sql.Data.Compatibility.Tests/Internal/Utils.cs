@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="Utils.cs" company="Akka.NET Project">
-//      Copyright (C) 2013-2022 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -11,9 +11,10 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
 {
     public static class Utils
     {
+        private const int TaggedVariants = 3;
+
         // We're only doing 100 entities
         public const int MaxEntities = 100;
-        private const int TaggedVariants = 3;
         public const int MessagesPerType = MaxEntities * TaggedVariants;
 
         public static readonly string[] Tags = { "Tag1", "Tag2", "Tag3", "Tag4" };
@@ -27,12 +28,11 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
             {
                 0 => msg,
                 1 => new Tagged(msg, new[] { Tags[0] }),
-                _ => new Tagged(msg, new[] { Tags[0], Tags[1] }),
+                _ => new Tagged(msg, new[] { Tags[0], Tags[1] })
             };
         }
 
         public static string ToEntityId(this int msg)
-            => ((msg / 3) % MaxEntities).ToString();
+            => (msg / 3 % MaxEntities).ToString();
     }
 }
-

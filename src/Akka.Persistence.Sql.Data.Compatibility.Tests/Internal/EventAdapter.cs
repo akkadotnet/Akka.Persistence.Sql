@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="EventAdapter.cs" company="Akka.NET Project">
-//      Copyright (C) 2013-2022 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -9,7 +9,7 @@ using Akka.Persistence.Journal;
 
 namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
 {
-    public sealed class EventAdapter: IWriteEventAdapter
+    public sealed class EventAdapter : IWriteEventAdapter
     {
         public string Manifest(object evt) => string.Empty;
 
@@ -26,4 +26,3 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
         }
     }
 }
-

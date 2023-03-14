@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System.Threading.Tasks;
-using Akka.Configuration;
 using Akka.Persistence.Sql.Tests.Common;
 using Xunit;
 using Xunit.Abstractions;
@@ -34,8 +33,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
             => Task.CompletedTask;
 
         private static Configuration.Config CreateSpecConfig(string connectionString)
-            => ConfigurationFactory.ParseString(
-                @$"
+            => @$"
                 akka.persistence {{
                     publish-plugin-commands = on
                     journal {{
@@ -50,6 +48,6 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
                             connection-string = ""{connectionString}""
                         }}
                     }}
-                }}");
+                }}";
     }
 }

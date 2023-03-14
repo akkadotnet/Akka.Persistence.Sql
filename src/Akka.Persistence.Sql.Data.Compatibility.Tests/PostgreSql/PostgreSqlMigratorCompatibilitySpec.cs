@@ -10,11 +10,9 @@ using Xunit.Abstractions;
 namespace Akka.Persistence.Sql.Data.Compatibility.Tests.PostgreSql
 {
     [Collection("SqlCompatibilitySpec")]
-    public class PostgreSqlMigratorCompatibilitySpec: MigratorCompatibilitySpec<PostgreSqlFixture>
+    public class PostgreSqlMigratorCompatibilitySpec : MigratorCompatibilitySpec<PostgreSqlFixture>
     {
-        public PostgreSqlMigratorCompatibilitySpec(ITestOutputHelper output) : base(output)
-        {
-        }
+        public PostgreSqlMigratorCompatibilitySpec(ITestOutputHelper output) : base(output) { }
 
         protected override TestSettings Settings => PostgreSqlSpecSettings.Instance;
     }

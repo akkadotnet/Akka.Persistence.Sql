@@ -13,15 +13,13 @@ using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Data.Compatibility.Tests
 {
-    public abstract class MigratorCompatibilitySpec<T>: DataCompatibilitySpec<T> where T: ITestContainer, new()
+    public abstract class MigratorCompatibilitySpec<T> : DataCompatibilitySpec<T> where T : ITestContainer, new()
     {
-        protected MigratorCompatibilitySpec(ITestOutputHelper output) : base(output)
-        {
-        }
-
         private readonly Configuration.Config _config = @"
 akka.persistence.journal.linq2db.tag-write-mode = Both
 akka.persistence.query.journal.linq2db.tag-read-mode = TagTable";
+
+        protected MigratorCompatibilitySpec(ITestOutputHelper output) : base(output) { }
 
         protected override async Task InitializeTestAsync()
         {
@@ -35,7 +33,7 @@ akka.persistence.query.journal.linq2db.tag-read-mode = TagTable";
             }
             catch
             {
-                if(TestCluster is { })
+                if (TestCluster is { })
                     await TestCluster.DisposeAsync();
                 await Fixture.DisposeAsync();
                 throw;
@@ -47,6 +45,5 @@ akka.persistence.query.journal.linq2db.tag-read-mode = TagTable";
             base.Setup(builder, provider);
             builder.AddHocon(_config, HoconAddMode.Prepend);
         }
-
     }
 }

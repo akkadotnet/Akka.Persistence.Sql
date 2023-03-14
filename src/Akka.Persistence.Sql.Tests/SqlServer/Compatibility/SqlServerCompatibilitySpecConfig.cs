@@ -4,7 +4,6 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using Akka.Configuration;
 using Akka.Persistence.Sql.Journal;
 using Akka.Persistence.Sql.Snapshot;
 using Akka.Persistence.Sql.Tests.Common;
@@ -17,8 +16,7 @@ namespace Akka.Persistence.Sql.Tests.SqlServer.Compatibility
         public static Configuration.Config InitSnapshotConfig(
             TestFixture fixture,
             string tableName)
-            => ConfigurationFactory.ParseString(
-                $@"
+            => $@"
                 akka.persistence {{
                     publish-plugin-commands = on
                     snapshot-store {{
@@ -48,14 +46,13 @@ namespace Akka.Persistence.Sql.Tests.SqlServer.Compatibility
                             }}
                         }}
                     }}
-                }}");
+                }}";
 
         public static Configuration.Config InitJournalConfig(
             TestFixture fixture,
             string tableName,
             string metadataTableName)
-            => ConfigurationFactory.ParseString(
-                $@"
+            => $@"
                 akka.persistence {{
                     publish-plugin-commands = on
                     journal {{
@@ -88,6 +85,6 @@ namespace Akka.Persistence.Sql.Tests.SqlServer.Compatibility
                             }}
                         }}
                     }}
-                }}");
+                }}";
     }
 }

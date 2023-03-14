@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="SqliteFixture.cs" company="Akka.NET Project">
-//      Copyright (C) 2013-2022 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  <copyright file="SqliteSpecsFixture.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -13,13 +13,13 @@ using Docker.DotNet;
 namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Sqlite
 {
     /// <summary>
-    ///     Fixture used to run SQL Server
+    ///     Fixture used to run Sqlite
     /// </summary>
     public sealed class SqliteFixture : ITestContainer
     {
-        public string ConnectionString { get; private set; } = "";
+        public string ConnectionString { get; private set; } = string.Empty;
 
-        public string ContainerName => "";
+        public string ContainerName => string.Empty;
 
         public event EventHandler<OutputReceivedArgs>? OnStdOut;
 
@@ -29,22 +29,20 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Sqlite
         {
             if (File.Exists("database.db"))
                 File.Delete("database.db");
+
             File.Copy("./db/akka-persistence-sqlite-test-data.latest.db", "database.db");
 
             ConnectionString = "DataSource=database.db";
 
+            Console.WriteLine($"Connection string: [{ConnectionString}]");
+
             return Task.CompletedTask;
         }
 
-        public ValueTask DisposeAsync()
-        {
-            // no-op
-            return new ValueTask();
-        }
+        // no-op
+        public ValueTask DisposeAsync() => new();
 
-        public void Dispose()
-        {
-            // no-op
-        }
+        // no-op
+        public void Dispose() { }
     }
 }

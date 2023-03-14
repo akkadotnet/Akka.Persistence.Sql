@@ -50,8 +50,7 @@ namespace Akka.Persistence.Sql.Tests.Sqlite.Compatibility
             string tableName,
             string metadataTableName,
             string connectionString)
-            => ConfigurationFactory.ParseString(
-                $@"
+            => $@"
                 akka.persistence {{
 	                publish-plugin-commands = on
 	                journal {{
@@ -84,6 +83,6 @@ namespace Akka.Persistence.Sql.Tests.Sqlite.Compatibility
 			                }}
 		                }}
 	                }}
-                }}");
+                }}";
     }
 }

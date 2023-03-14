@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System.Threading.Tasks;
-using Akka.Configuration;
 using Akka.Persistence.Sql.Journal;
 using Akka.Persistence.Sql.Tests.Common;
 using LinqToDB;
@@ -37,8 +36,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
             => Task.CompletedTask;
 
         private static Configuration.Config Configuration(string connString)
-            => ConfigurationFactory.ParseString(
-                $@"
+            => $@"
                 akka.persistence {{
                     publish-plugin-commands = on
                     journal {{
@@ -59,7 +57,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
                             }}
                         }}
                     }}
-                }}");
+                }}";
 
         [Fact]
         public void PersistenceActor_Must_measure_PersistGroup1000()

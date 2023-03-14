@@ -13,22 +13,22 @@ using Xunit.Abstractions;
 namespace Akka.Persistence.Sql.Data.Compatibility.Tests.SqlServer
 {
     [Collection("SqlCompatibilitySpec")]
-    public class SqlServerScriptCompatibilitySpec: SqlScriptCompatibilitySpec<SqlServerFixture>
+    public class SqlServerScriptCompatibilitySpec : SqlScriptCompatibilitySpec<SqlServerFixture>
     {
-        public SqlServerScriptCompatibilitySpec(ITestOutputHelper output) : base(output)
-        {
-        }
+        public SqlServerScriptCompatibilitySpec(ITestOutputHelper output) : base(output) { }
 
         protected override TestSettings Settings => SqlServerSpecSettings.Instance;
         protected override string ScriptFolder => "SqlServer";
 
         protected override void ExecuteSqlScripts(string setup, string migration, string cleanup)
         {
-            using var conn = new SqlConnection(Fixture.ConnectionString);
-            var server = new Server(new ServerConnection(conn));
+            using var connection = new SqlConnection(Fixture.ConnectionString);
+            var server = new Server(new ServerConnection(connection));
 
             server.ConnectionContext.ExecuteNonQuery(setup);
+
             server.ConnectionContext.ExecuteNonQuery(migration);
+
             server.ConnectionContext.ExecuteNonQuery(cleanup);
         }
     }

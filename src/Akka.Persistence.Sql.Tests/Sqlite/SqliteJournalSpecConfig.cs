@@ -4,7 +4,6 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using Akka.Configuration;
 using Akka.Persistence.Sql.Journal;
 using Akka.Persistence.Sql.Snapshot;
 using LinqToDB;
@@ -16,8 +15,7 @@ namespace Akka.Persistence.Sql.Tests.Sqlite
         public static Configuration.Config Create(
             string connString,
             string providerName)
-            => ConfigurationFactory.ParseString(
-                $@"
+            => $@"
                 akka.persistence {{
                     publish-plugin-commands = on
                     snapshot-store {{
@@ -34,7 +32,7 @@ namespace Akka.Persistence.Sql.Tests.Sqlite
                             use-clone-connection = {(providerName == ProviderName.SQLiteMS ? "on" : "off")}
                         }}
                     }}
-                }}");
+                }}";
     }
 
     public static class SqliteJournalSpecConfig
@@ -43,8 +41,7 @@ namespace Akka.Persistence.Sql.Tests.Sqlite
             string connString,
             string providerName,
             bool nativeMode = false)
-            => ConfigurationFactory.ParseString(
-                $@"
+            => $@"
                 akka.persistence {{
                     publish-plugin-commands = on
                     journal {{
@@ -61,6 +58,6 @@ namespace Akka.Persistence.Sql.Tests.Sqlite
                             use-clone-connection = {(providerName == ProviderName.SQLiteMS ? "on" : "off")}
                         }}
                     }}
-                }}");
+                }}";
     }
 }

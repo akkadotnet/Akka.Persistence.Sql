@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System.Threading.Tasks;
-using Akka.Configuration;
 using Akka.Persistence.Sql.Tests.Common;
 using Xunit;
 using Xunit.Abstractions;
@@ -35,8 +34,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
             => Task.CompletedTask;
 
         private static Configuration.Config Configuration(TestFixture fixture)
-            => ConfigurationFactory.ParseString(
-                $@"
+            => $@"
                 akka.persistence {{
                     publish-plugin-commands = on
                     journal {{
@@ -50,6 +48,6 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
                             connection-string = ""{fixture.ConnectionString(Database.SqlServer)}""
                         }}
                     }}
-                }}");
+                }}";
     }
 }

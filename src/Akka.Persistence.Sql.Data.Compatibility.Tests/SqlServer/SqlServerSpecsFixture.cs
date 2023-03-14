@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="SqlServerFixture.cs" company="Akka.NET Project">
-//      Copyright (C) 2013-2022 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  <copyright file="SqlServerSpecsFixture.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 using Akka.Persistence.Sql.Data.Compatibility.Tests.Internal;
 using Akka.Util;
 using Docker.DotNet.Models;
-using Xunit;
 
 namespace Akka.Persistence.Sql.Data.Compatibility.Tests.SqlServer
 {
@@ -20,18 +19,20 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.SqlServer
     /// </summary>
     public sealed class SqlServerFixture : DockerContainer
     {
-        public SqlServerFixture() : base($"{Const.Repository}/akka-persistence-sqlserver-test-data", "latest", $"mssql-{Guid.NewGuid():N}")
-        {
-        }
+        private string _connectionString = string.Empty;
 
-        private string _connectionString = "";
+        public SqlServerFixture() : base(
+            $"{Const.Repository}/akka-persistence-sqlserver-test-data",
+            "latest",
+            $"mssql-{Guid.NewGuid():N}") { }
+
         public override string ConnectionString => _connectionString;
 
         private int Port { get; } = ThreadLocalRandom.Current.Next(9000, 10000);
 
-        private string User { get; } = "sa";
+        private string User => "sa";
 
-        private string Password { get; } = "Password12!";
+        private string Password => "Password12!";
 
         protected override string ReadyMarker => "Recovery is complete.";
 
@@ -39,15 +40,17 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.SqlServer
         {
             parameters.ExposedPorts = new Dictionary<string, EmptyStruct>
             {
-                ["1433/tcp"] = new EmptyStruct()
+                ["1433/tcp"] = new()
             };
+
             parameters.HostConfig = new HostConfig
             {
                 PortBindings = new Dictionary<string, IList<PortBinding>>
                 {
-                    ["1433/tcp"] = new List<PortBinding> { new PortBinding { HostPort = $"{Port}" } }
+                    ["1433/tcp"] = new List<PortBinding> { new() { HostPort = $"{Port}" } }
                 }
             };
+
             parameters.Env = new[]
             {
                 "ACCEPT_EULA=Y",
@@ -73,6 +76,5 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.SqlServer
 
             return Task.CompletedTask;
         }
-
     }
 }

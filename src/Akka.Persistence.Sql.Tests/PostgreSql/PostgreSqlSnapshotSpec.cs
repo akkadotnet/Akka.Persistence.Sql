@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System.Threading.Tasks;
-using Akka.Configuration;
 using Akka.Persistence.Sql.Snapshot;
 using Akka.Persistence.Sql.Tests.Common;
 using Akka.Persistence.TCK.Snapshot;
@@ -45,9 +44,8 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql
         public Task DisposeAsync()
             => Task.CompletedTask;
 
-        private static Configuration.Config Configuration(TestFixture fixture) =>
-            ConfigurationFactory.ParseString(
-                @$"
+        private static Configuration.Config Configuration(TestFixture fixture)
+            => @$"
                 akka.persistence {{
                     publish-plugin-commands = on
                     snapshot-store {{
@@ -67,6 +65,6 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql
                             }}
                         }}
                     }}
-                }}");
+                }}";
     }
 }
