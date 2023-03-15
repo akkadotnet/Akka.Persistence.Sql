@@ -32,7 +32,6 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
                 output)
             => _fixture = fixture;
 
-        //DebuggingHelpers.SetupTraceDump(output);
         public async Task InitializeAsync()
         {
             await _fixture.InitializeDbAsync(Database.SqlServer);

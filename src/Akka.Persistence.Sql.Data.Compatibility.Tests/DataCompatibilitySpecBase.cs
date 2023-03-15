@@ -86,7 +86,7 @@ akka.persistence {{
 {(Settings.SchemaName is { } ? @$"
             {Settings.TableMapping} {{
                 schema-name = {Settings.SchemaName}
-            }}" : "")}
+            }}" : string.Empty)}
 		}}
 	}}
 
@@ -114,7 +114,7 @@ akka.persistence {{
 {(Settings.SchemaName is { } ? @$"
             {Settings.TableMapping} {{
                 schema-name = {Settings.SchemaName}
-            }}" : "")}
+            }}" : string.Empty)}
 		}}
 	}}
 }}")

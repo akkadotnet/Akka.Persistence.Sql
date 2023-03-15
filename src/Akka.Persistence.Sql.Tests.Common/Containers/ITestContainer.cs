@@ -13,12 +13,19 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
     public interface ITestContainer : IDisposable, IAsyncDisposable
     {
         public string ConnectionString { get; }
+
         public string DatabaseName { get; }
+
         public string ContainerName { get; }
+
         public DockerClient? Client { get; }
+
         public bool Initialized { get; }
+
         public event EventHandler<OutputReceivedArgs> OnStdOut;
+
         public Task InitializeAsync();
+
         public Task InitializeDbAsync();
     }
 }

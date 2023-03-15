@@ -82,7 +82,7 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
             var formattedMessage = formatter(state, exception);
             if (formattedMessage == NullFormatted)
             {
-                result = "";
+                result = string.Empty;
                 return false;
             }
 

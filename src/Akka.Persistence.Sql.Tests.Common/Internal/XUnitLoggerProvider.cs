@@ -20,10 +20,8 @@ namespace Akka.Persistence.Sql.Tests.Common.Internal
             _logLevel = logLevel;
         }
 
-        public void Dispose()
-        {
-            // no-op
-        }
+        // no-op
+        public void Dispose() { }
 
         public ILogger CreateLogger(string categoryName)
             => new XUnitLogger(categoryName, _helper, _logLevel);

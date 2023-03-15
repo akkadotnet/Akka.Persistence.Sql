@@ -49,23 +49,23 @@ namespace Akka.Persistence.Sql.HelperLib
         {
             var config = _journalConfig.DaoConfig;
 
-            await using var db = _connectionFactory.GetConnection();
+            await using var connection = _connectionFactory.GetConnection();
 
             // Create the tag table if it doesn't exist
-            var schemaProvider = db.DataProvider.GetSchemaProvider();
-            var dbSchema = schemaProvider.GetSchema(db);
+            var schemaProvider = connection.DataProvider.GetSchemaProvider();
+            var dbSchema = schemaProvider.GetSchema(connection);
 
             if (dbSchema.Tables.All(t => t.TableName != _journalConfig.TableConfig.TagTable.Name))
-                await db.CreateTableAsync<JournalTagRow>();
+                await connection.CreateTableAsync<JournalTagRow>();
 
             long maxId;
             if (endOffset is null)
             {
-                var jtrQuery = db.GetTable<JournalTagRow>()
+                var jtrQuery = connection.GetTable<JournalTagRow>()
                     .Select(jtr => jtr.OrderingId)
                     .Distinct();
 
-                maxId = await db.GetTable<JournalRow>()
+                maxId = await connection.GetTable<JournalRow>()
                     .Where(r =>
                         r.Tags != null &&
                         r.Tags.Length > 0 &&
@@ -87,12 +87,12 @@ namespace Akka.Persistence.Sql.HelperLib
                 Console.WriteLine(
                     $"Migrating offset {startOffset} to {Math.Min(startOffset + batchSize, maxId)}");
 
-                await using (var tx = await db.BeginTransactionAsync(IsolationLevel.ReadCommitted))
+                await using (var transaction = await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted))
                 {
                     try
                     {
                         var offset = startOffset;
-                        var rows = await db.GetTable<JournalRow>()
+                        var rows = await connection.GetTable<JournalRow>()
                             .Where(r =>
                                 r.Ordering >= offset &&
                                 r.Ordering < offset + batchSize &&
@@ -121,22 +121,24 @@ namespace Akka.Persistence.Sql.HelperLib
                         Console.WriteLine(
                             $"Inserting {tagList.Count} tag rows into {_journalConfig.TableConfig.TagTable.Name} table");
 
-                        await db.GetTable<JournalTagRow>().BulkCopyAsync(
-                            new BulkCopyOptions
-                            {
-                                BulkCopyType = BulkCopyType.MultipleRows,
-                                UseParameters = config.PreferParametersOnMultiRowInsert,
-                                MaxBatchSize = config.DbRoundTripTagBatchSize
-                            },
-                            tagList);
+                        await connection
+                            .GetTable<JournalTagRow>()
+                            .BulkCopyAsync(
+                                new BulkCopyOptions
+                                {
+                                    BulkCopyType = BulkCopyType.MultipleRows,
+                                    UseParameters = config.PreferParametersOnMultiRowInsert,
+                                    MaxBatchSize = config.DbRoundTripTagBatchSize
+                                },
+                                tagList);
 
-                        await tx.CommitAsync();
+                        await transaction.CommitAsync();
                     }
                     catch (Exception e1)
                     {
                         try
                         {
-                            await tx.RollbackAsync();
+                            await transaction.RollbackAsync();
                         }
                         catch (Exception e2)
                         {

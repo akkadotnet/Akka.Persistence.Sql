@@ -1,4 +1,10 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="ByteArrayJournalSerializer.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -12,36 +18,39 @@ using Akka.Util;
 namespace Akka.Persistence.Sql.Journal.Dao
 {
     /// <summary>
-    /// Serializes <see cref="IPersistentRepresentation"/>
+    ///     Serializes <see cref="IPersistentRepresentation" />
     /// </summary>
     public sealed class ByteArrayJournalSerializer : FlowPersistentReprSerializer<JournalRow>
     {
-        private readonly Akka.Serialization.Serialization _serializer;
-        private readonly string _separator;
         private readonly IProviderConfig<JournalTableConfig> _journalConfig;
+        private readonly string _separator;
         private readonly string[] _separatorArray;
+        private readonly Akka.Serialization.Serialization _serializer;
         private readonly TagWriteMode _tagWriteMode;
 
-        public ByteArrayJournalSerializer(IProviderConfig<JournalTableConfig> journalConfig, Akka.Serialization.Serialization serializer, string separator)
+        public ByteArrayJournalSerializer(
+            IProviderConfig<JournalTableConfig> journalConfig,
+            Akka.Serialization.Serialization serializer,
+            string separator)
         {
             _journalConfig = journalConfig;
             _serializer = serializer;
             _separator = separator;
-            _separatorArray = new[] {_separator};
+            _separatorArray = new[] { _separator };
             _tagWriteMode = journalConfig.TableConfig.TagWriteMode;
         }
 
         /// <summary>
-        /// Concatenates a set of tags using a provided separator.
+        ///     Concatenates a set of tags using a provided separator.
         /// </summary>
         /// <param name="tags"></param>
         /// <param name="separator"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static string StringSep(IImmutableSet<string> tags, string separator)
-        {
-            return tags.Count == 0 ? "" : $"{separator}{string.Join(separator, tags)}{separator}";
-        }
+            => tags.Count == 0
+                ? string.Empty
+                : $"{separator}{string.Join(separator, tags)}{separator}";
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static JournalRow CreateJournalRow(
@@ -50,35 +59,39 @@ namespace Akka.Persistence.Sql.Journal.Dao
             long timestamp,
             TagWriteMode tagWriteMode,
             string separator)
-        {
-            return tagWriteMode switch
+            => tagWriteMode switch
             {
                 TagWriteMode.Csv => new JournalRow
                 {
                     Tags = StringSep(tags, separator),
-                    Timestamp = representation.Timestamp == 0 ? timestamp : representation.Timestamp
+                    Timestamp = representation.Timestamp == 0
+                        ? timestamp
+                        : representation.Timestamp
                 },
 
                 TagWriteMode.TagTable => new JournalRow
                 {
-                    Tags = "",
+                    Tags = string.Empty,
                     TagArr = tags.ToArray(),
-                    Timestamp = representation.Timestamp == 0 ? timestamp : representation.Timestamp
+                    Timestamp = representation.Timestamp == 0
+                        ? timestamp
+                        : representation.Timestamp
                 },
 
                 TagWriteMode.Both => new JournalRow
                 {
                     Tags = StringSep(tags, separator),
                     TagArr = tags.ToArray(),
-                    Timestamp = representation.Timestamp == 0 ? timestamp : representation.Timestamp
+                    Timestamp = representation.Timestamp == 0
+                        ? timestamp
+                        : representation.Timestamp
                 },
 
                 _ => throw new Exception($"Invalid Tag Write Mode! Was: {tagWriteMode}")
             };
-        }
 
         protected override Try<JournalRow> Serialize(
-            IPersistentRepresentation persistentRepr,
+            IPersistentRepresentation persistentRepresentation,
             IImmutableSet<string> tTags,
             long timeStamp = 0)
         {
@@ -89,25 +102,22 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     .WithTransport(
                         system: _serializer.System,
                         state: (
-                            persistentRepr,
-                            _serializer.FindSerializerForType(persistentRepr.Payload.GetType(), _journalConfig.DefaultSerializer),
-                            CreateJournalRow(tTags, persistentRepr, timeStamp, _tagWriteMode, _separator)
+                            persistentRepr: persistentRepresentation,
+                            _serializer.FindSerializerForType(
+                                persistentRepresentation.Payload.GetType(),
+                                _journalConfig.DefaultSerializer),
+                            CreateJournalRow(tTags, persistentRepresentation, timeStamp, _tagWriteMode, _separator)
                         ),
                         action: state =>
                         {
                             var (representation, serializer, row) = state;
-                            if (serializer is SerializerWithStringManifest withStringManifest)
+
+                            row.Manifest = serializer switch
                             {
-                                row.Manifest = withStringManifest.Manifest(representation.Payload);
-                            }
-                            else if (serializer.IncludeManifest)
-                            {
-                                row.Manifest = representation.Payload.GetType().TypeQualifiedName();
-                            }
-                            else
-                            {
-                                row.Manifest = "";
-                            }
+                                SerializerWithStringManifest stringManifest => stringManifest.Manifest(representation.Payload),
+                                { IncludeManifest: true } => representation.Payload.GetType().TypeQualifiedName(),
+                                _ => string.Empty
+                            };
 
                             row.Message = serializer.ToBinary(representation.Payload);
                             row.PersistenceId = representation.PersistenceId;
@@ -128,19 +138,13 @@ namespace Akka.Persistence.Sql.Journal.Dao
         {
             try
             {
-                //object deserialized = null;
                 var identifierMaybe = t.Identifier;
-                if (!identifierMaybe.HasValue)
+                if (identifierMaybe.HasValue)
                 {
-                    var type = Type.GetType(t.Manifest, true);
-
                     // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
                     return new Try<(IPersistentRepresentation, IImmutableSet<string>, long)>((
                         new Persistent(
-                            payload: Akka.Serialization.Serialization.WithTransport(
-                                system: _serializer.System,
-                                state: (_serializer.FindSerializerForType(type,_journalConfig.DefaultSerializer), message: t.Message, type),
-                                action: state => state.Item1.FromBinary(state.message, state.type)),
+                            payload: _serializer.Deserialize(t.Message, identifierMaybe.Value, t.Manifest),
                             sequenceNr: t.SequenceNumber,
                             persistenceId: t.PersistenceId,
                             manifest: t.EventManifest ?? t.Manifest,
@@ -150,14 +154,19 @@ namespace Akka.Persistence.Sql.Journal.Dao
                             timestamp: t.Timestamp),
                         t.Tags?
                             .Split(_separatorArray, StringSplitOptions.RemoveEmptyEntries)
-                            .ToImmutableHashSet() ?? t.TagArr?.ToImmutableHashSet()?? ImmutableHashSet<string>.Empty,
+                            .ToImmutableHashSet() ?? t.TagArr?.ToImmutableHashSet() ?? ImmutableHashSet<string>.Empty,
                         t.Ordering));
                 }
+
+                var type = Type.GetType(t.Manifest, true);
 
                 // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
                 return new Try<(IPersistentRepresentation, IImmutableSet<string>, long)>((
                     new Persistent(
-                        payload: _serializer.Deserialize(t.Message, identifierMaybe.Value, t.Manifest),
+                        payload: Akka.Serialization.Serialization.WithTransport(
+                            system: _serializer.System,
+                            state: (_serializer.FindSerializerForType(type, _journalConfig.DefaultSerializer), message: t.Message, type),
+                            action: state => state.Item1.FromBinary(state.message, state.type)),
                         sequenceNr: t.SequenceNumber,
                         persistenceId: t.PersistenceId,
                         manifest: t.EventManifest ?? t.Manifest,
@@ -167,14 +176,14 @@ namespace Akka.Persistence.Sql.Journal.Dao
                         timestamp: t.Timestamp),
                     t.Tags?
                         .Split(_separatorArray, StringSplitOptions.RemoveEmptyEntries)
-                        .ToImmutableHashSet() ?? t.TagArr?.ToImmutableHashSet()?? ImmutableHashSet<string>.Empty,
+                        .ToImmutableHashSet() ?? t.TagArr?.ToImmutableHashSet() ?? ImmutableHashSet<string>.Empty,
                     t.Ordering));
+
             }
             catch (Exception e)
             {
                 return new Try<(IPersistentRepresentation, IImmutableSet<string>, long)>(e);
             }
-
         }
     }
 }

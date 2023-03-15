@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="Extension.cs" company="Akka.NET Project">
-//      Copyright (C) 2013-2022 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -22,10 +22,10 @@ namespace Akka.Persistence.Sql
         public static readonly Configuration.Config DefaultJournalMappingConfiguration;
         public static readonly Configuration.Config DefaultSnapshotMappingConfiguration;
 
-        public readonly Configuration.Config DefaultJournalConfig = DefaultJournalConfiguration;
-        public readonly Configuration.Config DefaultSnapshotConfig = DefaultSnapshotConfiguration;
         public readonly Configuration.Config DefaultConfig = DefaultConfiguration;
+        public readonly Configuration.Config DefaultJournalConfig = DefaultJournalConfiguration;
         public readonly Configuration.Config DefaultJournalMappingConfig = DefaultJournalMappingConfiguration;
+        public readonly Configuration.Config DefaultSnapshotConfig = DefaultSnapshotConfiguration;
         public readonly Configuration.Config DefaultSnapshotMappingConfig = DefaultSnapshotMappingConfiguration;
 
         static Linq2DbPersistence()
@@ -42,15 +42,11 @@ namespace Akka.Persistence.Sql
             DefaultSnapshotMappingConfiguration = DefaultSnapshotConfiguration.GetConfig("default");
         }
 
-        public Linq2DbPersistence(ExtendedActorSystem system)
-        {
-            system.Settings.InjectTopLevelFallback(DefaultConfig);
-        }
+        public Linq2DbPersistence(ActorSystem system)
+            => system.Settings.InjectTopLevelFallback(DefaultConfig);
 
         public static Linq2DbPersistence Get(ActorSystem system)
-        {
-            return system.WithExtension<Linq2DbPersistence, Linq2DbPersistenceProvider>();
-        }
+            => system.WithExtension<Linq2DbPersistence, Linq2DbPersistenceProvider>();
     }
 
     /// <summary>
@@ -58,9 +54,6 @@ namespace Akka.Persistence.Sql
     /// </summary>
     public sealed class Linq2DbPersistenceProvider : ExtensionIdProvider<Linq2DbPersistence>
     {
-        public override Linq2DbPersistence CreateExtension(ExtendedActorSystem system)
-        {
-            return new Linq2DbPersistence(system);
-        }
+        public override Linq2DbPersistence CreateExtension(ExtendedActorSystem system) => new(system);
     }
 }

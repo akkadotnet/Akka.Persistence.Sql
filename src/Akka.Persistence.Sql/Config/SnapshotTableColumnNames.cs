@@ -1,5 +1,10 @@
-﻿using System;
-using Akka.Configuration;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="SnapshotTableColumnNames.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 
 namespace Akka.Persistence.Sql.Config
 {
@@ -29,8 +34,6 @@ namespace Akka.Persistence.Sql.Config
         public string SerializerId { get; }
 
         public override int GetHashCode()
-        {
-            return HashCode.Combine(PersistenceId, SequenceNumber, Created, Snapshot, Manifest, SerializerId);
-        }
+            => HashCode.Combine(PersistenceId, SequenceNumber, Created, Snapshot, Manifest, SerializerId);
     }
 }

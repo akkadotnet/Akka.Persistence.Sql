@@ -40,14 +40,14 @@ namespace Akka.Persistence.Sql.TagTableMigration
 
     public static class Extensions
     {
-        public static string ToHocon(this DatabaseType db)
-            => db switch
+        public static string ToHocon(this DatabaseType databaseType)
+            => databaseType switch
             {
                 DatabaseType.SqlServer => "sql-server",
                 DatabaseType.Sqlite => "sqlite",
                 DatabaseType.PostgreSql => "postgresql",
                 DatabaseType.MySql => "mysql",
-                _ => throw new ArgumentException($"Unknown database type: {db}")
+                _ => throw new ArgumentException($"Unknown database type: {databaseType}")
             };
 
         public static string ToHocon(this ProviderType type)
@@ -90,7 +90,7 @@ akka.persistence {{
 {(opt.SchemaName is { } ? @$"
             {opt.TableMapping.ToHocon()} {{
                 schema-name = {opt.SchemaName}
-            }}" : "")}
+            }}" : string.Empty)}
 		}}
 	}}
 }}";

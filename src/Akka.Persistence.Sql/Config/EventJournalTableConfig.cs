@@ -1,39 +1,41 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="EventJournalTable.cs" company="Akka.NET Project">
-//      Copyright (C) 2013-2022 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  <copyright file="EventJournalTableConfig.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
 
 using System;
 
-namespace Akka.Persistence.Sql.Config;
-
-public sealed class EventJournalTableConfig: IEquatable<EventJournalTableConfig>
+namespace Akka.Persistence.Sql.Config
 {
-    public string Name { get; }
-    public JournalTableColumnNames ColumnNames { get; }
-
-    public EventJournalTableConfig(Configuration.Config config)
+    public sealed class EventJournalTableConfig : IEquatable<EventJournalTableConfig>
     {
-        var journalConfig = config.GetConfig("journal");
-        Name = journalConfig.GetString("table-name");
-        ColumnNames = new JournalTableColumnNames(journalConfig);
-    }
+        public EventJournalTableConfig(Configuration.Config config)
+        {
+            var journalConfig = config.GetConfig("journal");
+            Name = journalConfig.GetString("table-name");
+            ColumnNames = new JournalTableColumnNames(journalConfig);
+        }
 
-    public bool Equals(EventJournalTableConfig other)
-    {
-        if (ReferenceEquals(null, other)) return false;
-        if (ReferenceEquals(this, other)) return true;
-        return Name == other.Name && Equals(ColumnNames, other.ColumnNames);
-    }
+        public string Name { get; }
 
-    public override bool Equals(object obj)
-    {
-        return ReferenceEquals(this, obj) || obj is EventJournalTableConfig other && Equals(other);
-    }
+        public JournalTableColumnNames ColumnNames { get; }
 
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(Name, ColumnNames);
+        public bool Equals(EventJournalTableConfig other)
+        {
+            if (ReferenceEquals(null, other))
+                return false;
+
+            if (ReferenceEquals(this, other))
+                return true;
+
+            return Name == other.Name && Equals(ColumnNames, other.ColumnNames);
+        }
+
+        public override bool Equals(object obj)
+            => ReferenceEquals(this, obj) || (obj is EventJournalTableConfig other && Equals(other));
+
+        public override int GetHashCode()
+            => HashCode.Combine(Name, ColumnNames);
     }
 }

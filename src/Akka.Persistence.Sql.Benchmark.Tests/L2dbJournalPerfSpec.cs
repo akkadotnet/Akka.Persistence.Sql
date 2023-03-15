@@ -111,7 +111,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
         {
             var measurements = new List<TimeSpan>(MeasurementIterations);
 
-            block(); //warm-up
+            block(); // warm-up
 
             var i = 0;
             while (i < MeasurementIterations)
@@ -135,7 +135,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             var measurements = new List<TimeSpan>(MeasurementIterations);
 
             block();
-            block(); //warm-up
+            block(); // warm-up
 
             var i = 0;
             while (i < MeasurementIterations)

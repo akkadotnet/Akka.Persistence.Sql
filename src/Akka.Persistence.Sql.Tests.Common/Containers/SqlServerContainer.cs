@@ -71,7 +71,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         {
             var connectionBuilder = new SqlConnectionStringBuilder(ConnectionString)
             {
-                //connect to SqlServer database to create a new database
+                // connect to SqlServer database to create a new database
                 InitialCatalog = "master"
             };
 

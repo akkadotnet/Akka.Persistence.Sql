@@ -34,7 +34,6 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql
                 output)
             => _fixture = fixture;
 
-        //DebuggingHelpers.SetupTraceDump(output);
         public async Task InitializeAsync()
         {
             await _fixture.InitializeDbAsync(Database.PostgreSql);

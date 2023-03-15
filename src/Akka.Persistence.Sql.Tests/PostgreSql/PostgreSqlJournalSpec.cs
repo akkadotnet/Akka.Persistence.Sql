@@ -34,7 +34,6 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql
                 output)
             => _fixture = fixture;
 
-        //DebuggingHelpers.SetupTraceDump(output);
         protected override bool SupportsSerialization => false;
 
         public async Task InitializeAsync()

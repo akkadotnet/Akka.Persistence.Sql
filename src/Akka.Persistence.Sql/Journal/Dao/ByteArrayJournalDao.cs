@@ -1,4 +1,10 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="ByteArrayJournalDao.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using Akka.Actor;
 using Akka.Event;
 using Akka.Persistence.Sql.Config;
@@ -23,27 +29,30 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 materializer: mat,
                 connectionFactory: connection,
                 config: journalConfig,
-                serializer: new ByteArrayJournalSerializer(journalConfig, serializer, journalConfig.PluginConfig.TagSeparator),
-                logger: logger)
-        {
-        }
+                serializer: new ByteArrayJournalSerializer(
+                    journalConfig,
+                    serializer,
+                    journalConfig.PluginConfig.TagSeparator),
+                logger: logger) { }
 
         // TODO: change this to async
         public void InitializeTables()
         {
-            using var conn = ConnectionFactory.GetConnection();
+            using var connection = ConnectionFactory.GetConnection();
 
             try
             {
-                conn.CreateTable<JournalRow>();
-                if(JournalConfig.TableConfig.TagWriteMode is not TagWriteMode.Csv)
-                    conn.CreateTable<JournalTagRow>();
+                connection.CreateTable<JournalRow>();
+                if (JournalConfig.TableConfig.TagWriteMode is not TagWriteMode.Csv)
+                    connection.CreateTable<JournalTagRow>();
             }
             catch (Exception e)
             {
                 if (JournalConfig.WarnOnAutoInitializeFail)
                 {
-                    Logger.Warning(e,$"Could not Create Journal Table {JournalConfig.TableConfig.EventJournalTable.Name} as requested by config.");
+                    Logger.Warning(
+                        e,
+                        $"Could not Create Journal Table {JournalConfig.TableConfig.EventJournalTable.Name} as requested by config.");
                 }
             }
 
@@ -51,13 +60,15 @@ namespace Akka.Persistence.Sql.Journal.Dao
             {
                 try
                 {
-                    conn.CreateTable<JournalMetaData>();
+                    connection.CreateTable<JournalMetaData>();
                 }
                 catch (Exception e)
                 {
                     if (JournalConfig.WarnOnAutoInitializeFail)
                     {
-                        Logger.Warning(e,$"Could not Create Journal Metadata Table {JournalConfig.TableConfig.MetadataTable.Name} as requested by config.");
+                        Logger.Warning(
+                            e,
+                            $"Could not Create Journal Metadata Table {JournalConfig.TableConfig.MetadataTable.Name} as requested by config.");
                     }
                 }
             }

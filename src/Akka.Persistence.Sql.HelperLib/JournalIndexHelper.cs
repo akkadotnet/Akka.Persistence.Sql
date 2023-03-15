@@ -21,7 +21,7 @@ namespace Akka.Persistence.Sql.HelperLib
                 schemaName,
                 $"UX_{tableName}_PID_SEQNO");
 
-            //short name for easy compatibility with all dbs. (*cough* oracle *cough*)
+            // short name for easy compatibility with all dbs. (*cough* oracle *cough*)
             idx.Columns.Add(new IndexColumnDefinition { Name = persistenceIdCol });
             idx.Columns.Add(new IndexColumnDefinition { Name = sequenceNoCol, Direction = Direction.Ascending });
 
@@ -42,8 +42,8 @@ namespace Akka.Persistence.Sql.HelperLib
 
             idx.Columns.Add(new IndexColumnDefinition { Name = orderingCol });
 
-            //Should it be?
-            //idx.IsUnique = true;
+            // Should it be?
+            // idx.IsUnique = true;
 
             return idx;
         }
@@ -60,7 +60,7 @@ namespace Akka.Persistence.Sql.HelperLib
 
             idx.Columns.Add(new IndexColumnDefinition { Name = timestampCol });
 
-            //Not unique by any stretch.
+            // Not unique by any stretch.
             return idx;
         }
 

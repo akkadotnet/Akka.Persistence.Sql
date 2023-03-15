@@ -33,7 +33,6 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
                 output)
             => _fixture = fixture;
 
-        //DebuggingHelpers.SetupTraceDump(output);
         // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
         protected override bool SupportsSerialization => false;
 

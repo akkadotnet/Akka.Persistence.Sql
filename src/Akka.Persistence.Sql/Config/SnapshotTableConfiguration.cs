@@ -1,21 +1,27 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="SnapshotTableConfiguration.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using Akka.Configuration;
-using Akka.Persistence.Sql.Snapshot;
 
 namespace Akka.Persistence.Sql.Config
 {
-
     public class SnapshotTableConfiguration
     {
         public SnapshotTableConfiguration(Configuration.Config config)
         {
             var mappingPath = config.GetString("table-mapping");
             if (string.IsNullOrEmpty(mappingPath))
-                throw new ConfigurationException("The configuration property akka.persistence.journal.linq2db.table-mapping is null or empty");
+                throw new ConfigurationException(
+                    "The configuration property akka.persistence.journal.linq2db.table-mapping is null or empty");
 
             var mappingConfig = config.GetConfig(mappingPath);
             if (mappingConfig is null)
-                throw new ConfigurationException($"The configuration path akka.persistence.journal.linq2db.{mappingPath} does not exist");
+                throw new ConfigurationException(
+                    $"The configuration path akka.persistence.journal.linq2db.{mappingPath} does not exist");
 
             if (mappingPath != "default")
                 mappingConfig.WithFallback(Linq2DbPersistence.DefaultSnapshotMappingConfiguration);
@@ -30,8 +36,6 @@ namespace Akka.Persistence.Sql.Config
         public string SchemaName { get; }
 
         public override int GetHashCode()
-        {
-            return HashCode.Combine(SnapshotTable, SchemaName);
-        }
+            => HashCode.Combine(SnapshotTable, SchemaName);
     }
 }
