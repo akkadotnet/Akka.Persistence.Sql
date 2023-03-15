@@ -70,7 +70,7 @@
       <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
       <PackageVersion Include="Docker.DotNet" Version="$(DockerDotNetVersion)" />
       <PackageVersion Include="FluentAssertions" Version="$(FluentAssertionVersion)" />
-      <PackageVersion Include="JetBrains.dotMemoryUnit" Version="3.1.20200127.214830" />
+      <PackageVersion Include="JetBrains.dotMemoryUnit" Version="3.2.20220510" />
       <PackageVersion Include="xunit" Version="$(XunitVersion)" />
       <PackageVersion Include="xunit.runner.visualstudio" Version="$(XunitRunnerVersion)">
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
