@@ -6,36 +6,41 @@
 
 using System;
 
-namespace Akka.Persistence.Sql.Config;
-
-public class TagTableConfig : IEquatable<TagTableConfig>
+namespace Akka.Persistence.Sql.Config
 {
-    public TagTableConfig(Configuration.Config config)
+    public class TagTableConfig : IEquatable<TagTableConfig>
     {
-        var journalConfig = config.GetConfig("tag");
-        Name = journalConfig.GetString("table-name");
-        ColumnNames = new TagTableColumnNames(journalConfig);
-    }
+        public TagTableConfig(Configuration.Config config)
+        {
+            var journalConfig = config.GetConfig("tag");
+            Name = journalConfig.GetString("table-name");
+            ColumnNames = new TagTableColumnNames(journalConfig);
+        }
 
-    public string Name { get; }
+        public string Name { get; }
 
-    public TagTableColumnNames ColumnNames { get; }
+        public TagTableColumnNames ColumnNames { get; }
 
-    public bool Equals(TagTableConfig other)
-    {
-        if (ReferenceEquals(null, other)) return false;
-        if (ReferenceEquals(this, other)) return true;
-        return Name == other.Name && Equals(ColumnNames, other.ColumnNames);
-    }
+        public bool Equals(TagTableConfig other)
+        {
+            if (ReferenceEquals(null, other))
+                return false;
 
-    public override bool Equals(object obj)
-    {
-        if (ReferenceEquals(this, obj)) return true;
-        return obj is TagTableConfig cfg && Equals(cfg);
-    }
+            if (ReferenceEquals(this, other))
+                return true;
 
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(Name, ColumnNames);
+            return Name == other.Name && Equals(ColumnNames, other.ColumnNames);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(this, obj))
+                return true;
+
+            return obj is TagTableConfig cfg && Equals(cfg);
+        }
+
+        public override int GetHashCode()
+            => HashCode.Combine(Name, ColumnNames);
     }
 }

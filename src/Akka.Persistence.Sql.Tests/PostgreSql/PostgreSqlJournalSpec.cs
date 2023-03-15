@@ -1,7 +1,12 @@
-﻿using System.Threading.Tasks;
-using Akka.Configuration;
-using Akka.Persistence.Sql.Tests.Common;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="PostgreSqlJournalSpec.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System.Threading.Tasks;
 using Akka.Persistence.Sql.Journal;
+using Akka.Persistence.Sql.Tests.Common;
 using Akka.Persistence.TCK.Journal;
 using LinqToDB;
 using Xunit;
@@ -18,33 +23,16 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql
     [Collection("PersistenceSpec")]
     public class Linq2DbPostgreSqlJournalSpec : JournalSpec, IAsyncLifetime
     {
-        public static Configuration.Config Configuration(TestFixture fixture)
-        {
-            return ConfigurationFactory.ParseString(@$"
-akka.persistence {{
-    publish-plugin-commands = on
-    journal {{
-        plugin = ""akka.persistence.journal.linq2db""
-        linq2db {{
-            class = ""{typeof(Linq2DbWriteJournal).AssemblyQualifiedName}""
-            plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
-            connection-string = ""{fixture.ConnectionString(Database.PostgreSql)}""
-            provider-name = ""{ProviderName.PostgreSQL95}""
-            use-clone-connection = true
-            auto-initialize = true
-        }}
-    }}
-}}");
-        }
-
         private readonly TestFixture _fixture;
 
-        public Linq2DbPostgreSqlJournalSpec(ITestOutputHelper output, TestFixture fixture)
-            : base(Configuration(fixture), nameof(Linq2DbPostgreSqlJournalSpec), output)
-        {
-            _fixture = fixture;
-            //DebuggingHelpers.SetupTraceDump(output);
-        }
+        public Linq2DbPostgreSqlJournalSpec(
+            ITestOutputHelper output,
+            TestFixture fixture)
+            : base(
+                Configuration(fixture),
+                nameof(Linq2DbPostgreSqlJournalSpec),
+                output)
+            => _fixture = fixture;
 
         protected override bool SupportsSerialization => false;
 
@@ -55,8 +43,23 @@ akka.persistence {{
         }
 
         public Task DisposeAsync()
-        {
-            return Task.CompletedTask;
-        }
+            => Task.CompletedTask;
+
+        public static Configuration.Config Configuration(TestFixture fixture)
+            => @$"
+                akka.persistence {{
+                    publish-plugin-commands = on
+                    journal {{
+                        plugin = ""akka.persistence.journal.linq2db""
+                        linq2db {{
+                            class = ""{typeof(Linq2DbWriteJournal).AssemblyQualifiedName}""
+                            plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
+                            connection-string = ""{fixture.ConnectionString(Database.PostgreSql)}""
+                            provider-name = ""{ProviderName.PostgreSQL95}""
+                            use-clone-connection = true
+                            auto-initialize = true
+                        }}
+                    }}
+                }}";
     }
 }

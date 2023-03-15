@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+//  <copyright file="SystemDataSqliteJournalSpec.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  </copyright>
+// -----------------------------------------------------------------------
+
 using System.Threading.Tasks;
 using Akka.Persistence.Sql.Tests.Common;
 using Akka.Persistence.TCK.Journal;
@@ -12,13 +18,14 @@ namespace Akka.Persistence.Sql.Tests.Sqlite
     {
         private readonly TestFixture _fixture;
 
-        public SystemDataSqliteJournalSpec(ITestOutputHelper output, TestFixture fixture)
+        public SystemDataSqliteJournalSpec(
+            ITestOutputHelper output,
+            TestFixture fixture)
             : base(
                 SqliteJournalSpecConfig.Create(fixture.ConnectionString(Database.Sqlite), ProviderName.SQLiteClassic),
-                nameof(SystemDataSqliteJournalSpec), output)
-        {
-            _fixture = fixture;
-        }
+                nameof(SystemDataSqliteJournalSpec),
+                output)
+            => _fixture = fixture;
 
         // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
         protected override bool SupportsSerialization => false;
@@ -30,8 +37,6 @@ namespace Akka.Persistence.Sql.Tests.Sqlite
         }
 
         public Task DisposeAsync()
-        {
-            return Task.CompletedTask;
-        }
+            => Task.CompletedTask;
     }
 }

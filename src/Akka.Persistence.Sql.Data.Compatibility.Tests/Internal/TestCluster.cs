@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="TestCluster.cs" company="Akka.NET Project">
-//      Copyright (C) 2013-2022 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -21,17 +21,16 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
-using LogLevel = Akka.Event.LogLevel;
 
 namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
 {
-    public sealed class TestCluster: IAsyncDisposable
+    public sealed class TestCluster : IAsyncDisposable
     {
+        private readonly TimeSpan _clusterStartTimeout;
+
         private readonly IHost _host1;
         private readonly IHost _host2;
         private readonly IHost _host3;
-
-        private readonly TimeSpan _clusterStartTimeout;
 
         public TestCluster(
             Action<AkkaConfigurationBuilder, IServiceProvider> setup,
@@ -49,11 +48,15 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
         }
 
         public bool IsStarted => ShardRegions.Count > 0;
+
         public ImmutableList<IActorRef> ShardRegions { get; private set; } = ImmutableList<IActorRef>.Empty;
 
-        public ImmutableList<IHost> Hosts { get; private set; } = ImmutableList<IHost>.Empty;
+        public ImmutableList<IHost> Hosts { get; }
 
         public ImmutableList<ActorSystem> ActorSystems { get; private set; } = ImmutableList<ActorSystem>.Empty;
+
+        public async ValueTask DisposeAsync()
+            => await ShutdownAsync();
 
         public async Task StartAsync(CancellationToken token = default)
         {
@@ -66,9 +69,9 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
             await StartClusterAsync(token);
 
             ShardRegions = ImmutableList.Create(
-                _host1.Services.GetRequiredService<ActorRegistry>().Get<ShardRegion>(),
-                _host2.Services.GetRequiredService<ActorRegistry>().Get<ShardRegion>(),
-                _host3.Services.GetRequiredService<ActorRegistry>().Get<ShardRegion>());
+                await _host1.Services.GetRequiredService<ActorRegistry>().GetAsync<ShardRegion>(token),
+                await _host2.Services.GetRequiredService<ActorRegistry>().GetAsync<ShardRegion>(token),
+                await _host3.Services.GetRequiredService<ActorRegistry>().GetAsync<ShardRegion>(token));
 
             ActorSystems = ImmutableList.Create(
                 _host1.Services.GetRequiredService<ActorSystem>(),
@@ -82,51 +85,60 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
             string journalId,
             ITestOutputHelper helper)
             => new HostBuilder()
-                .ConfigureLogging(logger =>
-                {
-                    logger.ClearProviders();
-                    logger.AddProvider(new XUnitLoggerProvider(helper, Microsoft.Extensions.Logging.LogLevel.Information));
-                    logger.AddFilter("Akka.*", Microsoft.Extensions.Logging.LogLevel.Information);
-                })
-                .ConfigureServices((_, services) =>
-                {
-                    services.AddAkka("TestSystem", (builder, provider) =>
+                .ConfigureLogging(
+                    logger =>
                     {
-                        builder
-                            .ConfigureLoggers(logger =>
+                        logger.ClearProviders();
+                        logger.AddProvider(new XUnitLoggerProvider(helper, LogLevel.Information));
+                        logger.AddFilter("Akka.*", LogLevel.Information);
+                    })
+                .ConfigureServices(
+                    (_, services) =>
+                    {
+                        services.AddAkka(
+                            "TestSystem",
+                            (builder, provider) =>
                             {
-                                logger.LogLevel = LogLevel.InfoLevel;
-                                logger.AddLoggerFactory();
-                            })
-                            .AddHocon(@"
+                                builder
+                                    .ConfigureLoggers(
+                                        logger =>
+                                        {
+                                            logger.LogLevel = Event.LogLevel.InfoLevel;
+                                            logger.AddLoggerFactory();
+                                        })
+                                    .AddHocon(
+                                        @"
 akka.cluster.min-nr-of-members = 3
 akka.cluster.sharding.snapshot-after = 20
-akka.actor.ask-timeout = 3s", HoconAddMode.Prepend)
-                            .WithCustomSerializer(
-                                serializerIdentifier: "customSerializer",
-                                boundTypes: new [] {typeof(CustomShardedMessage)},
-                                serializerFactory: system => new CustomSerializer(system))
-                            .WithRemoting("localhost", port)
-                            .WithClustering()
-                            .WithShardRegion<ShardRegion>(
-                                "test",
-                                EntityActor.Props,
-                                new MessageExtractor(),
-                                new ShardOptions
-                                {
-                                    RememberEntities = false,
-                                    StateStoreMode = StateStoreMode.Persistence
-                                })
-                            .WithJournal(journalId, journalBuilder =>
-                            {
-                                journalBuilder.AddWriteEventAdapter<EventAdapter>(
-                                    eventAdapterName: "customMessage",
-                                    boundTypes: new[] { typeof(int), typeof(string) });
-                            });
+akka.actor.ask-timeout = 3s",
+                                        HoconAddMode.Prepend)
+                                    .WithCustomSerializer(
+                                        serializerIdentifier: "customSerializer",
+                                        boundTypes: new[] { typeof(CustomShardedMessage) },
+                                        serializerFactory: system => new CustomSerializer(system))
+                                    .WithRemoting("localhost", port)
+                                    .WithClustering()
+                                    .WithShardRegion<ShardRegion>(
+                                        "test",
+                                        EntityActor.Props,
+                                        new MessageExtractor(),
+                                        new ShardOptions
+                                        {
+                                            RememberEntities = false,
+                                            StateStoreMode = StateStoreMode.Persistence
+                                        })
+                                    .WithJournal(
+                                        journalId,
+                                        journalBuilder =>
+                                        {
+                                            journalBuilder.AddWriteEventAdapter<EventAdapter>(
+                                                eventAdapterName: "customMessage",
+                                                boundTypes: new[] { typeof(int), typeof(string) });
+                                        });
 
-                        setup(builder, provider);
-                    });
-                }).Build();
+                                setup(builder, provider);
+                            });
+                    }).Build();
 
         [SuppressMessage("ReSharper", "MethodHasAsyncOverloadWithCancellation")]
         private async Task StartClusterAsync(CancellationToken token)
@@ -148,7 +160,7 @@ akka.actor.ask-timeout = 3s", HoconAddMode.Prepend)
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
             cts.CancelAfter(_clusterStartTimeout);
             var task = await Task.WhenAny(clusterTcs.Task, Task.Delay(Timeout.Infinite, cts.Token));
-            if(task != clusterTcs.Task)
+            if (task != clusterTcs.Task)
             {
                 await ShutdownAsync();
                 throw new TimeoutException($"Cluster failed to form in {_clusterStartTimeout.TotalSeconds} seconds");
@@ -162,31 +174,26 @@ akka.actor.ask-timeout = 3s", HoconAddMode.Prepend)
 
         private async Task ShutdownAsync()
         {
+            void DisposeHost(IDisposable host, ICollection<Task> tasks)
+            {
+                if (host is IAsyncDisposable asyncHost)
+                {
+                    tasks.Add(asyncHost.DisposeAsync().AsTask());
+                }
+                else
+                {
+                    host.Dispose();
+                }
+            }
+
             var tasks = new List<Task>();
-            if(_host1 is IAsyncDisposable asyncHost1)
-                tasks.Add(asyncHost1.DisposeAsync().AsTask());
-            else
-                _host1.Dispose();
 
-            if(_host2 is IAsyncDisposable asyncHost2)
-                tasks.Add(asyncHost2.DisposeAsync().AsTask());
-            else
-                _host2.Dispose();
+            DisposeHost(_host1, tasks);
+            DisposeHost(_host2, tasks);
+            DisposeHost(_host3, tasks);
 
-            if(_host3 is IAsyncDisposable asyncHost3)
-                tasks.Add(asyncHost3.DisposeAsync().AsTask());
-            else
-                _host3.Dispose();
-
-            if(tasks.Count > 0)
+            if (tasks.Count > 0)
                 await Task.WhenAll(tasks);
         }
-
-        public async ValueTask DisposeAsync()
-        {
-            await ShutdownAsync();
-        }
-
     }
 }
-

@@ -1,5 +1,10 @@
-﻿using System;
-using Akka.Configuration;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="JournalTableColumnNames.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 
 namespace Akka.Persistence.Sql.Config
 {
@@ -18,33 +23,42 @@ namespace Akka.Persistence.Sql.Config
             Identifier = cfg.GetString("identifier", "identifier");
             Manifest = cfg.GetString("manifest", "manifest");
         }
+
         public string Ordering { get; }
+
         public string Deleted { get; }
+
         public string PersistenceId { get; }
+
         public string SequenceNumber { get; }
+
         public string Created { get; }
+
         public string Tags { get; }
+
         public string Message { get; }
+
         public string Identifier { get; }
+
         public string Manifest { get; }
 
         public bool Equals(JournalTableColumnNames other)
-        {
-            return other is { } &&
-                Ordering == other.Ordering &&
-                Deleted == other.Deleted &&
-                PersistenceId == other.PersistenceId &&
-                SequenceNumber == other.SequenceNumber &&
-                Created == other.Created &&
-                Tags == other.Tags &&
-                Message == other.Message &&
-                Identifier == other.Identifier &&
-                Manifest == other.Manifest;
-        }
+            => other is { } &&
+               Ordering == other.Ordering &&
+               Deleted == other.Deleted &&
+               PersistenceId == other.PersistenceId &&
+               SequenceNumber == other.SequenceNumber &&
+               Created == other.Created &&
+               Tags == other.Tags &&
+               Message == other.Message &&
+               Identifier == other.Identifier &&
+               Manifest == other.Manifest;
 
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(this, obj)) return true;
+            if (ReferenceEquals(this, obj))
+                return true;
+
             return obj is JournalTableColumnNames j && Equals(j);
         }
 

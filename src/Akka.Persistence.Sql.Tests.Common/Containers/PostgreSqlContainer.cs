@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="PostgreSqlFixture.cs" company="Akka.NET Project">
-//      Copyright (C) 2013-2022 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  <copyright file="PostgreSqlContainer.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -16,10 +16,14 @@ using Npgsql;
 namespace Akka.Persistence.Sql.Tests.Common.Containers
 {
     /// <summary>
-    ///     Fixture used to run Postgre SQL Server
+    ///     Fixture used to run PostgreSQL
     /// </summary>
     public sealed class PostgreSqlContainer : DockerContainer
     {
+        private const string User = "postgres";
+
+        private const string Password = "postgres";
+
         public PostgreSqlContainer() : base("postgres", "latest", $"postgresql-{Guid.NewGuid():N}")
         {
             ConnectionString = new DbConnectionStringBuilder
@@ -38,11 +42,8 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
 
         private int Port { get; } = ThreadLocalRandom.Current.Next(9000, 10000);
 
-        private const string User = "postgres";
-
-        private const string Password = "postgres";
-
         protected override string ReadyMarker => "ready to accept connections";
+
         protected override int ReadyCount => 2;
 
         protected override void ConfigureContainer(CreateContainerParameters parameters)
@@ -64,48 +65,52 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
             {
                 $"POSTGRES_PASSWORD={Password}",
                 $"POSTGRES_USER={User}",
-                $"POSTGRES_DB={DatabaseName}",
+                $"POSTGRES_DB={DatabaseName}"
             };
         }
 
         public override async Task InitializeDbAsync()
         {
-            await using var conn = new NpgsqlConnection(ConnectionString);
-            conn.Open();
-            await using var cmd = new NpgsqlCommand
+            await using var connection = new NpgsqlConnection(ConnectionString);
+
+            await connection.OpenAsync();
+
+            await using var command = new NpgsqlCommand
             {
                 CommandText = $"SELECT TRUE FROM pg_database WHERE datname='{DatabaseName}'",
-                Connection = conn
+                Connection = connection
             };
-            var result = cmd.ExecuteScalar();
+
+            var result = command.ExecuteScalar();
+
             var dbExists = result != null && Convert.ToBoolean(result);
 
             if (dbExists)
             {
-                await DoCleanAsync(conn);
+                await DoCleanAsync(connection);
             }
             else
             {
-                await DoCreateAsync(conn, DatabaseName);
+                await DoCreateAsync(connection, DatabaseName);
             }
-
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static async Task DoCreateAsync(NpgsqlConnection conn, string databaseName)
+        private static async Task DoCreateAsync(NpgsqlConnection connection, string databaseName)
         {
-            await using var cmd = new NpgsqlCommand
+            await using var command = new NpgsqlCommand
             {
                 CommandText = $"CREATE DATABASE {databaseName}",
-                Connection = conn
+                Connection = connection
             };
-            await cmd.ExecuteNonQueryAsync();
+
+            await command.ExecuteNonQueryAsync();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static async Task DoCleanAsync(NpgsqlConnection conn)
+        private static async Task DoCleanAsync(NpgsqlConnection connection)
         {
-            await using var cmd = new NpgsqlCommand
+            await using var command = new NpgsqlCommand
             {
                 CommandText = @"
 DROP TABLE IF EXISTS public.event_journal;
@@ -116,9 +121,10 @@ DROP TABLE IF EXISTS public.journal;
 DROP TABLE IF EXISTS public.journal_metadata;
 DROP TABLE IF EXISTS public.tags;
 DROP TABLE IF EXISTS public.snapshot;",
-                Connection = conn,
+                Connection = connection
             };
-            await cmd.ExecuteNonQueryAsync();
+
+            await command.ExecuteNonQueryAsync();
         }
     }
 }

@@ -1,4 +1,10 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="Materializer.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Implementation;
@@ -8,7 +14,6 @@ namespace Akka.Persistence.Sql.Utility
 {
     public static class Materializer
     {
-
         private static ActorSystem ActorSystemOf(IActorRefFactory context)
         {
             return context switch
@@ -20,9 +25,10 @@ namespace Akka.Persistence.Sql.Utility
                     $"ActorRefFactory context must be a ActorSystem or ActorContext, got [{context.GetType()}]")
             };
         }
+
         /// <summary>
-        /// Creates a Materializer under the /system/ hierarchy instead of /user/
-        /// This ensures that we don't accidentally get torn down before the rest of the system.
+        ///     Creates a Materializer under the /system/ hierarchy instead of /user/
+        ///     This ensures that we don't accidentally get torn down before the rest of the system.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="settings"></param>

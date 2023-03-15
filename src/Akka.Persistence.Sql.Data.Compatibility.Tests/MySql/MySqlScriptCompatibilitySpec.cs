@@ -4,26 +4,25 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using System.Text;
 using MySql.Data.MySqlClient;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Data.Compatibility.Tests.MySql
 {
-    [Collection("SqlCompatSpec")]
+    [Collection("SqlCompatibilitySpec")]
     public class MySqlScriptCompatibilitySpec : SqlScriptCompatibilitySpec<MySqlFixture>
     {
-        public MySqlScriptCompatibilitySpec(ITestOutputHelper output) : base(output)
-        {
-        }
+        public MySqlScriptCompatibilitySpec(ITestOutputHelper output) : base(output) { }
 
         protected override TestSettings Settings => MySqlSpecSettings.Instance;
+
         protected override string ScriptFolder => "MySql";
+
         protected override void ExecuteSqlScripts(string setup, string migration, string cleanup)
         {
-            using var conn = new MySqlConnection(Fixture.ConnectionString);
-            var script = new MySqlScript(conn);
+            using var connection = new MySqlConnection(Fixture.ConnectionString);
+            var script = new MySqlScript(connection);
 
             script.Query = setup;
             script.Execute();

@@ -32,12 +32,14 @@ namespace Akka.Persistence.Sql.HelperLib
                 .GetConfig("akka.persistence.journal.linq2db");
 
             var mapping = config.GetString("table-mapping");
-            if(string.IsNullOrWhiteSpace(mapping) || mapping == "default")
-                throw new ConfigurationException("akka.persistence.journal.linq2db.table-mapping must not be empty or 'default'");
+            if (string.IsNullOrWhiteSpace(mapping) || mapping == "default")
+                throw new ConfigurationException(
+                    "akka.persistence.journal.linq2db.table-mapping must not be empty or 'default'");
 
             _journalConfig = new JournalConfig(config);
             if (_journalConfig.TableConfig.TagWriteMode != TagWriteMode.Both)
-                throw new ConfigurationException("akka.persistence.journal.linq2db.tag-write-mode has to be 'Both'");
+                throw new ConfigurationException(
+                    "akka.persistence.journal.linq2db.tag-write-mode has to be 'Both'");
 
             _connectionFactory = new AkkaPersistenceDataConnectionFactory(_journalConfig);
             _separator = _journalConfig.PluginConfig.TagSeparator;
@@ -47,28 +49,27 @@ namespace Akka.Persistence.Sql.HelperLib
         {
             var config = _journalConfig.DaoConfig;
 
-            await using var db = _connectionFactory.GetConnection();
+            await using var connection = _connectionFactory.GetConnection();
 
             // Create the tag table if it doesn't exist
-            var schemaProvider = db.DataProvider.GetSchemaProvider();
-            var dbSchema = schemaProvider.GetSchema(db);
+            var schemaProvider = connection.DataProvider.GetSchemaProvider();
+            var dbSchema = schemaProvider.GetSchema(connection);
+
             if (dbSchema.Tables.All(t => t.TableName != _journalConfig.TableConfig.TagTable.Name))
-            {
-                await db.CreateTableAsync<JournalTagRow>();
-            }
+                await connection.CreateTableAsync<JournalTagRow>();
 
             long maxId;
             if (endOffset is null)
             {
-                var jtrQuery = db.GetTable<JournalTagRow>()
+                var jtrQuery = connection.GetTable<JournalTagRow>()
                     .Select(jtr => jtr.OrderingId)
                     .Distinct();
 
-                maxId = await db.GetTable<JournalRow>()
+                maxId = await connection.GetTable<JournalRow>()
                     .Where(r =>
-                        r.Tags != null
-                        && r.Tags.Length > 0
-                        && r.Ordering.NotIn(jtrQuery))
+                        r.Tags != null &&
+                        r.Tags.Length > 0 &&
+                        r.Ordering.NotIn(jtrQuery))
                     .Select(r => r.Ordering)
                     .OrderByDescending(r => r)
                     .FirstOrDefaultAsync();
@@ -78,67 +79,81 @@ namespace Akka.Persistence.Sql.HelperLib
                 maxId = endOffset.Value;
             }
 
-            Console.WriteLine($"Attempting to migrate tags from {_journalConfig.TableConfig.EventJournalTable.Name} table starting from ordering number {startOffset} to {maxId}");
+            Console.WriteLine(
+                $"Attempting to migrate tags from {_journalConfig.TableConfig.EventJournalTable.Name} table starting from ordering number {startOffset} to {maxId}");
 
             while (startOffset <= maxId)
             {
-                Console.WriteLine($"Migrating offset {startOffset} to {Math.Min(startOffset + batchSize, maxId)}");
-                await using (var tx = await db.BeginTransactionAsync(IsolationLevel.ReadCommitted))
+                Console.WriteLine(
+                    $"Migrating offset {startOffset} to {Math.Min(startOffset + batchSize, maxId)}");
+
+                await using (var transaction = await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted))
                 {
                     try
                     {
                         var offset = startOffset;
-                        var rows = await db.GetTable<JournalRow>()
+                        var rows = await connection.GetTable<JournalRow>()
                             .Where(r =>
-                                r.Ordering >= offset
-                                && r.Ordering < offset + batchSize
-                                && r.Tags != null
-                                && r.Tags.Length > 0)
+                                r.Ordering >= offset &&
+                                r.Ordering < offset + batchSize &&
+                                r.Tags != null &&
+                                r.Tags.Length > 0)
                             .ToListAsync();
 
                         var tagList = new List<JournalTagRow>();
                         foreach (var row in rows)
                         {
                             var tags = row.Tags
-                                .Split(new [] {_separator}, StringSplitOptions.RemoveEmptyEntries)
+                                .Split(new[] { _separator }, StringSplitOptions.RemoveEmptyEntries)
                                 .Where(s => !string.IsNullOrWhiteSpace(s));
 
-                            tagList.AddRange(tags.Select(tag => new JournalTagRow
-                            {
-                                OrderingId = row.Ordering,
-                                TagValue = tag,
-                                SequenceNumber = row.SequenceNumber,
-                                PersistenceId = row.PersistenceId
-                            }));
+                            tagList.AddRange(
+                                tags.Select(
+                                    tag => new JournalTagRow
+                                    {
+                                        OrderingId = row.Ordering,
+                                        TagValue = tag,
+                                        SequenceNumber = row.SequenceNumber,
+                                        PersistenceId = row.PersistenceId
+                                    }));
                         }
 
-                        Console.WriteLine($"Inserting {tagList.Count} tag rows into {_journalConfig.TableConfig.TagTable.Name} table");
-                        await db.GetTable<JournalTagRow>().BulkCopyAsync(new BulkCopyOptions
-                        {
-                            BulkCopyType = BulkCopyType.MultipleRows,
-                            UseParameters = config.PreferParametersOnMultiRowInsert,
-                            MaxBatchSize = config.DbRoundTripTagBatchSize
-                        }, tagList);
+                        Console.WriteLine(
+                            $"Inserting {tagList.Count} tag rows into {_journalConfig.TableConfig.TagTable.Name} table");
 
-                        await tx.CommitAsync();
+                        await connection
+                            .GetTable<JournalTagRow>()
+                            .BulkCopyAsync(
+                                new BulkCopyOptions
+                                {
+                                    BulkCopyType = BulkCopyType.MultipleRows,
+                                    UseParameters = config.PreferParametersOnMultiRowInsert,
+                                    MaxBatchSize = config.DbRoundTripTagBatchSize
+                                },
+                                tagList);
+
+                        await transaction.CommitAsync();
                     }
                     catch (Exception e1)
                     {
                         try
                         {
-                            await tx.RollbackAsync();
+                            await transaction.RollbackAsync();
                         }
                         catch (Exception e2)
                         {
                             throw new AggregateException(
                                 $"Migration failed on offset {startOffset} to {startOffset + batchSize}, Rollback failed.",
-                                e2, e1);
+                                e2,
+                                e1);
                         }
+
                         throw new Exception(
                             $"Migration failed on offset {startOffset} to {startOffset + batchSize}, Rollback successful.",
                             e1);
                     }
                 }
+
                 startOffset += batchSize;
             }
         }

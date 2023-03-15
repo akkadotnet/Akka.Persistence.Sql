@@ -1,5 +1,10 @@
-﻿using System.Threading.Tasks;
-using Akka.Configuration;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="SqliteJournalPerfSpec.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System.Threading.Tasks;
 using Akka.Persistence.Sql.Tests.Common;
 using Xunit;
 using Xunit.Abstractions;
@@ -11,17 +16,24 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
     {
         private readonly TestFixture _fixture;
 
-        public SqliteJournalPerfSpec(ITestOutputHelper output, TestFixture fixture)
+        public SqliteJournalPerfSpec(
+            ITestOutputHelper output,
+            TestFixture fixture)
             : base(
                 CreateSpecConfig(fixture.ConnectionString(Database.MsSqlite)),
-                nameof(SqliteJournalPerfSpec), output, eventsCount: TestConstants.NumMessages)
-        {
-            _fixture = fixture;
-        }
+                nameof(SqliteJournalPerfSpec),
+                output,
+                eventsCount: TestConstants.NumMessages)
+            => _fixture = fixture;
+
+        public async Task InitializeAsync()
+            => await _fixture.InitializeDbAsync(Database.MsSqlite);
+
+        public Task DisposeAsync()
+            => Task.CompletedTask;
 
         private static Configuration.Config CreateSpecConfig(string connectionString)
-        {
-            return ConfigurationFactory.ParseString(@$"
+            => @$"
                 akka.persistence {{
                     publish-plugin-commands = on
                     journal {{
@@ -36,17 +48,6 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
                             connection-string = ""{connectionString}""
                         }}
                     }}
-                }}");
-        }
-
-        public async Task InitializeAsync()
-        {
-            await _fixture.InitializeDbAsync(Database.MsSqlite);
-        }
-
-        public Task DisposeAsync()
-        {
-            return Task.CompletedTask;
-        }
+                }}";
     }
 }

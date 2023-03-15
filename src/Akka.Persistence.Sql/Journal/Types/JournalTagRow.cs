@@ -1,16 +1,16 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="JournalTagRow.cs" company="Akka.NET Project">
-//      Copyright (C) 2009-2023 Lightbend Inc. <http://www.lightbend.com>
 //      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
 
-namespace Akka.Persistence.Sql.Journal.Types;
-
-public sealed class JournalTagRow
+namespace Akka.Persistence.Sql.Journal.Types
 {
-    public long SequenceNumber { get; set; }
-    public string PersistenceId { get; set; }
-    public long OrderingId { get; set; }
-    public string TagValue { get; set; }
+    public sealed class JournalTagRow
+    {
+        public long SequenceNumber { get; set; }
+        public string PersistenceId { get; set; }
+        public long OrderingId { get; set; }
+        public string TagValue { get; set; }
+    }
 }

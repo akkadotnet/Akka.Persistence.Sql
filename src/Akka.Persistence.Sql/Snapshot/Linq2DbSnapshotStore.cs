@@ -1,4 +1,10 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="Linq2DbSnapshotStore.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Configuration;
@@ -6,10 +12,7 @@ using Akka.Event;
 using Akka.Persistence.Snapshot;
 using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Db;
-using Akka.Persistence.Sql.Journal;
 using Akka.Persistence.Sql.Utility;
-using Akka.Streams;
-using Akka.Util;
 
 namespace Akka.Persistence.Sql.Snapshot
 {
@@ -19,67 +22,62 @@ namespace Akka.Persistence.Sql.Snapshot
         public static readonly Configuration.Config DefaultConfiguration =
             ConfigurationFactory.FromResource<Linq2DbSnapshotStore>("Akka.Persistence.Sql.snapshot.conf");
 
-        private readonly SnapshotConfig _snapshotConfig;
-
         private readonly ByteArraySnapshotDao _dao;
 
         public Linq2DbSnapshotStore(Configuration.Config snapshotConfig)
         {
             var config = snapshotConfig.WithFallback(Linq2DbPersistence.DefaultSnapshotConfiguration);
 
-            _snapshotConfig = new SnapshotConfig(config);
+            var snapshotConfig1 = new SnapshotConfig(config);
 
             _dao = new ByteArraySnapshotDao(
-                connectionFactory: new AkkaPersistenceDataConnectionFactory(_snapshotConfig),
-                snapshotConfig: _snapshotConfig, serialization: Context.System.Serialization,
+                connectionFactory: new AkkaPersistenceDataConnectionFactory(snapshotConfig1),
+                snapshotConfig: snapshotConfig1,
+                serialization: Context.System.Serialization,
                 mat: Materializer.CreateSystemMaterializer((ExtendedActorSystem)Context.System),
                 logger: Context.GetLogger());
 
-            if (_snapshotConfig.AutoInitialize)
+            if (!snapshotConfig1.AutoInitialize)
+                return;
+
+            try
             {
-                try
-                {
-                    _dao.InitializeTables();
-                }
-                catch (Exception e)
-                {
-                    Context.GetLogger().Warning(e,
-                        "Unable to Initialize Persistence Snapshot Table!");
-                }
+                _dao.InitializeTables();
+            }
+            catch (Exception e)
+            {
+                Context.GetLogger().Warning(
+                    e,
+                    "Unable to Initialize Persistence Snapshot Table!");
             }
         }
 
-        protected override async Task<SelectedSnapshot> LoadAsync(string persistenceId, SnapshotSelectionCriteria criteria)
-        {
-            switch (criteria.MaxSequenceNr)
+        protected override async Task<SelectedSnapshot> LoadAsync(
+            string persistenceId,
+            SnapshotSelectionCriteria criteria)
+            => criteria.MaxSequenceNr switch
             {
-                case long.MaxValue when criteria.MaxTimeStamp == DateTime.MaxValue:
-                    return (await _dao.LatestSnapshot(persistenceId)).GetOrElse(null);
-                case long.MaxValue:
-                    return (await _dao.SnapshotForMaxTimestamp(persistenceId, criteria.MaxTimeStamp)).GetOrElse(null);
-                default:
-                {
-                    return criteria.MaxTimeStamp == DateTime.MaxValue
-                        ? (await _dao.SnapshotForMaxSequenceNr(
-                            persistenceId: persistenceId,
-                            sequenceNr: criteria.MaxSequenceNr)).GetOrElse(null)
-                        : (await _dao.SnapshotForMaxSequenceNrAndMaxTimestamp(
-                            persistenceId: persistenceId,
-                            sequenceNr: criteria.MaxSequenceNr,
-                            timestamp: criteria.MaxTimeStamp)).GetOrElse(null);
-                }
-            }
-        }
+                long.MaxValue when criteria.MaxTimeStamp == DateTime.MaxValue
+                    => (await _dao.LatestSnapshot(persistenceId)).GetOrElse(null),
+
+                long.MaxValue
+                    => (await _dao.SnapshotForMaxTimestamp(persistenceId, criteria.MaxTimeStamp)).GetOrElse(null),
+
+                _ => criteria.MaxTimeStamp == DateTime.MaxValue
+                    ? (await _dao.SnapshotForMaxSequenceNr(
+                        persistenceId: persistenceId,
+                        sequenceNr: criteria.MaxSequenceNr)).GetOrElse(null)
+                    : (await _dao.SnapshotForMaxSequenceNrAndMaxTimestamp(
+                        persistenceId: persistenceId,
+                        sequenceNr: criteria.MaxSequenceNr,
+                        timestamp: criteria.MaxTimeStamp)).GetOrElse(null)
+            };
 
         protected override async Task SaveAsync(SnapshotMetadata metadata, object snapshot)
-        {
-            await _dao.Save(metadata, snapshot);
-        }
+            => await _dao.Save(metadata, snapshot);
 
         protected override async Task DeleteAsync(SnapshotMetadata metadata)
-        {
-            await _dao.Delete(metadata.PersistenceId, metadata.SequenceNr);
-        }
+            => await _dao.Delete(metadata.PersistenceId, metadata.SequenceNr);
 
         protected override async Task DeleteAsync(string persistenceId, SnapshotSelectionCriteria criteria)
         {
@@ -88,9 +86,11 @@ namespace Akka.Persistence.Sql.Snapshot
                 case long.MaxValue when criteria.MaxTimeStamp == DateTime.MaxValue:
                     await _dao.DeleteAllSnapshots(persistenceId);
                     break;
+
                 case long.MaxValue:
                     await _dao.DeleteUpToMaxTimestamp(persistenceId, criteria.MaxTimeStamp);
                     break;
+
                 default:
                 {
                     if (criteria.MaxTimeStamp == DateTime.MaxValue)
@@ -104,6 +104,7 @@ namespace Akka.Persistence.Sql.Snapshot
                             maxSequenceNr: criteria.MaxSequenceNr,
                             maxTimestamp: criteria.MaxTimeStamp);
                     }
+
                     break;
                 }
             }

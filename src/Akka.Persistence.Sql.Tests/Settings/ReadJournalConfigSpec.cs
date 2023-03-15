@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="ReadJournalConfigSpec.cs" company="Akka.NET Project">
-//      Copyright (C) 2013-2022 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -20,14 +20,14 @@ namespace Akka.Persistence.Sql.Tests.Settings
         private readonly Configuration.Config _defaultConfig;
 
         public ReadJournalConfigSpec()
-        {
-            _defaultConfig = Linq2DbPersistence.DefaultConfiguration;
-        }
+            => _defaultConfig = Linq2DbPersistence.DefaultConfiguration;
 
         [Fact(DisplayName = "Default journal query HOCON config should contain default values")]
         public void DefaultJournalQueryHoconConfigTest()
         {
-            var query = _defaultConfig.GetConfig("akka.persistence.query.journal.linq2db");
+            var query = _defaultConfig.GetConfig(
+                "akka.persistence.query.journal.linq2db");
+
             query.Should().NotBeNull();
 
             var stringType = query.GetString("class");
@@ -47,8 +47,7 @@ namespace Akka.Persistence.Sql.Tests.Settings
             query.GetInt("max-row-by-row-size").Should().Be(100);
             query.GetBoolean("use-clone-connection").Should().BeFalse();
             query.GetString("tag-separator", "invalid").Should().Be(";");
-            query.GetString("dao", "invalid").Should()
-                .Be("Akka.Persistence.Sql.Journal.Dao.ByteArrayJournalDao, Akka.Persistence.Sql");
+            query.GetString("dao", "invalid").Should().Be("Akka.Persistence.Sql.Journal.Dao.ByteArrayJournalDao, Akka.Persistence.Sql");
 
             var retrieval = query.GetConfig("journal-sequence-retrieval");
             retrieval.Should().NotBeNull();
@@ -72,10 +71,13 @@ namespace Akka.Persistence.Sql.Tests.Settings
         [Fact(DisplayName = "Default journal query config should contain default values")]
         public void DefaultReadJournalConfigTest()
         {
-            var journalHocon = _defaultConfig.GetConfig("akka.persistence.query.journal.linq2db");
+            var journalHocon = _defaultConfig.GetConfig(
+                "akka.persistence.query.journal.linq2db");
+
             journalHocon.Should().NotBeNull();
 
             var journal = new ReadJournalConfig(journalHocon);
+
             // assert default values
             AssertDefaultQueryConfig(journal);
 
@@ -101,16 +103,18 @@ namespace Akka.Persistence.Sql.Tests.Settings
             metaColumns.SequenceNumber.Should().Be("sequence_number");
         }
 
-        [Fact(DisplayName = "Journal config with SqlServer compat should contain correct column names")]
+        [Fact(DisplayName = "Journal config with SqlServer compatibility should contain correct column names")]
         public void SqlServerJournalConfigTest()
         {
             var journalHocon = ConfigurationFactory
                 .ParseString("akka.persistence.query.journal.linq2db.table-mapping = sql-server")
                 .WithFallback(_defaultConfig)
                 .GetConfig("akka.persistence.query.journal.linq2db");
+
             journalHocon.Should().NotBeNull();
 
             var journal = new ReadJournalConfig(journalHocon);
+
             // assert default values
             AssertDefaultQueryConfig(journal);
 
@@ -140,16 +144,18 @@ namespace Akka.Persistence.Sql.Tests.Settings
             metaColumns.SequenceNumber.Should().Be("SequenceNr");
         }
 
-        [Fact(DisplayName = "Journal config with Sqlite compat should contain correct column names")]
+        [Fact(DisplayName = "Journal config with Sqlite compatibility should contain correct column names")]
         public void SqliteJournalConfigTest()
         {
             var journalHocon = ConfigurationFactory
                 .ParseString("akka.persistence.query.journal.linq2db.table-mapping = sqlite")
                 .WithFallback(_defaultConfig)
                 .GetConfig("akka.persistence.query.journal.linq2db");
+
             journalHocon.Should().NotBeNull();
 
             var journal = new ReadJournalConfig(journalHocon);
+
             // assert default values
             AssertDefaultQueryConfig(journal);
 
@@ -179,16 +185,18 @@ namespace Akka.Persistence.Sql.Tests.Settings
             metaColumns.SequenceNumber.Should().Be("sequence_nr");
         }
 
-        [Fact(DisplayName = "Journal config with PostgreSql compat should contain correct column names")]
+        [Fact(DisplayName = "Journal config with PostgreSql compatibility should contain correct column names")]
         public void PostgreSqlJournalConfigTest()
         {
             var journalHocon = ConfigurationFactory
                 .ParseString("akka.persistence.query.journal.linq2db.table-mapping = postgresql")
                 .WithFallback(_defaultConfig)
                 .GetConfig("akka.persistence.query.journal.linq2db");
+
             journalHocon.Should().NotBeNull();
 
             var journal = new ReadJournalConfig(journalHocon);
+
             // assert default values
             AssertDefaultQueryConfig(journal);
 
@@ -218,16 +226,18 @@ namespace Akka.Persistence.Sql.Tests.Settings
             metaColumns.SequenceNumber.Should().Be("sequence_nr");
         }
 
-        [Fact(DisplayName = "Journal config with MySql compat should contain correct column names")]
+        [Fact(DisplayName = "Journal config with MySql compatibility should contain correct column names")]
         public void MySqlJournalConfigTest()
         {
             var journalHocon = ConfigurationFactory
                 .ParseString("akka.persistence.query.journal.linq2db.table-mapping = mysql")
                 .WithFallback(_defaultConfig)
                 .GetConfig("akka.persistence.query.journal.linq2db");
+
             journalHocon.Should().NotBeNull();
 
             var journal = new ReadJournalConfig(journalHocon);
+
             // assert default values
             AssertDefaultQueryConfig(journal);
 

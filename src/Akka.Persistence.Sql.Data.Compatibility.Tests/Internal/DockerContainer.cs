@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="DockerContainer.cs" company="Akka.NET Project">
-//      Copyright (C) 2013-2022 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -16,11 +16,13 @@ using LanguageExt.UnitsOfMeasure;
 
 namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
 {
-    public abstract class DockerContainer: ITestContainer
+    public abstract class DockerContainer : ITestContainer
     {
-        private Stream? _stream;
-        private readonly CancellationTokenSource _logsCts = new ();
+        private readonly CancellationTokenSource _logsCts = new();
+
+        private bool _disposing;
         private Task? _readDockerTask;
+        private Stream? _stream;
 
         protected DockerContainer(string imageName, string tag, string containerName)
         {
@@ -32,23 +34,23 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
             OnStdOut += (_, _) => { };
         }
 
-        public abstract string ConnectionString { get; }
-
-        public virtual string DatabaseName => "akka_persistence_tests";
-
         private string ImageName { get; }
 
         private string Tag { get; }
 
         private string FullImageName => $"{ImageName}:{Tag}";
 
-        public string ContainerName { get; }
+        protected virtual string? ReadyMarker => null;
 
-        protected virtual string? ReadyMarker { get; } = null;
-
-        protected virtual int ReadyCount { get; } = 1;
+        protected virtual int ReadyCount => 1;
 
         protected virtual TimeSpan ReadyTimeout { get; } = TimeSpan.FromMinutes(1);
+
+        public abstract string ConnectionString { get; }
+
+        public virtual string DatabaseName => "akka_persistence_tests";
+
+        public string ContainerName { get; }
 
         public DockerClient Client { get; }
 
@@ -56,29 +58,35 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
 
         public async Task InitializeAsync()
         {
-            var images = await Client.Images.ListImagesAsync(new ImagesListParameters
-            {
-                Filters = new Dictionary<string, IDictionary<string, bool>>
+            var images = await Client.Images.ListImagesAsync(
+                new ImagesListParameters
                 {
+                    Filters = new Dictionary<string, IDictionary<string, bool>>
                     {
-                        "reference",
-                        new Dictionary<string, bool>
                         {
-                            {FullImageName, true}
+                            "reference",
+                            new Dictionary<string, bool>
+                            {
+                                { FullImageName, true }
+                            }
                         }
                     }
-                }
-            });
+                });
 
             if (images.Count == 0)
+            {
                 await Client.Images.CreateImageAsync(
-                    new ImagesCreateParameters {FromImage = ImageName, Tag = Tag}, null,
-                    new Progress<JSONMessage>(message =>
-                    {
-                        Console.WriteLine(!string.IsNullOrEmpty(message.ErrorMessage)
-                            ? message.ErrorMessage
-                            : $"{message.ID} {message.Status} {message.ProgressMessage}");
-                    }));
+                    new ImagesCreateParameters { FromImage = ImageName, Tag = Tag },
+                    null,
+                    new Progress<JSONMessage>(
+                        message =>
+                        {
+                            Console.WriteLine(
+                                !string.IsNullOrEmpty(message.ErrorMessage)
+                                    ? message.ErrorMessage
+                                    : $"{message.ID} {message.Status} {message.ProgressMessage}");
+                        }));
+            }
 
             // configure container parameters
             var options = new CreateContainerParameters();
@@ -103,45 +111,66 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
                     ShowStderr = true,
                     Timestamps = true
                 });
+
             _readDockerTask = ReadDockerStreamAsync();
 
             // Wait until container is completely ready
             if (ReadyMarker is { })
+            {
                 await AwaitUntilReadyAsync(ReadyMarker, ReadyTimeout);
+            }
             else
+            {
                 await Task.Delay(20.Seconds());
+            }
 
             await AfterContainerStartedAsync();
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            // Perform async cleanup.
+            await DisposeAsyncCore().ConfigureAwait(false);
+
+            Dispose(false);
+            GC.SuppressFinalize(this);
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         protected abstract void ConfigureContainer(CreateContainerParameters parameters);
 
         protected virtual Task AfterContainerStartedAsync()
-        {
-            return Task.CompletedTask;
-        }
+            => Task.CompletedTask;
 
         private async Task AwaitUntilReadyAsync(string marker, TimeSpan timeout)
         {
             var tcs = new TaskCompletionSource<string>();
             var count = 0;
+
             void LineProcessor(object? sender, OutputReceivedArgs args)
             {
-                if(args.Output.Contains(marker))
-                {
-                    count++;
-                    if(ReadyCount == count)
-                        tcs.SetResult(args.Output);
-                }
+                if (!args.Output.Contains(marker))
+                    return;
+
+                count++;
+                if (ReadyCount == count)
+                    tcs.SetResult(args.Output);
             }
 
             OnStdOut += LineProcessor;
+
             using var cts = new CancellationTokenSource(timeout);
             try
             {
                 var task = await Task.WhenAny(Task.Delay(Timeout.Infinite, cts.Token), tcs.Task);
-                if(task == tcs.Task)
+                if (task == tcs.Task)
                     return;
+
                 throw new Exception($"Docker image failed to run within {timeout}.");
             }
             finally
@@ -172,25 +201,11 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
             }
         }
 
-        private bool _disposing;
-        public async ValueTask DisposeAsync()
-        {
-            // Perform async cleanup.
-            await DisposeAsyncCore().ConfigureAwait(false);
-
-            Dispose(false);
-            GC.SuppressFinalize(this);
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
         protected virtual async ValueTask DisposeAsyncCore()
         {
-            if (_disposing) return;
+            if (_disposing)
+                return;
+
             _disposing = true;
 
             _logsCts.Cancel();
@@ -199,7 +214,7 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
             if (_readDockerTask is { })
                 await _readDockerTask;
 
-            if(_stream is { })
+            if (_stream is { })
                 await _stream.DisposeAsync();
 
             try
@@ -224,37 +239,39 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
 
         protected virtual void Dispose(bool disposing)
         {
-            if (disposing)
+            if (!disposing)
+                return;
+
+            if (_disposing)
+                return;
+
+            _disposing = true;
+
+            _logsCts.Cancel();
+            _logsCts.Dispose();
+            _readDockerTask?.GetAwaiter().GetResult();
+            _stream?.Dispose();
+
+            try
             {
-                if(_disposing) return;
-                _disposing = true;
+                Client.Containers.StopContainerAsync(
+                        id: ContainerName,
+                        parameters: new ContainerStopParameters())
+                    .GetAwaiter().GetResult();
 
-                _logsCts.Cancel();
-                _logsCts.Dispose();
-                _readDockerTask?.GetAwaiter().GetResult();
-                _stream?.Dispose();
-
-                try
-                {
-                    Client.Containers.StopContainerAsync(
-                            id: ContainerName,
-                            parameters: new ContainerStopParameters())
-                        .GetAwaiter().GetResult();
-
-                    Client.Containers.RemoveContainerAsync(ContainerName, new ContainerRemoveParameters { Force = true })
-                        .GetAwaiter().GetResult();
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine($"Failed to stop and/or remove docker container. {e}");
-                }
-                finally
-                {
-                    Client.Dispose();
-                }
+                Client.Containers.RemoveContainerAsync(
+                        id: ContainerName,
+                        parameters: new ContainerRemoveParameters { Force = true })
+                    .GetAwaiter().GetResult();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Failed to stop and/or remove docker container. {e}");
+            }
+            finally
+            {
+                Client.Dispose();
             }
         }
-
     }
 }
-

@@ -1,4 +1,10 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="SqlCommonSnapshotCompatibilitySpec.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Persistence.Sql.Tests.Internal;
@@ -10,18 +16,17 @@ using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Tests
 {
-    public abstract class SqlCommonSnapshotCompatibilitySpec: IAsyncLifetime
+    public abstract class SqlCommonSnapshotCompatibilitySpec : IAsyncLifetime
     {
-        protected abstract Configuration.Config Config { get; }
         public SqlCommonSnapshotCompatibilitySpec(ITestOutputHelper helper)
-        {
-            Output = helper;
-        }
+            => Output = helper;
+
+        protected abstract Configuration.Config Config { get; }
 
         protected ITestOutputHelper Output { get; }
         protected abstract string OldSnapshot { get; }
         protected abstract string NewSnapshot { get; }
-        protected ActorSystem Sys { get; private set;  }
+        protected ActorSystem Sys { get; private set; }
         protected Akka.TestKit.Xunit2.TestKit TestKit { get; private set; }
         protected TestProbe Probe { get; private set; }
 
@@ -42,7 +47,7 @@ namespace Akka.Persistence.Sql.Tests
         [Fact]
         public void Can_Recover_SqlCommon_Snapshot()
         {
-            var persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatActor(OldSnapshot, "p-1")));
+            var persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatibilityActor(OldSnapshot, "p-1")));
             var ourGuid = Guid.NewGuid();
 
             Probe.Send(persistRef, new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 });
@@ -52,7 +57,7 @@ namespace Akka.Persistence.Sql.Tests
 
             EnsureTerminated(persistRef);
 
-            persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatActor(NewSnapshot, "p-1")));
+            persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatibilityActor(NewSnapshot, "p-1")));
             Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
             Probe.ExpectMsg(true, 5.Seconds());
         }
@@ -60,7 +65,7 @@ namespace Akka.Persistence.Sql.Tests
         [Fact]
         public void Can_Persist_SqlCommon_Snapshot()
         {
-            var persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatActor(OldSnapshot, "p-2")));
+            var persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatibilityActor(OldSnapshot, "p-2")));
             var ourGuid = Guid.NewGuid();
 
             Probe.Send(persistRef, new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 });
@@ -70,7 +75,7 @@ namespace Akka.Persistence.Sql.Tests
 
             EnsureTerminated(persistRef);
 
-            persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatActor(NewSnapshot, "p-2")));
+            persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatibilityActor(NewSnapshot, "p-2")));
             Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
             Probe.ExpectMsg(true, 5.Seconds());
 
@@ -84,7 +89,7 @@ namespace Akka.Persistence.Sql.Tests
         [Fact]
         public void SqlCommon_Snapshot_Can_Recover_L2Db_Snapshot()
         {
-            var persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatActor(NewSnapshot, "p-3")));
+            var persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatibilityActor(NewSnapshot, "p-3")));
             var ourGuid = Guid.NewGuid();
 
             Probe.Send(persistRef, new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 });
@@ -94,7 +99,7 @@ namespace Akka.Persistence.Sql.Tests
 
             EnsureTerminated(persistRef);
 
-            persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatActor(OldSnapshot, "p-3")));
+            persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatibilityActor(OldSnapshot, "p-3")));
             Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
             Probe.ExpectMsg(true, 5.Seconds());
         }
@@ -102,7 +107,7 @@ namespace Akka.Persistence.Sql.Tests
         [Fact]
         public void SqlCommon_Snapshot_Can_Persist_L2db_Snapshot()
         {
-            var persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatActor(NewSnapshot, "p-4")));
+            var persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatibilityActor(NewSnapshot, "p-4")));
             var ourGuid = Guid.NewGuid();
 
             Probe.Send(persistRef, new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 });
@@ -112,7 +117,7 @@ namespace Akka.Persistence.Sql.Tests
 
             EnsureTerminated(persistRef);
 
-            persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatActor(OldSnapshot, "p-4")));
+            persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatibilityActor(OldSnapshot, "p-4")));
             Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
             Probe.ExpectMsg(true, 10.Seconds());
 

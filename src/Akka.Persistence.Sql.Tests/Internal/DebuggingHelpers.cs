@@ -1,4 +1,10 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="DebuggingHelpers.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using System.Diagnostics;
 using System.Text;
 using LinqToDB.Data;
@@ -11,6 +17,7 @@ namespace Akka.Persistence.Sql.Tests.Internal
         public static void SetupTraceDump(ITestOutputHelper outputHelper)
         {
             DataConnection.TurnTraceSwitchOn();
+
             DataConnection.OnTrace = info =>
             {
                 try
@@ -49,7 +56,7 @@ namespace Akka.Persistence.Sql.Tests.Internal
                 }
                 catch (InvalidOperationException)
                 {
-                    //This will sometimes get thrown because of async and ITestOutputHelper interactions.
+                    // This will sometimes get thrown because of async and ITestOutputHelper interactions.
                 }
             };
         }

@@ -1,4 +1,10 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="ExtSeqStage.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using System.Threading.Tasks;
 using Akka.Streams;
 using Akka.Streams.Stage;
@@ -8,12 +14,53 @@ namespace Akka.Persistence.Sql.Streams
 {
     public sealed class ExtSeqStage<T> : GraphStageWithMaterializedValue<SinkShape<T>, Task<Seq<T>>>
     {
-        #region stage logic
+        /// <summary>
+        ///     TBD
+        /// </summary>
+        public readonly Inlet<T> In = new("Seq.in");
 
+        /// <summary>
+        ///     TBD
+        /// </summary>
+        public ExtSeqStage()
+            => Shape = new SinkShape<T>(In);
+
+        /// <summary>
+        ///     TBD
+        /// </summary>
+        protected override Attributes InitialAttributes { get; } = Attributes.CreateName("languageExtSeqSink");
+
+        /// <summary>
+        ///     TBD
+        /// </summary>
+        public override SinkShape<T> Shape { get; }
+
+        /// <summary>
+        ///     TBD
+        /// </summary>
+        /// <param name="inheritedAttributes">TBD</param>
+        /// <returns>TBD</returns>
+        public override ILogicAndMaterializedValue<Task<Seq<T>>> CreateLogicAndMaterializedValue(
+            Attributes inheritedAttributes)
+        {
+            var promise = new TaskCompletionSource<Seq<T>>();
+
+            return new LogicAndMaterializedValue<Task<Seq<T>>>(
+                new Logic(this, promise),
+                promise.Task);
+        }
+
+        /// <summary>
+        ///     TBD
+        /// </summary>
+        /// <returns>TBD</returns>
+        public override string ToString() => "LanguageExtSeqStage";
+
+        #region stage logic
         private sealed class Logic : InGraphStageLogic
         {
-            private readonly ExtSeqStage<T> _stage;
             private readonly TaskCompletionSource<Seq<T>> _promise;
+            private readonly ExtSeqStage<T> _stage;
             private Seq<T> _buf = Seq<T>.Empty;
             private bool _completionSignalled;
 
@@ -53,48 +100,6 @@ namespace Akka.Persistence.Sql.Streams
 
             public override void PreStart() => Pull(_stage.In);
         }
-
         #endregion
-
-        /// <summary>
-        /// TBD
-        /// </summary>
-        public ExtSeqStage()
-        {
-            Shape = new SinkShape<T>(In);
-        }
-
-        /// <summary>
-        /// TBD
-        /// </summary>
-        protected override Attributes InitialAttributes { get; } = Attributes.CreateName("languageExtSeqSink");
-
-        /// <summary>
-        /// TBD
-        /// </summary>
-        public override SinkShape<T> Shape { get; }
-
-        /// <summary>
-        /// TBD
-        /// </summary>
-        public readonly Inlet<T> In = new Inlet<T>("Seq.in");
-
-        /// <summary>
-        /// TBD
-        /// </summary>
-        /// <param name="inheritedAttributes">TBD</param>
-        /// <returns>TBD</returns>
-        public override ILogicAndMaterializedValue<Task<Seq<T>>> CreateLogicAndMaterializedValue(
-            Attributes inheritedAttributes)
-        {
-            var promise = new TaskCompletionSource<Seq<T>>();
-            return new LogicAndMaterializedValue<Task<Seq<T>>>(new Logic(this, promise), promise.Task);
-        }
-
-        /// <summary>
-        /// TBD
-        /// </summary>
-        /// <returns>TBD</returns>
-        public override string ToString() => "LanguageExtSeqStage";
     }
 }

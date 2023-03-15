@@ -10,8 +10,5 @@ using Xunit;
 namespace Akka.Persistence.Sql.Benchmark.Tests
 {
     [CollectionDefinition("BenchmarkSpec")]
-    public class BenchmarkCollectionFixture: ICollectionFixture<TestFixture>
-    {
-
-    }
+    public class BenchmarkCollectionFixture : ICollectionFixture<TestFixture> { }
 }

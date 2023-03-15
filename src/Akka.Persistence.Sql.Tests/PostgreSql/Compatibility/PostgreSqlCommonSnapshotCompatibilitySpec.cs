@@ -1,9 +1,8 @@
-﻿// //-----------------------------------------------------------------------
-// // <copyright file="DockerLinq2DbPostgreSqlSqlCommonSnapshotCompatibilitySpec.cs" company="Akka.NET Project">
-// //     Copyright (C) 2009-2020 Lightbend Inc. <http://www.lightbend.com>
-// //     Copyright (C) 2013-2020 .NET Foundation <https://github.com/akkadotnet/akka.net>
-// // </copyright>
-// //-----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
+//  <copyright file="PostgreSqlCommonSnapshotCompatibilitySpec.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  </copyright>
+// -----------------------------------------------------------------------
 
 using System.Threading.Tasks;
 using Akka.Persistence.Sql.Tests.Common;
@@ -23,18 +22,25 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
     {
         private readonly TestFixture _fixture;
 
-        protected override Configuration.Config Config { get; }
-
-        protected override string OldSnapshot => "akka.persistence.snapshot-store.postgresql";
-
-        protected override string NewSnapshot => "akka.persistence.snapshot-store.linq2db";
-
-        public PostgreSqlCommonSnapshotCompatibilitySpec(ITestOutputHelper output, TestFixture fixture)
-            : base( output)
+        public PostgreSqlCommonSnapshotCompatibilitySpec(
+            ITestOutputHelper output,
+            TestFixture fixture)
+            : base(output)
         {
             _fixture = fixture;
-            Config = PostgreSqlCompatibilitySpecConfig.InitSnapshotConfig(_fixture, "snapshot_store");
+
+            Config = PostgreSqlCompatibilitySpecConfig.InitSnapshotConfig(
+                _fixture,
+                "snapshot_store");
         }
+
+        protected override Configuration.Config Config { get; }
+
+        protected override string OldSnapshot
+            => "akka.persistence.snapshot-store.postgresql";
+
+        protected override string NewSnapshot
+            => "akka.persistence.snapshot-store.linq2db";
 
         public override async Task InitializeAsync()
         {

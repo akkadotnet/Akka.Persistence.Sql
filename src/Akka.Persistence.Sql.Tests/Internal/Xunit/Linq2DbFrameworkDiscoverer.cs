@@ -11,16 +11,14 @@ using Xunit.Sdk;
 
 namespace Akka.Persistence.Sql.Tests.Internal.Xunit
 {
-    public class Linq2DbFrameworkDiscoverer: XunitTestFrameworkDiscoverer
+    public class Linq2DbFrameworkDiscoverer : XunitTestFrameworkDiscoverer
     {
         public Linq2DbFrameworkDiscoverer(
             IAssemblyInfo assemblyInfo,
             ISourceInformationProvider sourceProvider,
             IMessageSink diagnosticMessageSink,
             IXunitTestCollectionFactory collectionFactory = null)
-            : base(assemblyInfo, sourceProvider, diagnosticMessageSink, collectionFactory)
-        {
-        }
+            : base(assemblyInfo, sourceProvider, diagnosticMessageSink, collectionFactory) { }
 
         protected override bool IsValidTestClass(ITypeInfo type)
         {
@@ -40,7 +38,11 @@ namespace Akka.Persistence.Sql.Tests.Internal.Xunit
             var skipLinux = testClass.Class.GetCustomAttributes(typeof(SkipLinuxAttribute)).Any() && isUnix;
             var skipWindows = testClass.Class.GetCustomAttributes(typeof(SkipWindowsAttribute)).Any() && !isUnix;
 
-            return !skipLinux && !skipWindows && base.FindTestsForType(testClass, includeSourceInformation, messageBus, discoveryOptions);
+            return !skipLinux && !skipWindows && base.FindTestsForType(
+                testClass,
+                includeSourceInformation,
+                messageBus,
+                discoveryOptions);
         }
     }
 }

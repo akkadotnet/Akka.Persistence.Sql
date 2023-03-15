@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="XUnitLogger.cs" company="Akka.NET Project">
-//      Copyright (C) 2013-2022 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -10,7 +10,7 @@ using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
 {
-    public class XUnitLogger: ILogger
+    public class XUnitLogger : ILogger
     {
         private const string NullFormatted = "[null]";
 
@@ -25,7 +25,12 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
             _logLevel = logLevel;
         }
 
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception exception,
+            Func<TState, Exception, string> formatter)
         {
             if (!IsEnabled(logLevel))
                 return;
@@ -35,6 +40,16 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
 
             WriteLogEntry(logLevel, eventId, formattedMessage, exception);
         }
+
+        public bool IsEnabled(LogLevel logLevel)
+            => logLevel switch
+            {
+                LogLevel.None => false,
+                _ => logLevel >= _logLevel
+            };
+
+        public IDisposable BeginScope<TState>(TState state)
+            => throw new NotImplementedException();
 
         private void WriteLogEntry(LogLevel logLevel, EventId eventId, string message, Exception? exception)
         {
@@ -52,21 +67,8 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
             var msg = $"{DateTime.Now}:{level}:{_category}:{eventId} {message}";
             if (exception != null)
                 msg += $"\n{exception.GetType()} {exception.Message}\n{exception.StackTrace}";
+
             _helper.WriteLine(msg);
-        }
-
-        public bool IsEnabled(LogLevel logLevel)
-        {
-            return logLevel switch
-            {
-                LogLevel.None => false,
-                _ => logLevel >= _logLevel
-            };
-        }
-
-        public IDisposable BeginScope<TState>(TState state)
-        {
-            throw new NotImplementedException();
         }
 
         private static bool TryFormatMessage<TState>(
@@ -80,7 +82,7 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
             var formattedMessage = formatter(state, exception);
             if (formattedMessage == NullFormatted)
             {
-                result = "";
+                result = string.Empty;
                 return false;
             }
 
@@ -89,4 +91,3 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
         }
     }
 }
-

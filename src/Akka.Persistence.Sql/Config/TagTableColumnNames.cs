@@ -6,39 +6,47 @@
 
 using System;
 
-namespace Akka.Persistence.Sql.Config;
-
-public class TagTableColumnNames : IEquatable<TagTableColumnNames>
+namespace Akka.Persistence.Sql.Config
 {
-    public TagTableColumnNames(Configuration.Config config)
+    public class TagTableColumnNames : IEquatable<TagTableColumnNames>
     {
-        var cfg = config.GetConfig("columns");
-        OrderingId = cfg.GetString("ordering-id", "ordering_id");
-        Tag = cfg.GetString("tag-value", "tag");
-        SequenceNumber = cfg.GetString("sequence-nr", "sequence_nr");
-        PersistenceId = cfg.GetString("persistence-id", "persistence_id");
-    }
+        public TagTableColumnNames(Configuration.Config config)
+        {
+            var cfg = config.GetConfig("columns");
+            OrderingId = cfg.GetString("ordering-id", "ordering_id");
+            Tag = cfg.GetString("tag-value", "tag");
+            SequenceNumber = cfg.GetString("sequence-nr", "sequence_nr");
+            PersistenceId = cfg.GetString("persistence-id", "persistence_id");
+        }
 
-    public string OrderingId { get; }
-    public string Tag { get; }
-    public string SequenceNumber { get; }
-    public string PersistenceId { get; }
+        public string OrderingId { get; }
 
-    public bool Equals(TagTableColumnNames other)
-    {
-        if (ReferenceEquals(null, other)) return false;
-        if (ReferenceEquals(this, other)) return true;
-        return OrderingId == other.OrderingId;
-    }
+        public string Tag { get; }
 
-    public override bool Equals(object obj)
-    {
-        if (ReferenceEquals(this, obj)) return true;
-        return obj is TagTableColumnNames tag && Equals(tag);
-    }
+        public string SequenceNumber { get; }
 
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(OrderingId, Tag);
+        public string PersistenceId { get; }
+
+        public bool Equals(TagTableColumnNames other)
+        {
+            if (ReferenceEquals(null, other))
+                return false;
+
+            if (ReferenceEquals(this, other))
+                return true;
+
+            return OrderingId == other.OrderingId;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(this, obj))
+                return true;
+
+            return obj is TagTableColumnNames tag && Equals(tag);
+        }
+
+        public override int GetHashCode()
+            => HashCode.Combine(OrderingId, Tag);
     }
 }

@@ -1,4 +1,10 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="ByteArraySnapshotSerializer.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using Akka.Persistence.Sql.Config;
 using Akka.Serialization;
 using Akka.Util;
@@ -7,8 +13,8 @@ namespace Akka.Persistence.Sql.Snapshot
 {
     public class ByteArraySnapshotSerializer : ISnapshotSerializer<SnapshotRow>
     {
-        private readonly Akka.Serialization.Serialization _serialization;
         private readonly SnapshotConfig _config;
+        private readonly Akka.Serialization.Serialization _serialization;
 
         public ByteArraySnapshotSerializer(Akka.Serialization.Serialization serialization, SnapshotConfig config)
         {
@@ -17,18 +23,18 @@ namespace Akka.Persistence.Sql.Snapshot
         }
 
         public Try<SnapshotRow> Serialize(SnapshotMetadata metadata, object snapshot)
-        {
-            return Try<SnapshotRow>.From(()=>ToSnapshotEntry(metadata, snapshot));
-        }
+            => Try<SnapshotRow>.From(() => ToSnapshotEntry(metadata, snapshot));
 
         public Try<SelectedSnapshot> Deserialize(SnapshotRow t)
-        {
-            return Try<SelectedSnapshot>.From(() => ReadSnapshot(t));
-        }
+            => Try<SelectedSnapshot>.From(() => ReadSnapshot(t));
 
         protected SelectedSnapshot ReadSnapshot(SnapshotRow reader)
         {
-            var metadata = new SnapshotMetadata(reader.PersistenceId, reader.SequenceNumber, reader.Created);
+            var metadata = new SnapshotMetadata(
+                reader.PersistenceId,
+                reader.SequenceNumber,
+                reader.Created);
+
             var snapshot = GetSnapshot(reader);
 
             return new SelectedSnapshot(metadata, snapshot);
@@ -42,6 +48,7 @@ namespace Akka.Persistence.Sql.Snapshot
             if (reader.SerializerId is null)
             {
                 var type = Type.GetType(manifest, true);
+
                 // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
                 return Akka.Serialization.Serialization.WithTransport(
                     system: _serialization.System,
@@ -57,20 +64,17 @@ namespace Akka.Persistence.Sql.Snapshot
         {
             var snapshotType = snapshot.GetType();
             var serializer = _serialization.FindSerializerForType(snapshotType, _config.DefaultSerializer);
-            var binary  = Akka.Serialization.Serialization.WithTransport(
+            var binary = Akka.Serialization.Serialization.WithTransport(
                 system: _serialization.System,
                 state: (serializer, snapshot),
                 action: state => state.serializer.ToBinary(state.snapshot));
 
-            var manifest = "";
-            if (serializer is SerializerWithStringManifest stringManifest)
+            var manifest = serializer switch
             {
-                manifest = stringManifest.Manifest(snapshot);
-            }
-            else if (serializer.IncludeManifest)
-            {
-                manifest = snapshotType.TypeQualifiedName();
-            }
+                SerializerWithStringManifest stringManifest => stringManifest.Manifest(snapshot),
+                { IncludeManifest: true } => snapshotType.TypeQualifiedName(),
+                _ => string.Empty
+            };
 
             return new SnapshotRow
             {

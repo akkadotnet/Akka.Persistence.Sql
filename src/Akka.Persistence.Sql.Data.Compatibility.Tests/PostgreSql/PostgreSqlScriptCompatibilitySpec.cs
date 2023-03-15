@@ -10,30 +10,32 @@ using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Data.Compatibility.Tests.PostgreSql
 {
-    [Collection("SqlCompatSpec")]
+    [Collection("SqlCompatibilitySpec")]
     public class PostgreSqlScriptCompatibilitySpec : SqlScriptCompatibilitySpec<PostgreSqlFixture>
     {
-        public PostgreSqlScriptCompatibilitySpec(ITestOutputHelper output) : base(output)
-        {
-        }
+        public PostgreSqlScriptCompatibilitySpec(ITestOutputHelper output) : base(output) { }
 
         protected override TestSettings Settings => PostgreSqlSpecSettings.Instance;
         protected override string ScriptFolder => "PostgreSql";
+
         protected override void ExecuteSqlScripts(string setup, string migration, string cleanup)
         {
-            using var conn = new NpgsqlConnection(Fixture.ConnectionString);
-            conn.Open();
+            using var connection = new NpgsqlConnection(Fixture.ConnectionString);
+            connection.Open();
 
-            var cmd = new NpgsqlCommand {
-                Connection = conn
+            var command = new NpgsqlCommand
+            {
+                Connection = connection
             };
 
-            cmd.CommandText = setup;
-            cmd.ExecuteNonQuery();
-            cmd.CommandText = migration;
-            cmd.ExecuteNonQuery();
-            cmd.CommandText = cleanup;
-            cmd.ExecuteNonQuery();
+            command.CommandText = setup;
+            command.ExecuteNonQuery();
+
+            command.CommandText = migration;
+            command.ExecuteNonQuery();
+
+            command.CommandText = cleanup;
+            command.ExecuteNonQuery();
         }
     }
 }

@@ -1,4 +1,10 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="JournalSequenceRetrievalConfig.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 
 namespace Akka.Persistence.Sql.Config
 {
@@ -23,10 +29,6 @@ namespace Akka.Persistence.Sql.Config
 
         public int BatchSize { get; }
 
-        public static JournalSequenceRetrievalConfig Apply(Configuration.Config config)
-        {
-            return new JournalSequenceRetrievalConfig(config);
-        }
-
+        public static JournalSequenceRetrievalConfig Apply(Configuration.Config config) => new(config);
     }
 }

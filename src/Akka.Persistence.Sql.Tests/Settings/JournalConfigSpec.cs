@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 //  <copyright file="JournalConfigSpec.cs" company="Akka.NET Project">
-//      Copyright (C) 2013-2022 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
 
@@ -19,22 +19,21 @@ namespace Akka.Persistence.Sql.Tests.Settings
         private readonly Configuration.Config _defaultConfig;
 
         public JournalConfigSpec()
-        {
-            _defaultConfig = Linq2DbPersistence.DefaultConfiguration;
-        }
+            => _defaultConfig = Linq2DbPersistence.DefaultConfiguration;
 
         [Fact(DisplayName = "Default journal HOCON config should contain default values")]
         public void DefaultJournalHoconConfigTest()
         {
-            var journal = _defaultConfig.GetConfig("akka.persistence.journal.linq2db");
+            var journal = _defaultConfig.GetConfig(
+                "akka.persistence.journal.linq2db");
+
             journal.Should().NotBeNull();
 
             var stringType = journal.GetString("class");
             var type = Type.GetType(stringType);
             type.Should().Be(typeof(Linq2DbWriteJournal));
 
-            journal.GetString("plugin-dispatcher").Should()
-                .Be("akka.persistence.dispatchers.default-plugin-dispatcher");
+            journal.GetString("plugin-dispatcher").Should().Be("akka.persistence.dispatchers.default-plugin-dispatcher");
             journal.GetString("connection-string", "invalid").Should().BeNullOrEmpty();
             journal.GetString("provider-name", "invalid").Should().BeNullOrEmpty();
             journal.GetBoolean("delete-compatibility-mode").Should().BeTrue();
@@ -50,8 +49,7 @@ namespace Akka.Persistence.Sql.Tests.Settings
             journal.GetString("materializer-dispatcher", "invalid").Should().Be("akka.actor.default-dispatcher");
             journal.GetString("serializer", "invalid").Should().BeNullOrEmpty();
             journal.GetString("tag-separator", "invalid").Should().Be(";");
-            journal.GetString("dao", "invalid").Should()
-                .Be("Akka.Persistence.Sql.Journal.Dao.ByteArrayJournalDao, Akka.Persistence.Sql");
+            journal.GetString("dao", "invalid").Should().Be("Akka.Persistence.Sql.Journal.Dao.ByteArrayJournalDao, Akka.Persistence.Sql");
             journal.GetBoolean("auto-initialize").Should().BeFalse();
             journal.GetBoolean("warn-on-auto-init-fail").Should().BeTrue();
 
@@ -69,10 +67,13 @@ namespace Akka.Persistence.Sql.Tests.Settings
         [Fact(DisplayName = "Default journal config should contain default values")]
         public void DefaultJournalConfigTest()
         {
-            var journalHocon = _defaultConfig.GetConfig("akka.persistence.journal.linq2db");
+            var journalHocon = _defaultConfig.GetConfig(
+                "akka.persistence.journal.linq2db");
+
             journalHocon.Should().NotBeNull();
 
             var journal = new JournalConfig(journalHocon);
+
             // assert default values
             AssertDefaultJournalConfig(journal);
 
@@ -102,16 +103,18 @@ namespace Akka.Persistence.Sql.Tests.Settings
             metaColumns.SequenceNumber.Should().Be("sequence_number");
         }
 
-        [Fact(DisplayName = "Journal config with SqlServer compat should contain correct column names")]
+        [Fact(DisplayName = "Journal config with SqlServer compatibility should contain correct column names")]
         public void SqlServerJournalConfigTest()
         {
             var journalHocon = ConfigurationFactory
                 .ParseString("akka.persistence.journal.linq2db.table-mapping = sql-server")
                 .WithFallback(_defaultConfig)
                 .GetConfig("akka.persistence.journal.linq2db");
+
             journalHocon.Should().NotBeNull();
 
             var journal = new JournalConfig(journalHocon);
+
             // assert default values
             AssertDefaultJournalConfig(journal);
 
@@ -141,16 +144,18 @@ namespace Akka.Persistence.Sql.Tests.Settings
             metaColumns.SequenceNumber.Should().Be("SequenceNr");
         }
 
-        [Fact(DisplayName = "Journal config with Sqlite compat should contain correct column names")]
+        [Fact(DisplayName = "Journal config with Sqlite compatibility should contain correct column names")]
         public void SqliteJournalConfigTest()
         {
             var journalHocon = ConfigurationFactory
                 .ParseString("akka.persistence.journal.linq2db.table-mapping = sqlite")
                 .WithFallback(_defaultConfig)
                 .GetConfig("akka.persistence.journal.linq2db");
+
             journalHocon.Should().NotBeNull();
 
             var journal = new JournalConfig(journalHocon);
+
             // assert default values
             AssertDefaultJournalConfig(journal);
 
@@ -180,16 +185,18 @@ namespace Akka.Persistence.Sql.Tests.Settings
             metaColumns.SequenceNumber.Should().Be("sequence_nr");
         }
 
-        [Fact(DisplayName = "Journal config with PostgreSql compat should contain correct column names")]
+        [Fact(DisplayName = "Journal config with PostgreSql compatibility should contain correct column names")]
         public void PostgreSqlJournalConfigTest()
         {
             var journalHocon = ConfigurationFactory
                 .ParseString("akka.persistence.journal.linq2db.table-mapping = postgresql")
                 .WithFallback(_defaultConfig)
                 .GetConfig("akka.persistence.journal.linq2db");
+
             journalHocon.Should().NotBeNull();
 
             var journal = new JournalConfig(journalHocon);
+
             // assert default values
             AssertDefaultJournalConfig(journal);
 
@@ -219,16 +226,18 @@ namespace Akka.Persistence.Sql.Tests.Settings
             metaColumns.SequenceNumber.Should().Be("sequence_nr");
         }
 
-        [Fact(DisplayName = "Journal config with MySql compat should contain correct column names")]
+        [Fact(DisplayName = "Journal config with MySql compatibility should contain correct column names")]
         public void MySqlJournalConfigTest()
         {
             var journalHocon = ConfigurationFactory
                 .ParseString("akka.persistence.journal.linq2db.table-mapping = mysql")
                 .WithFallback(_defaultConfig)
                 .GetConfig("akka.persistence.journal.linq2db");
+
             journalHocon.Should().NotBeNull();
 
             var journal = new JournalConfig(journalHocon);
+
             // assert default values
             AssertDefaultJournalConfig(journal);
 

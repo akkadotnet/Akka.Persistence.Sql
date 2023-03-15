@@ -1,4 +1,10 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="ReadJournalConfig.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 
 namespace Akka.Persistence.Sql.Config
 {
@@ -10,7 +16,7 @@ namespace Akka.Persistence.Sql.Config
             ProviderName = config.GetString("provider-name");
             TableConfig = new JournalTableConfig(config);
             DaoConfig = new BaseByteArrayJournalDaoConfig(config);
-            UseCloneConnection = config.GetBoolean("use-clone-connection", false);
+            UseCloneConnection = config.GetBoolean("use-clone-connection");
             JournalSequenceRetrievalConfiguration = new JournalSequenceRetrievalConfig(config);
             PluginConfig = new ReadJournalPluginConfig(config);
             RefreshInterval = config.GetTimeSpan("refresh-interval", TimeSpan.FromSeconds(1));
@@ -32,10 +38,15 @@ namespace Akka.Persistence.Sql.Config
         public JournalSequenceRetrievalConfig JournalSequenceRetrievalConfiguration { get; }
 
         public string ProviderName { get; }
+
         public string ConnectionString { get; }
+
         public JournalTableConfig TableConfig { get; }
+
         public IDaoConfig IDaoConfig => DaoConfig;
+
         public bool UseCloneConnection { get; }
+
         public string DefaultSerializer { get; }
     }
 }

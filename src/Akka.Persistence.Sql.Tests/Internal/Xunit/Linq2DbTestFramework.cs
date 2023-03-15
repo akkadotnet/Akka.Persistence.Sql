@@ -9,11 +9,9 @@ using Xunit.Sdk;
 
 namespace Akka.Persistence.Sql.Tests.Internal.Xunit
 {
-    public class Linq2DbTestFramework: XunitTestFramework
+    public class Linq2DbTestFramework : XunitTestFramework
     {
-        public Linq2DbTestFramework(IMessageSink messageSink) : base(messageSink)
-        {
-        }
+        public Linq2DbTestFramework(IMessageSink messageSink) : base(messageSink) { }
 
         protected override ITestFrameworkDiscoverer CreateDiscoverer(IAssemblyInfo assemblyInfo)
             => new Linq2DbFrameworkDiscoverer(assemblyInfo, SourceInformationProvider, DiagnosticMessageSink);

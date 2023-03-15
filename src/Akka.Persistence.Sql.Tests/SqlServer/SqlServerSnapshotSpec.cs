@@ -1,4 +1,10 @@
-﻿using System.Threading.Tasks;
+﻿// -----------------------------------------------------------------------
+//  <copyright file="SqlServerSnapshotSpec.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System.Threading.Tasks;
 using Akka.Persistence.Sql.Tests.Common;
 using Akka.Persistence.TCK.Snapshot;
 using Xunit;
@@ -15,17 +21,16 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
     [Collection("PersistenceSpec")]
     public class SqlServerSnapshotSpec : SnapshotStoreSpec, IAsyncLifetime
     {
-        private static Configuration.Config Configuration(TestFixture fixture)
-            => SqlServerSnapshotSpecConfig.Create(fixture.ConnectionString(Database.SqlServer),"snapshotSpec");
-
         private readonly TestFixture _fixture;
 
-        public SqlServerSnapshotSpec(ITestOutputHelper output, TestFixture fixture)
-            : base(Configuration(fixture), nameof(SqlServerSnapshotSpec), output)
-        {
-            _fixture = fixture;
-            //DebuggingHelpers.SetupTraceDump(output);
-        }
+        public SqlServerSnapshotSpec(
+            ITestOutputHelper output,
+            TestFixture fixture)
+            : base(
+                Configuration(fixture),
+                nameof(SqlServerSnapshotSpec),
+                output)
+            => _fixture = fixture;
 
         public async Task InitializeAsync()
         {
@@ -34,8 +39,11 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
         }
 
         public Task DisposeAsync()
-        {
-            return Task.CompletedTask;
-        }
+            => Task.CompletedTask;
+
+        private static Configuration.Config Configuration(TestFixture fixture)
+            => SqlServerSnapshotSpecConfig.Create(
+                fixture.ConnectionString(Database.SqlServer),
+                "snapshotSpec");
     }
 }
