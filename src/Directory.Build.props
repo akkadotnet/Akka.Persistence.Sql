@@ -39,7 +39,7 @@
     <AkkaRedisVersion>1.4.35</AkkaRedisVersion>
     <RedisInsideVersion>3.3.0</RedisInsideVersion>
 
-    <AkkaMySqlVersion>1.4.42</AkkaMySqlVersion>
+    <AkkaMySqlVersion>1.5.0</AkkaMySqlVersion>
     <MySqlVersion>8.0.32</MySqlVersion>
 
     <FluentMigratorVersion>3.3.2</FluentMigratorVersion>
