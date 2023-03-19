@@ -19,7 +19,7 @@
     <NetStandardLibVersion>netstandard2.0</NetStandardLibVersion>
     <NetCoreTestVersion>net7.0</NetCoreTestVersion>
 
-    <AkkaVersion>1.4.49</AkkaVersion>
+    <AkkaVersion>1.5.1</AkkaVersion>
     <AkkaHostingVersion>1.0.3</AkkaHostingVersion>
 
     <Linq2DbVersion>3.4.1</Linq2DbVersion>
