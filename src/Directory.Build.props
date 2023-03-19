@@ -22,7 +22,7 @@
     <AkkaVersion>1.5.1</AkkaVersion>
     <AkkaHostingVersion>1.5.1</AkkaHostingVersion>
 
-    <Linq2DbVersion>4.4.1</Linq2DbVersion>
+    <Linq2DbVersion>5.1.0</Linq2DbVersion>
     <LanguageExtVersion>4.4.2</LanguageExtVersion>
     <FluentMigratorVersion>3.3.2</FluentMigratorVersion>
 
