@@ -311,20 +311,20 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
             switch (result)
             {
-                case QueueOfferResult.Enqueued _:
+                case QueueOfferResult.Enqueued:
                     break;
 
                 case QueueOfferResult.Failure f:
                     promise.TrySetException(new Exception("Failed to write journal row batch", f.Cause));
                     break;
 
-                case QueueOfferResult.Dropped _:
+                case QueueOfferResult.Dropped:
                     promise.TrySetException(
                         new Exception(
                             $"Failed to enqueue journal row batch write, the queue buffer was full ({JournalConfig.DaoConfig.BufferSize} elements)"));
                     break;
 
-                case QueueOfferResult.QueueClosed _:
+                case QueueOfferResult.QueueClosed:
                     promise.TrySetException(
                         new Exception(
                             "Failed to enqueue journal row batch write, the queue was closed."));
