@@ -10,20 +10,22 @@
     <PackageReference Include="Akka.Cluster.Sharding" />
     <PackageReference Include="Akka.Hosting" />
     <PackageReference Include="Akka.Persistence.Sql.Compat.Common" />
+
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Docker.DotNet" />
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="LanguageExt.Core" />
+
     <PackageReference Include="Microsoft.Data.Sqlite.Core" />
+    <PackageReference Include="System.Data.SQLite" />
 
-    <PackageReference Include="Microsoft.NET.Test.Sdk" />
-
+    <PackageReference Include="Microsoft.Data.SqlClient" />
     <PackageReference Include="Microsoft.SqlServer.SqlManagementObjects" />
 
     <PackageReference Include="MySql.Data" />
 
     <PackageReference Include="Npgsql" />
-    <PackageReference Include="System.Data.SqlClient" />
-    <PackageReference Include="System.Data.SQLite" />
+
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

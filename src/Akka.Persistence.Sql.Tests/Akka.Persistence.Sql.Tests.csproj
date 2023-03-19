@@ -18,7 +18,7 @@
     <PackageReference Include="Akka.Serialization.Hyperion" />
     <PackageReference Include="Docker.DotNet" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="System.Data.SqlClient" />
+    <PackageReference Include="Microsoft.Data.SqlClient" />
     <PackageReference Include="System.Data.SQLite.Core" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio">

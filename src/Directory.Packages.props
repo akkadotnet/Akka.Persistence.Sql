@@ -35,7 +35,7 @@
     <!-- SQL Server dependencies -->
     <ItemGroup>
       <PackageVersion Include="Akka.Persistence.SqlServer" Version="$(AkkaSqlServerVersion)" />
-      <PackageVersion Include="System.Data.SqlClient" Version="$(SqlClientVersion)" />
+      <PackageVersion Include="Microsoft.Data.SqlClient" Version="$(SqlClientVersion)" />
       <PackageVersion Include="Microsoft.SqlServer.SqlManagementObjects" Version="$(SqlManagementObjectsVersion)" />
     </ItemGroup>
 

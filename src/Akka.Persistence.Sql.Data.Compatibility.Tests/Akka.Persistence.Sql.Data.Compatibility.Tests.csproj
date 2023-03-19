@@ -10,12 +10,13 @@
     <PackageReference Include="Akka.Cluster.Sharding" />
     <PackageReference Include="Akka.Hosting" />
     <PackageReference Include="Akka.Persistence.Sql.Compat.Common" />
+
     <PackageReference Include="Docker.DotNet" />
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
 
+    <PackageReference Include="Microsoft.Data.SqlClient" />
     <PackageReference Include="Microsoft.SqlServer.SqlManagementObjects" />
-    <PackageReference Include="System.Data.SqlClient" />
 
     <PackageReference Include="MySql.Data" />
 

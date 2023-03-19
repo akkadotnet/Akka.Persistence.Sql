@@ -25,8 +25,8 @@
     <Linq2DbVersion>3.4.1</Linq2DbVersion>
     <LanguageExtVersion>3.4.15</LanguageExtVersion>
 
-    <AkkaSqlServerVersion>1.4.35</AkkaSqlServerVersion>
-    <SqlClientVersion>4.8.5</SqlClientVersion>
+    <AkkaSqlServerVersion>1.5.1</AkkaSqlServerVersion>
+    <SqlClientVersion>5.1.0</SqlClientVersion>
     <SqlManagementObjectsVersion>170.13.0</SqlManagementObjectsVersion>
 
     <AkkaSqliteVersion>1.4.49</AkkaSqliteVersion>
