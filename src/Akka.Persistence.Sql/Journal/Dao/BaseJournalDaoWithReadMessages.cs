@@ -99,7 +99,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                             if (lastSeq.HasValue)
                                 nextFrom = lastSeq.Value + 1;
 
-                            return new Option<((long, FlowControlEnum), LanguageExt.Seq<Try<ReplayCompletion>>)>(
+                            return Option<((long, FlowControlEnum), LanguageExt.Seq<Try<ReplayCompletion>>)>.Create(
                                 ((nextFrom, nextControl), msg));
                         }
 
