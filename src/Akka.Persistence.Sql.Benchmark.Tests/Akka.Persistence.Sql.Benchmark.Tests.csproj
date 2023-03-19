@@ -9,11 +9,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Akka.Persistence.PostgreSql" />
-    <PackageReference Include="Akka.Persistence.Redis" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="redis-inside" />
     <PackageReference Include="JetBrains.dotMemoryUnit" />
+
+    <PackageReference Include="Akka.Persistence.PostgreSql" />
+
+    <PackageReference Include="Akka.Persistence.Redis" />
+
+    <PackageReference Include="redis-inside" />
+
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
