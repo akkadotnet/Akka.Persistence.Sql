@@ -39,4 +39,8 @@
     <ProjectReference Include="..\Akka.Persistence.Sql.Tests.Common\Akka.Persistence.Sql.Tests.Common.csproj" />
     <ProjectReference Include="..\Akka.Persistence.Sql\Akka.Persistence.Sql.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Update="xunit.runner.json" CopyToOutputDirectory="Always" />
+  </ItemGroup>
 </Project>

@@ -41,6 +41,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="xunit.runner.json" CopyToOutputDirectory="Always" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="..\..\scripts\SqlServer\1_Migration_Setup.sql">
       <Link>SqlServer\1_Migration_Setup.sql</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
