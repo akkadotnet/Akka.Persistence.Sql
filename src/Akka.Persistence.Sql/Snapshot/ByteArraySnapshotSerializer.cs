@@ -82,7 +82,8 @@ namespace Akka.Persistence.Sql.Snapshot
                 SequenceNumber = metadata.SequenceNr,
                 Created = metadata.Timestamp,
                 Manifest = manifest,
-                Payload = binary, SerializerId = serializer.Identifier
+                Payload = binary,
+                SerializerId = serializer.Identifier
             };
         }
     }
