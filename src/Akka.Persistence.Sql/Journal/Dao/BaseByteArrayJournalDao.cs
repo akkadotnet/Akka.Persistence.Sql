@@ -433,28 +433,31 @@ namespace Akka.Persistence.Sql.Journal.Dao
             await connection
                 .GetTable<JournalTagRow>()
                 .BulkCopyAsync(
-                    new BulkCopyOptions()
-                        .WithBulkCopyType(BulkCopyType.MultipleRows)
-                        .WithUseParameters(config.PreferParametersOnMultiRowInsert)
-                        .WithMaxBatchSize(config.DbRoundTripTagBatchSize),
+                    new BulkCopyOptions
+                    {
+                        BulkCopyType = BulkCopyType.MultipleRows,
+                        UseParameters = config.PreferParametersOnMultiRowInsert,
+                        MaxBatchSize = config.DbRoundTripTagBatchSize
+                    },
                     tagsToInsert);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static async Task BulkInsertNoTagTableTags(
-            IDataContext connection,
+            DataConnection connection,
             Seq<JournalRow> xs,
             BaseByteArrayJournalDaoConfig config)
             => await connection
                 .GetTable<JournalRow>()
                 .BulkCopyAsync(
-                    new BulkCopyOptions()
-                        .WithBulkCopyType(
-                            xs.Count > config.MaxRowByRowSize
-                                ? BulkCopyType.Default
-                                : BulkCopyType.MultipleRows)
-                        .WithUseParameters(config.PreferParametersOnMultiRowInsert)
-                        .WithMaxBatchSize(config.DbRoundTripBatchSize),
+                    new BulkCopyOptions
+                    {
+                        BulkCopyType = xs.Count > config.MaxRowByRowSize
+                            ? BulkCopyType.Default
+                            : BulkCopyType.MultipleRows,
+                        UseParameters = config.PreferParametersOnMultiRowInsert,
+                        MaxBatchSize = config.DbRoundTripBatchSize
+                    },
                     xs);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -491,7 +494,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static IQueryable<long> MaxMarkedForDeletionMaxPersistenceIdQuery(
-            IDataContext connection,
+            DataConnection connection,
             string persistenceId)
             => connection
                 .GetTable<JournalRow>()
@@ -524,7 +527,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
         }
 
         private static IQueryable<long?> MaxSeqForPersistenceIdQueryableNativeMode(
-            IDataContext connection,
+            DataConnection connection,
             string persistenceId)
             => connection
                 .GetTable<JournalRow>()
@@ -532,7 +535,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 .Select(r => (long?)r.SequenceNumber);
 
         private static IQueryable<long?> MaxSeqForPersistenceIdQueryableNativeModeMinId(
-            IDataContext connection,
+            DataConnection connection,
             string persistenceId,
             long minSequenceNumber)
             => connection
@@ -543,7 +546,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 .Select(r => (long?)r.SequenceNumber);
 
         private static IQueryable<long?> MaxSeqForPersistenceIdQueryableCompatibilityModeWithMinId(
-            IDataContext connection,
+            DataConnection connection,
             string persistenceId,
             long minSequenceNumber)
             => connection
@@ -561,7 +564,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                         .Select(r => LinqToDB.Sql.Ext.Max<long?>(r.SequenceNumber).ToValue()));
 
         private static IQueryable<long?> MaxSeqForPersistenceIdQueryableCompatibilityMode(
-            IDataContext connection,
+            DataConnection connection,
             string persistenceId)
             => connection
                 .GetTable<JournalRow>()

@@ -9,6 +9,7 @@ using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Journal.Types;
 using Akka.Persistence.Sql.Snapshot;
 using LinqToDB;
+using LinqToDB.Configuration;
 using LinqToDB.Data;
 using LinqToDB.Data.RetryPolicy;
 using LinqToDB.DataProvider.SqlServer;
@@ -19,7 +20,7 @@ namespace Akka.Persistence.Sql.Db
     public class AkkaPersistenceDataConnectionFactory
     {
         private readonly Lazy<DataConnection> _cloneConnection;
-        private readonly DataOptions _opts;
+        private readonly LinqToDBConnectionOptions _opts;
         private readonly IRetryPolicy _policy;
         private readonly bool _useCloneDataConnection;
 
@@ -33,16 +34,15 @@ namespace Akka.Persistence.Sql.Db
                 config.ProviderName,
                 config.TableConfig.GetHashCode());
 
-            var mappingSchema = new MappingSchema(configName, MappingSchema.Default);
-
-            var fmb = new FluentMappingBuilder(mappingSchema);
+            var fmb = new MappingSchema(configName, MappingSchema.Default).GetFluentMappingBuilder();
             MapJournalRow(config, fmb);
-            fmb.Build();
 
             _useCloneDataConnection = config.UseCloneConnection;
-            _opts = new DataOptions()
+            var mappingSchema = fmb.MappingSchema;
+            _opts = new LinqToDBConnectionOptionsBuilder()
                 .UseConnectionString(config.ProviderName, config.ConnectionString)
-                .UseMappingSchema(mappingSchema);
+                .UseMappingSchema(mappingSchema)
+                .Build();
 
             if (config.ProviderName.ToLower().StartsWith("sqlserver"))
                 _policy = new SqlServerRetryPolicy();
@@ -60,16 +60,15 @@ namespace Akka.Persistence.Sql.Db
                 config.ProviderName,
                 config.TableConfig.GetHashCode());
 
-            var mappingSchema = new MappingSchema(configName, MappingSchema.Default);
-
-            var fmb = new FluentMappingBuilder(mappingSchema);
+            var fmb = new MappingSchema(configName, MappingSchema.Default).GetFluentMappingBuilder();
             MapSnapshotRow(config, fmb);
-            fmb.Build();
 
             _useCloneDataConnection = config.UseCloneConnection;
-            _opts = new DataOptions()
+            var mappingSchema = fmb.MappingSchema;
+            _opts = new LinqToDBConnectionOptionsBuilder()
                 .UseConnectionString(config.ProviderName, config.ConnectionString)
-                .UseMappingSchema(mappingSchema);
+                .UseMappingSchema(mappingSchema)
+                .Build();
 
             if (config.ProviderName.ToLower().StartsWith("sqlserver"))
                 _policy = new SqlServerRetryPolicy();

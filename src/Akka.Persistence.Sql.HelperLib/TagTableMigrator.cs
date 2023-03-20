@@ -124,10 +124,12 @@ namespace Akka.Persistence.Sql.HelperLib
                         await connection
                             .GetTable<JournalTagRow>()
                             .BulkCopyAsync(
-                                new BulkCopyOptions()
-                                    .WithBulkCopyType(BulkCopyType.MultipleRows)
-                                    .WithUseParameters(config.PreferParametersOnMultiRowInsert)
-                                    .WithMaxBatchSize(config.DbRoundTripTagBatchSize),
+                                new BulkCopyOptions
+                                {
+                                    BulkCopyType = BulkCopyType.MultipleRows,
+                                    UseParameters = config.PreferParametersOnMultiRowInsert,
+                                    MaxBatchSize = config.DbRoundTripTagBatchSize
+                                },
                                 tagList);
 
                         await transaction.CommitAsync();
