@@ -54,7 +54,8 @@ namespace Akka.Persistence.Sql.Snapshot
                 .GetTable<SnapshotRow>()
                 .Where(r =>
                     r.PersistenceId == persistenceId &&
-                    r.SequenceNumber <= maxSequenceNr).DeleteAsync();
+                    r.SequenceNumber <= maxSequenceNr)
+                .DeleteAsync();
         }
 
         public async Task DeleteUpToMaxTimestamp(string persistenceId, DateTime maxTimestamp)
@@ -65,7 +66,8 @@ namespace Akka.Persistence.Sql.Snapshot
                 .GetTable<SnapshotRow>()
                 .Where(r =>
                     r.PersistenceId == persistenceId &&
-                    r.Created <= maxTimestamp).DeleteAsync();
+                    r.Created <= maxTimestamp)
+                .DeleteAsync();
         }
 
         public async Task DeleteUpToMaxSequenceNrAndMaxTimestamp(
@@ -80,7 +82,8 @@ namespace Akka.Persistence.Sql.Snapshot
                 .Where(r =>
                     r.PersistenceId == persistenceId &&
                     r.SequenceNumber <= maxSequenceNr &&
-                    r.Created <= maxTimestamp).DeleteAsync();
+                    r.Created <= maxTimestamp)
+                .DeleteAsync();
         }
 
         public async Task<Option<SelectedSnapshot>> LatestSnapshot(string persistenceId)
@@ -137,10 +140,10 @@ namespace Akka.Persistence.Sql.Snapshot
             long sequenceNr,
             DateTime timestamp)
         {
-            await using var connection
-                = _connectionFactory.GetConnection();
+            await using var connection = _connectionFactory.GetConnection();
 
-            var row = await connection.GetTable<SnapshotRow>()
+            var row = await connection
+                .GetTable<SnapshotRow>()
                 .Where(r =>
                     r.PersistenceId == persistenceId &&
                     r.SequenceNumber <= sequenceNr &&

@@ -22,7 +22,9 @@ namespace Akka.Persistence.Sql.Tests.Sqlite
             ITestOutputHelper outputHelper,
             TestFixture fixture)
             : base(
-                SqliteSnapshotSpecConfig.Create(fixture.ConnectionString(Database.MsSqlite), ProviderName.SQLiteMS),
+                SqliteSnapshotSpecConfig.Create(
+                    fixture.ConnectionString(Database.MsSqlite),
+                    ProviderName.SQLiteMS),
                 nameof(MsSqliteSnapshotSpec),
                 outputHelper)
             => _fixture = fixture;
