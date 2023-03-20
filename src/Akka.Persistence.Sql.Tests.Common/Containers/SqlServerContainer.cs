@@ -94,6 +94,8 @@ END",
             command.ExecuteScalar();
 
             await DropTablesAsync(connection, DatabaseName);
+
+            await connection.CloseAsync();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

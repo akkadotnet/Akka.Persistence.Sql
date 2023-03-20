@@ -34,12 +34,12 @@ namespace Akka.Persistence.Sql.Tests.Common
         public async Task DisposeAsync()
             => await Task.WhenAll(_containers.Select(kvp => kvp.Value.DisposeAsync().AsTask()));
 
-        public string ConnectionString(Database mode)
-            => _containers[mode].ConnectionString;
+        public string ConnectionString(Database database)
+            => _containers[database].ConnectionString;
 
-        public async Task InitializeDbAsync(Database mode)
+        public async Task InitializeDbAsync(Database database)
         {
-            var container = _containers[mode];
+            var container = _containers[database];
             if (!container.Initialized)
                 await container.InitializeAsync();
 
