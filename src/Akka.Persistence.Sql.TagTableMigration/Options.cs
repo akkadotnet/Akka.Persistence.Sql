@@ -78,8 +78,8 @@ namespace Akka.Persistence.Sql.TagTableMigration
             => (Configuration.Config)$@"
 akka.persistence {{
 	journal {{
-		plugin = ""akka.persistence.journal.linq2db""
-		linq2db {{
+		plugin = ""akka.persistence.journal.sql""
+		sql {{
 			connection-string = ""{opt.ConnectionString}""
 			provider-name = {opt.Provider.ToHocon()}
 			table-mapping = {opt.TableMapping.ToHocon()}

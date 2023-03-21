@@ -39,7 +39,7 @@ namespace Akka.Persistence.Sql.Tests.SqlServer.Compatibility
             => "akka.persistence.snapshot-store.sql-server";
 
         protected override string NewSnapshot
-            => "akka.persistence.snapshot-store.linq2db";
+            => "akka.persistence.snapshot-store.sql";
 
         protected override Configuration.Config Config { get; }
 

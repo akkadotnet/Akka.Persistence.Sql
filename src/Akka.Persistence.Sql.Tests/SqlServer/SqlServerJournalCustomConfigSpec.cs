@@ -46,7 +46,7 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
             => Task.CompletedTask;
 
         private static Configuration.Config Configuration(TestFixture fixture)
-            => Linq2DbJournalDefaultSpecConfig.GetCustomConfig(
+            => SqlJournalDefaultSpecConfig.GetCustomConfig(
                 "customSpec",
                 "customJournalTable",
                 "customMetadataTable",

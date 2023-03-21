@@ -11,10 +11,10 @@ using Akka.Persistence.Sql.Snapshot;
 
 namespace Akka.Persistence.Sql
 {
-    public sealed class Linq2DbPersistence : IExtension
+    public sealed class SqlPersistence : IExtension
     {
-        public const string JournalConfigPath = "akka.persistence.journal.linq2db";
-        public const string SnapshotStoreConfigPath = "akka.persistence.snapshot-store.linq2db";
+        public const string JournalConfigPath = "akka.persistence.journal.sql";
+        public const string SnapshotStoreConfigPath = "akka.persistence.snapshot-store.sql";
 
         public static readonly Configuration.Config DefaultJournalConfiguration;
         public static readonly Configuration.Config DefaultSnapshotConfiguration;
@@ -28,10 +28,10 @@ namespace Akka.Persistence.Sql
         public readonly Configuration.Config DefaultSnapshotConfig = DefaultSnapshotConfiguration;
         public readonly Configuration.Config DefaultSnapshotMappingConfig = DefaultSnapshotMappingConfiguration;
 
-        static Linq2DbPersistence()
+        static SqlPersistence()
         {
-            var journalConfig = ConfigurationFactory.FromResource<Linq2DbWriteJournal>("Akka.Persistence.Sql.persistence.conf");
-            var snapshotConfig = ConfigurationFactory.FromResource<Linq2DbSnapshotStore>("Akka.Persistence.Sql.snapshot.conf");
+            var journalConfig = ConfigurationFactory.FromResource<SqlWriteJournal>("Akka.Persistence.Sql.persistence.conf");
+            var snapshotConfig = ConfigurationFactory.FromResource<SqlSnapshotStore>("Akka.Persistence.Sql.snapshot.conf");
 
             DefaultConfiguration = journalConfig.WithFallback(snapshotConfig);
 
@@ -42,18 +42,18 @@ namespace Akka.Persistence.Sql
             DefaultSnapshotMappingConfiguration = DefaultSnapshotConfiguration.GetConfig("default");
         }
 
-        public Linq2DbPersistence(ActorSystem system)
+        public SqlPersistence(ActorSystem system)
             => system.Settings.InjectTopLevelFallback(DefaultConfig);
 
-        public static Linq2DbPersistence Get(ActorSystem system)
-            => system.WithExtension<Linq2DbPersistence, Linq2DbPersistenceProvider>();
+        public static SqlPersistence Get(ActorSystem system)
+            => system.WithExtension<SqlPersistence, SqlPersistenceProvider>();
     }
 
     /// <summary>
     ///     Singleton class used to setup Linq2Db for akka persistence plugin.
     /// </summary>
-    public sealed class Linq2DbPersistenceProvider : ExtensionIdProvider<Linq2DbPersistence>
+    public sealed class SqlPersistenceProvider : ExtensionIdProvider<SqlPersistence>
     {
-        public override Linq2DbPersistence CreateExtension(ExtendedActorSystem system) => new(system);
+        public override SqlPersistence CreateExtension(ExtendedActorSystem system) => new(system);
     }
 }

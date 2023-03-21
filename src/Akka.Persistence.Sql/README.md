@@ -199,10 +199,10 @@ akka.persistence {
   publish-plugin-commands = on
 
   journal {
-    plugin = "akka.persistence.journal.linq2db"
+    plugin = "akka.persistence.journal.sql"
 
-    linq2db {
-      class = "Akka.Persistence.Sql.Journal.Linq2DbWriteJournal, Akka.Persistence.Sql"
+    sql {
+      class = "Akka.Persistence.Sql.Journal.SqlWriteJournal, Akka.Persistence.Sql"
       plugin-dispatcher = "akka.persistence.dispatchers.default-plugin-dispatcher"
       connection-string = "" # Connection String is Required!
 
@@ -376,10 +376,10 @@ Please note that you -must- provide a Connection String and Provider name.
 ```hocon
 akka.persistence {
   snapshot-store {
-    plugin = "akka.persistence.snapshot-store.linq2db"
+    plugin = "akka.persistence.snapshot-store.sql"
 
-    linq2db {
-      class = "Akka.Persistence.Sql.Snapshot.Linq2DbSnapshotStore"
+    sql {
+      class = "Akka.Persistence.Sql.Snapshot.SqlSnapshotStore"
       plugin-dispatcher = "akka.persistence.dispatchers.default-plugin-dispatcher"
       connection-string = ""
       provider-name = ""

@@ -35,7 +35,7 @@ namespace Akka.Persistence.Sql.Tests.Sqlite.Compatibility
             => "akka.persistence.snapshot-store.sqlite";
 
         protected override string NewSnapshot
-            => "akka.persistence.snapshot-store.linq2db";
+            => "akka.persistence.snapshot-store.sql";
 
         public override async Task InitializeAsync()
         {

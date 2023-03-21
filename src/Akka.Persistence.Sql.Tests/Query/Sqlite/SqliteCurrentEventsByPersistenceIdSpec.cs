@@ -34,7 +34,7 @@ namespace Akka.Persistence.Sql.Tests.Query.Sqlite
         public async Task InitializeAsync()
         {
             await _fixture.InitializeDbAsync(Database.MsSqlite);
-            ReadJournal = Sys.ReadJournalFor<Linq2DbReadJournal>(Linq2DbReadJournal.Identifier);
+            ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
         }
 
         public Task DisposeAsync()
@@ -46,9 +46,9 @@ namespace Akka.Persistence.Sql.Tests.Query.Sqlite
                     akka.loglevel = INFO
                     akka.persistence {{
                         journal {{
-                            plugin = ""akka.persistence.journal.linq2db""
-                            linq2db {{
-                                class = ""{typeof(Linq2DbWriteJournal).AssemblyQualifiedName}""
+                            plugin = ""akka.persistence.journal.sql""
+                            sql {{
+                                class = ""{typeof(SqlWriteJournal).AssemblyQualifiedName}""
                                 plugin-dispatcher = ""akka.actor.default-dispatcher""
                                 provider-name = ""{ProviderName.SQLiteMS}""
                                 table-mapping = sqlite
@@ -59,7 +59,7 @@ namespace Akka.Persistence.Sql.Tests.Query.Sqlite
                         }}
                         query {{
                             journal {{
-                                linq2db {{
+                                sql {{
                                     provider-name = ""{ProviderName.SQLiteMS}""
                                     connection-string = ""{fixture.ConnectionString(Database.MsSqlite)}""
                                     table-mapping = sqlite
@@ -69,6 +69,6 @@ namespace Akka.Persistence.Sql.Tests.Query.Sqlite
                         }}
                     }}
                     akka.test.single-expect-default = 10s")
-                .WithFallback(Linq2DbPersistence.DefaultConfiguration);
+                .WithFallback(SqlPersistence.DefaultConfiguration);
     }
 }

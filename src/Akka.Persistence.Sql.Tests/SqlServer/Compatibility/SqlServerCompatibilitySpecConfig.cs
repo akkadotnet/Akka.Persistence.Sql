@@ -32,8 +32,8 @@ namespace Akka.Persistence.Sql.Tests.SqlServer.Compatibility
 			                sequential-access = off
 		                }}
 
-                        linq2db {{
-                            class = ""{typeof(Linq2DbSnapshotStore).AssemblyQualifiedName}""
+                        sql {{
+                            class = ""{typeof(SqlSnapshotStore).AssemblyQualifiedName}""
                             plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
                             connection-string = ""{fixture.ConnectionString(Database.SqlServer)}""
                             provider-name = ""{ProviderName.SqlServer2017}""
@@ -66,8 +66,8 @@ namespace Akka.Persistence.Sql.Tests.SqlServer.Compatibility
                             connection-string = ""{fixture.ConnectionString(Database.SqlServer)}""
                         }}
 
-                        linq2db {{
-                            class = ""{typeof(Linq2DbWriteJournal).AssemblyQualifiedName}""
+                        sql {{
+                            class = ""{typeof(SqlWriteJournal).AssemblyQualifiedName}""
                             plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
                             connection-string = ""{fixture.ConnectionString(Database.SqlServer)}""
                             provider-name = ""{ProviderName.SqlServer2017}""

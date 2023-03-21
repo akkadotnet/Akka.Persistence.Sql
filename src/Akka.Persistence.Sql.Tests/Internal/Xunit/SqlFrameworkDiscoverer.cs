@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="Linq2DbFrameworkDiscoverer.cs" company="Akka.NET Project">
+//  <copyright file="SqlFrameworkDiscoverer.cs" company="Akka.NET Project">
 //      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
@@ -11,9 +11,9 @@ using Xunit.Sdk;
 
 namespace Akka.Persistence.Sql.Tests.Internal.Xunit
 {
-    public class Linq2DbFrameworkDiscoverer : XunitTestFrameworkDiscoverer
+    public class SqlFrameworkDiscoverer : XunitTestFrameworkDiscoverer
     {
-        public Linq2DbFrameworkDiscoverer(
+        public SqlFrameworkDiscoverer(
             IAssemblyInfo assemblyInfo,
             ISourceInformationProvider sourceProvider,
             IMessageSink diagnosticMessageSink,

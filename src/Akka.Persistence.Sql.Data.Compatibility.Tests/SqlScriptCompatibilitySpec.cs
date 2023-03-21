@@ -43,8 +43,8 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests
 
             builder.AddHocon(
                 @"
-akka.persistence.journal.linq2db.tag-write-mode = TagTable
-akka.persistence.query.journal.linq2db.tag-read-mode = TagTable",
+akka.persistence.journal.sql.tag-write-mode = TagTable
+akka.persistence.query.journal.sql.tag-read-mode = TagTable",
                 HoconAddMode.Prepend);
         }
 
