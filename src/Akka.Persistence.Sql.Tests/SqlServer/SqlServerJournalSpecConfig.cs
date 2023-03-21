@@ -21,9 +21,9 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
                 akka.persistence {{
                     publish-plugin-commands = on
                     journal {{
-                        plugin = ""akka.persistence.journal.linq2db""
-                        linq2db {{
-                            class = ""{typeof(Linq2DbWriteJournal).AssemblyQualifiedName}""
+                        plugin = ""akka.persistence.journal.sql""
+                        sql {{
+                            class = ""{typeof(SqlWriteJournal).AssemblyQualifiedName}""
                             plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
                             connection-string = ""{connString}""
                             provider-name = ""{ProviderName.SqlServer2017}""
@@ -46,9 +46,9 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
                 akka.persistence {{
                     publish-plugin-commands = on
                     snapshot-store {{
-                        plugin = ""akka.persistence.snapshot-store.linq2db""
-                        linq2db {{
-                            class = ""{typeof(Linq2DbSnapshotStore).AssemblyQualifiedName}""
+                        plugin = ""akka.persistence.snapshot-store.sql""
+                        sql {{
+                            class = ""{typeof(SqlSnapshotStore).AssemblyQualifiedName}""
                             plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
                             connection-string = ""{connString}""
                             provider-name = ""{ProviderName.SqlServer2017}""

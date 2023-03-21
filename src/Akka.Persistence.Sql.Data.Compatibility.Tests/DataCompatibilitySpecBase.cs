@@ -54,7 +54,7 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests
         {
             await Fixture.InitializeAsync();
             await InitializeTestAsync();
-            TestCluster = new TestCluster(InternalSetup, "linq2db", Output);
+            TestCluster = new TestCluster(InternalSetup, "sql", Output);
             await TestCluster.StartAsync();
         }
 
@@ -70,8 +70,8 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests
             => ((Configuration.Config)$@"
 akka.persistence {{
 	journal {{
-		plugin = ""akka.persistence.journal.linq2db""
-		linq2db {{
+		plugin = ""akka.persistence.journal.sql""
+		sql {{
 			connection-string = ""{Fixture.ConnectionString}""
 			provider-name = {Settings.ProviderName}
 			table-mapping = {Settings.TableMapping}
@@ -90,7 +90,7 @@ akka.persistence {{
 		}}
 	}}
 
-	query.journal.linq2db {{
+	query.journal.sql {{
 		connection-string = ""{Fixture.ConnectionString}""
 		provider-name = {Settings.ProviderName}
 		table-mapping = {Settings.TableMapping}
@@ -104,8 +104,8 @@ akka.persistence {{
 	}}
 
 	snapshot-store {{
-		plugin = akka.persistence.snapshot-store.linq2db
-		linq2db {{
+		plugin = akka.persistence.snapshot-store.sql
+		sql {{
 			connection-string = ""{Fixture.ConnectionString}""
 			provider-name = {Settings.ProviderName}
 			table-mapping = {Settings.TableMapping}
@@ -118,7 +118,7 @@ akka.persistence {{
 		}}
 	}}
 }}")
-                .WithFallback(Linq2DbPersistence.DefaultConfiguration)
+                .WithFallback(SqlPersistence.DefaultConfiguration)
                 .WithFallback(ClusterSharding.DefaultConfig())
                 .WithFallback(ClusterSingletonManager.DefaultConfig());
 
@@ -187,7 +187,7 @@ akka.persistence {{
         {
             var readJournal = PersistenceQuery
                 .Get(system)
-                .ReadJournalFor<Linq2DbReadJournal>(Linq2DbReadJournal.Identifier);
+                .ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
 
             // "Tag2" check
             var roundTotal = Enumerable

@@ -23,7 +23,7 @@ namespace Akka.Persistence.Sql.Config
             var mappingPath = config.GetString("table-mapping");
             if (string.IsNullOrEmpty(mappingPath))
                 throw new ConfigurationException(
-                    "The configuration property akka.persistence.journal.linq2db.table-mapping is null or empty");
+                    "The configuration property akka.persistence.journal.sql.table-mapping is null or empty");
 
             var tagWriteValue = config.GetString("tag-write-mode", "TagTable").ToLowerInvariant();
             if (!Enum.TryParse(tagWriteValue, true, out TagWriteMode tagWriteMode))
@@ -39,10 +39,10 @@ namespace Akka.Persistence.Sql.Config
             var mappingConfig = config.GetConfig(mappingPath);
             if (mappingConfig is null)
                 throw new ConfigurationException(
-                    $"The configuration path akka.persistence.journal.linq2db.{mappingPath} does not exist");
+                    $"The configuration path akka.persistence.journal.sql.{mappingPath} does not exist");
 
             if (mappingPath != "default")
-                mappingConfig = mappingConfig.WithFallback(Linq2DbPersistence.DefaultJournalMappingConfiguration);
+                mappingConfig = mappingConfig.WithFallback(SqlPersistence.DefaultJournalMappingConfiguration);
 
             SchemaName = mappingConfig.GetString("schema-name");
 

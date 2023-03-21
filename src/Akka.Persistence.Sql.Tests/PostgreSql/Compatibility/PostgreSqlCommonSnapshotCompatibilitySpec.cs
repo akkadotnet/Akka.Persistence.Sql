@@ -40,7 +40,7 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
             => "akka.persistence.snapshot-store.postgresql";
 
         protected override string NewSnapshot
-            => "akka.persistence.snapshot-store.linq2db";
+            => "akka.persistence.snapshot-store.sql";
 
         public override async Task InitializeAsync()
         {

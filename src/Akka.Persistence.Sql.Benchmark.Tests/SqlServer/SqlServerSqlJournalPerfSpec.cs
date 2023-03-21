@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="PostgreSqlLinq2DbJournalPerfSpec.cs" company="Akka.NET Project">
+//  <copyright file="SqlServerSqlJournalPerfSpec.cs" company="Akka.NET Project">
 //      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
@@ -11,42 +11,42 @@ using LinqToDB;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
+namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
 {
     [Collection("BenchmarkSpec")]
-    public class PostgreSqlLinq2DbJournalPerfSpec : L2dbJournalPerfSpec, IAsyncLifetime
+    public class SqlServerSqlJournalPerfSpec : SqlJournalPerfSpec, IAsyncLifetime
     {
         private readonly TestFixture _fixture;
 
-        public PostgreSqlLinq2DbJournalPerfSpec(
+        public SqlServerSqlJournalPerfSpec(
             ITestOutputHelper output,
             TestFixture fixture)
             : base(
-                Configuration(fixture.ConnectionString(Database.PostgreSql)),
-                nameof(PostgreSqlLinq2DbJournalPerfSpec),
+                Configure(fixture.ConnectionString(Database.SqlServer)),
+                nameof(SqlServerSqlJournalPerfSpec),
                 output,
                 40,
                 eventsCount: TestConstants.DockerNumMessages)
             => _fixture = fixture;
 
         public async Task InitializeAsync()
-            => await _fixture.InitializeDbAsync(Database.PostgreSql);
+            => await _fixture.InitializeDbAsync(Database.SqlServer).ConfigureAwait(false);
 
         public Task DisposeAsync()
             => Task.CompletedTask;
 
-        private static Configuration.Config Configuration(string connString)
+        private static Configuration.Config Configure(string connString)
             => $@"
                 akka.persistence {{
                     publish-plugin-commands = on
                     journal {{
-                        plugin = ""akka.persistence.journal.linq2db""
-                        linq2db {{
-                            class = ""{typeof(Linq2DbWriteJournal).AssemblyQualifiedName}""
+                        plugin = ""akka.persistence.journal.sql""
+                        sql {{
+                            class = ""{typeof(SqlWriteJournal).AssemblyQualifiedName}""
                             plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
 
                             connection-string = ""{connString}""
-                            provider-name = ""{ProviderName.PostgreSQL95}""
+                            provider-name = ""{ProviderName.SqlServer2017}""
                             use-clone-connection = true
                             auto-initialize = true
                             warn-on-auto-init-fail = false

@@ -32,8 +32,8 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
 			                sequential-access = off
 		                }}
 
-                        linq2db {{
-                            class = ""{typeof(Linq2DbSnapshotStore).AssemblyQualifiedName}""
+                        sql {{
+                            class = ""{typeof(SqlSnapshotStore).AssemblyQualifiedName}""
                             plugin-dispatcher = ""akka.actor.default-dispatcher""
                             connection-string = ""{fixture.ConnectionString(Database.PostgreSql)}""
                             provider-name = {ProviderName.PostgreSQL95}
@@ -67,8 +67,8 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
                             auto-initialize = on
                         }}
 
-                        linq2db {{
-                            class = ""{typeof(Linq2DbWriteJournal).AssemblyQualifiedName}""
+                        sql {{
+                            class = ""{typeof(SqlWriteJournal).AssemblyQualifiedName}""
                             plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
                             connection-string = ""{fixture.ConnectionString(Database.PostgreSql)}""
                             provider-name = ""{ProviderName.PostgreSQL95}""

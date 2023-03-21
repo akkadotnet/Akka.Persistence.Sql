@@ -1,12 +1,12 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="Linq2DbJournalDefaultSpecConfig.cs" company="Akka.NET Project">
+//  <copyright file="SqlJournalDefaultSpecConfig.cs" company="Akka.NET Project">
 //      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
 
 namespace Akka.Persistence.Sql.Tests
 {
-    public static class Linq2DbJournalDefaultSpecConfig
+    public static class SqlJournalDefaultSpecConfig
     {
         public static string CustomConfig(
             string customJournalName,
@@ -16,7 +16,7 @@ namespace Akka.Persistence.Sql.Tests
             string connectionString)
             => $@"
 akka.persistence.journal.{customJournalName} {{
-    class = ""Akka.Persistence.Sql.Journal.Linq2DbWriteJournal, Akka.Persistence.Sql""
+    class = ""Akka.Persistence.Sql.Journal.SqlWriteJournal, Akka.Persistence.Sql""
     provider-name = ""{providerName}""
     connection-string = ""{connectionString}""
     auto-initialize = true
@@ -36,7 +36,7 @@ akka.persistence.journal.{customJournalName} {{
             string providerName,
             string connectionString)
             => $@"
-akka.persistence.journal.linq2db {{
+akka.persistence.journal.sql {{
     provider-name = ""{providerName}""
     connection-string = ""{connectionString}""
     auto-initialize = true

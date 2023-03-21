@@ -12,7 +12,7 @@ using Xunit.Abstractions;
 namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
 {
     [Collection("BenchmarkSpec")]
-    public class SqliteJournalPerfSpec : L2dbJournalPerfSpec, IAsyncLifetime
+    public class SqliteJournalPerfSpec : SqlJournalPerfSpec, IAsyncLifetime
     {
         private readonly TestFixture _fixture;
 

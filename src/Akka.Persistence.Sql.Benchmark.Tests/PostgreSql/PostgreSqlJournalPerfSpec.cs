@@ -12,7 +12,7 @@ using Xunit.Abstractions;
 namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
 {
     [Collection("BenchmarkSpec")]
-    public class PostgreSqlJournalPerfSpec : L2dbJournalPerfSpec, IAsyncLifetime
+    public class PostgreSqlJournalPerfSpec : SqlJournalPerfSpec, IAsyncLifetime
     {
         private readonly TestFixture _fixture;
 

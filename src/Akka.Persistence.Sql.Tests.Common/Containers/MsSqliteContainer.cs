@@ -27,7 +27,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
 
         public string ConnectionString { get; }
 
-        public string DatabaseName { get; } = $"linq2db_tests_{Guid.NewGuid():N}";
+        public string DatabaseName { get; } = $"sql_tests_{Guid.NewGuid():N}";
 
         public string ContainerName => string.Empty;
 

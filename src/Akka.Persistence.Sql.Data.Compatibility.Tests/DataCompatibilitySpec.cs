@@ -27,18 +27,18 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests
 
         protected override void Setup(AkkaConfigurationBuilder builder, IServiceProvider provider) { }
 
-        [Fact(DisplayName = "Linq2Db should recover data created using other persistence plugins")]
+        [Fact(DisplayName = "Sql should recover data created using other persistence plugins")]
         public async Task RecoveryValidationTest()
             => await ValidateRecovery(TestCluster!.ShardRegions[0]);
 
-        [Fact(DisplayName = "Linq2Db should be able to retrieve persistence ids on data created by other persistence plugin")]
+        [Fact(DisplayName = "Sql should be able to retrieve persistence ids on data created by other persistence plugin")]
         public async Task PersistenceIdQueryValidationTest()
         {
             var system = TestCluster!.ActorSystems[0];
 
             var readJournal = PersistenceQuery
                 .Get(system)
-                .ReadJournalFor<Linq2DbReadJournal>(Linq2DbReadJournal.Identifier);
+                .ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
 
             var result = await readJournal
                 .CurrentPersistenceIds()
@@ -49,13 +49,13 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests
             result.Should().BeEquivalentTo(Enumerable.Range(0, 100).Select(i => i.ToString()));
         }
 
-        [Fact(DisplayName = "Linq2Db should be able to query events by persistence id on data created by other persistence plugin")]
+        [Fact(DisplayName = "Sql should be able to query events by persistence id on data created by other persistence plugin")]
         public async Task ByPersistenceIdQueryValidationTest()
         {
             var system = TestCluster!.ActorSystems[0];
             var readJournal = PersistenceQuery
                 .Get(system)
-                .ReadJournalFor<Linq2DbReadJournal>(Linq2DbReadJournal.Identifier);
+                .ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
 
             foreach (var id in Enumerable.Range(0, 100))
             {
@@ -84,11 +84,11 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests
             }
         }
 
-        [Fact(DisplayName = "Linq2Db should be able to query events by tag on data created by other persistence plugin")]
+        [Fact(DisplayName = "Sql should be able to query events by tag on data created by other persistence plugin")]
         public async Task TagQueryValidationTest()
             => await ValidateTags(TestCluster!.ActorSystems[0], 2);
 
-        [Fact(DisplayName = "Linq2Db query events by tag should correctly read tags after event deletion")]
+        [Fact(DisplayName = "Sql query events by tag should correctly read tags after event deletion")]
         public async Task TagQueryEventDeletionValidationTest()
         {
             // Wake up all entities
@@ -101,7 +101,7 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests
             var system = TestCluster!.ActorSystems[0];
             var readJournal = PersistenceQuery
                 .Get(system)
-                .ReadJournalFor<Linq2DbReadJournal>(Linq2DbReadJournal.Identifier);
+                .ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
 
             foreach (var id in Enumerable.Range(0, 100))
             {

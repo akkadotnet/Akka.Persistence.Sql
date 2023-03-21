@@ -21,16 +21,16 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql
     [SkipWindows]
 #endif
     [Collection("PersistenceSpec")]
-    public class Linq2DbPostgreSqlJournalSpec : JournalSpec, IAsyncLifetime
+    public class PostgreSqlJournalSpec : JournalSpec, IAsyncLifetime
     {
         private readonly TestFixture _fixture;
 
-        public Linq2DbPostgreSqlJournalSpec(
+        public PostgreSqlJournalSpec(
             ITestOutputHelper output,
             TestFixture fixture)
             : base(
                 Configuration(fixture),
-                nameof(Linq2DbPostgreSqlJournalSpec),
+                nameof(PostgreSqlJournalSpec),
                 output)
             => _fixture = fixture;
 
@@ -50,9 +50,9 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql
                 akka.persistence {{
                     publish-plugin-commands = on
                     journal {{
-                        plugin = ""akka.persistence.journal.linq2db""
-                        linq2db {{
-                            class = ""{typeof(Linq2DbWriteJournal).AssemblyQualifiedName}""
+                        plugin = ""akka.persistence.journal.sql""
+                        sql {{
+                            class = ""{typeof(SqlWriteJournal).AssemblyQualifiedName}""
                             plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
                             connection-string = ""{fixture.ConnectionString(Database.PostgreSql)}""
                             provider-name = ""{ProviderName.PostgreSQL95}""

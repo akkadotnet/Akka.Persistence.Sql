@@ -29,8 +29,8 @@ namespace Akka.Persistence.Sql.Tests.Sqlite.Compatibility
 			                    auto-initialize = on
 		                    }}
 
-		                    linq2db {{
-			                    class = ""{typeof(Linq2DbSnapshotStore).AssemblyQualifiedName}""
+		                    sql {{
+			                    class = ""{typeof(SqlSnapshotStore).AssemblyQualifiedName}""
                                 plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
 			                    connection-string = ""{connectionString}""
 			                    provider-name = ""{ProviderName.SQLiteMS}""
@@ -44,7 +44,7 @@ namespace Akka.Persistence.Sql.Tests.Sqlite.Compatibility
 		                    }}
 	                    }}
                     }}")
-                .WithFallback(Linq2DbPersistence.DefaultConfiguration);
+                .WithFallback(SqlPersistence.DefaultConfiguration);
 
         public static Configuration.Config InitJournalConfig(
             string tableName,
@@ -64,8 +64,8 @@ namespace Akka.Persistence.Sql.Tests.Sqlite.Compatibility
 			                auto-initialize = on
 			                connection-string = ""{connectionString}""
 		                }}
-		                linq2db {{
-			                class = ""{typeof(Linq2DbWriteJournal).AssemblyQualifiedName}""
+		                sql {{
+			                class = ""{typeof(SqlWriteJournal).AssemblyQualifiedName}""
 			                plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
 			                connection-string = ""{connectionString}""
 			                provider-name = ""{ProviderName.SQLiteMS}""

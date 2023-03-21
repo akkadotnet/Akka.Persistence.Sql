@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="Linq2DbSnapshotStore.cs" company="Akka.NET Project">
+//  <copyright file="SqlSnapshotStore.cs" company="Akka.NET Project">
 //      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
@@ -16,17 +16,17 @@ using Akka.Persistence.Sql.Utility;
 
 namespace Akka.Persistence.Sql.Snapshot
 {
-    public class Linq2DbSnapshotStore : SnapshotStore
+    public class SqlSnapshotStore : SnapshotStore
     {
-        [Obsolete(message: "Use Linq2DbPersistence.Get(ActorSystem).DefaultConfig instead")]
+        [Obsolete(message: "Use SqlPersistence.Get(ActorSystem).DefaultConfig instead")]
         public static readonly Configuration.Config DefaultConfiguration =
-            ConfigurationFactory.FromResource<Linq2DbSnapshotStore>("Akka.Persistence.Sql.snapshot.conf");
+            ConfigurationFactory.FromResource<SqlSnapshotStore>("Akka.Persistence.Sql.snapshot.conf");
 
         private readonly ByteArraySnapshotDao _dao;
 
-        public Linq2DbSnapshotStore(Configuration.Config snapshotConfig)
+        public SqlSnapshotStore(Configuration.Config snapshotConfig)
         {
-            var config = snapshotConfig.WithFallback(Linq2DbPersistence.DefaultSnapshotConfiguration);
+            var config = snapshotConfig.WithFallback(SqlPersistence.DefaultSnapshotConfiguration);
 
             var snapshotConfig1 = new SnapshotConfig(config);
 

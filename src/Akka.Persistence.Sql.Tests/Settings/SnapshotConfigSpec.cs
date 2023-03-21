@@ -18,19 +18,19 @@ namespace Akka.Persistence.Sql.Tests.Settings
         private readonly Configuration.Config _defaultConfig;
 
         public SnapshotConfigSpec()
-            => _defaultConfig = Linq2DbPersistence.DefaultConfiguration;
+            => _defaultConfig = SqlPersistence.DefaultConfiguration;
 
         [Fact(DisplayName = "Default snapshot HOCON config should contain default values")]
         public void DefaultJournalHoconConfigTest()
         {
             var snapshot = _defaultConfig.GetConfig(
-                "akka.persistence.snapshot-store.linq2db");
+                "akka.persistence.snapshot-store.sql");
 
             snapshot.Should().NotBeNull();
 
             var stringType = snapshot.GetString("class");
             var type = Type.GetType(stringType);
-            type.Should().Be(typeof(Linq2DbSnapshotStore));
+            type.Should().Be(typeof(SqlSnapshotStore));
 
             snapshot.GetString("plugin-dispatcher").Should().Be("akka.persistence.dispatchers.default-plugin-dispatcher");
             snapshot.GetString("connection-string", "invalid").Should().BeNullOrEmpty();
@@ -54,7 +54,7 @@ namespace Akka.Persistence.Sql.Tests.Settings
         public void DefaultSnapshotConfigTest()
         {
             var snapshotHocon = _defaultConfig.GetConfig(
-                "akka.persistence.snapshot-store.linq2db");
+                "akka.persistence.snapshot-store.sql");
 
             snapshotHocon.Should().NotBeNull();
 
@@ -81,9 +81,9 @@ namespace Akka.Persistence.Sql.Tests.Settings
         public void SqlServerSnapshotConfigTest()
         {
             var snapshotHocon = ConfigurationFactory
-                .ParseString("akka.persistence.snapshot-store.linq2db.table-mapping = sql-server")
+                .ParseString("akka.persistence.snapshot-store.sql.table-mapping = sql-server")
                 .WithFallback(_defaultConfig)
-                .GetConfig("akka.persistence.snapshot-store.linq2db");
+                .GetConfig("akka.persistence.snapshot-store.sql");
 
             snapshotHocon.Should().NotBeNull();
 
@@ -110,9 +110,9 @@ namespace Akka.Persistence.Sql.Tests.Settings
         public void SqliteSnapshotConfigTest()
         {
             var snapshotHocon = ConfigurationFactory
-                .ParseString("akka.persistence.snapshot-store.linq2db.table-mapping = sqlite")
+                .ParseString("akka.persistence.snapshot-store.sql.table-mapping = sqlite")
                 .WithFallback(_defaultConfig)
-                .GetConfig("akka.persistence.snapshot-store.linq2db");
+                .GetConfig("akka.persistence.snapshot-store.sql");
 
             snapshotHocon.Should().NotBeNull();
 
@@ -139,9 +139,9 @@ namespace Akka.Persistence.Sql.Tests.Settings
         public void PostgreSqlSnapshotConfigTest()
         {
             var snapshotHocon = ConfigurationFactory
-                .ParseString("akka.persistence.snapshot-store.linq2db.table-mapping = postgresql")
+                .ParseString("akka.persistence.snapshot-store.sql.table-mapping = postgresql")
                 .WithFallback(_defaultConfig)
-                .GetConfig("akka.persistence.snapshot-store.linq2db");
+                .GetConfig("akka.persistence.snapshot-store.sql");
 
             snapshotHocon.Should().NotBeNull();
 
@@ -168,9 +168,9 @@ namespace Akka.Persistence.Sql.Tests.Settings
         public void MySqlSnapshotConfigTest()
         {
             var snapshotHocon = ConfigurationFactory
-                .ParseString("akka.persistence.snapshot-store.linq2db.table-mapping = mysql")
+                .ParseString("akka.persistence.snapshot-store.sql.table-mapping = mysql")
                 .WithFallback(_defaultConfig)
-                .GetConfig("akka.persistence.snapshot-store.linq2db");
+                .GetConfig("akka.persistence.snapshot-store.sql");
 
             snapshotHocon.Should().NotBeNull();
 

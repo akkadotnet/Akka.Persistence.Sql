@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="Linq2DbReadJournalProvider.cs" company="Akka.NET Project">
+//  <copyright file="SqlReadJournalProvider.cs" company="Akka.NET Project">
 //      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
@@ -9,22 +9,22 @@ using Akka.Persistence.Query;
 
 namespace Akka.Persistence.Sql.Query
 {
-    public class Linq2DbReadJournalProvider : IReadJournalProvider
+    public class SqlReadJournalProvider : IReadJournalProvider
     {
         private readonly Configuration.Config _config;
         private readonly string _configPath;
         private readonly ExtendedActorSystem _system;
 
-        public Linq2DbReadJournalProvider(
+        public SqlReadJournalProvider(
             ExtendedActorSystem system,
             Configuration.Config config)
         {
             _system = system;
             _config = config;
-            _configPath = "linq2db";
+            _configPath = "sql";
         }
 
-        public Linq2DbReadJournalProvider(
+        public SqlReadJournalProvider(
             ExtendedActorSystem system,
             Configuration.Config config,
             string configPath)
@@ -35,6 +35,6 @@ namespace Akka.Persistence.Sql.Query
         }
 
         public IReadJournal GetReadJournal()
-            => new Linq2DbReadJournal(_system, _config, _configPath);
+            => new SqlReadJournal(_system, _config, _configPath);
     }
 }
