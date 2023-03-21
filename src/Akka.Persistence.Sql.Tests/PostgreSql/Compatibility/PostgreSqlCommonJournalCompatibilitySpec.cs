@@ -39,7 +39,7 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
 
         protected override string OldJournal => "akka.persistence.journal.postgresql";
 
-        protected override string NewJournal => "akka.persistence.journal.linq2db";
+        protected override string NewJournal => "akka.persistence.journal.sql";
 
         public override async Task InitializeAsync()
         {

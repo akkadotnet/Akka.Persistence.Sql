@@ -48,9 +48,9 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql
                 akka.persistence {{
                     publish-plugin-commands = on
                     snapshot-store {{
-                        plugin = ""akka.persistence.snapshot-store.linq2db""
-                        linq2db {{
-                            class = ""{typeof(Linq2DbSnapshotStore).AssemblyQualifiedName}""
+                        plugin = ""akka.persistence.snapshot-store.sql""
+                        sql {{
+                            class = ""{typeof(SqlSnapshotStore).AssemblyQualifiedName}""
                             plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
                             connection-string = ""{fixture.ConnectionString(Database.PostgreSql)}""
                             provider-name = ""{ProviderName.PostgreSQL95}""

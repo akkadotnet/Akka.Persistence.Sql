@@ -9,7 +9,6 @@ using Akka.Configuration;
 using Akka.Persistence.Query;
 using Akka.Persistence.Sql.Query;
 using Akka.Persistence.Sql.Tests.Common;
-using Akka.Persistence.Sqlite;
 using Akka.Persistence.TCK.Query;
 using LinqToDB;
 using Xunit;
@@ -32,7 +31,7 @@ namespace Akka.Persistence.Sql.Tests.Query.Base
         public async Task InitializeAsync()
         {
             await _fixture.InitializeDbAsync(_config.Database);
-            ReadJournal = Sys.ReadJournalFor<Linq2DbReadJournal>(Linq2DbReadJournal.Identifier);
+            ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
         }
 
         public Task DisposeAsync()
@@ -52,8 +51,8 @@ namespace Akka.Persistence.Sql.Tests.Query.Base
                     akka.persistence {{
                         publish-plugin-commands = on
                         journal {{
-                            plugin = ""akka.persistence.journal.linq2db""
-                            linq2db = {{
+                            plugin = ""akka.persistence.journal.sql""
+                            sql {{
                                 provider-name = ""{config.Provider}""
                                 tag-write-mode = ""{config.TagWriteMode}""
                                 table-mapping = ""{config.TableMapping}""
@@ -63,8 +62,8 @@ namespace Akka.Persistence.Sql.Tests.Query.Base
                             }}
                         }}
                         snapshot-store {{
-                            plugin = ""akka.persistence.snapshot-store.linq2db""
-                            linq2db {{
+                            plugin = ""akka.persistence.snapshot-store.sql""
+                            sql {{
                                 provider-name = ""{config.Provider}""
                                 table-mapping = ""{config.TableMapping}""
                                 connection-string = ""{fixture.ConnectionString(config.Database)}""
@@ -72,7 +71,7 @@ namespace Akka.Persistence.Sql.Tests.Query.Base
                             }}
                         }}
                     }}
-                    akka.persistence.query.journal.linq2db {{
+                    akka.persistence.query.journal.sql {{
                         provider-name = ""{config.Provider}""
                         connection-string = ""{fixture.ConnectionString(config.Database)}""
                         tag-read-mode = ""{config.TagReadMode}""
@@ -80,6 +79,6 @@ namespace Akka.Persistence.Sql.Tests.Query.Base
                         auto-initialize = on
                     }}
                     akka.test.single-expect-default = 10s")
-                .WithFallback(Linq2DbPersistence.DefaultConfiguration);
+                .WithFallback(SqlPersistence.DefaultConfiguration);
     }
 }

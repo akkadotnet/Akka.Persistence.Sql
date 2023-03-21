@@ -189,7 +189,7 @@ Please note that you -must- provide a Connection String (`connection-string`) an
     - multiple round-trips will still be contained in a single transaction.
     - You will want to Keep this number higher than `batch-size`, if you are persisting lots of events with `PersistAll/(Async)`.
   - `prefer-parameters-on-multirow-insert` controls whether Linq2Db will try to use parameters instead of building raw strings for inserts.
-    - Linq2Db is incredibly speed and memory efficent at building binary strings. In most cases, this will be faster than the cost of parsing/marshalling parameters by ADO and the DB.
+    - Linq2Db is incredibly speed and memory efficient at building binary strings. In most cases, this will be faster than the cost of parsing/marshalling parameters by ADO and the DB.
 
 - For Table Configuration:
   - Note that Tables/Columns will be created with the casing provided, and selected in the same way (i.e. if using a DB with case sensitive columns, be careful!)
@@ -199,10 +199,10 @@ akka.persistence {
   publish-plugin-commands = on
 
   journal {
-    plugin = "akka.persistence.journal.linq2db"
+    plugin = "akka.persistence.journal.sql"
 
-    linq2db {
-      class = "Akka.Persistence.Sql.Journal.Linq2DbWriteJournal, Akka.Persistence.Sql"
+    sql {
+      class = "Akka.Persistence.Sql.Journal.SqlWriteJournal, Akka.Persistence.Sql"
       plugin-dispatcher = "akka.persistence.dispatchers.default-plugin-dispatcher"
       connection-string = "" # Connection String is Required!
 
@@ -376,10 +376,10 @@ Please note that you -must- provide a Connection String and Provider name.
 ```hocon
 akka.persistence {
   snapshot-store {
-    plugin = "akka.persistence.snapshot-store.linq2db"
+    plugin = "akka.persistence.snapshot-store.sql"
 
-    linq2db {
-      class = "Akka.Persistence.Sql.Snapshot.Linq2DbSnapshotStore"
+    sql {
+      class = "Akka.Persistence.Sql.Snapshot.SqlSnapshotStore"
       plugin-dispatcher = "akka.persistence.dispatchers.default-plugin-dispatcher"
       connection-string = ""
       provider-name = ""

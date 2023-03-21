@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="Linq2DbReadJournal.cs" company="Akka.NET Project">
+//  <copyright file="SqlReadJournal.cs" company="Akka.NET Project">
 //      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
@@ -25,7 +25,7 @@ using Akka.Streams.Dsl;
 
 namespace Akka.Persistence.Sql.Query
 {
-    public class Linq2DbReadJournal :
+    public class SqlReadJournal :
         IPersistenceIdsQuery,
         ICurrentPersistenceIdsQuery,
         IEventsByPersistenceIdQuery,
@@ -36,8 +36,8 @@ namespace Akka.Persistence.Sql.Query
         ICurrentAllEventsQuery
     {
         // ReSharper disable once UnusedMember.Global
-        [Obsolete(message: "Use Linq2DbPersistence.Get(ActorSystem).DefaultConfig instead")]
-        public static readonly Configuration.Config DefaultConfiguration = Linq2DbWriteJournal.DefaultConfiguration;
+        [Obsolete(message: "Use SqlPersistence.Get(ActorSystem).DefaultConfig instead")]
+        public static readonly Configuration.Config DefaultConfiguration = SqlWriteJournal.DefaultConfiguration;
 
         private readonly Source<long, ICancelable> _delaySource;
         private readonly EventAdapters _eventAdapters;
@@ -47,9 +47,9 @@ namespace Akka.Persistence.Sql.Query
         private readonly ByteArrayReadJournalDao _readJournalDao;
         private readonly ExtendedActorSystem _system;
 
-        public static string Identifier => "akka.persistence.query.journal.linq2db";
+        public static string Identifier => "akka.persistence.query.journal.sql";
 
-        public Linq2DbReadJournal(
+        public SqlReadJournal(
             ExtendedActorSystem system,
             Configuration.Config config,
             string configPath)
@@ -86,7 +86,7 @@ namespace Akka.Persistence.Sql.Query
                     () => new JournalSequenceActor(
                         _readJournalDao,
                         _readJournalConfig.JournalSequenceRetrievalConfiguration)),
-                name: $"{_readJournalConfig.TableConfig.EventJournalTable.Name}akka-persistence-linq2db-sequence-actor");
+                name: $"{_readJournalConfig.TableConfig.EventJournalTable.Name}akka-persistence-sql-sequence-actor");
 
             _delaySource = Source.Tick(TimeSpan.FromSeconds(0), _readJournalConfig.RefreshInterval, 0L).Take(1);
         }

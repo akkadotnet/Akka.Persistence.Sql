@@ -30,7 +30,7 @@ namespace Akka.Persistence.Sql.Tests.Query.Base
         public async Task InitializeAsync()
         {
             await _fixture.InitializeDbAsync(_config.Database);
-            ReadJournal = Sys.ReadJournalFor<Linq2DbReadJournal>(Linq2DbReadJournal.Identifier);
+            ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
         }
 
         public Task DisposeAsync()
@@ -41,8 +41,8 @@ namespace Akka.Persistence.Sql.Tests.Query.Base
                     akka.loglevel = INFO
                     akka.persistence {{
                         journal {{
-                            plugin = ""akka.persistence.journal.linq2db""
-                            linq2db {{
+                            plugin = ""akka.persistence.journal.sql""
+                            sql {{
                                 provider-name = ""{config.Provider}""
                                 tag-write-mode = ""{config.TagWriteMode}""
                                 table-mapping = ""{config.TableMapping}""
@@ -53,7 +53,7 @@ namespace Akka.Persistence.Sql.Tests.Query.Base
                         }}
                         query {{
                             journal {{
-                                linq2db {{
+                                sql {{
                                     provider-name = ""{config.Provider}""
                                     connection-string = ""{fixture.ConnectionString(config.Database)}""
                                     tag-read-mode = ""{config.TagReadMode}""
@@ -64,6 +64,6 @@ namespace Akka.Persistence.Sql.Tests.Query.Base
                         }}
                     }}
                     akka.test.single-expect-default = 10s")
-                .WithFallback(Linq2DbPersistence.DefaultConfiguration);
+                .WithFallback(SqlPersistence.DefaultConfiguration);
     }
 }

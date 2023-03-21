@@ -36,7 +36,7 @@ namespace Akka.Persistence.Sql.Query
             _mat = Materializer.CreateSystemMaterializer(
                 context: (ExtendedActorSystem)Context.System,
                 settings: ActorMaterializerSettings.Create(Context.System),
-                namePrefix: "linq2db-query");
+                namePrefix: "sql-query");
 
             _readJournalDao = readJournalDao;
             _config = config;
