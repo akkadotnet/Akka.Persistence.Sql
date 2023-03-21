@@ -36,21 +36,21 @@ namespace Akka.Persistence.Sql.Tests.Settings
             journal.GetString("plugin-dispatcher").Should().Be("akka.persistence.dispatchers.default-plugin-dispatcher");
             journal.GetString("connection-string", "invalid").Should().BeNullOrEmpty();
             journal.GetString("provider-name", "invalid").Should().BeNullOrEmpty();
-            journal.GetBoolean("delete-compatibility-mode").Should().BeTrue();
+            journal.GetBoolean("delete-compatibility-mode").Should().BeFalse();
             journal.GetString("table-mapping", "invalid").Should().Be("default");
             journal.GetInt("buffer-size").Should().Be(5000);
             journal.GetInt("batch-size").Should().Be(100);
             journal.GetInt("db-round-trip-max-batch-size").Should().Be(1000);
-            journal.GetBoolean("prefer-parameters-on-multirow-insert").Should().BeTrue();
+            journal.GetBoolean("prefer-parameters-on-multirow-insert").Should().BeFalse();
             journal.GetInt("replay-batch-size").Should().Be(1000);
             journal.GetInt("parallelism").Should().Be(3);
             journal.GetInt("max-row-by-row-size").Should().Be(100);
-            journal.GetBoolean("use-clone-connection").Should().BeFalse();
+            journal.GetBoolean("use-clone-connection").Should().BeTrue();
             journal.GetString("materializer-dispatcher", "invalid").Should().Be("akka.actor.default-dispatcher");
             journal.GetString("serializer", "invalid").Should().BeNullOrEmpty();
             journal.GetString("tag-separator", "invalid").Should().Be(";");
             journal.GetString("dao", "invalid").Should().Be("Akka.Persistence.Sql.Journal.Dao.ByteArrayJournalDao, Akka.Persistence.Sql");
-            journal.GetBoolean("auto-initialize").Should().BeFalse();
+            journal.GetBoolean("auto-initialize").Should().BeTrue();
             journal.GetBoolean("warn-on-auto-init-fail").Should().BeTrue();
 
             var journalTables = journal.GetConfig("default");
@@ -280,9 +280,9 @@ namespace Akka.Persistence.Sql.Tests.Settings
             journal.MaterializerDispatcher.Should().Be("akka.actor.default-dispatcher");
             journal.ProviderName.Should().BeNullOrEmpty();
             journal.UseSharedDb.Should().BeNullOrEmpty();
-            journal.UseCloneConnection.Should().BeFalse();
+            journal.UseCloneConnection.Should().BeTrue();
             journal.DefaultSerializer.Should().BeNullOrEmpty();
-            journal.AutoInitialize.Should().BeFalse();
+            journal.AutoInitialize.Should().BeTrue();
             journal.WarnOnAutoInitializeFail.Should().BeTrue();
 
             var pluginConfig = journal.PluginConfig;
@@ -294,11 +294,11 @@ namespace Akka.Persistence.Sql.Tests.Settings
             daoConfig.BufferSize.Should().Be(5000);
             daoConfig.BatchSize.Should().Be(100);
             daoConfig.DbRoundTripBatchSize.Should().Be(1000);
-            daoConfig.PreferParametersOnMultiRowInsert.Should().BeTrue();
+            daoConfig.PreferParametersOnMultiRowInsert.Should().BeFalse();
             daoConfig.ReplayBatchSize.Should().Be(1000);
             daoConfig.Parallelism.Should().Be(3);
             daoConfig.MaxRowByRowSize.Should().Be(100);
-            daoConfig.SqlCommonCompatibilityMode.Should().BeTrue();
+            daoConfig.SqlCommonCompatibilityMode.Should().BeFalse();
         }
     }
 }
