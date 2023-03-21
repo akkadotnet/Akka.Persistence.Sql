@@ -1,6 +1,6 @@
-akka.persistence.journal.linq2db {
+akka.persistence.journal.sql {
   testGen {
-    class = "Akka.Persistence.Sql.Journal.Linq2DbWriteJournal, Akka.Persistence.Sql"
+    class = "Akka.Persistence.Sql.Journal.SqlWriteJournal, Akka.Persistence.Sql"
     provider-name = "SqlServer"
     connection-string = "connStr"
     tables {

@@ -34,7 +34,7 @@ namespace Akka.Persistence.Sql.Tests.Sqlite.Compatibility
             => "akka.persistence.journal.sqlite";
 
         protected override string NewJournal
-            => "akka.persistence.journal.linq2db";
+            => "akka.persistence.journal.sql";
 
         protected override Configuration.Config Config { get; }
 

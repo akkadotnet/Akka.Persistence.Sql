@@ -40,7 +40,7 @@ namespace Akka.Persistence.Sql.Tests.SqlServer.Compatibility
             => "akka.persistence.journal.sql-server";
 
         protected override string NewJournal
-            => "akka.persistence.journal.linq2db";
+            => "akka.persistence.journal.sql";
 
         protected override Configuration.Config Config { get; }
 

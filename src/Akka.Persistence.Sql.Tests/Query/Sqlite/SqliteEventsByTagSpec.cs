@@ -33,7 +33,7 @@ namespace Akka.Persistence.Sql.Tests.Query.Sqlite
         public async Task InitializeAsync()
         {
             await _fixture.InitializeDbAsync(Database.MsSqlite);
-            ReadJournal = Sys.ReadJournalFor<Linq2DbReadJournal>(Linq2DbReadJournal.Identifier);
+            ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
         }
 
         public Task DisposeAsync()
@@ -43,8 +43,8 @@ namespace Akka.Persistence.Sql.Tests.Query.Sqlite
             => ConfigurationFactory.ParseString(
                     $@"
                     akka.loglevel = INFO
-                    akka.persistence.journal.plugin = ""akka.persistence.journal.linq2db""
-                    akka.persistence.journal.linq2db {{
+                    akka.persistence.journal.plugin = ""akka.persistence.journal.sql""
+                    akka.persistence.journal.sql {{
                         event-adapters {{
                           color-tagger  = ""Akka.Persistence.TCK.Query.ColorFruitTagger, Akka.Persistence.TCK""
                         }}
@@ -58,7 +58,7 @@ namespace Akka.Persistence.Sql.Tests.Query.Sqlite
                         connection-string = ""{fixture.ConnectionString(Database.MsSqlite)}""
                         refresh-interval = 1s
                     }}
-                    akka.persistence.query.journal.linq2db
+                    akka.persistence.query.journal.sql
                     {{
                         provider-name = ""{ProviderName.SQLiteMS}""
                         table-mapping = sqlite
@@ -66,6 +66,6 @@ namespace Akka.Persistence.Sql.Tests.Query.Sqlite
                         auto-initialize = on
                     }}
                     akka.test.single-expect-default = 10s")
-                .WithFallback(Linq2DbPersistence.DefaultConfiguration);
+                .WithFallback(SqlPersistence.DefaultConfiguration);
     }
 }

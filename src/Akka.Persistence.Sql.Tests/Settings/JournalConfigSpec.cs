@@ -19,19 +19,19 @@ namespace Akka.Persistence.Sql.Tests.Settings
         private readonly Configuration.Config _defaultConfig;
 
         public JournalConfigSpec()
-            => _defaultConfig = Linq2DbPersistence.DefaultConfiguration;
+            => _defaultConfig = SqlPersistence.DefaultConfiguration;
 
         [Fact(DisplayName = "Default journal HOCON config should contain default values")]
         public void DefaultJournalHoconConfigTest()
         {
             var journal = _defaultConfig.GetConfig(
-                "akka.persistence.journal.linq2db");
+                "akka.persistence.journal.sql");
 
             journal.Should().NotBeNull();
 
             var stringType = journal.GetString("class");
             var type = Type.GetType(stringType);
-            type.Should().Be(typeof(Linq2DbWriteJournal));
+            type.Should().Be(typeof(SqlWriteJournal));
 
             journal.GetString("plugin-dispatcher").Should().Be("akka.persistence.dispatchers.default-plugin-dispatcher");
             journal.GetString("connection-string", "invalid").Should().BeNullOrEmpty();
@@ -68,7 +68,7 @@ namespace Akka.Persistence.Sql.Tests.Settings
         public void DefaultJournalConfigTest()
         {
             var journalHocon = _defaultConfig.GetConfig(
-                "akka.persistence.journal.linq2db");
+                "akka.persistence.journal.sql");
 
             journalHocon.Should().NotBeNull();
 
@@ -107,9 +107,9 @@ namespace Akka.Persistence.Sql.Tests.Settings
         public void SqlServerJournalConfigTest()
         {
             var journalHocon = ConfigurationFactory
-                .ParseString("akka.persistence.journal.linq2db.table-mapping = sql-server")
+                .ParseString("akka.persistence.journal.sql.table-mapping = sql-server")
                 .WithFallback(_defaultConfig)
-                .GetConfig("akka.persistence.journal.linq2db");
+                .GetConfig("akka.persistence.journal.sql");
 
             journalHocon.Should().NotBeNull();
 
@@ -148,9 +148,9 @@ namespace Akka.Persistence.Sql.Tests.Settings
         public void SqliteJournalConfigTest()
         {
             var journalHocon = ConfigurationFactory
-                .ParseString("akka.persistence.journal.linq2db.table-mapping = sqlite")
+                .ParseString("akka.persistence.journal.sql.table-mapping = sqlite")
                 .WithFallback(_defaultConfig)
-                .GetConfig("akka.persistence.journal.linq2db");
+                .GetConfig("akka.persistence.journal.sql");
 
             journalHocon.Should().NotBeNull();
 
@@ -189,9 +189,9 @@ namespace Akka.Persistence.Sql.Tests.Settings
         public void PostgreSqlJournalConfigTest()
         {
             var journalHocon = ConfigurationFactory
-                .ParseString("akka.persistence.journal.linq2db.table-mapping = postgresql")
+                .ParseString("akka.persistence.journal.sql.table-mapping = postgresql")
                 .WithFallback(_defaultConfig)
-                .GetConfig("akka.persistence.journal.linq2db");
+                .GetConfig("akka.persistence.journal.sql");
 
             journalHocon.Should().NotBeNull();
 
@@ -230,9 +230,9 @@ namespace Akka.Persistence.Sql.Tests.Settings
         public void MySqlJournalConfigTest()
         {
             var journalHocon = ConfigurationFactory
-                .ParseString("akka.persistence.journal.linq2db.table-mapping = mysql")
+                .ParseString("akka.persistence.journal.sql.table-mapping = mysql")
                 .WithFallback(_defaultConfig)
-                .GetConfig("akka.persistence.journal.linq2db");
+                .GetConfig("akka.persistence.journal.sql");
 
             journalHocon.Should().NotBeNull();
 

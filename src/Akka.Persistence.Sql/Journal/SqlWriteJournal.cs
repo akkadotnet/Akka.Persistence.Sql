@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="Linq2DbWriteJournal.cs" company="Akka.NET Project">
+//  <copyright file="SqlWriteJournal.cs" company="Akka.NET Project">
 //      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
@@ -38,10 +38,10 @@ namespace Akka.Persistence.Sql.Journal
             => UnixEpoch.AddMilliseconds(unixEpochMillis);
     }
 
-    public class Linq2DbWriteJournal : AsyncWriteJournal
+    public class SqlWriteJournal : AsyncWriteJournal
     {
-        [Obsolete(message: "Use Linq2DbPersistence.DefaultConfiguration or Linq2DbPersistence.Get(ActorSystem).DefaultConfig instead")]
-        public static readonly Configuration.Config DefaultConfiguration = Linq2DbPersistence.DefaultConfiguration;
+        [Obsolete(message: "Use SqlPersistence.DefaultConfiguration or SqlPersistence.Get(ActorSystem).DefaultConfig instead")]
+        public static readonly Configuration.Config DefaultConfiguration = SqlPersistence.DefaultConfiguration;
 
         private readonly ByteArrayJournalDao _journal;
         private readonly JournalConfig _journalConfig;
@@ -51,13 +51,13 @@ namespace Akka.Persistence.Sql.Journal
 
         private readonly Dictionary<string, Task> _writeInProgress = new();
 
-        public Linq2DbWriteJournal(Configuration.Config journalConfig)
+        public SqlWriteJournal(Configuration.Config journalConfig)
         {
             _log = Context.GetLogger();
 
             try
             {
-                var config = journalConfig.WithFallback(Linq2DbPersistence.DefaultJournalConfiguration);
+                var config = journalConfig.WithFallback(SqlPersistence.DefaultJournalConfiguration);
                 _journalConfig = new JournalConfig(config);
 
                 _mat = Materializer.CreateSystemMaterializer(
@@ -115,7 +115,7 @@ namespace Akka.Persistence.Sql.Journal
 
         public override void AroundPreRestart(Exception cause, object message)
         {
-            _log.Error(cause, $"Linq2Db Journal Error on {message?.GetType().ToString() ?? "null"}");
+            _log.Error(cause, $"Sql Journal Error on {message?.GetType().ToString() ?? "null"}");
             base.AroundPreRestart(cause, message);
         }
 

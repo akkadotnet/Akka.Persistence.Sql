@@ -23,7 +23,7 @@ using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Benchmark.Tests
 {
-    public abstract class L2dbJournalPerfSpec : Akka.TestKit.Xunit2.TestKit
+    public abstract class SqlJournalPerfSpec : Akka.TestKit.Xunit2.TestKit
     {
         // Number of measurement iterations each test will be run.
         private const int MeasurementIterations = 10;
@@ -34,7 +34,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
         private readonly TimeSpan _expectDuration;
         private readonly TestProbe _testProbe;
 
-        protected L2dbJournalPerfSpec(
+        protected SqlJournalPerfSpec(
             Configuration.Config config,
             string actorSystem,
             ITestOutputHelper output,

@@ -28,18 +28,18 @@ namespace Akka.Persistence.Sql.HelperLib
         public TagTableMigrator(Configuration.Config config)
         {
             config = config
-                .WithFallback(Linq2DbPersistence.DefaultConfiguration)
-                .GetConfig("akka.persistence.journal.linq2db");
+                .WithFallback(SqlPersistence.DefaultConfiguration)
+                .GetConfig("akka.persistence.journal.sql");
 
             var mapping = config.GetString("table-mapping");
             if (string.IsNullOrWhiteSpace(mapping) || mapping == "default")
                 throw new ConfigurationException(
-                    "akka.persistence.journal.linq2db.table-mapping must not be empty or 'default'");
+                    "akka.persistence.journal.sql.table-mapping must not be empty or 'default'");
 
             _journalConfig = new JournalConfig(config);
             if (_journalConfig.TableConfig.TagWriteMode != TagWriteMode.Both)
                 throw new ConfigurationException(
-                    "akka.persistence.journal.linq2db.tag-write-mode has to be 'Both'");
+                    "akka.persistence.journal.sql.tag-write-mode has to be 'Both'");
 
             _connectionFactory = new AkkaPersistenceDataConnectionFactory(_journalConfig);
             _separator = _journalConfig.PluginConfig.TagSeparator;
