@@ -38,7 +38,7 @@ namespace Akka.Persistence.Sql.Config
 
         public string UseSharedDb { get; }
 
-        public SnapshotPluginConfig PluginConfig { get; }
+        public IPluginConfig PluginConfig { get; }
 
         /// <summary>
         ///     Flag determining in in case of event journal or metadata table missing, they should be automatically initialized.

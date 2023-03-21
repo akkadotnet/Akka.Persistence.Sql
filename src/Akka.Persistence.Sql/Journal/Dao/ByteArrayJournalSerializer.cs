@@ -26,7 +26,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
         private readonly string _separator;
         private readonly string[] _separatorArray;
         private readonly Akka.Serialization.Serialization _serializer;
-        private readonly TagWriteMode _tagWriteMode;
+        private readonly TagMode _tagWriteMode;
 
         public ByteArrayJournalSerializer(
             IProviderConfig<JournalTableConfig> journalConfig,
@@ -37,7 +37,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
             _serializer = serializer;
             _separator = separator;
             _separatorArray = new[] { _separator };
-            _tagWriteMode = journalConfig.TableConfig.TagWriteMode;
+            _tagWriteMode = journalConfig.PluginConfig.TagMode;
         }
 
         /// <summary>
@@ -57,11 +57,11 @@ namespace Akka.Persistence.Sql.Journal.Dao
             IImmutableSet<string> tags,
             IPersistentRepresentation representation,
             long timestamp,
-            TagWriteMode tagWriteMode,
+            TagMode tagWriteMode,
             string separator)
             => tagWriteMode switch
             {
-                TagWriteMode.Csv => new JournalRow
+                TagMode.Csv => new JournalRow
                 {
                     Tags = StringSep(tags, separator),
                     Timestamp = representation.Timestamp == 0
@@ -69,7 +69,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                         : representation.Timestamp
                 },
 
-                TagWriteMode.TagTable => new JournalRow
+                TagMode.TagTable => new JournalRow
                 {
                     Tags = string.Empty,
                     TagArr = tags.ToArray(),
@@ -78,7 +78,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                         : representation.Timestamp
                 },
 
-                TagWriteMode.Both => new JournalRow
+                TagMode.Both => new JournalRow
                 {
                     Tags = StringSep(tags, separator),
                     TagArr = tags.ToArray(),
