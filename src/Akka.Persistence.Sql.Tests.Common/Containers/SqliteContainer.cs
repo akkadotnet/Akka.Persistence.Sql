@@ -20,7 +20,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
 
         public SqliteContainer()
         {
-            ConnectionString = $"FullUri=file:{DatabaseName}?mode=memory&cache=shared";
+            ConnectionString = $"FullUri=file:memdb-{DatabaseName}?mode=memory&cache=shared";
 
             Console.WriteLine($"Connection string: [{ConnectionString}]");
         }
@@ -45,6 +45,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
             _heldConnection = new SQLiteConnection(ConnectionString);
             await _heldConnection.OpenAsync();
             GC.KeepAlive(_heldConnection);
+
             Initialized = true;
         }
 

@@ -16,10 +16,14 @@
     <PackageReference Include="Akka.Persistence.TCK" />
     <PackageReference Include="Akka.Persistence.TestKit" />
     <PackageReference Include="Akka.Serialization.Hyperion" />
+
     <PackageReference Include="Docker.DotNet" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="System.Data.SqlClient" />
+
+    <PackageReference Include="Microsoft.Data.SqlClient" />
+
     <PackageReference Include="System.Data.SQLite.Core" />
+
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -34,5 +38,9 @@
   <ItemGroup>
     <ProjectReference Include="..\Akka.Persistence.Sql.Tests.Common\Akka.Persistence.Sql.Tests.Common.csproj" />
     <ProjectReference Include="..\Akka.Persistence.Sql\Akka.Persistence.Sql.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="xunit.runner.json" CopyToOutputDirectory="Always" />
   </ItemGroup>
 </Project>

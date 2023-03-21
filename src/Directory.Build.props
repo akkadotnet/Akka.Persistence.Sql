@@ -19,35 +19,36 @@
     <NetStandardLibVersion>netstandard2.0</NetStandardLibVersion>
     <NetCoreTestVersion>net7.0</NetCoreTestVersion>
 
-    <AkkaVersion>1.4.49</AkkaVersion>
-    <AkkaHostingVersion>1.0.3</AkkaHostingVersion>
+    <AkkaVersion>1.5.1</AkkaVersion>
+    <AkkaHostingVersion>1.5.1</AkkaHostingVersion>
 
-    <Linq2DbVersion>3.4.1</Linq2DbVersion>
-    <LanguageExtVersion>3.4.15</LanguageExtVersion>
+    <Linq2DbVersion>3.5.0</Linq2DbVersion>
+    <LanguageExtVersion>4.4.2</LanguageExtVersion>
+    <FluentMigratorVersion>3.3.2</FluentMigratorVersion>
 
-    <AkkaSqlServerVersion>1.4.35</AkkaSqlServerVersion>
-    <SqlClientVersion>4.8.5</SqlClientVersion>
+    <AkkaSqlServerVersion>1.5.1</AkkaSqlServerVersion>
+    <SqlClientVersion>5.1.0</SqlClientVersion>
     <SqlManagementObjectsVersion>170.13.0</SqlManagementObjectsVersion>
 
-    <AkkaSqliteVersion>1.4.49</AkkaSqliteVersion>
+    <AkkaSqliteVersion>1.5.1</AkkaSqliteVersion>
     <SqliteVersion>1.0.117</SqliteVersion>
-    <MicrosoftSqliteVersion>6.0.4</MicrosoftSqliteVersion>
+    <MicrosoftSqliteVersion>7.0.4</MicrosoftSqliteVersion>
 
-    <AkkaPostgreSqlVersion>1.4.46</AkkaPostgreSqlVersion>
+    <AkkaPostgreSqlVersion>1.5.1</AkkaPostgreSqlVersion>
     <PostgreSqlVersion>6.0.7</PostgreSqlVersion>
 
-    <AkkaRedisVersion>1.4.35</AkkaRedisVersion>
+    <AkkaRedisVersion>1.5.0</AkkaRedisVersion>
     <RedisInsideVersion>3.3.0</RedisInsideVersion>
 
-    <AkkaMySqlVersion>1.4.42</AkkaMySqlVersion>
-    <MySqlVersion>8.0.32</MySqlVersion>
+    <AkkaMySqlVersion>1.5.0</AkkaMySqlVersion>
+    <MySqlVersion>8.0.32.1</MySqlVersion>
 
-    <FluentMigratorVersion>3.3.2</FluentMigratorVersion>
-    <DockerDotNetVersion>3.125.12</DockerDotNetVersion>
     <TestSdkVersion>17.5.0</TestSdkVersion>
+    <DockerDotNetVersion>3.125.13</DockerDotNetVersion>
+    <FluentAssertionVersion>6.10.0</FluentAssertionVersion>
+    <JetBrainsDotMemoryVersion>3.2.20220510</JetBrainsDotMemoryVersion>
     <XunitVersion>2.4.2</XunitVersion>
     <XunitRunnerVersion>2.4.5</XunitRunnerVersion>
-    <FluentAssertionVersion>6.10.0</FluentAssertionVersion>
     <CoverletVersion>3.2.0</CoverletVersion>
     <NBenchVersion>1.2.2</NBenchVersion>
   </PropertyGroup>

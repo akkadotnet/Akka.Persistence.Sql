@@ -22,7 +22,6 @@ using Akka.Persistence.Sql.Query.InternalProtocol;
 using Akka.Persistence.Sql.Utility;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using LanguageExt;
 
 namespace Akka.Persistence.Sql.Query
 {
@@ -36,6 +35,7 @@ namespace Akka.Persistence.Sql.Query
         IAllEventsQuery,
         ICurrentAllEventsQuery
     {
+        // ReSharper disable once UnusedMember.Global
         [Obsolete(message: "Use Linq2DbPersistence.Get(ActorSystem).DefaultConfig instead")]
         public static readonly Configuration.Config DefaultConfiguration = Linq2DbWriteJournal.DefaultConfiguration;
 
@@ -108,7 +108,7 @@ namespace Akka.Persistence.Sql.Query
                         offset is Sequence s
                             ? s.Value
                             : 0,
-                        Some.Create(maxInDb)));
+                        maxInDb));
 
         public Source<EventEnvelope, NotUsed> CurrentEventsByPersistenceId(
             string persistenceId,
@@ -134,7 +134,7 @@ namespace Akka.Persistence.Sql.Query
                 persistenceId: persistenceId,
                 fromSequenceNr: fromSequenceNr,
                 toSequenceNr: toSequenceNr,
-                refreshInterval: new Util.Option<(TimeSpan, IScheduler)>(
+                refreshInterval: Util.Option<(TimeSpan, IScheduler)>.Create(
                     (_readJournalConfig.RefreshInterval, _system.Scheduler)));
 
         public Source<EventEnvelope, NotUsed> EventsByTag(string tag, Offset offset)
@@ -286,7 +286,7 @@ namespace Akka.Persistence.Sql.Query
                                     .Where(r => r != null)
                                     .Max(t => t.Value);
 
-                            return new Util.Option<((long nextStartingOffset, FlowControlEnum nextControl), IImmutableList<EventEnvelope> xs)>(
+                            return Util.Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>.Create(
                                 ((nextStartingOffset, nextControl), xs));
                         }
 
@@ -316,7 +316,7 @@ namespace Akka.Persistence.Sql.Query
                 .FromEnumerable(
                     state: new { readJournalDao = _readJournalDao },
                     func: async input => new[] { await input.readJournalDao.MaxJournalSequenceAsync() })
-                .ConcatMany(maxInDb => EventsByTag(tag, offset, Some.Create(maxInDb)));
+                .ConcatMany(maxInDb => EventsByTag(tag, offset, maxInDb));
 
         private Source<EventEnvelope, NotUsed> Events(long offset, long? terminateAfterOffset)
         {
@@ -363,7 +363,7 @@ namespace Akka.Persistence.Sql.Query
                                     .Where(r => r != null)
                                     .Max(t => t.Value);
 
-                            return new Util.Option<((long nextStartingOffset, FlowControlEnum nextControl), IImmutableList<EventEnvelope>xs)>(
+                            return Util.Option<((long nextStartingOffset, FlowControlEnum nextControl), IImmutableList<EventEnvelope>xs)>.Create(
                                 ((nextStartingOffset, nextControl), xs));
                         }
 

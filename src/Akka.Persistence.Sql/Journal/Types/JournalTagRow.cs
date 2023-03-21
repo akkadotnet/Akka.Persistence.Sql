@@ -9,8 +9,11 @@ namespace Akka.Persistence.Sql.Journal.Types
     public sealed class JournalTagRow
     {
         public long SequenceNumber { get; set; }
+
         public string PersistenceId { get; set; }
+
         public long OrderingId { get; set; }
+
         public string TagValue { get; set; }
     }
 }

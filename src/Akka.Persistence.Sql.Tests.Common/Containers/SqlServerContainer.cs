@@ -7,9 +7,9 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Data.SqlClient;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Microsoft.Data.SqlClient;
 using Akka.Util;
 using Docker.DotNet.Models;
 
@@ -94,6 +94,8 @@ END",
             command.ExecuteScalar();
 
             await DropTablesAsync(connection, DatabaseName);
+
+            await connection.CloseAsync();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

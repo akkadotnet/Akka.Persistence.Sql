@@ -23,14 +23,6 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
             ConnectionString = $"Filename=file:memdb-{DatabaseName}.db;Mode=Memory;Cache=Shared";
 
             Console.WriteLine($"Connection string: [{ConnectionString}]");
-
-            if (_heldConnection is not null)
-                return;
-
-            _heldConnection = new SqliteConnection(ConnectionString);
-            _heldConnection.Open();
-
-            GC.KeepAlive(_heldConnection);
         }
 
         public string ConnectionString { get; }
@@ -43,10 +35,19 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
 
         public DockerClient? Client => null;
 
-        public bool Initialized => true;
+        public bool Initialized { get; private set; }
 
-        public Task InitializeAsync()
-            => Task.CompletedTask;
+        public async Task InitializeAsync()
+        {
+            if (Initialized)
+                return;
+
+            _heldConnection = new SqliteConnection(ConnectionString);
+            await _heldConnection.OpenAsync();
+            GC.KeepAlive(_heldConnection);
+
+            Initialized = true;
+        }
 
         public async Task InitializeDbAsync()
         {
@@ -58,23 +59,34 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
             {
                 CommandText = @"
 DROP TABLE IF EXISTS event_journal;
-DROP TABLE IF EXISTS journal_metadata;
 DROP TABLE IF EXISTS snapshot;
-
+DROP TABLE IF EXISTS journal_metadata;
 DROP TABLE IF EXISTS journal;
-DROP TABLE IF EXISTS tags;
-",
+DROP TABLE IF EXISTS tags;",
                 Connection = connection
             };
 
             await command.ExecuteNonQueryAsync();
         }
 
-        // no-op
-        public ValueTask DisposeAsync()
-            => new();
+        public async ValueTask DisposeAsync()
+        {
+            if (_heldConnection is null)
+                return;
 
-        // no-op
-        public void Dispose() { }
+            _heldConnection.Close();
+            await _heldConnection.DisposeAsync();
+            _heldConnection = null;
+        }
+
+        public void Dispose()
+        {
+            if (_heldConnection is null)
+                return;
+
+            _heldConnection.Close();
+            _heldConnection.Dispose();
+            _heldConnection = null;
+        }
     }
 }
