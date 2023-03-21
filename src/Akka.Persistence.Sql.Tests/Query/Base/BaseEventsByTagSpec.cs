@@ -10,38 +10,34 @@ using Akka.Persistence.Query;
 using Akka.Persistence.Sql.Query;
 using Akka.Persistence.Sql.Tests.Common;
 using Akka.Persistence.TCK.Query;
-using LinqToDB;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Sql.Tests.Query.Sqlite
+namespace Akka.Persistence.Sql.Tests.Query.Base
 {
-    [Collection("PersistenceSpec")]
-    public class SqliteEventsByTagSpec : EventsByTagSpec, IAsyncLifetime
+    public abstract class BaseEventsByTagSpec : EventsByTagSpec, IAsyncLifetime
     {
+        private readonly ITestConfig _config;
         private readonly TestFixture _fixture;
 
-        public SqliteEventsByTagSpec(
-            ITestOutputHelper output,
-            TestFixture fixture)
-            : base(
-                Config(fixture),
-                nameof(SqliteEventsByTagSpec),
-                output)
-            => _fixture = fixture;
+        public BaseEventsByTagSpec(ITestConfig config, ITestOutputHelper output, TestFixture fixture)
+            : base(Config(config, fixture), nameof(BaseEventsByTagSpec), output)
+        {
+            _config = config;
+            _fixture = fixture;
+        }
 
         public async Task InitializeAsync()
         {
-            await _fixture.InitializeDbAsync(Database.MsSqlite);
+            await _fixture.InitializeDbAsync(_config.Database);
             ReadJournal = Sys.ReadJournalFor<Linq2DbReadJournal>(Linq2DbReadJournal.Identifier);
         }
 
         public Task DisposeAsync()
             => Task.CompletedTask;
 
-        private static Configuration.Config Config(TestFixture fixture)
-            => ConfigurationFactory.ParseString(
-                    $@"
+        private static Configuration.Config Config(ITestConfig config, TestFixture fixture)
+            => ConfigurationFactory.ParseString($@"
                     akka.loglevel = INFO
                     akka.persistence.journal.plugin = ""akka.persistence.journal.linq2db""
                     akka.persistence.journal.linq2db {{
@@ -51,18 +47,19 @@ namespace Akka.Persistence.Sql.Tests.Query.Sqlite
                         event-adapter-bindings = {{
                           ""System.String"" = color-tagger
                         }}
-                        plugin-dispatcher = ""akka.actor.default-dispatcher""
-                        provider-name = ""{ProviderName.SQLiteMS}""
-                        table-mapping = sqlite
+                        provider-name = ""{config.Provider}""
+                        tag-write-mode = ""{config.TagWriteMode}""
+                        table-mapping = ""{config.TableMapping}""
+                        connection-string = ""{fixture.ConnectionString(config.Database)}""
                         auto-initialize = on
-                        connection-string = ""{fixture.ConnectionString(Database.MsSqlite)}""
                         refresh-interval = 1s
                     }}
                     akka.persistence.query.journal.linq2db
                     {{
-                        provider-name = ""{ProviderName.SQLiteMS}""
-                        table-mapping = sqlite
-                        connection-string = ""{fixture.ConnectionString(Database.MsSqlite)}""
+                        provider-name = ""{config.Provider}""
+                        connection-string = ""{fixture.ConnectionString(config.Database)}""
+                        tag-read-mode = ""{config.TagReadMode}""
+                        table-mapping = ""{config.TableMapping}""
                         auto-initialize = on
                     }}
                     akka.test.single-expect-default = 10s")

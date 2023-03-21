@@ -9,39 +9,37 @@ using Akka.Configuration;
 using Akka.Persistence.Query;
 using Akka.Persistence.Sql.Query;
 using Akka.Persistence.Sql.Tests.Common;
+using Akka.Persistence.Sqlite;
 using Akka.Persistence.TCK.Query;
 using LinqToDB;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Sql.Tests.Query.Sqlite
+namespace Akka.Persistence.Sql.Tests.Query.Base
 {
-    [Collection("PersistenceSpec")]
-    public class SqlitePersistenceIdsSpec : PersistenceIdsSpec, IAsyncLifetime
+    public abstract class BasePersistenceIdsSpec : PersistenceIdsSpec, IAsyncLifetime
     {
+        private readonly ITestConfig _config;
         private readonly TestFixture _fixture;
 
-        public SqlitePersistenceIdsSpec(
-            ITestOutputHelper output,
-            TestFixture fixture)
-            : base(
-                Config(fixture),
-                nameof(SqlitePersistenceIdsSpec),
-                output)
-            => _fixture = fixture;
+        public BasePersistenceIdsSpec(ITestConfig config, ITestOutputHelper output, TestFixture fixture)
+            : base(Config(config, fixture), nameof(PersistenceIdsSpec), output)
+        {
+            _config = config;
+            _fixture = fixture;
+        }
 
         public async Task InitializeAsync()
         {
-            await _fixture.InitializeDbAsync(Database.MsSqlite);
+            await _fixture.InitializeDbAsync(_config.Database);
             ReadJournal = Sys.ReadJournalFor<Linq2DbReadJournal>(Linq2DbReadJournal.Identifier);
         }
 
         public Task DisposeAsync()
             => Task.CompletedTask;
 
-        private static Configuration.Config Config(TestFixture fixture)
-            => ConfigurationFactory.ParseString(
-                    $@"
+        private static Configuration.Config Config(ITestConfig config, TestFixture fixture)
+            => ConfigurationFactory.ParseString($@"
                     akka.loglevel = INFO
                     akka.actor{{
                         serializers{{
@@ -56,31 +54,30 @@ namespace Akka.Persistence.Sql.Tests.Query.Sqlite
                         journal {{
                             plugin = ""akka.persistence.journal.linq2db""
                             linq2db = {{
-                                provider-name = ""{ProviderName.SQLiteMS}""
-                                table-mapping = sqlite
-                                plugin-dispatcher = ""akka.actor.default-dispatcher""
+                                provider-name = ""{config.Provider}""
+                                tag-write-mode = ""{config.TagWriteMode}""
+                                table-mapping = ""{config.TableMapping}""
+                                connection-string = ""{fixture.ConnectionString(config.Database)}""
                                 auto-initialize = on
-                                connection-string = ""{fixture.ConnectionString(Database.MsSqlite)}""
                                 refresh-interval = 200ms
                             }}
                         }}
                         snapshot-store {{
-                            plugin = ""akka.persistence.snapshot-store.sqlite""
-                            sqlite {{
-                                class = ""Akka.Persistence.Sqlite.Snapshot.SqliteSnapshotStore, Akka.Persistence.Sqlite""
-                                plugin-dispatcher = ""akka.actor.default-dispatcher""
-                                table-name = snapshot_store
+                            plugin = ""akka.persistence.snapshot-store.linq2db""
+                            linq2db {{
+                                provider-name = ""{config.Provider}""
+                                table-mapping = ""{config.TableMapping}""
+                                connection-string = ""{fixture.ConnectionString(config.Database)}""
                                 auto-initialize = on
-                                connection-string = ""{fixture.ConnectionString(Database.MsSqlite)}""
                             }}
                         }}
                     }}
                     akka.persistence.query.journal.linq2db {{
-                        provider-name = ""{ProviderName.SQLiteMS}""
-                        table-mapping = sqlite
-                        connection-string = ""{fixture.ConnectionString(Database.MsSqlite)}""
+                        provider-name = ""{config.Provider}""
+                        connection-string = ""{fixture.ConnectionString(config.Database)}""
+                        tag-read-mode = ""{config.TagReadMode}""
+                        table-mapping = ""{config.TableMapping}""
                         auto-initialize = on
-                        write-plugin = ""akka.persistence.journal.linq2db""
                     }}
                     akka.test.single-expect-default = 10s")
                 .WithFallback(Linq2DbPersistence.DefaultConfiguration);

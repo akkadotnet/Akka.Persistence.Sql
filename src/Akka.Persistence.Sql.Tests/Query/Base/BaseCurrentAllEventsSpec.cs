@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="SqliteAllEventsSpec.cs" company="Akka.NET Project">
+//  <copyright file="SqliteCurrentAllEventsSpec.cs" company="Akka.NET Project">
 //      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
@@ -10,41 +10,34 @@ using Akka.Persistence.Query;
 using Akka.Persistence.Sql.Query;
 using Akka.Persistence.Sql.Tests.Common;
 using Akka.Persistence.TCK.Query;
-using Akka.Util.Internal;
-using LinqToDB;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Sql.Tests.Query.Sqlite
+namespace Akka.Persistence.Sql.Tests.Query.Base
 {
-    [Collection("PersistenceSpec")]
-    public class SqliteAllEventsSpec : AllEventsSpec, IAsyncLifetime
+    public abstract class BaseCurrentAllEventsSpec : CurrentAllEventsSpec, IAsyncLifetime
     {
-        public static readonly AtomicCounter Counter = new(0);
-
+        private readonly ITestConfig _config;
         private readonly TestFixture _fixture;
 
-        public SqliteAllEventsSpec(
-            ITestOutputHelper output,
-            TestFixture fixture)
-            : base(
-                Config(fixture),
-                nameof(SqliteAllEventsSpec),
-                output)
-            => _fixture = fixture;
-
+        protected BaseCurrentAllEventsSpec(ITestConfig config, ITestOutputHelper output, TestFixture fixture)
+            : base(Config(config, fixture), nameof(CurrentAllEventsSpec), output)
+        {
+            _config = config;
+            _fixture = fixture;
+        }
+        
         public async Task InitializeAsync()
         {
-            await _fixture.InitializeDbAsync(Database.MsSqlite);
+            await _fixture.InitializeDbAsync(_config.Database);
             ReadJournal = Sys.ReadJournalFor<Linq2DbReadJournal>(Linq2DbReadJournal.Identifier);
         }
 
         public Task DisposeAsync()
             => Task.CompletedTask;
 
-        private static Configuration.Config Config(TestFixture fixture)
-            => ConfigurationFactory.ParseString(
-                    $@"
+        private static Configuration.Config Config(ITestConfig config, TestFixture fixture)
+            => ConfigurationFactory.ParseString($@"
                     akka.loglevel = INFO
                     akka.persistence.journal.plugin = ""akka.persistence.journal.linq2db""
                     akka.persistence.journal.linq2db {{
@@ -54,17 +47,18 @@ namespace Akka.Persistence.Sql.Tests.Query.Sqlite
                         event-adapter-bindings = {{
                             ""System.String"" = color-tagger
                         }}
-                        plugin-dispatcher = ""akka.actor.default-dispatcher""
-                        provider-name = ""{ProviderName.SQLiteMS}""
-                        table-mapping = sqlite
+                        provider-name = ""{config.Provider}""
+                        tag-write-mode = ""{config.TagWriteMode}""
+                        table-mapping = ""{config.TableMapping}""
+                        connection-string = ""{fixture.ConnectionString(config.Database)}""
                         auto-initialize = on
-                        connection-string = ""{fixture.ConnectionString(Database.MsSqlite)}""
                         refresh-interval = 1s
                     }}
                     akka.persistence.query.journal.linq2db {{
-                        provider-name = ""{ProviderName.SQLiteMS}""
-                        connection-string = ""{fixture.ConnectionString(Database.MsSqlite)}""
-                        table-mapping = sqlite
+                        provider-name = ""{config.Provider}""
+                        connection-string = ""{fixture.ConnectionString(config.Database)}""
+                        tag-read-mode = ""{config.TagReadMode}""
+                        table-mapping = ""{config.TableMapping}""
                         auto-initialize = on
                     }}
                     akka.test.single-expect-default = 10s")
