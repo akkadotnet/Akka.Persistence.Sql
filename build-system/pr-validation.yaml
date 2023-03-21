@@ -16,7 +16,7 @@ jobs:
     parameters:
       name: 'windows_pr'
       displayName: 'Windows PR Validation'
-      vmImage: 'windows-2019'
+      vmImage: 'windows-latest'
       scriptFileName: build.cmd
       scriptArgs: all
       outputDirectory: 'bin/nuget'
@@ -26,7 +26,7 @@ jobs:
     parameters:
       name: 'linux_pr'
       displayName: 'Linux PR Validation'
-      vmImage: 'ubuntu-20.04'
+      vmImage: 'ubuntu-latest'
       scriptFileName: ./build.sh
       scriptArgs: all
       outputDirectory: 'bin/nuget'
