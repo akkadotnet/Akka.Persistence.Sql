@@ -54,17 +54,14 @@ namespace Akka.Persistence.Sql.Tests.Query.Base
                             sql {{
                                 provider-name = ""{config.Provider}""
                                 tag-write-mode = ""{config.TagMode}""
-                                table-mapping = ""{config.TableMapping}""
                                 connection-string = ""{fixture.ConnectionString(config.Database)}""
                                 auto-initialize = on
-                                refresh-interval = 200ms
                             }}
                         }}
                         snapshot-store {{
                             plugin = ""akka.persistence.snapshot-store.sql""
                             sql {{
                                 provider-name = ""{config.Provider}""
-                                table-mapping = ""{config.TableMapping}""
                                 connection-string = ""{fixture.ConnectionString(config.Database)}""
                                 auto-initialize = on
                             }}
@@ -74,8 +71,8 @@ namespace Akka.Persistence.Sql.Tests.Query.Base
                         provider-name = ""{config.Provider}""
                         connection-string = ""{fixture.ConnectionString(config.Database)}""
                         tag-read-mode = ""{config.TagMode}""
-                        table-mapping = ""{config.TableMapping}""
                         auto-initialize = on
+                        refresh-interval = 200ms
                     }}
                     akka.test.single-expect-default = 10s")
                 .WithFallback(SqlPersistence.DefaultConfiguration);
