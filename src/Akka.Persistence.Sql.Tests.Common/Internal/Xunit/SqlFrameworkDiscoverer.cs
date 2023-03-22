@@ -9,7 +9,7 @@ using System.Linq;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
-namespace Akka.Persistence.Sql.Tests.Internal.Xunit
+namespace Akka.Persistence.Sql.Tests.Common.Internal.Xunit
 {
     public class SqlFrameworkDiscoverer : XunitTestFrameworkDiscoverer
     {

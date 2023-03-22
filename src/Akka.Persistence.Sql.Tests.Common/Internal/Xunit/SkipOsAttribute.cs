@@ -6,7 +6,7 @@
 
 using System;
 
-namespace Akka.Persistence.Sql.Tests.Internal.Xunit
+namespace Akka.Persistence.Sql.Tests.Common.Internal.Xunit
 {
     [AttributeUsage(AttributeTargets.Class)]
     public class SkipLinuxAttribute : Attribute { }

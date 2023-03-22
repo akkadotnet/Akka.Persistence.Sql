@@ -9,7 +9,7 @@ using Akka.Persistence.Sql.Tests.Common;
 using Xunit;
 using Xunit.Abstractions;
 #if !DEBUG
-using Akka.Persistence.Sql.Tests.Internal.Xunit;
+using Akka.Persistence.Sql.Tests.Common.Internal.Xunit;
 #endif
 
 namespace Akka.Persistence.Sql.Tests.SqlServer.Compatibility

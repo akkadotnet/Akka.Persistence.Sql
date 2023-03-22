@@ -8,6 +8,9 @@ using Akka.Persistence.Sql.Tests.Common;
 using Akka.Persistence.Sql.Tests.Common.Query;
 using Xunit;
 using Xunit.Abstractions;
+#if !DEBUG
+using Akka.Persistence.Sql.Tests.Common.Internal.Xunit;
+#endif
 
 namespace Akka.Persistence.Sql.Query.Csv.Tests.PostgreSql
 {
