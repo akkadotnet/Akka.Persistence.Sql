@@ -53,4 +53,19 @@ namespace Akka.Persistence.Sql.Tests.Common.Query
         public string Provider => ProviderName.PostgreSQL95;
         public TagMode TagMode { get; }
     }
+
+    public sealed class SqlServerConfig : ITestConfig
+    {
+        public static readonly SqlServerConfig TagTable = new (TagMode.TagTable);
+        public static readonly SqlServerConfig Csv = new (TagMode.Csv);
+
+        private SqlServerConfig(TagMode mode)
+        {
+            TagMode = mode;
+        }
+        
+        public Database Database => Database.SqlServer;
+        public string Provider => ProviderName.SqlServer2017;
+        public TagMode TagMode { get; }
+    }
 }
