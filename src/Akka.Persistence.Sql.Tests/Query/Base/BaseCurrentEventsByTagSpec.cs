@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="SqliteCurrentEventsByTagSpec.cs" company="Akka.NET Project">
+//  <copyright file="BaseCurrentEventsByTagSpec.cs" company="Akka.NET Project">
 //      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
@@ -33,8 +33,10 @@ namespace Akka.Persistence.Sql.Tests.Query.Base
             ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
         }
 
-        public Task DisposeAsync()
-            => Task.CompletedTask;
+        public async Task DisposeAsync()
+        {
+            await _fixture.InitializeDbAsync(_config.Database);
+        }
 
         private static Configuration.Config Config(ITestConfig config, TestFixture fixture)
             => ConfigurationFactory.ParseString($@"

@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="SqlitePersistenceIdsSpec.cs" company="Akka.NET Project">
+//  <copyright file="BasePersistenceIdsSpec.cs" company="Akka.NET Project">
 //      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
@@ -10,7 +10,6 @@ using Akka.Persistence.Query;
 using Akka.Persistence.Sql.Query;
 using Akka.Persistence.Sql.Tests.Common;
 using Akka.Persistence.TCK.Query;
-using LinqToDB;
 using Xunit;
 using Xunit.Abstractions;
 

@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="SqlitePersistenceIdsSpec.cs" company="Akka.NET Project">
+//  <copyright file="MsSqliteEventsByTagSpec.cs" company="Akka.NET Project">
 //      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
@@ -12,9 +12,9 @@ using Xunit.Abstractions;
 namespace Akka.Persistence.Sql.Tests.Query.MsSqlite.Csv
 {
     [Collection("PersistenceSpec")]
-    public class SqlitePersistenceIdsSpec : BasePersistenceIdsSpec, IAsyncLifetime
+    public class MsSqliteEventsByTagSpec : BaseEventsByTagSpec
     {
-        public SqlitePersistenceIdsSpec(ITestOutputHelper output, TestFixture fixture)
+        public MsSqliteEventsByTagSpec(ITestOutputHelper output, TestFixture fixture)
             : base(SqliteConfig.MsCsv, output, fixture) { }
     }
 }

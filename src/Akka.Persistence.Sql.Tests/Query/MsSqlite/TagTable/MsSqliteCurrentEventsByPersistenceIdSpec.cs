@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="SqliteEventsByPersistenceIdSpec.cs" company="Akka.NET Project">
+//  <copyright file="MsSqliteCurrentEventsByPersistenceIdSpec.cs" company="Akka.NET Project">
 //      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
@@ -9,12 +9,12 @@ using Akka.Persistence.Sql.Tests.Query.Base;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Sql.Tests.Query.MsSqlite.Csv
+namespace Akka.Persistence.Sql.Tests.Query.MsSqlite.TagTable
 {
     [Collection("PersistenceSpec")]
-    public class SqliteEventsByPersistenceIdSpec : BaseEventsByPersistenceIdSpec
+    public class MsSqliteCurrentEventsByPersistenceIdSpec : BaseCurrentEventsByPersistenceIdSpec
     {
-        public SqliteEventsByPersistenceIdSpec(ITestOutputHelper output, TestFixture fixture)
-            : base(SqliteConfig.MsCsv, output, fixture) { }
+        public MsSqliteCurrentEventsByPersistenceIdSpec(ITestOutputHelper output, TestFixture fixture) 
+            : base(SqliteConfig.MsTagTable, output, fixture) { }
     }
 }
