@@ -49,17 +49,15 @@ namespace Akka.Persistence.Sql.Tests.Query.Base
                         }}
                         provider-name = ""{config.Provider}""
                         tag-write-mode = ""{config.TagMode}""
-                        table-mapping = ""{config.TableMapping}""
                         connection-string = ""{fixture.ConnectionString(config.Database)}""
                         auto-initialize = on
-                        refresh-interval = 1s
                     }}
                     akka.persistence.query.journal.sql {{
                         provider-name = ""{config.Provider}""
                         connection-string = ""{fixture.ConnectionString(config.Database)}""
                         tag-read-mode = ""{config.TagMode}""
-                        table-mapping = ""{config.TableMapping}""
                         auto-initialize = on
+                        refresh-interval = 1s
                     }}
                     akka.test.single-expect-default = 10s")
                 .WithFallback(SqlPersistence.DefaultConfiguration);
