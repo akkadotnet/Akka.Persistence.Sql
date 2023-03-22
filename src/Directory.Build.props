@@ -34,8 +34,8 @@
     <SqliteVersion>1.0.117</SqliteVersion>
     <MicrosoftSqliteVersion>7.0.4</MicrosoftSqliteVersion>
 
-    <AkkaPostgreSqlVersion>1.5.1</AkkaPostgreSqlVersion>
-    <PostgreSqlVersion>6.0.7</PostgreSqlVersion>
+    <AkkaPostgreSqlVersion>1.5.1.1</AkkaPostgreSqlVersion>
+    <PostgreSqlVersion>7.0.2</PostgreSqlVersion>
 
     <AkkaRedisVersion>1.5.0</AkkaRedisVersion>
     <RedisInsideVersion>3.3.0</RedisInsideVersion>
