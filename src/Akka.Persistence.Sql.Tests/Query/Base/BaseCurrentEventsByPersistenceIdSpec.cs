@@ -44,7 +44,7 @@ namespace Akka.Persistence.Sql.Tests.Query.Base
                             plugin = ""akka.persistence.journal.sql""
                             sql {{
                                 provider-name = ""{config.Provider}""
-                                tag-write-mode = ""{config.TagWriteMode}""
+                                tag-write-mode = ""{config.TagMode}""
                                 table-mapping = ""{config.TableMapping}""
                                 connection-string = ""{fixture.ConnectionString(config.Database)}""
                                 auto-initialize = on
@@ -56,7 +56,7 @@ namespace Akka.Persistence.Sql.Tests.Query.Base
                                 sql {{
                                     provider-name = ""{config.Provider}""
                                     connection-string = ""{fixture.ConnectionString(config.Database)}""
-                                    tag-read-mode = ""{config.TagReadMode}""
+                                    tag-read-mode = ""{config.TagMode}""
                                     table-mapping = ""{config.TableMapping}""
                                     auto-initialize = on
                                 }}

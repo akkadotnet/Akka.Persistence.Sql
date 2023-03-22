@@ -15,33 +15,30 @@ namespace Akka.Persistence.Sql.Tests.Query.Base
         string TableMapping { get; }
         Database Database { get; }
         string Provider { get; }
-        TagMode TagWriteMode { get; }
-        TagMode TagReadMode { get; }
+        TagMode TagMode { get; }
     }
     
     internal sealed class SqliteConfig: ITestConfig
     {
         public static readonly SqliteConfig MsTagTable = new (
-            Database.MsSqlite, ProviderName.SQLiteMS, TagMode.TagTable, TagMode.TagTable);
+            Database.MsSqlite, ProviderName.SQLiteMS, TagMode.TagTable);
         public static readonly SqliteConfig MsCsv = new (
-            Database.MsSqlite, ProviderName.SQLiteMS, TagMode.Csv, TagMode.Csv);
+            Database.MsSqlite, ProviderName.SQLiteMS, TagMode.Csv);
         public static readonly SqliteConfig TagTable = new (
-            Database.Sqlite, ProviderName.SQLiteClassic, TagMode.TagTable, TagMode.TagTable);
+            Database.Sqlite, ProviderName.SQLiteClassic, TagMode.TagTable);
         public static readonly SqliteConfig Csv = new (
-            Database.Sqlite, ProviderName.SQLiteClassic, TagMode.Csv, TagMode.Csv);
+            Database.Sqlite, ProviderName.SQLiteClassic, TagMode.Csv);
         
-        private SqliteConfig(Database database, string provider, TagMode write, TagMode read)
+        private SqliteConfig(Database database, string provider, TagMode mode)
         {
             Database = database;
             Provider = provider;
-            TagWriteMode = write;
-            TagReadMode = read;
+            TagMode = mode;
         }
         
-        public string TableMapping => "sqlite";
+        public string TableMapping => "default";
         public Database Database { get; }
         public string Provider { get; }
-        public TagMode TagWriteMode { get; }
-        public TagMode TagReadMode { get; }
+        public TagMode TagMode { get; }
     }
 }
