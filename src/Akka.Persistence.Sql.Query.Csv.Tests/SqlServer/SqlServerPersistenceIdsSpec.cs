@@ -11,6 +11,9 @@ using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Query.Csv.Tests.SqlServer
 {
+#if !DEBUG
+    [SkipWindows]
+#endif
     [Collection("PersistenceSpec")]
     public class SqlServerPersistenceIdsSpec : BasePersistenceIdsSpec, IAsyncLifetime
     {

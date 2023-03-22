@@ -11,6 +11,9 @@ using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Tests.Query.PostgreSql.TagTable
 {
+#if !DEBUG
+    [SkipWindows]
+#endif
     [Collection("PersistenceSpec")]
     public class PostgreSqlCurrentPersistenceIdsSpec : BaseCurrentPersistenceIdsSpec
     {

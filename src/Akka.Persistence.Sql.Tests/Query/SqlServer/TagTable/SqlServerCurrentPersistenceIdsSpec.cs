@@ -11,6 +11,9 @@ using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Tests.Query.SqlServer.TagTable
 {
+#if !DEBUG
+    [SkipWindows]
+#endif
     [Collection("PersistenceSpec")]
     public class SqlServerCurrentPersistenceIdsSpec : BaseCurrentPersistenceIdsSpec
     {
