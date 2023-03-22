@@ -13,8 +13,6 @@
     <PackageReference Include="Akka.Persistence.Sqlite" />
     <PackageReference Include="Akka.Persistence.SqlServer" />
     <PackageReference Include="Akka.Persistence.PostgreSql" />
-    <PackageReference Include="Akka.Persistence.TCK" />
-    <PackageReference Include="Akka.Persistence.TestKit" />
     <PackageReference Include="Akka.Serialization.Hyperion" />
 
     <PackageReference Include="Docker.DotNet" />

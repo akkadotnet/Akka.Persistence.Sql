@@ -70,6 +70,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.Persistence.Sql.TagTab
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akka.Persistence.Sql.Tests.Common", "src\Akka.Persistence.Sql.Tests.Common\Akka.Persistence.Sql.Tests.Common.csproj", "{BDF8A537-A9D3-45A4-81EA-4B77DBD544D6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Sql.Query.Csv.Tests", "src\Akka.Persistence.Sql.Query.Csv.Tests\Akka.Persistence.Sql.Query.Csv.Tests.csproj", "{A6E4AB23-8402-4C53-ACEA-1FEE134011AE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -108,6 +110,10 @@ Global
 		{BDF8A537-A9D3-45A4-81EA-4B77DBD544D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BDF8A537-A9D3-45A4-81EA-4B77DBD544D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BDF8A537-A9D3-45A4-81EA-4B77DBD544D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A6E4AB23-8402-4C53-ACEA-1FEE134011AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6E4AB23-8402-4C53-ACEA-1FEE134011AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6E4AB23-8402-4C53-ACEA-1FEE134011AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6E4AB23-8402-4C53-ACEA-1FEE134011AE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
