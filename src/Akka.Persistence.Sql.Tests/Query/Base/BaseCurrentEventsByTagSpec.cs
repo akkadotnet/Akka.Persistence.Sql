@@ -33,10 +33,8 @@ namespace Akka.Persistence.Sql.Tests.Query.Base
             ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
         }
 
-        public async Task DisposeAsync()
-        {
-            await _fixture.InitializeDbAsync(_config.Database);
-        }
+        public Task DisposeAsync()
+            => Task.CompletedTask;
 
         private static Configuration.Config Config(ITestConfig config, TestFixture fixture)
             => ConfigurationFactory.ParseString($@"
