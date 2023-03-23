@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="ByteArraySnapshotSerializer.cs" company="Akka.NET Project">
+//  <copyright file="ByteArrayDateTimeSnapshotSerializer.cs" company="Akka.NET Project">
 //      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
@@ -11,12 +11,14 @@ using Akka.Util;
 
 namespace Akka.Persistence.Sql.Snapshot
 {
-    public class ByteArraySnapshotSerializer : ISnapshotSerializer<DateTimeSnapshotRow>
+    public class ByteArrayDateTimeSnapshotSerializer : ISnapshotSerializer<DateTimeSnapshotRow>
     {
         private readonly SnapshotConfig _config;
         private readonly Akka.Serialization.Serialization _serialization;
 
-        public ByteArraySnapshotSerializer(Akka.Serialization.Serialization serialization, SnapshotConfig config)
+        public ByteArrayDateTimeSnapshotSerializer(
+            Akka.Serialization.Serialization serialization,
+            SnapshotConfig config)
         {
             _serialization = serialization;
             _config = config;

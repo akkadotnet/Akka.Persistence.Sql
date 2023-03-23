@@ -5,11 +5,9 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Threading.Tasks;
 using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Journal.Types;
 using Akka.Persistence.Sql.Snapshot;
-using LinqToDB;
 using LinqToDB.Configuration;
 using LinqToDB.Data;
 using LinqToDB.Data.RetryPolicy;
@@ -370,43 +368,5 @@ namespace Akka.Persistence.Sql.Db
             connection.RetryPolicy = _policy;
             return connection;
         }
-    }
-
-    public class AkkaDataConnection : IDisposable, IAsyncDisposable
-    {
-        private readonly string _providerName;
-
-        public AkkaDataConnection(
-            string providerName,
-            DataConnection connection)
-        {
-            _providerName = providerName.ToLower();
-
-            Db = connection;
-        }
-
-        public bool UseDateTime =>
-            !_providerName.Contains("sqlite") &&
-            !_providerName.Contains("postgresql");
-
-        public DataConnection Db { get; }
-
-        public IRetryPolicy RetryPolicy
-        {
-            get => Db.RetryPolicy;
-            set => Db.RetryPolicy = value;
-        }
-
-        public AkkaDataConnection Clone()
-            => new(_providerName, (DataConnection)Db.Clone());
-
-        public void Dispose()
-            => Db.Dispose();
-
-        public ValueTask DisposeAsync()
-            => Db.DisposeAsync();
-
-        public ITable<T> GetTable<T>() where T : class
-            => Db.GetTable<T>();
     }
 }

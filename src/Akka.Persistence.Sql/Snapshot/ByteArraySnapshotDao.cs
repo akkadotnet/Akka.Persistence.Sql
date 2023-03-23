@@ -18,22 +18,26 @@ namespace Akka.Persistence.Sql.Snapshot
 {
     public class ByteArraySnapshotDao : ISnapshotDao
     {
-        private readonly AkkaPersistenceDataConnectionFactory _connectionFactory;
         private readonly ILoggingAdapter _logger;
-        private readonly ByteArraySnapshotSerializer _serializer;
+
+        private readonly AkkaPersistenceDataConnectionFactory _connectionFactory;
+        private readonly ByteArrayDateTimeSnapshotSerializer _dateTimeSerializer;
+        private readonly ByteArrayLongSnapshotSerializer _longSerializer;
         private readonly SnapshotConfig _snapshotConfig;
 
         public ByteArraySnapshotDao(
             AkkaPersistenceDataConnectionFactory connectionFactory,
             SnapshotConfig snapshotConfig,
             Akka.Serialization.Serialization serialization,
-            IMaterializer mat,
+            IMaterializer materializer,
             ILoggingAdapter logger)
         {
             _logger = logger;
             _snapshotConfig = snapshotConfig;
             _connectionFactory = connectionFactory;
-            _serializer = new ByteArraySnapshotSerializer(serialization, _snapshotConfig);
+
+            _dateTimeSerializer = new ByteArrayDateTimeSnapshotSerializer(serialization, _snapshotConfig);
+            _longSerializer = new ByteArrayLongSnapshotSerializer(serialization, _snapshotConfig);
         }
 
         public async Task DeleteAllSnapshots(string persistenceId)
@@ -60,24 +64,48 @@ namespace Akka.Persistence.Sql.Snapshot
         {
             await using var connection = _connectionFactory.GetConnection();
 
-            await connection
-                .GetTable<DateTimeSnapshotRow>()
-                .Where(r =>
-                    r.PersistenceId == persistenceId &&
-                    r.SequenceNumber <= maxSequenceNr)
-                .DeleteAsync();
+            if (connection.UseDateTime)
+            {
+                await connection
+                    .GetTable<DateTimeSnapshotRow>()
+                    .Where(r =>
+                        r.PersistenceId == persistenceId &&
+                        r.SequenceNumber <= maxSequenceNr)
+                    .DeleteAsync();
+            }
+            else
+            {
+                await connection
+                    .GetTable<LongSnapshotRow>()
+                    .Where(r =>
+                        r.PersistenceId == persistenceId &&
+                        r.SequenceNumber <= maxSequenceNr)
+                    .DeleteAsync();
+            }
         }
 
         public async Task DeleteUpToMaxTimestamp(string persistenceId, DateTime maxTimestamp)
         {
             await using var connection = _connectionFactory.GetConnection();
 
-            await connection
-                .GetTable<DateTimeSnapshotRow>()
-                .Where(r =>
-                    r.PersistenceId == persistenceId &&
-                    r.Created <= maxTimestamp)
-                .DeleteAsync();
+            if (connection.UseDateTime)
+            {
+                await connection
+                    .GetTable<DateTimeSnapshotRow>()
+                    .Where(r =>
+                        r.PersistenceId == persistenceId &&
+                        r.Created <= maxTimestamp)
+                    .DeleteAsync();
+            }
+            else
+            {
+                await connection
+                    .GetTable<LongSnapshotRow>()
+                    .Where(r =>
+                        r.PersistenceId == persistenceId &&
+                        r.Created <= maxTimestamp.Ticks)
+                    .DeleteAsync();
+            }
         }
 
         public async Task DeleteUpToMaxSequenceNrAndMaxTimestamp(
@@ -87,62 +115,124 @@ namespace Akka.Persistence.Sql.Snapshot
         {
             await using var connection = _connectionFactory.GetConnection();
 
-            await connection
-                .GetTable<DateTimeSnapshotRow>()
-                .Where(r =>
-                    r.PersistenceId == persistenceId &&
-                    r.SequenceNumber <= maxSequenceNr &&
-                    r.Created <= maxTimestamp)
-                .DeleteAsync();
+            if (connection.UseDateTime)
+            {
+                await connection
+                    .GetTable<DateTimeSnapshotRow>()
+                    .Where(r =>
+                        r.PersistenceId == persistenceId &&
+                        r.SequenceNumber <= maxSequenceNr &&
+                        r.Created <= maxTimestamp)
+                    .DeleteAsync();
+            }
+            else
+            {
+                await connection
+                    .GetTable<LongSnapshotRow>()
+                    .Where(r =>
+                        r.PersistenceId == persistenceId &&
+                        r.SequenceNumber <= maxSequenceNr &&
+                        r.Created <= maxTimestamp.Ticks)
+                    .DeleteAsync();
+            }
         }
 
         public async Task<Option<SelectedSnapshot>> LatestSnapshot(string persistenceId)
         {
             await using var connection = _connectionFactory.GetConnection();
 
-            var row = await connection
-                .GetTable<DateTimeSnapshotRow>()
-                .Where(r => r.PersistenceId == persistenceId)
-                .OrderByDescending(t => t.SequenceNumber)
-                .FirstOrDefaultAsync();
+            if (connection.UseDateTime)
+            {
+                var row = await connection
+                    .GetTable<DateTimeSnapshotRow>()
+                    .Where(r => r.PersistenceId == persistenceId)
+                    .OrderByDescending(t => t.SequenceNumber)
+                    .FirstOrDefaultAsync();
 
-            return row != null
-                ? _serializer.Deserialize(row).Get()
-                : Option<SelectedSnapshot>.None;
+                return row != null
+                    ? _dateTimeSerializer.Deserialize(row).Get()
+                    : Option<SelectedSnapshot>.None;
+            }
+            else
+            {
+                var row = await connection
+                    .GetTable<LongSnapshotRow>()
+                    .Where(r => r.PersistenceId == persistenceId)
+                    .OrderByDescending(t => t.SequenceNumber)
+                    .FirstOrDefaultAsync();
+
+                return row != null
+                    ? _longSerializer.Deserialize(row).Get()
+                    : Option<SelectedSnapshot>.None;
+            }
         }
 
         public async Task<Option<SelectedSnapshot>> SnapshotForMaxTimestamp(string persistenceId, DateTime timestamp)
         {
             await using var connection = _connectionFactory.GetConnection();
 
-            var row = await connection
-                .GetTable<DateTimeSnapshotRow>()
-                .Where(r =>
-                    r.PersistenceId == persistenceId &&
-                    r.Created <= timestamp)
-                .OrderByDescending(t => t.SequenceNumber)
-                .FirstOrDefaultAsync();
+            if (connection.UseDateTime)
+            {
+                var row = await connection
+                    .GetTable<DateTimeSnapshotRow>()
+                    .Where(r =>
+                        r.PersistenceId == persistenceId &&
+                        r.Created <= timestamp)
+                    .OrderByDescending(t => t.SequenceNumber)
+                    .FirstOrDefaultAsync();
 
-            return row != null
-                ? _serializer.Deserialize(row).Get()
-                : Option<SelectedSnapshot>.None;
+                return row != null
+                    ? _dateTimeSerializer.Deserialize(row).Get()
+                    : Option<SelectedSnapshot>.None;
+            }
+            else
+            {
+                var row = await connection
+                    .GetTable<LongSnapshotRow>()
+                    .Where(r =>
+                        r.PersistenceId == persistenceId &&
+                        r.Created <= timestamp.Ticks)
+                    .OrderByDescending(t => t.SequenceNumber)
+                    .FirstOrDefaultAsync();
+
+                return row != null
+                    ? _longSerializer.Deserialize(row).Get()
+                    : Option<SelectedSnapshot>.None;
+            }
         }
 
         public async Task<Option<SelectedSnapshot>> SnapshotForMaxSequenceNr(string persistenceId, long sequenceNr)
         {
             await using var connection = _connectionFactory.GetConnection();
 
-            var row = await connection
-                .GetTable<DateTimeSnapshotRow>()
-                .Where(r =>
-                    r.PersistenceId == persistenceId &&
-                    r.SequenceNumber <= sequenceNr)
-                .OrderByDescending(t => t.SequenceNumber)
-                .FirstOrDefaultAsync();
+            if (connection.UseDateTime)
+            {
+                var row = await connection
+                    .GetTable<DateTimeSnapshotRow>()
+                    .Where(r =>
+                        r.PersistenceId == persistenceId &&
+                        r.SequenceNumber <= sequenceNr)
+                    .OrderByDescending(t => t.SequenceNumber)
+                    .FirstOrDefaultAsync();
 
-            return row != null
-                ? _serializer.Deserialize(row).Get()
-                : Option<SelectedSnapshot>.None;
+                return row != null
+                    ? _dateTimeSerializer.Deserialize(row).Get()
+                    : Option<SelectedSnapshot>.None;
+            }
+            else
+            {
+                var row = await connection
+                    .GetTable<LongSnapshotRow>()
+                    .Where(r =>
+                        r.PersistenceId == persistenceId &&
+                        r.SequenceNumber <= sequenceNr)
+                    .OrderByDescending(t => t.SequenceNumber)
+                    .FirstOrDefaultAsync();
+
+                return row != null
+                    ? _longSerializer.Deserialize(row).Get()
+                    : Option<SelectedSnapshot>.None;
+            }
         }
 
         public async Task<Option<SelectedSnapshot>> SnapshotForMaxSequenceNrAndMaxTimestamp(
@@ -152,37 +242,69 @@ namespace Akka.Persistence.Sql.Snapshot
         {
             await using var connection = _connectionFactory.GetConnection();
 
-            var row = await connection
-                .GetTable<DateTimeSnapshotRow>()
-                .Where(r =>
-                    r.PersistenceId == persistenceId &&
-                    r.SequenceNumber <= sequenceNr &&
-                    r.Created <= timestamp)
-                .OrderByDescending(t => t.SequenceNumber)
-                .FirstOrDefaultAsync();
+            if (connection.UseDateTime)
+            {
+                var row = await connection
+                    .GetTable<DateTimeSnapshotRow>()
+                    .Where(r =>
+                        r.PersistenceId == persistenceId &&
+                        r.SequenceNumber <= sequenceNr &&
+                        r.Created <= timestamp)
+                    .OrderByDescending(t => t.SequenceNumber)
+                    .FirstOrDefaultAsync();
 
-            return row != null
-                ? _serializer.Deserialize(row).Get()
-                : Option<SelectedSnapshot>.None;
+                return row != null
+                    ? _dateTimeSerializer.Deserialize(row).Get()
+                    : Option<SelectedSnapshot>.None;
+            }
+            else
+            {
+                var row = await connection
+                    .GetTable<LongSnapshotRow>()
+                    .Where(r =>
+                        r.PersistenceId == persistenceId &&
+                        r.SequenceNumber <= sequenceNr &&
+                        r.Created <= timestamp.Ticks)
+                    .OrderByDescending(t => t.SequenceNumber)
+                    .FirstOrDefaultAsync();
+
+                return row != null
+                    ? _longSerializer.Deserialize(row).Get()
+                    : Option<SelectedSnapshot>.None;
+            }
         }
 
         public async Task Delete(string persistenceId, long sequenceNr)
         {
             await using var connection = _connectionFactory.GetConnection();
 
-            var _ = await connection
-                .GetTable<DateTimeSnapshotRow>()
-                .Where(r =>
-                    r.PersistenceId == persistenceId &&
-                    r.SequenceNumber == sequenceNr)
-                .DeleteAsync();
+            if (connection.UseDateTime)
+            {
+                await connection
+                    .GetTable<DateTimeSnapshotRow>()
+                    .Where(r =>
+                        r.PersistenceId == persistenceId &&
+                        r.SequenceNumber == sequenceNr)
+                    .DeleteAsync();
+            }
+            else
+            {
+                await connection
+                    .GetTable<LongSnapshotRow>()
+                    .Where(r =>
+                        r.PersistenceId == persistenceId &&
+                        r.SequenceNumber == sequenceNr)
+                    .DeleteAsync();
+            }
         }
 
         public async Task Save(SnapshotMetadata snapshotMetadata, object snapshot)
         {
             await using var connection = _connectionFactory.GetConnection();
 
-            await connection.Db.InsertOrReplaceAsync(_serializer.Serialize(snapshotMetadata, snapshot).Get());
+            await connection
+                .Db
+                .InsertOrReplaceAsync(_dateTimeSerializer.Serialize(snapshotMetadata, snapshot).Get());
         }
 
         // TODO: This should be converted to async
@@ -192,7 +314,14 @@ namespace Akka.Persistence.Sql.Snapshot
 
             try
             {
-                connection.Db.CreateTable<DateTimeSnapshotRow>();
+                if (connection.UseDateTime)
+                {
+                    connection.Db.CreateTable<DateTimeSnapshotRow>();
+                }
+                else
+                {
+                    connection.Db.CreateTable<LongSnapshotRow>();
+                }
             }
             catch (Exception e)
             {
