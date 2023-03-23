@@ -28,11 +28,13 @@ namespace Akka.Persistence.Sql.Db
         {
             _providerName = providerName.ToLower();
             _connection = connection;
+
+            UseDateTime =
+                !_providerName.Contains("sqlite") &&
+                !_providerName.Contains("postgresql");
         }
 
-        public bool UseDateTime =>
-            !_providerName.Contains("sqlite") &&
-            !_providerName.Contains("postgresql");
+        public bool UseDateTime { get; }
 
         public IRetryPolicy RetryPolicy
         {
