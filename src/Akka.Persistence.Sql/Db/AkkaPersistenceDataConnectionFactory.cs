@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Threading.Tasks;
 using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Journal.Types;
 using Akka.Persistence.Sql.Snapshot;
@@ -19,7 +20,7 @@ namespace Akka.Persistence.Sql.Db
 {
     public class AkkaPersistenceDataConnectionFactory
     {
-        private readonly Lazy<DataConnection> _cloneConnection;
+        private readonly Lazy<AkkaDataConnection> _cloneConnection;
         private readonly LinqToDbConnectionOptions _opts;
         private readonly IRetryPolicy _policy;
         private readonly bool _useCloneDataConnection;
@@ -47,7 +48,10 @@ namespace Akka.Persistence.Sql.Db
             if (config.ProviderName.ToLower().StartsWith("sqlserver"))
                 _policy = new SqlServerRetryPolicy();
 
-            _cloneConnection = new Lazy<DataConnection>(() => new DataConnection(_opts));
+            _cloneConnection = new Lazy<AkkaDataConnection>(
+                () => new AkkaDataConnection(
+                    _opts.ProviderName,
+                    new DataConnection(_opts)));
         }
 
         public AkkaPersistenceDataConnectionFactory(IProviderConfig<SnapshotTableConfiguration> config)
@@ -61,7 +65,16 @@ namespace Akka.Persistence.Sql.Db
                 config.TableConfig.GetHashCode());
 
             var fmb = new MappingSchema(configName, MappingSchema.Default).GetFluentMappingBuilder();
-            MapSnapshotRow(config, fmb);
+
+            if (config.ProviderName.ToLower().Contains("sqlite") ||
+                config.ProviderName.ToLower().Contains("postgresql"))
+            {
+                MapLongSnapshotRow(config, fmb);
+            }
+            else
+            {
+                MapDateTimeSnapshotRow(config, fmb);
+            }
 
             _useCloneDataConnection = config.UseCloneConnection;
             var mappingSchema = fmb.MappingSchema;
@@ -73,60 +86,10 @@ namespace Akka.Persistence.Sql.Db
             if (config.ProviderName.ToLower().StartsWith("sqlserver"))
                 _policy = new SqlServerRetryPolicy();
 
-            _cloneConnection = new Lazy<DataConnection>(() => new DataConnection(_opts));
-        }
-
-        private static void MapSnapshotRow(
-            IProviderConfig<SnapshotTableConfiguration> config,
-            FluentMappingBuilder fmb)
-        {
-            var tableConfig = config.TableConfig;
-            var snapshotConfig = tableConfig.SnapshotTable;
-            var builder = fmb.Entity<SnapshotRow>();
-
-            if (tableConfig.SchemaName is { })
-                builder.HasSchemaName(tableConfig.SchemaName);
-
-            builder
-                .HasTableName(snapshotConfig.Name)
-
-                .Member(r => r.Created)
-                .HasColumnName(snapshotConfig.ColumnNames.Created)
-
-                .Member(r => r.Manifest)
-                .HasColumnName(snapshotConfig.ColumnNames.Manifest)
-                .HasLength(500)
-
-                .Member(r => r.Payload)
-                .HasColumnName(snapshotConfig.ColumnNames.Snapshot)
-
-                .Member(r => r.SequenceNumber)
-                .HasColumnName(snapshotConfig.ColumnNames.SequenceNumber)
-
-                .Member(r => r.SerializerId)
-                .HasColumnName(snapshotConfig.ColumnNames.SerializerId)
-
-                .Member(r => r.PersistenceId)
-                .HasColumnName(snapshotConfig.ColumnNames.PersistenceId)
-                .HasLength(255);
-
-            if (config.ProviderName.ToLower().Contains("sqlite") ||
-                config.ProviderName.ToLower().Contains("postgresql"))
-            {
-                builder
-                    .Member(r => r.Created)
-                    .HasDataType(DataType.Int64)
-                    .HasConversion(
-                        r => r.Ticks,
-                        r => new DateTime(r));
-            }
-
-            if (config.IDaoConfig.SqlCommonCompatibilityMode)
-            {
-                //builder.Member(r => r.Created)
-                //    .HasConversion(l => DateTimeHelpers.FromUnixEpochMillis(l),
-                //        dt => DateTimeHelpers.ToUnixEpochMillis(dt));
-            }
+            _cloneConnection = new Lazy<AkkaDataConnection>(
+                () => new AkkaDataConnection(
+                    _opts.ProviderName,
+                    new DataConnection(_opts)));
         }
 
         private static void MapJournalRow(
@@ -309,14 +272,141 @@ namespace Akka.Persistence.Sql.Db
             }
         }
 
-        public DataConnection GetConnection()
+        private static void MapDateTimeSnapshotRow(
+            IProviderConfig<SnapshotTableConfiguration> config,
+            FluentMappingBuilder fmb)
+        {
+            var tableConfig = config.TableConfig;
+            var snapshotConfig = tableConfig.SnapshotTable;
+            var builder = fmb.Entity<DateTimeSnapshotRow>();
+
+            if (tableConfig.SchemaName is { })
+                builder.HasSchemaName(tableConfig.SchemaName);
+
+            builder
+                .HasTableName(snapshotConfig.Name)
+
+                .Member(r => r.Created)
+                .HasColumnName(snapshotConfig.ColumnNames.Created)
+
+                .Member(r => r.Manifest)
+                .HasColumnName(snapshotConfig.ColumnNames.Manifest)
+                .HasLength(500)
+
+                .Member(r => r.Payload)
+                .HasColumnName(snapshotConfig.ColumnNames.Snapshot)
+
+                .Member(r => r.SequenceNumber)
+                .HasColumnName(snapshotConfig.ColumnNames.SequenceNumber)
+
+                .Member(r => r.SerializerId)
+                .HasColumnName(snapshotConfig.ColumnNames.SerializerId)
+
+                .Member(r => r.PersistenceId)
+                .HasColumnName(snapshotConfig.ColumnNames.PersistenceId)
+                .HasLength(255);
+
+            if (config.IDaoConfig.SqlCommonCompatibilityMode)
+            {
+                //builder.Member(r => r.Created)
+                //    .HasConversion(l => DateTimeHelpers.FromUnixEpochMillis(l),
+                //        dt => DateTimeHelpers.ToUnixEpochMillis(dt));
+            }
+        }
+
+        private static void MapLongSnapshotRow(
+            IProviderConfig<SnapshotTableConfiguration> config,
+            FluentMappingBuilder fmb)
+        {
+            var tableConfig = config.TableConfig;
+            var snapshotConfig = tableConfig.SnapshotTable;
+            var builder = fmb.Entity<LongSnapshotRow>();
+
+            if (tableConfig.SchemaName is { })
+                builder.HasSchemaName(tableConfig.SchemaName);
+
+            builder
+                .HasTableName(snapshotConfig.Name)
+
+                .Member(r => r.Created)
+                .HasColumnName(snapshotConfig.ColumnNames.Created)
+
+                .Member(r => r.Manifest)
+                .HasColumnName(snapshotConfig.ColumnNames.Manifest)
+                .HasLength(500)
+
+                .Member(r => r.Payload)
+                .HasColumnName(snapshotConfig.ColumnNames.Snapshot)
+
+                .Member(r => r.SequenceNumber)
+                .HasColumnName(snapshotConfig.ColumnNames.SequenceNumber)
+
+                .Member(r => r.SerializerId)
+                .HasColumnName(snapshotConfig.ColumnNames.SerializerId)
+
+                .Member(r => r.PersistenceId)
+                .HasColumnName(snapshotConfig.ColumnNames.PersistenceId)
+                .HasLength(255);
+
+            if (config.IDaoConfig.SqlCommonCompatibilityMode)
+            {
+                //builder.Member(r => r.Created)
+                //    .HasConversion(l => DateTimeHelpers.FromUnixEpochMillis(l),
+                //        dt => DateTimeHelpers.ToUnixEpochMillis(dt));
+            }
+        }
+
+        public AkkaDataConnection GetConnection()
         {
             if (!_useCloneDataConnection)
-                return new DataConnection(_opts) { RetryPolicy = _policy };
+                return new AkkaDataConnection(
+                    _opts.ProviderName,
+                    new DataConnection(_opts)
+                    {
+                        RetryPolicy = _policy
+                    });
 
-            var connection = (DataConnection)_cloneConnection.Value.Clone();
+            var connection = _cloneConnection.Value.Clone();
             connection.RetryPolicy = _policy;
             return connection;
         }
+    }
+
+    public class AkkaDataConnection : IDisposable, IAsyncDisposable
+    {
+        private readonly string _providerName;
+
+        public AkkaDataConnection(
+            string providerName,
+            DataConnection connection)
+        {
+            _providerName = providerName.ToLower();
+
+            Db = connection;
+        }
+
+        public bool UseDateTime =>
+            !_providerName.Contains("sqlite") &&
+            !_providerName.Contains("postgresql");
+
+        public DataConnection Db { get; }
+
+        public IRetryPolicy RetryPolicy
+        {
+            get => Db.RetryPolicy;
+            set => Db.RetryPolicy = value;
+        }
+
+        public AkkaDataConnection Clone()
+            => new(_providerName, (DataConnection)Db.Clone());
+
+        public void Dispose()
+            => Db.Dispose();
+
+        public ValueTask DisposeAsync()
+            => Db.DisposeAsync();
+
+        public ITable<T> GetTable<T>() where T : class
+            => Db.GetTable<T>();
     }
 }

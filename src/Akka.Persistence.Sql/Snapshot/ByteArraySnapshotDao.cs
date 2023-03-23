@@ -40,10 +40,20 @@ namespace Akka.Persistence.Sql.Snapshot
         {
             await using var connection = _connectionFactory.GetConnection();
 
-            await connection
-                .GetTable<SnapshotRow>()
-                .Where(r => r.PersistenceId == persistenceId)
-                .DeleteAsync();
+            if (connection.UseDateTime)
+            {
+                await connection
+                    .GetTable<DateTimeSnapshotRow>()
+                    .Where(r => r.PersistenceId == persistenceId)
+                    .DeleteAsync();
+            }
+            else
+            {
+                await connection
+                    .GetTable<LongSnapshotRow>()
+                    .Where(r => r.PersistenceId == persistenceId)
+                    .DeleteAsync();
+            }
         }
 
         public async Task DeleteUpToMaxSequenceNr(string persistenceId, long maxSequenceNr)
@@ -51,7 +61,7 @@ namespace Akka.Persistence.Sql.Snapshot
             await using var connection = _connectionFactory.GetConnection();
 
             await connection
-                .GetTable<SnapshotRow>()
+                .GetTable<DateTimeSnapshotRow>()
                 .Where(r =>
                     r.PersistenceId == persistenceId &&
                     r.SequenceNumber <= maxSequenceNr)
@@ -63,7 +73,7 @@ namespace Akka.Persistence.Sql.Snapshot
             await using var connection = _connectionFactory.GetConnection();
 
             await connection
-                .GetTable<SnapshotRow>()
+                .GetTable<DateTimeSnapshotRow>()
                 .Where(r =>
                     r.PersistenceId == persistenceId &&
                     r.Created <= maxTimestamp)
@@ -78,7 +88,7 @@ namespace Akka.Persistence.Sql.Snapshot
             await using var connection = _connectionFactory.GetConnection();
 
             await connection
-                .GetTable<SnapshotRow>()
+                .GetTable<DateTimeSnapshotRow>()
                 .Where(r =>
                     r.PersistenceId == persistenceId &&
                     r.SequenceNumber <= maxSequenceNr &&
@@ -91,7 +101,7 @@ namespace Akka.Persistence.Sql.Snapshot
             await using var connection = _connectionFactory.GetConnection();
 
             var row = await connection
-                .GetTable<SnapshotRow>()
+                .GetTable<DateTimeSnapshotRow>()
                 .Where(r => r.PersistenceId == persistenceId)
                 .OrderByDescending(t => t.SequenceNumber)
                 .FirstOrDefaultAsync();
@@ -106,7 +116,7 @@ namespace Akka.Persistence.Sql.Snapshot
             await using var connection = _connectionFactory.GetConnection();
 
             var row = await connection
-                .GetTable<SnapshotRow>()
+                .GetTable<DateTimeSnapshotRow>()
                 .Where(r =>
                     r.PersistenceId == persistenceId &&
                     r.Created <= timestamp)
@@ -123,7 +133,7 @@ namespace Akka.Persistence.Sql.Snapshot
             await using var connection = _connectionFactory.GetConnection();
 
             var row = await connection
-                .GetTable<SnapshotRow>()
+                .GetTable<DateTimeSnapshotRow>()
                 .Where(r =>
                     r.PersistenceId == persistenceId &&
                     r.SequenceNumber <= sequenceNr)
@@ -143,7 +153,7 @@ namespace Akka.Persistence.Sql.Snapshot
             await using var connection = _connectionFactory.GetConnection();
 
             var row = await connection
-                .GetTable<SnapshotRow>()
+                .GetTable<DateTimeSnapshotRow>()
                 .Where(r =>
                     r.PersistenceId == persistenceId &&
                     r.SequenceNumber <= sequenceNr &&
@@ -161,7 +171,7 @@ namespace Akka.Persistence.Sql.Snapshot
             await using var connection = _connectionFactory.GetConnection();
 
             var _ = await connection
-                .GetTable<SnapshotRow>()
+                .GetTable<DateTimeSnapshotRow>()
                 .Where(r =>
                     r.PersistenceId == persistenceId &&
                     r.SequenceNumber == sequenceNr)
@@ -172,7 +182,7 @@ namespace Akka.Persistence.Sql.Snapshot
         {
             await using var connection = _connectionFactory.GetConnection();
 
-            await connection.InsertOrReplaceAsync(_serializer.Serialize(snapshotMetadata, snapshot).Get());
+            await connection.Db.InsertOrReplaceAsync(_serializer.Serialize(snapshotMetadata, snapshot).Get());
         }
 
         // TODO: This should be converted to async
@@ -182,7 +192,7 @@ namespace Akka.Persistence.Sql.Snapshot
 
             try
             {
-                connection.CreateTable<SnapshotRow>();
+                connection.Db.CreateTable<DateTimeSnapshotRow>();
             }
             catch (Exception e)
             {
