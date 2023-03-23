@@ -28,8 +28,16 @@ namespace Akka.Persistence.Sql.Tests.Common
             };
         }
 
-        public Task InitializeAsync()
-            => Task.CompletedTask;
+        public async Task InitializeAsync()
+        {
+            await Task.WhenAll(
+                _containers.Values
+                    .Where(container => !container.Initialized)
+                    .Select(container => container.InitializeAsync()));
+            await Task.WhenAll(
+                _containers.Values
+                    .Select(container => container.InitializeDbAsync()));
+        }
 
         public async Task DisposeAsync()
             => await Task.WhenAll(_containers.Select(kvp => kvp.Value.DisposeAsync().AsTask()));

@@ -18,7 +18,7 @@ namespace Akka.Persistence.Sql.Tests.Query.SqlServer.TagTable
     [SkipWindows]
 #endif
     [Collection("PersistenceSpec")]
-    public class SqlServerPersistenceIdsSpec : BasePersistenceIdsSpec, IAsyncLifetime
+    public class SqlServerPersistenceIdsSpec : BasePersistenceIdsSpec
     {
         public SqlServerPersistenceIdsSpec(ITestOutputHelper output, TestFixture fixture)
             : base(SqlServerConfig.TagTable, output, fixture) { }
