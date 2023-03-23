@@ -19,7 +19,7 @@ namespace Akka.Persistence.Sql.Db
     public class AkkaPersistenceDataConnectionFactory
     {
         private readonly Lazy<AkkaDataConnection> _cloneConnection;
-        private readonly LinqToDbConnectionOptions _opts;
+        private readonly LinqToDBConnectionOptions _opts;
         private readonly IRetryPolicy _policy;
         private readonly bool _useCloneDataConnection;
 
@@ -38,7 +38,7 @@ namespace Akka.Persistence.Sql.Db
 
             _useCloneDataConnection = config.UseCloneConnection;
             var mappingSchema = fmb.MappingSchema;
-            _opts = new LinqToDbConnectionOptionsBuilder()
+            _opts = new LinqToDBConnectionOptionsBuilder()
                 .UseConnectionString(config.ProviderName, config.ConnectionString)
                 .UseMappingSchema(mappingSchema)
                 .Build();
@@ -76,7 +76,7 @@ namespace Akka.Persistence.Sql.Db
 
             _useCloneDataConnection = config.UseCloneConnection;
             var mappingSchema = fmb.MappingSchema;
-            _opts = new LinqToDbConnectionOptionsBuilder()
+            _opts = new LinqToDBConnectionOptionsBuilder()
                 .UseConnectionString(config.ProviderName, config.ConnectionString)
                 .UseMappingSchema(mappingSchema)
                 .Build();

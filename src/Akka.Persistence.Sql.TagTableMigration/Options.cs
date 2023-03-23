@@ -19,13 +19,14 @@ namespace Akka.Persistence.Sql.TagTableMigration
     public enum ProviderType
     {
         SqlServer,
-        SqlServer2000,
         SqlServer2005,
         SqlServer2008,
         SqlServer2012,
         SqlServer2014,
         SqlServer2016,
         SqlServer2017,
+        SqlServer2019,
+        SqlServer2022,
         MySql,
         MySqlOfficial,
         MySqlConnector,
@@ -33,6 +34,7 @@ namespace Akka.Persistence.Sql.TagTableMigration
         PostgreSql92,
         PostgreSql93,
         PostgreSql95,
+        PostgreSql15,
         Sqlite,
         SqliteClassic,
         SqliteMs
@@ -54,13 +56,14 @@ namespace Akka.Persistence.Sql.TagTableMigration
             => type switch
             {
                 ProviderType.SqlServer => ProviderName.SqlServer,
-                ProviderType.SqlServer2000 => ProviderName.SqlServer2000,
                 ProviderType.SqlServer2005 => ProviderName.SqlServer2005,
                 ProviderType.SqlServer2008 => ProviderName.SqlServer2008,
                 ProviderType.SqlServer2012 => ProviderName.SqlServer2012,
                 ProviderType.SqlServer2014 => ProviderName.SqlServer2014,
                 ProviderType.SqlServer2016 => ProviderName.SqlServer2016,
                 ProviderType.SqlServer2017 => ProviderName.SqlServer2017,
+                ProviderType.SqlServer2019 => ProviderName.SqlServer2019,
+                ProviderType.SqlServer2022 => ProviderName.SqlServer2022,
                 ProviderType.MySql => ProviderName.MySql,
                 ProviderType.MySqlOfficial => ProviderName.MySqlOfficial,
                 ProviderType.MySqlConnector => ProviderName.MySqlConnector,
@@ -68,6 +71,7 @@ namespace Akka.Persistence.Sql.TagTableMigration
                 ProviderType.PostgreSql92 => ProviderName.PostgreSQL92,
                 ProviderType.PostgreSql93 => ProviderName.PostgreSQL93,
                 ProviderType.PostgreSql95 => ProviderName.PostgreSQL95,
+                ProviderType.PostgreSql15 => ProviderName.PostgreSQL15,
                 ProviderType.Sqlite => ProviderName.SQLite,
                 ProviderType.SqliteClassic => ProviderName.SQLiteClassic,
                 ProviderType.SqliteMs => ProviderName.SQLiteMS,
