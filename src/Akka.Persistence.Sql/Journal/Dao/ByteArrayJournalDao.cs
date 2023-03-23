@@ -42,9 +42,9 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
             try
             {
-                connection.Db.CreateTable<JournalRow>();
+                connection.CreateTable<JournalRow>();
                 if (JournalConfig.TableConfig.TagWriteMode is not TagWriteMode.Csv)
-                    connection.Db.CreateTable<JournalTagRow>();
+                    connection.CreateTable<JournalTagRow>();
             }
             catch (Exception e)
             {
@@ -60,7 +60,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
             {
                 try
                 {
-                    connection.Db.CreateTable<JournalMetaData>();
+                    connection.CreateTable<JournalMetaData>();
                 }
                 catch (Exception e)
                 {

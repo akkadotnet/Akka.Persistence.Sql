@@ -302,9 +302,22 @@ namespace Akka.Persistence.Sql.Snapshot
         {
             await using var connection = _connectionFactory.GetConnection();
 
-            await connection
-                .Db
-                .InsertOrReplaceAsync(_dateTimeSerializer.Serialize(snapshotMetadata, snapshot).Get());
+            if (connection.UseDateTime)
+            {
+                await connection
+                    .InsertOrReplaceAsync(
+                        _dateTimeSerializer
+                            .Serialize(snapshotMetadata, snapshot)
+                            .Get());
+            }
+            else
+            {
+                await connection
+                    .InsertOrReplaceAsync(
+                        _longSerializer
+                            .Serialize(snapshotMetadata, snapshot)
+                            .Get());
+            }
         }
 
         // TODO: This should be converted to async
@@ -316,11 +329,11 @@ namespace Akka.Persistence.Sql.Snapshot
             {
                 if (connection.UseDateTime)
                 {
-                    connection.Db.CreateTable<DateTimeSnapshotRow>();
+                    connection.CreateTable<DateTimeSnapshotRow>();
                 }
                 else
                 {
-                    connection.Db.CreateTable<LongSnapshotRow>();
+                    connection.CreateTable<LongSnapshotRow>();
                 }
             }
             catch (Exception e)

@@ -52,11 +52,10 @@ namespace Akka.Persistence.Sql.HelperLib
             await using var connection = _connectionFactory.GetConnection();
 
             // Create the tag table if it doesn't exist
-            var schemaProvider = connection.Db.DataProvider.GetSchemaProvider();
-            var dbSchema = schemaProvider.GetSchema(connection.Db);
+            var dbSchema = connection.GetSchema();
 
             if (dbSchema.Tables.All(t => t.TableName != _journalConfig.TableConfig.TagTable.Name))
-                await connection.Db.CreateTableAsync<JournalTagRow>();
+                await connection.CreateTableAsync<JournalTagRow>();
 
             long maxId;
             if (endOffset is null)
@@ -87,7 +86,7 @@ namespace Akka.Persistence.Sql.HelperLib
                 Console.WriteLine(
                     $"Migrating offset {startOffset} to {Math.Min(startOffset + batchSize, maxId)}");
 
-                await using (var transaction = await connection.Db.BeginTransactionAsync(IsolationLevel.ReadCommitted))
+                await using (var transaction = await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted))
                 {
                     try
                     {

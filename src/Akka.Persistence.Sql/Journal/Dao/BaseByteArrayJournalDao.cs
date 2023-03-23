@@ -152,7 +152,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
         {
             await using var connection = ConnectionFactory.GetConnection();
 
-            var transaction = await connection.Db.BeginTransactionAsync();
+            var transaction = await connection.BeginTransactionAsync();
 
             try
             {
@@ -349,7 +349,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     // If we are writing a single row,
                     // we don't need to worry about transactions.
                     await using var connection = ConnectionFactory.GetConnection();
-                    await connection.Db.InsertAsync(xs.Head);
+                    await connection.InsertAsync(xs.Head);
                     break;
                 }
 
@@ -363,7 +363,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
         {
             await using var connection = ConnectionFactory.GetConnection();
 
-            await using var transaction = await connection.Db.BeginTransactionAsync(IsolationLevel.ReadCommitted);
+            await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted);
 
             try
             {
@@ -387,13 +387,13 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     }
                 }
 
-                await connection.Db.CommitTransactionAsync();
+                await connection.CommitTransactionAsync();
             }
             catch (Exception e1)
             {
                 try
                 {
-                    await connection.Db.RollbackTransactionAsync();
+                    await connection.RollbackTransactionAsync();
                 }
                 catch (Exception e2)
                 {
@@ -417,7 +417,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
             // We're forced to insert the rows one by one.
             foreach (var journalRow in xs)
             {
-                var dbId = await connection.Db.InsertWithInt64IdentityAsync(journalRow);
+                var dbId = await connection.InsertWithInt64IdentityAsync(journalRow);
 
                 tagsToInsert.AddRange(
                     journalRow.TagArr.Select(
