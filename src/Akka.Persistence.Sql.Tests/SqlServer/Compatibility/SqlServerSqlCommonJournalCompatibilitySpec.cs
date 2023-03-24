@@ -44,9 +44,9 @@ namespace Akka.Persistence.Sql.Tests.SqlServer.Compatibility
 
         protected override Configuration.Config Config { get; }
 
-        public override async Task InitializeAsync()
+        public override async Task DisposeAsync()
         {
-            await base.InitializeAsync();
+            await base.DisposeAsync();
             await _fixture.InitializeDbAsync(Database.SqlServer);
         }
     }

@@ -4,6 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System.Threading;
 using System.Threading.Tasks;
 using Akka.Configuration;
 using Akka.Persistence.Query;
@@ -38,13 +39,12 @@ namespace Akka.Persistence.Sql.Tests.Common.Query
 
         public async Task DisposeAsync()
         {
-            await _fixture.InitializeDbAsync(_config.Database);
-        }
-
-        protected override void AfterAll()
-        {
-            base.AfterAll();
-            if(!_fixture.InitializeDbAsync(_config.Database).Wait(10.Seconds()))
+            using var cts = new CancellationTokenSource(10.Seconds());
+            await Task.WhenAny(
+                Task.Delay(Timeout.Infinite, cts.Token),
+                _fixture.InitializeDbAsync(_config.Database));
+            
+            if(cts.IsCancellationRequested)
                 throw new XunitException("Failed to clean up database in 10 seconds");
         }
 

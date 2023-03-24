@@ -16,7 +16,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
     /// </summary>
     public sealed class SqliteContainer : ITestContainer
     {
-        private static SQLiteConnection? _heldConnection;
+        private SQLiteConnection? _heldConnection;
 
         public SqliteContainer()
         {

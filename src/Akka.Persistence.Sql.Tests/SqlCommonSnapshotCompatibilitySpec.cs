@@ -30,7 +30,7 @@ namespace Akka.Persistence.Sql.Tests
         protected Akka.TestKit.Xunit2.TestKit TestKit { get; private set; }
         protected TestProbe Probe { get; private set; }
 
-        public virtual Task InitializeAsync()
+        public Task InitializeAsync()
         {
             Sys = ActorSystem.Create("test-sys", Config);
             TestKit = new Akka.TestKit.Xunit2.TestKit(Sys, Output);

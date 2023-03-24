@@ -4,13 +4,16 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System.Threading;
 using System.Threading.Tasks;
 using Akka.Persistence.Sql.Snapshot;
 using Akka.Persistence.Sql.Tests.Common;
 using Akka.Persistence.TCK.Snapshot;
+using FluentAssertions.Extensions;
 using LinqToDB;
 using Xunit;
 using Xunit.Abstractions;
+using Xunit.Sdk;
 #if !DEBUG
 using Akka.Persistence.Sql.Tests.Common.Internal.Xunit;
 #endif
@@ -32,16 +35,24 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql
                 Configuration(fixture),
                 nameof(PostgreSqlSnapshotSpec),
                 output)
-            => _fixture = fixture;
-
-        public async Task InitializeAsync()
         {
-            await _fixture.InitializeDbAsync(Database.PostgreSql);
+            _fixture = fixture;
             Initialize();
         }
 
-        public Task DisposeAsync()
+        public Task InitializeAsync()
             => Task.CompletedTask;
+
+        public async Task DisposeAsync()
+        {
+            using var cts = new CancellationTokenSource(10.Seconds());
+            await Task.WhenAny(
+                Task.Delay(Timeout.Infinite, cts.Token),
+                _fixture.InitializeDbAsync(Database.PostgreSql));
+            
+            if(cts.IsCancellationRequested)
+                throw new XunitException("Failed to clean up database in 10 seconds");
+        }
 
         private static Configuration.Config Configuration(TestFixture fixture)
             => @$"

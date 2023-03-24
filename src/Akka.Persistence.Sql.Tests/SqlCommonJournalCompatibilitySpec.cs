@@ -32,7 +32,7 @@ namespace Akka.Persistence.Sql.Tests
         protected Akka.TestKit.Xunit2.TestKit TestKit { get; private set; }
         protected TestProbe Probe { get; private set; }
 
-        public virtual Task InitializeAsync()
+        public Task InitializeAsync()
         {
             Sys = ActorSystem.Create("test-sys", Config);
             TestKit = new Akka.TestKit.Xunit2.TestKit(Sys, Output);
@@ -40,8 +40,11 @@ namespace Akka.Persistence.Sql.Tests
             return Task.CompletedTask;
         }
 
-        public async Task DisposeAsync()
-            => await Sys.Terminate();
+        public virtual Task DisposeAsync()
+        {
+            TestKit.Shutdown();
+            return Task.CompletedTask;
+        }
 
         [Fact]
         public void Can_Recover_SqlCommon_Journal()
