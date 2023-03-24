@@ -9,10 +9,8 @@ using Akka.Configuration;
 using Akka.Persistence.Query;
 using Akka.Persistence.Sql.Query;
 using Akka.Persistence.TCK.Query;
-using FluentAssertions.Extensions;
 using Xunit;
 using Xunit.Abstractions;
-using Xunit.Sdk;
 
 namespace Akka.Persistence.Sql.Tests.Common.Query
 {
@@ -26,27 +24,16 @@ namespace Akka.Persistence.Sql.Tests.Common.Query
         {
             _config = config;
             _fixture = fixture;
-            var persistence = Persistence.Instance.Apply(Sys);
-            persistence.JournalFor(null);
         }
 
-        public Task InitializeAsync()
-        {
-            ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
-            return Task.CompletedTask;
-        }
-
-        public async Task DisposeAsync()
+        public async Task InitializeAsync()
         {
             await _fixture.InitializeDbAsync(_config.Database);
+            ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
         }
 
-        protected override void AfterAll()
-        {
-            base.AfterAll();
-            if(!_fixture.InitializeDbAsync(_config.Database).Wait(10.Seconds()))
-                throw new XunitException("Failed to clean up database in 10 seconds");
-        }
+        public Task DisposeAsync()
+            => Task.CompletedTask;
 
         private static Configuration.Config Config(ITestConfig config, TestFixture fixture)
             => ConfigurationFactory.ParseString($@"

@@ -18,7 +18,7 @@ namespace Akka.Persistence.Sql.Tests.Query.PostgreSql.TagTable
     [SkipWindows]
 #endif
     [Collection("PersistenceSpec")]
-    public class PostgreSqlPersistenceIdsSpec : BasePersistenceIdsSpec
+    public class PostgreSqlPersistenceIdsSpec : BasePersistenceIdsSpec, IAsyncLifetime
     {
         public PostgreSqlPersistenceIdsSpec(ITestOutputHelper output, TestFixture fixture)
             : base(PostgreSqlConfig.TagTable, output, fixture) { }

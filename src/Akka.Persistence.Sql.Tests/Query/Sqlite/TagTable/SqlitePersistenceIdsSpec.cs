@@ -12,7 +12,7 @@ using Xunit.Abstractions;
 namespace Akka.Persistence.Sql.Tests.Query.Sqlite.TagTable
 {
     [Collection("PersistenceSpec")]
-    public class SqlitePersistenceIdsSpec : BasePersistenceIdsSpec
+    public class SqlitePersistenceIdsSpec : BasePersistenceIdsSpec, IAsyncLifetime
     {
         public SqlitePersistenceIdsSpec(ITestOutputHelper output, TestFixture fixture)
             : base(SqliteConfig.TagTable, output, fixture) { }

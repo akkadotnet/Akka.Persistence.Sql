@@ -12,7 +12,7 @@ using Xunit.Abstractions;
 namespace Akka.Persistence.Sql.Query.Csv.Tests.Sqlite
 {
     [Collection("PersistenceSpec")]
-    public class SqlitePersistenceIdsSpec : BasePersistenceIdsSpec
+    public class SqlitePersistenceIdsSpec : BasePersistenceIdsSpec, IAsyncLifetime
     {
         public SqlitePersistenceIdsSpec(ITestOutputHelper output, TestFixture fixture)
             : base(SqliteConfig.Csv, output, fixture) { }

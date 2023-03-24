@@ -18,7 +18,7 @@ namespace Akka.Persistence.Sql.Query.Csv.Tests.SqlServer
     [SkipWindows]
 #endif
     [Collection("PersistenceSpec")]
-    public class SqlServerPersistenceIdsSpec : BasePersistenceIdsSpec
+    public class SqlServerPersistenceIdsSpec : BasePersistenceIdsSpec, IAsyncLifetime
     {
         public SqlServerPersistenceIdsSpec(ITestOutputHelper output, TestFixture fixture)
             : base(SqlServerConfig.Csv, output, fixture) { }
