@@ -4,20 +4,17 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using System.Threading;
-using System.Threading.Tasks;
+using System;
 using Akka.Configuration;
 using Akka.Persistence.Query;
 using Akka.Persistence.Sql.Query;
 using Akka.Persistence.TCK.Query;
 using FluentAssertions.Extensions;
-using Xunit;
 using Xunit.Abstractions;
-using Xunit.Sdk;
 
 namespace Akka.Persistence.Sql.Tests.Common.Query
 {
-    public abstract class BaseCurrentAllEventsSpec : CurrentAllEventsSpec, IAsyncLifetime
+    public abstract class BaseCurrentAllEventsSpec : CurrentAllEventsSpec
     {
         private readonly ITestConfig _config;
         private readonly TestFixture _fixture;
@@ -27,34 +24,15 @@ namespace Akka.Persistence.Sql.Tests.Common.Query
         {
             _config = config;
             _fixture = fixture;
-            var persistence = Persistence.Instance.Apply(Sys);
-            persistence.JournalFor(null);
+            ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
         }
         
-        public Task InitializeAsync()
+        protected override void AfterAll()
         {
-            ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
-            return Task.CompletedTask;
-        }
-
-        public async Task DisposeAsync()
-        {
-            using var cts = new CancellationTokenSource(20.Seconds());
-
-            var timeoutTask = Task.Delay(Timeout.Infinite, cts.Token);
-
-            await Task.WhenAny(timeoutTask, Sys.Terminate());
-            if(cts.IsCancellationRequested)
-                throw new XunitException("Failed to clean up test in 20 seconds");
-
-            await Task.WhenAny(
-                timeoutTask,
-                _fixture.InitializeDbAsync(_config.Database));
-            
-            if(cts.IsCancellationRequested)
-                throw new XunitException("Failed to clean up test in 20 seconds");
-            
-            cts.Cancel();
+            base.AfterAll();
+            Shutdown();
+            if (!_fixture.InitializeDbAsync(_config.Database).Wait(10.Seconds()))
+                throw new Exception("Failed to clean up database in 10 seconds");
         }
 
         private static Configuration.Config Config(ITestConfig config, TestFixture fixture)
