@@ -113,7 +113,6 @@ namespace Akka.Persistence.Sql.Query.Dao
                                       lp.OrderingId <= input.maxOffset &&
                                       !r.Deleted &&
                                       lp.TagValue == input.tag
-                                orderby r.Ordering
                                 select r;
 
                             var mainRows = await query.ToListAsync();
