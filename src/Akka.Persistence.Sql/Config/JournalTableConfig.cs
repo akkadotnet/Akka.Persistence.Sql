@@ -9,13 +9,6 @@ using Akka.Configuration;
 
 namespace Akka.Persistence.Sql.Config
 {
-    public enum TagWriteMode
-    {
-        Csv,
-        TagTable,
-        Both
-    }
-
     public class JournalTableConfig : IEquatable<JournalTableConfig>
     {
         public JournalTableConfig(Configuration.Config config)
@@ -24,12 +17,6 @@ namespace Akka.Persistence.Sql.Config
             if (string.IsNullOrEmpty(mappingPath))
                 throw new ConfigurationException(
                     "The configuration property akka.persistence.journal.sql.table-mapping is null or empty");
-
-            var tagWriteValue = config.GetString("tag-write-mode", "TagTable").ToLowerInvariant();
-            if (!Enum.TryParse(tagWriteValue, true, out TagWriteMode tagWriteMode))
-                tagWriteMode = TagWriteMode.TagTable;
-
-            TagWriteMode = tagWriteMode;
 
             // backward compatibility
             var compatibility = config.GetString("table-compatibility-mode");
@@ -52,8 +39,6 @@ namespace Akka.Persistence.Sql.Config
         }
 
         public string SchemaName { get; }
-
-        public TagWriteMode TagWriteMode { get; }
 
         // TODO: implement this settings
         public bool UseEventManifestColumn { get; } = false;

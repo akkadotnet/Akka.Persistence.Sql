@@ -72,9 +72,9 @@ namespace Akka.Persistence.Sql.Query.Dao
             var separator = _readJournalConfig.PluginConfig.TagSeparator;
             var maxTake = MaxTake(max);
 
-            return _readJournalConfig.PluginConfig.TagReadMode switch
+            return _readJournalConfig.PluginConfig.TagMode switch
             {
-                TagReadMode.Csv => AsyncSource<JournalRow>
+                TagMode.Csv => AsyncSource<JournalRow>
                     .FromEnumerable(
                         new { separator, tag, offset, maxOffset, maxTake, ConnectionFactory },
                         async input =>
@@ -96,7 +96,7 @@ namespace Akka.Persistence.Sql.Query.Dao
                         })
                     .Via(_deserializeFlow),
 
-                TagReadMode.TagTable => AsyncSource<JournalRow>
+                TagMode.TagTable => AsyncSource<JournalRow>
                     .FromEnumerable(
                         new { separator, tag, offset, maxOffset, maxTake, ConnectionFactory },
                         async input =>
@@ -113,6 +113,7 @@ namespace Akka.Persistence.Sql.Query.Dao
                                       lp.OrderingId <= input.maxOffset &&
                                       !r.Deleted &&
                                       lp.TagValue == input.tag
+                                orderby r.Ordering
                                 select r;
 
                             var mainRows = await query.ToListAsync();
@@ -149,7 +150,7 @@ namespace Akka.Persistence.Sql.Query.Dao
                             .Take(state.toTake)
                             .ToListAsync();
 
-                        if (_readJournalConfig.PluginConfig.TagReadMode == TagReadMode.TagTable)
+                        if (_readJournalConfig.PluginConfig.TagMode == TagMode.TagTable)
                             await AddTagDataFromTagTable(mainRows, connection);
 
                         return mainRows;
@@ -238,7 +239,7 @@ namespace Akka.Persistence.Sql.Query.Dao
 
         private async Task<List<JournalRow>> AddTagDataIfNeeded(List<JournalRow> toAdd, AkkaDataConnection connection)
         {
-            if (_readJournalConfig.PluginConfig.TagReadMode == TagReadMode.TagTable)
+            if (_readJournalConfig.PluginConfig.TagMode == TagMode.TagTable)
                 await AddTagDataFromTagTable(toAdd, connection);
 
             return toAdd;
