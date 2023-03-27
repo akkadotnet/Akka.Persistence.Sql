@@ -129,7 +129,7 @@ namespace Akka.Persistence.Sql.Query.Dao
         }
 
         public override Source<Try<ReplayCompletion>, NotUsed> Messages(
-            DataConnection connection,
+            AkkaDataConnection connection,
             string persistenceId,
             long fromSequenceNr,
             long toSequenceNr,
@@ -237,7 +237,7 @@ namespace Akka.Persistence.Sql.Query.Dao
             ).Via(_deserializeFlow);
         }
 
-        private async Task<List<JournalRow>> AddTagDataIfNeeded(List<JournalRow> toAdd, DataConnection connection)
+        private async Task<List<JournalRow>> AddTagDataIfNeeded(List<JournalRow> toAdd, AkkaDataConnection connection)
         {
             if (_readJournalConfig.PluginConfig.TagMode == TagMode.TagTable)
                 await AddTagDataFromTagTable(toAdd, connection);
@@ -245,7 +245,7 @@ namespace Akka.Persistence.Sql.Query.Dao
             return toAdd;
         }
 
-        private static async Task AddTagDataFromTagTable(List<JournalRow> toAdd, DataConnection connection)
+        private static async Task AddTagDataFromTagTable(List<JournalRow> toAdd, AkkaDataConnection connection)
         {
             if (toAdd.Count == 0)
                 return;

@@ -277,7 +277,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
         /// <param name="max"></param>
         /// <returns></returns>
         public override Source<Util.Try<ReplayCompletion>, NotUsed> Messages(
-            DataConnection connection,
+            AkkaDataConnection connection,
             string persistenceId,
             long fromSequenceNr,
             long toSequenceNr,
@@ -406,7 +406,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static async Task InsertWithOrderingAndBulkInsertTags(
-            DataConnection connection,
+            AkkaDataConnection connection,
             Seq<JournalRow> xs,
             BaseByteArrayJournalDaoConfig config)
         {
@@ -444,7 +444,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static async Task BulkInsertNoTagTableTags(
-            DataConnection connection,
+            AkkaDataConnection connection,
             Seq<JournalRow> xs,
             BaseByteArrayJournalDaoConfig config)
             => await connection
@@ -494,7 +494,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static IQueryable<long> MaxMarkedForDeletionMaxPersistenceIdQuery(
-            DataConnection connection,
+            AkkaDataConnection connection,
             string persistenceId)
             => connection
                 .GetTable<JournalRow>()
@@ -504,7 +504,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 .Take(1);
 
         private IQueryable<long?> MaxSeqNumberForPersistenceIdQuery(
-            DataConnection connection,
+            AkkaDataConnection connection,
             string persistenceId,
             long minSequenceNumber = 0)
         {
@@ -527,7 +527,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
         }
 
         private static IQueryable<long?> MaxSeqForPersistenceIdQueryableNativeMode(
-            DataConnection connection,
+            AkkaDataConnection connection,
             string persistenceId)
             => connection
                 .GetTable<JournalRow>()
@@ -535,7 +535,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 .Select(r => (long?)r.SequenceNumber);
 
         private static IQueryable<long?> MaxSeqForPersistenceIdQueryableNativeModeMinId(
-            DataConnection connection,
+            AkkaDataConnection connection,
             string persistenceId,
             long minSequenceNumber)
             => connection
@@ -546,7 +546,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 .Select(r => (long?)r.SequenceNumber);
 
         private static IQueryable<long?> MaxSeqForPersistenceIdQueryableCompatibilityModeWithMinId(
-            DataConnection connection,
+            AkkaDataConnection connection,
             string persistenceId,
             long minSequenceNumber)
             => connection
@@ -564,7 +564,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                         .Select(r => LinqToDB.Sql.Ext.Max<long?>(r.SequenceNumber).ToValue()));
 
         private static IQueryable<long?> MaxSeqForPersistenceIdQueryableCompatibilityMode(
-            DataConnection connection,
+            AkkaDataConnection connection,
             string persistenceId)
             => connection
                 .GetTable<JournalRow>()

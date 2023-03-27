@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="ByteArraySnapshotSerializer.cs" company="Akka.NET Project">
+//  <copyright file="ByteArrayDateTimeSnapshotSerializer.cs" company="Akka.NET Project">
 //      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
@@ -11,24 +11,26 @@ using Akka.Util;
 
 namespace Akka.Persistence.Sql.Snapshot
 {
-    public class ByteArraySnapshotSerializer : ISnapshotSerializer<SnapshotRow>
+    public class ByteArrayDateTimeSnapshotSerializer : ISnapshotSerializer<DateTimeSnapshotRow>
     {
         private readonly SnapshotConfig _config;
         private readonly Akka.Serialization.Serialization _serialization;
 
-        public ByteArraySnapshotSerializer(Akka.Serialization.Serialization serialization, SnapshotConfig config)
+        public ByteArrayDateTimeSnapshotSerializer(
+            Akka.Serialization.Serialization serialization,
+            SnapshotConfig config)
         {
             _serialization = serialization;
             _config = config;
         }
 
-        public Try<SnapshotRow> Serialize(SnapshotMetadata metadata, object snapshot)
-            => Try<SnapshotRow>.From(() => ToSnapshotEntry(metadata, snapshot));
+        public Try<DateTimeSnapshotRow> Serialize(SnapshotMetadata metadata, object snapshot)
+            => Try<DateTimeSnapshotRow>.From(() => ToSnapshotEntry(metadata, snapshot));
 
-        public Try<SelectedSnapshot> Deserialize(SnapshotRow t)
+        public Try<SelectedSnapshot> Deserialize(DateTimeSnapshotRow t)
             => Try<SelectedSnapshot>.From(() => ReadSnapshot(t));
 
-        protected SelectedSnapshot ReadSnapshot(SnapshotRow reader)
+        protected SelectedSnapshot ReadSnapshot(DateTimeSnapshotRow reader)
         {
             var metadata = new SnapshotMetadata(
                 reader.PersistenceId,
@@ -40,7 +42,7 @@ namespace Akka.Persistence.Sql.Snapshot
             return new SelectedSnapshot(metadata, snapshot);
         }
 
-        protected object GetSnapshot(SnapshotRow reader)
+        protected object GetSnapshot(DateTimeSnapshotRow reader)
         {
             var manifest = reader.Manifest;
             var binary = reader.Payload;
@@ -60,7 +62,7 @@ namespace Akka.Persistence.Sql.Snapshot
             return _serialization.Deserialize(binary, serializerId, manifest);
         }
 
-        private SnapshotRow ToSnapshotEntry(SnapshotMetadata metadata, object snapshot)
+        private DateTimeSnapshotRow ToSnapshotEntry(SnapshotMetadata metadata, object snapshot)
         {
             var snapshotType = snapshot.GetType();
             var serializer = _serialization.FindSerializerForType(snapshotType, _config.DefaultSerializer);
@@ -76,7 +78,7 @@ namespace Akka.Persistence.Sql.Snapshot
                 _ => string.Empty
             };
 
-            return new SnapshotRow
+            return new DateTimeSnapshotRow
             {
                 PersistenceId = metadata.PersistenceId,
                 SequenceNumber = metadata.SequenceNr,

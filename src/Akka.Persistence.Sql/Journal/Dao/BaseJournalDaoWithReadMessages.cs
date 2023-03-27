@@ -37,7 +37,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
         }
 
         public abstract Source<Try<ReplayCompletion>, NotUsed> Messages(
-            DataConnection connection,
+            AkkaDataConnection connection,
             string persistenceId,
             long fromSequenceNr,
             long toSequenceNr,
