@@ -8,7 +8,7 @@ using System;
 
 namespace Akka.Persistence.Sql.Config
 {
-    public class ReadJournalPluginConfig: IPluginConfig
+    public class ReadJournalPluginConfig : IPluginConfig
     {
         public ReadJournalPluginConfig(Configuration.Config config)
         {
