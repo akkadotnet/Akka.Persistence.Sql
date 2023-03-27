@@ -14,11 +14,16 @@ namespace Akka.Persistence.Sql.Tests.Internal
 {
     public static class DebuggingHelpers
     {
-        public static void SetupTraceDump(ITestOutputHelper outputHelper)
+        public static void SetupTraceDump(
+            ITestOutputHelper outputHelper,
+            DataConnection connection)
         {
-            DataConnection.TurnTraceSwitchOn();
+            connection.TraceSwitchConnection = new TraceSwitch(
+                "DataConnection",
+                "DataConnection trace switch",
+                TraceLevel.Verbose.ToString());
 
-            DataConnection.OnTrace = info =>
+            connection.OnTraceConnection = info =>
             {
                 try
                 {

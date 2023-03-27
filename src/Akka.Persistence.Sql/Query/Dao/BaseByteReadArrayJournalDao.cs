@@ -59,7 +59,8 @@ namespace Akka.Persistence.Sql.Query.Dao
                         .Where(r => r.Deleted == false)
                         .Select(r => r.PersistenceId)
                         .Distinct()
-                        .Take(input.maxTake).ToListAsync();
+                        .Take(input.maxTake)
+                        .ToListAsync();
                 });
         }
 
