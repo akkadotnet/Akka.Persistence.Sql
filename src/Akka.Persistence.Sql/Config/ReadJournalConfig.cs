@@ -31,7 +31,7 @@ namespace Akka.Persistence.Sql.Config
 
         public bool AddShutdownHook { get; }
 
-        public ReadJournalPluginConfig PluginConfig { get; }
+        public IPluginConfig PluginConfig { get; }
 
         public TimeSpan RefreshInterval { get; }
 

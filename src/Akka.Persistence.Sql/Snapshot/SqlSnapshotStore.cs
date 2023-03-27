@@ -34,7 +34,7 @@ namespace Akka.Persistence.Sql.Snapshot
                 connectionFactory: new AkkaPersistenceDataConnectionFactory(snapshotConfig1),
                 snapshotConfig: snapshotConfig1,
                 serialization: Context.System.Serialization,
-                mat: Materializer.CreateSystemMaterializer((ExtendedActorSystem)Context.System),
+                materializer: Materializer.CreateSystemMaterializer((ExtendedActorSystem)Context.System),
                 logger: Context.GetLogger());
 
             if (!snapshotConfig1.AutoInitialize)
