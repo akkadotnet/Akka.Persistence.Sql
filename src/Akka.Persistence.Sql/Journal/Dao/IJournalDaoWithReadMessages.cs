@@ -6,17 +6,17 @@
 
 using System;
 using Akka.Actor;
+using Akka.Persistence.Sql.Db;
 using Akka.Persistence.Sql.Journal.Types;
 using Akka.Streams.Dsl;
 using Akka.Util;
-using LinqToDB.Data;
 
 namespace Akka.Persistence.Sql.Journal.Dao
 {
     public interface IJournalDaoWithReadMessages
     {
         Source<Try<ReplayCompletion>, NotUsed> Messages(
-            DataConnection connection,
+            AkkaDataConnection connection,
             string persistenceId,
             long fromSequenceNr,
             long toSequenceNr,

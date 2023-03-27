@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="SnapshotRow.cs" company="Akka.NET Project">
+//  <copyright file="DateTimeSnapshotRow.cs" company="Akka.NET Project">
 //      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
@@ -10,7 +10,7 @@ using LinqToDB.Mapping;
 
 namespace Akka.Persistence.Sql.Snapshot
 {
-    public class SnapshotRow
+    public class DateTimeSnapshotRow
     {
         [PrimaryKey, NotNull]
         public string PersistenceId { get; set; }
