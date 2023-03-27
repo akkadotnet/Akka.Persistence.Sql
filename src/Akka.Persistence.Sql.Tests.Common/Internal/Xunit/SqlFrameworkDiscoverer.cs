@@ -17,7 +17,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Internal.Xunit
             IAssemblyInfo assemblyInfo,
             ISourceInformationProvider sourceProvider,
             IMessageSink diagnosticMessageSink,
-            IXunitTestCollectionFactory collectionFactory = null)
+            IXunitTestCollectionFactory? collectionFactory = null)
             : base(assemblyInfo, sourceProvider, diagnosticMessageSink, collectionFactory) { }
 
         protected override bool IsValidTestClass(ITypeInfo type)

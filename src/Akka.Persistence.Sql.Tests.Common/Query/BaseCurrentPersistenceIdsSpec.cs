@@ -39,13 +39,22 @@ namespace Akka.Persistence.Sql.Tests.Common.Query
 
         public async Task DisposeAsync()
         {
-            using var cts = new CancellationTokenSource(10.Seconds());
+            using var cts = new CancellationTokenSource(20.Seconds());
+
+            var timeoutTask = Task.Delay(Timeout.Infinite, cts.Token);
+
+            await Task.WhenAny(timeoutTask, Sys.Terminate());
+            if(cts.IsCancellationRequested)
+                throw new XunitException("Failed to clean up test in 20 seconds");
+
             await Task.WhenAny(
-                Task.Delay(Timeout.Infinite, cts.Token),
+                timeoutTask,
                 _fixture.InitializeDbAsync(_config.Database));
             
             if(cts.IsCancellationRequested)
-                throw new XunitException("Failed to clean up database in 10 seconds");
+                throw new XunitException("Failed to clean up test in 20 seconds");
+            
+            cts.Cancel();
         }
 
         private static Configuration.Config Config(ITestConfig config, TestFixture fixture)
