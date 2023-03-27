@@ -248,10 +248,9 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
             await connection
                 .GetTable<JournalRow>()
-                .Where(
-                    r =>
-                        r.PersistenceId == persistenceId &&
-                        r.SequenceNumber == write.SequenceNr)
+                .Where(r =>
+                    r.PersistenceId == persistenceId &&
+                    r.SequenceNumber == write.SequenceNr)
                 .Set(r => r.Message, serialize.Get().Message)
                 .UpdateAsync();
 
@@ -433,12 +432,10 @@ namespace Akka.Persistence.Sql.Journal.Dao
             await connection
                 .GetTable<JournalTagRow>()
                 .BulkCopyAsync(
-                    new BulkCopyOptions
-                    {
-                        BulkCopyType = BulkCopyType.MultipleRows,
-                        UseParameters = config.PreferParametersOnMultiRowInsert,
-                        MaxBatchSize = config.DbRoundTripTagBatchSize
-                    },
+                    new BulkCopyOptions()
+                        .WithBulkCopyType(BulkCopyType.MultipleRows)
+                        .WithUseParameters(config.PreferParametersOnMultiRowInsert)
+                        .WithMaxBatchSize(config.DbRoundTripTagBatchSize),
                     tagsToInsert);
         }
 
@@ -450,14 +447,13 @@ namespace Akka.Persistence.Sql.Journal.Dao
             => await connection
                 .GetTable<JournalRow>()
                 .BulkCopyAsync(
-                    new BulkCopyOptions
-                    {
-                        BulkCopyType = xs.Count > config.MaxRowByRowSize
-                            ? BulkCopyType.Default
-                            : BulkCopyType.MultipleRows,
-                        UseParameters = config.PreferParametersOnMultiRowInsert,
-                        MaxBatchSize = config.DbRoundTripBatchSize
-                    },
+                    new BulkCopyOptions()
+                        .WithBulkCopyType(
+                            xs.Count > config.MaxRowByRowSize
+                                ? BulkCopyType.Default
+                                : BulkCopyType.MultipleRows)
+                        .WithUseParameters(config.PreferParametersOnMultiRowInsert)
+                        .WithMaxBatchSize(config.DbRoundTripBatchSize),
                     xs);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -466,7 +462,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
         // By using a custom flatten here, we avoid an Enumerable/LINQ allocation
         // And are able to have a little more control over default capacity of array.
-        private static List<JournalRow> FlattenListOfListsToList(List<Util.Try<JournalRow[]>> source)
+        private static IEnumerable<JournalRow> FlattenListOfListsToList(List<Util.Try<JournalRow[]>> source)
         {
             var rows = new List<JournalRow>(
                 source.Count > 4
@@ -577,9 +573,9 @@ namespace Akka.Persistence.Sql.Journal.Dao
                         .Select(r => LinqToDB.Sql.Ext.Max<long?>(r.SequenceNumber).ToValue()));
 
         private static Func<Util.Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, Util.Try<ReplayCompletion>> MessageWithBatchMapper()
-            => sertry => sertry.IsSuccess
-                ? new Util.Try<ReplayCompletion>(new ReplayCompletion(sertry.Success.Value))
-                : new Util.Try<ReplayCompletion>(sertry.Failure.Value);
+            => x => x.IsSuccess
+                ? new Util.Try<ReplayCompletion>(new ReplayCompletion(x.Success.Value))
+                : new Util.Try<ReplayCompletion>(x.Failure.Value);
     }
 
     public sealed class PersistenceIdAndSequenceNumber
