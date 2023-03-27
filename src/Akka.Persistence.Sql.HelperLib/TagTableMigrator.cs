@@ -37,7 +37,7 @@ namespace Akka.Persistence.Sql.HelperLib
                     "akka.persistence.journal.sql.table-mapping must not be empty or 'default'");
 
             _journalConfig = new JournalConfig(config);
-            if (_journalConfig.PluginConfig.TagMode != TagMode.Both)
+            if (_journalConfig.TableConfig.TagWriteMode != TagWriteMode.Both)
                 throw new ConfigurationException(
                     "akka.persistence.journal.sql.tag-write-mode has to be 'Both'");
 

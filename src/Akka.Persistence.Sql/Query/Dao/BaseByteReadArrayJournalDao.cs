@@ -72,9 +72,9 @@ namespace Akka.Persistence.Sql.Query.Dao
             var separator = _readJournalConfig.PluginConfig.TagSeparator;
             var maxTake = MaxTake(max);
 
-            return _readJournalConfig.PluginConfig.TagMode switch
+            return _readJournalConfig.PluginConfig.TagReadMode switch
             {
-                TagMode.Csv => AsyncSource<JournalRow>
+                TagReadMode.Csv => AsyncSource<JournalRow>
                     .FromEnumerable(
                         new { separator, tag, offset, maxOffset, maxTake, ConnectionFactory },
                         async input =>
@@ -96,7 +96,7 @@ namespace Akka.Persistence.Sql.Query.Dao
                         })
                     .Via(_deserializeFlow),
 
-                TagMode.TagTable => AsyncSource<JournalRow>
+                TagReadMode.TagTable => AsyncSource<JournalRow>
                     .FromEnumerable(
                         new { separator, tag, offset, maxOffset, maxTake, ConnectionFactory },
                         async input =>
@@ -150,7 +150,7 @@ namespace Akka.Persistence.Sql.Query.Dao
                             .Take(state.toTake)
                             .ToListAsync();
 
-                        if (_readJournalConfig.PluginConfig.TagMode == TagMode.TagTable)
+                        if (_readJournalConfig.PluginConfig.TagReadMode == TagReadMode.TagTable)
                             await AddTagDataFromTagTable(mainRows, connection);
 
                         return mainRows;
@@ -239,7 +239,7 @@ namespace Akka.Persistence.Sql.Query.Dao
 
         private async Task<List<JournalRow>> AddTagDataIfNeeded(List<JournalRow> toAdd, DataConnection connection)
         {
-            if (_readJournalConfig.PluginConfig.TagMode == TagMode.TagTable)
+            if (_readJournalConfig.PluginConfig.TagReadMode == TagReadMode.TagTable)
                 await AddTagDataFromTagTable(toAdd, connection);
 
             return toAdd;

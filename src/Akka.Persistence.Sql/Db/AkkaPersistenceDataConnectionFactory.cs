@@ -180,7 +180,7 @@ namespace Akka.Persistence.Sql.Db
                 .IsNotColumn();
 
             // We can skip writing tags the old way by ignoring the column in mapping.
-            if (config.PluginConfig.TagMode == TagMode.TagTable)
+            if (tableConfig.TagWriteMode == TagWriteMode.TagTable)
             {
                 journalRowBuilder
                     .Member(r => r.Tags)
@@ -224,7 +224,7 @@ namespace Akka.Persistence.Sql.Db
                     .IsNotColumn();
             }
 
-            if (config.PluginConfig.TagMode is not TagMode.Csv)
+            if (config.TableConfig.TagWriteMode is not TagWriteMode.Csv)
             {
                 var tagConfig = tableConfig.TagTable;
                 var tagColumns = tagConfig.ColumnNames;

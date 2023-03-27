@@ -73,7 +73,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
             r => r.SequenceNumber;
 
         private readonly Flow<JournalRow, Util.Try<ReplayCompletion>, NotUsed> _deserializeFlowMapped;
-        private readonly TagMode _tagWriteMode;
+        private readonly TagWriteMode _tagWriteMode;
         protected readonly JournalConfig JournalConfig;
 
         protected readonly ILoggingAdapter Logger;
@@ -93,7 +93,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
             JournalConfig = config;
             Serializer = serializer;
             _deserializeFlowMapped = Serializer.DeserializeFlow().Select(MessageWithBatchMapper());
-            _tagWriteMode = JournalConfig.PluginConfig.TagMode;
+            _tagWriteMode = JournalConfig.TableConfig.TagWriteMode;
 
             // Due to C# rules we have to initialize WriteQueue here
             // Keeping it here vs init function prevents accidental moving of init
@@ -202,7 +202,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                         .DeleteAsync();
                 }
 
-                if (JournalConfig.PluginConfig.TagMode != TagMode.Csv)
+                if (JournalConfig.TableConfig.TagWriteMode != TagWriteMode.Csv)
                 {
                     await connection
                         .GetTable<JournalTagRow>()
@@ -344,7 +344,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 // hot path:
                 // If we only have one row, penalty for BulkCopy
                 // Isn't worth it due to insert caching/transaction/etc.
-                case 1 when _tagWriteMode == TagMode.Csv || xs.Head().TagArr.Length == 0:
+                case 1 when _tagWriteMode == TagWriteMode.Csv || xs.Head().TagArr.Length == 0:
                 {
                     // If we are writing a single row,
                     // we don't need to worry about transactions.
@@ -367,7 +367,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
             try
             {
-                if (_tagWriteMode == TagMode.Csv)
+                if (_tagWriteMode == TagWriteMode.Csv)
                 {
                     await BulkInsertNoTagTableTags(connection, xs, JournalConfig.DaoConfig);
                 }

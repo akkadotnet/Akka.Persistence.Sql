@@ -43,7 +43,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
             try
             {
                 connection.CreateTable<JournalRow>();
-                if (JournalConfig.PluginConfig.TagMode is not TagMode.Csv)
+                if (JournalConfig.TableConfig.TagWriteMode is not TagWriteMode.Csv)
                     connection.CreateTable<JournalTagRow>();
             }
             catch (Exception e)

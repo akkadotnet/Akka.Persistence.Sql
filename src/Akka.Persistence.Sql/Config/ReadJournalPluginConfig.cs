@@ -8,7 +8,7 @@ using System;
 
 namespace Akka.Persistence.Sql.Config
 {
-    public class ReadJournalPluginConfig: IPluginConfig
+    public class ReadJournalPluginConfig
     {
         public ReadJournalPluginConfig(Configuration.Config config)
         {
@@ -16,16 +16,22 @@ namespace Akka.Persistence.Sql.Config
             Dao = config.GetString("dao", "Akka.Persistence.Sql.Journal.Dao.ByteArrayJournalDao, Akka.Persistence.Sql");
 
             var tagReadValue = config.GetString("tag-read-mode", "TagTable").ToLowerInvariant();
-            if (!Enum.TryParse<TagMode>(tagReadValue, true, out var tagReadMode))
-                tagReadMode = TagMode.TagTable;
+            if (!Enum.TryParse<TagReadMode>(tagReadValue, true, out var tagReadMode))
+                tagReadMode = TagReadMode.TagTable;
 
-            TagMode = tagReadMode;
+            TagReadMode = tagReadMode;
         }
 
         public string Dao { get; }
 
         public string TagSeparator { get; }
 
-        public TagMode TagMode { get; }
+        public TagReadMode TagReadMode { get; }
+    }
+
+    public enum TagReadMode
+    {
+        Csv,
+        TagTable
     }
 }
