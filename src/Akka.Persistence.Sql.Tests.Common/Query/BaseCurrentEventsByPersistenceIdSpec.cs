@@ -18,21 +18,12 @@ namespace Akka.Persistence.Sql.Tests.Common.Query
 {
     public abstract class BaseCurrentEventsByPersistenceIdSpec<T> : CurrentEventsByPersistenceIdSpec where T : ITestContainer
     {
-        private readonly T _fixture;
-
         protected BaseCurrentEventsByPersistenceIdSpec(TagMode tagMode, ITestOutputHelper output, string name, T fixture)
             : base(Config(tagMode, fixture), name, output)
         {
-            _fixture = fixture;
-            ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
-        }
-
-        protected override void AfterAll()
-        {
-            base.AfterAll();
-            Shutdown();
-            if (!_fixture.InitializeDbAsync().Wait(10.Seconds()))
+            if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
                 throw new Exception("Failed to clean up database in 10 seconds");
+            ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
         }
 
         private static Configuration.Config Config(TagMode tagMode, T fixture)
