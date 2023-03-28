@@ -51,24 +51,31 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
             Initialized = true;
         }
 
+        private static readonly string[] Tables =
+        {
+            "event_journal",
+            "snapshot_store",
+            "journal",
+            "journal_metadata",
+            "tags",
+            "snapshot"
+        };
+        
         public async Task InitializeDbAsync()
         {
             await using var connection = new SQLiteConnection(ConnectionString);
-
             await connection.OpenAsync();
 
-            await using var command = new SQLiteCommand
+            foreach (var table in Tables)
             {
-                CommandText = @"
-DROP TABLE IF EXISTS event_journal;
-DROP TABLE IF EXISTS snapshot;
-DROP TABLE IF EXISTS journal_metadata;
-DROP TABLE IF EXISTS journal;
-DROP TABLE IF EXISTS tags;",
-                Connection = connection
-            };
+                await using var command = new SQLiteCommand
+                {
+                    CommandText = $"DROP TABLE IF EXISTS {table};",
+                    Connection = connection
+                };
 
-            await command.ExecuteNonQueryAsync();
+                await command.ExecuteNonQueryAsync();
+            }
         }
 
         public async Task DisposeAsync()

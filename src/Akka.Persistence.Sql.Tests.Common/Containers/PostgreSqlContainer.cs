@@ -109,24 +109,29 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
             await command.ExecuteNonQueryAsync();
         }
 
+        private static readonly string[] Tables =
+        {
+            "event_journal",
+            "snapshot_store",
+            "journal",
+            "journal_metadata",
+            "tags",
+            "snapshot"
+        };
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static async Task DoCleanAsync(NpgsqlConnection connection)
         {
-            await using var command = new NpgsqlCommand
+            foreach (var table in Tables)
             {
-                CommandText = @"
-DROP TABLE IF EXISTS public.event_journal;
-DROP TABLE IF EXISTS public.snapshot_store;
-DROP TABLE IF EXISTS public.metadata;
+                await using var command = new NpgsqlCommand
+                {
+                    CommandText = $"DROP TABLE IF EXISTS public.{table};",
+                    Connection = connection
+                };
 
-DROP TABLE IF EXISTS public.journal;
-DROP TABLE IF EXISTS public.journal_metadata;
-DROP TABLE IF EXISTS public.tags;
-DROP TABLE IF EXISTS public.snapshot;",
-                Connection = connection
-            };
-
-            await command.ExecuteNonQueryAsync();
+                await command.ExecuteNonQueryAsync();
+            }
         }
     }
 }
