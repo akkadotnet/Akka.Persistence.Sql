@@ -48,6 +48,8 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         protected virtual TimeSpan ReadyTimeout { get; } = TimeSpan.FromMinutes(1);
 
         public bool Initialized { get; private set; }
+        
+        public abstract string ProviderName { get; }
 
         public abstract string ConnectionString { get; }
 
@@ -133,9 +135,10 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
             }
 
             await AfterContainerStartedAsync();
+            await InitializeDbAsync();
         }
 
-        public async ValueTask DisposeAsync()
+        public async Task DisposeAsync()
         {
             // Perform async cleanup.
             await DisposeAsyncCore().ConfigureAwait(false);

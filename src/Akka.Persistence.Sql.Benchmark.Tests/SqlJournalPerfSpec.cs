@@ -12,10 +12,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Routing;
 using Akka.TestKit;
 using Akka.Util;
 using Akka.Util.Internal;
+using FluentAssertions.Extensions;
 using JetBrains.dotMemoryUnit;
 using JetBrains.dotMemoryUnit.Kernel;
 using Xunit;
@@ -23,7 +25,7 @@ using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Benchmark.Tests
 {
-    public abstract class SqlJournalPerfSpec : Akka.TestKit.Xunit2.TestKit
+    public abstract class SqlJournalPerfSpec<T> : Akka.TestKit.Xunit2.TestKit where T : ITestContainer
     {
         // Number of measurement iterations each test will be run.
         private const int MeasurementIterations = 10;
@@ -38,6 +40,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             Configuration.Config config,
             string actorSystem,
             ITestOutputHelper output,
+            T fixture,
             int timeoutDurationSeconds = 30,
             int eventsCount = 10000)
             : base(config ?? Configuration.Config.Empty, actorSystem, output)
@@ -46,6 +49,17 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             _eventsCount = eventsCount;
             _expectDuration = TimeSpan.FromSeconds(timeoutDurationSeconds);
             _testProbe = CreateTestProbe();
+            Fixture = fixture;
+        }
+
+        protected T Fixture { get; }
+
+        protected override void AfterAll()
+        {
+            base.AfterAll();
+            Shutdown();
+            if (!Fixture.InitializeDbAsync().Wait(10.Seconds()))
+                throw new Exception("Failed to clean up database in 10 seconds");
         }
 
         private IReadOnlyList<int> Commands => Enumerable.Range(1, _eventsCount).ToList();

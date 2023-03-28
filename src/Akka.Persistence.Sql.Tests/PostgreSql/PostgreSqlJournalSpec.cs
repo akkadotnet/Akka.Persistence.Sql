@@ -4,16 +4,14 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using System.Threading;
-using System.Threading.Tasks;
+using System;
 using Akka.Persistence.Sql.Journal;
-using Akka.Persistence.Sql.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.TCK.Journal;
 using FluentAssertions.Extensions;
 using LinqToDB;
 using Xunit;
 using Xunit.Abstractions;
-using Xunit.Sdk;
 #if !DEBUG
 using Akka.Persistence.Sql.Tests.Common.Internal.Xunit;
 #endif
@@ -23,18 +21,13 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql
 #if !DEBUG
     [SkipWindows]
 #endif
-    [Collection("PersistenceSpec")]
+    [Collection(nameof(PostgreSqlPersistenceSpec))]
     public class PostgreSqlJournalSpec : JournalSpec
     {
-        private readonly TestFixture _fixture;
+        private readonly PostgreSqlContainer _fixture;
 
-        public PostgreSqlJournalSpec(
-            ITestOutputHelper output,
-            TestFixture fixture)
-            : base(
-                Configuration(fixture),
-                nameof(PostgreSqlJournalSpec),
-                output)
+        public PostgreSqlJournalSpec(ITestOutputHelper output, PostgreSqlContainer fixture)
+            : base(Configuration(fixture), nameof(PostgreSqlJournalSpec), output)
         {
             _fixture = fixture;
             Initialize();
@@ -42,21 +35,15 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql
 
         protected override bool SupportsSerialization => false;
 
-        public Task InitializeAsync()
-            => Task.CompletedTask;
-
-        public async Task DisposeAsync()
+        protected override void AfterAll()
         {
-            using var cts = new CancellationTokenSource(10.Seconds());
-            await Task.WhenAny(
-                Task.Delay(Timeout.Infinite, cts.Token),
-                _fixture.InitializeDbAsync(Database.PostgreSql));
-            
-            if(cts.IsCancellationRequested)
-                throw new XunitException("Failed to clean up database in 10 seconds");
+            base.AfterAll();
+            Shutdown();
+            if (!_fixture.InitializeDbAsync().Wait(10.Seconds()))
+                throw new Exception("Failed to clean up database in 10 seconds");
         }
 
-        public static Configuration.Config Configuration(TestFixture fixture)
+        public static Configuration.Config Configuration(PostgreSqlContainer fixture)
             => @$"
                 akka.persistence {{
                     publish-plugin-commands = on
@@ -65,7 +52,7 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql
                         sql {{
                             class = ""{typeof(SqlWriteJournal).AssemblyQualifiedName}""
                             plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
-                            connection-string = ""{fixture.ConnectionString(Database.PostgreSql)}""
+                            connection-string = ""{fixture.ConnectionString}""
                             provider-name = ""{ProviderName.PostgreSQL95}""
                             use-clone-connection = true
                             auto-initialize = true

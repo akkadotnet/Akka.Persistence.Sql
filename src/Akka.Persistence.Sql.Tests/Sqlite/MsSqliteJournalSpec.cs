@@ -4,24 +4,22 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using System.Threading;
-using System.Threading.Tasks;
-using Akka.Persistence.Sql.Tests.Common;
+using System;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.TCK.Journal;
 using FluentAssertions.Extensions;
 using LinqToDB;
 using Xunit;
 using Xunit.Abstractions;
-using Xunit.Sdk;
 
 namespace Akka.Persistence.Sql.Tests.Sqlite
 {
-    [Collection("PersistenceSpec")]
+    [Collection(nameof(MsSqlitePersistenceSpec))]
     public class MsSqliteNativeConfigSpec : MsSqliteJournalSpec
     {
         public MsSqliteNativeConfigSpec(
             ITestOutputHelper output,
-            TestFixture fixture)
+            MsSqliteContainer fixture)
             : base(
                 output,
                 fixture,
@@ -29,43 +27,34 @@ namespace Akka.Persistence.Sql.Tests.Sqlite
                 true) { }
     }
 
-    [Collection("PersistenceSpec")]
-    public class MsSqliteJournalSpec : JournalSpec, IAsyncLifetime
+    [Collection(nameof(MsSqlitePersistenceSpec))]
+    public class MsSqliteJournalSpec : JournalSpec
     {
-        private readonly TestFixture _fixture;
+        private readonly MsSqliteContainer _fixture;
 
         public MsSqliteJournalSpec(
             ITestOutputHelper output,
-            TestFixture fixture,
+            MsSqliteContainer fixture,
             string name = nameof(MsSqliteJournalSpec),
             bool nativeMode = false)
             : base(
-                SqliteJournalSpecConfig.Create(
-                    fixture.ConnectionString(Database.MsSqlite),
-                    ProviderName.SQLiteMS,
-                    nativeMode),
+                SqliteJournalSpecConfig.Create(fixture.ConnectionString, ProviderName.SQLiteMS, nativeMode),
                 name,
                 output)
-            => _fixture = fixture;
+        {
+            _fixture = fixture;
+            Initialize();
+        }
 
         // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
         protected override bool SupportsSerialization => false;
 
-        public Task InitializeAsync()
+        protected override void AfterAll()
         {
-            Initialize();
-            return Task.CompletedTask;
-        }
-
-        public async Task DisposeAsync()
-        {
-            using var cts = new CancellationTokenSource(10.Seconds());
-            await Task.WhenAny(
-                Task.Delay(Timeout.Infinite, cts.Token),
-                _fixture.InitializeDbAsync(Database.MsSqlite));
-            
-            if(cts.IsCancellationRequested)
-                throw new XunitException("Failed to clean up database in 10 seconds");
+            base.AfterAll();
+            Shutdown();
+            if (!_fixture.InitializeDbAsync().Wait(10.Seconds()))
+                throw new Exception("Failed to clean up database in 10 seconds");
         }
     }
 }

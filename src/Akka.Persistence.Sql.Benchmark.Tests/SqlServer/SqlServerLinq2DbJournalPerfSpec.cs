@@ -4,36 +4,27 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using System.Threading.Tasks;
 using Akka.Persistence.Sql.Journal;
-using Akka.Persistence.Sql.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using LinqToDB;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
 {
-    [Collection("BenchmarkSpec")]
-    public class SqlServerSqlJournalPerfSpec : SqlJournalPerfSpec, IAsyncLifetime
+    [Collection(nameof(SqlServerPersistenceBenchmark))]
+    public class SqlServerLinq2DbJournalPerfSpec : SqlJournalPerfSpec<SqlServerContainer>
     {
-        private readonly TestFixture _fixture;
-
-        public SqlServerSqlJournalPerfSpec(
-            ITestOutputHelper output,
-            TestFixture fixture)
+        public SqlServerLinq2DbJournalPerfSpec(ITestOutputHelper output, SqlServerContainer fixture)
             : base(
-                Configure(fixture.ConnectionString(Database.SqlServer)),
-                nameof(SqlServerSqlJournalPerfSpec),
+                Configure(fixture.ConnectionString),
+                nameof(SqlServerLinq2DbJournalPerfSpec),
                 output,
+                fixture,
                 40,
                 eventsCount: TestConstants.DockerNumMessages)
-            => _fixture = fixture;
-
-        public async Task InitializeAsync()
-            => await _fixture.InitializeDbAsync(Database.SqlServer).ConfigureAwait(false);
-
-        public Task DisposeAsync()
-            => Task.CompletedTask;
+        {
+        }
 
         private static Configuration.Config Configure(string connString)
             => $@"

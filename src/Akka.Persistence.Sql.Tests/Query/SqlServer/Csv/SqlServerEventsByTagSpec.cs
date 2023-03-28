@@ -4,8 +4,11 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.Sql.Tests.Common.Query;
+using Akka.Persistence.Sql.Tests.SqlServer;
 using Xunit;
 using Xunit.Abstractions;
 #if !DEBUG
@@ -17,10 +20,10 @@ namespace Akka.Persistence.Sql.Tests.Query.SqlServer.Csv
 #if !DEBUG
     [SkipWindows]
 #endif
-    [Collection("PersistenceSpec")]
-    public class SqlServerEventsByTagSpec : BaseEventsByTagSpec
+    [Collection(nameof(SqlServerPersistenceSpec))]
+    public class SqlServerEventsByTagSpec : BaseEventsByTagSpec<SqlServerContainer>
     {
-        public SqlServerEventsByTagSpec(ITestOutputHelper output, TestFixture fixture)
-            : base(SqlServerConfig.Csv, output, fixture) { }
+        public SqlServerEventsByTagSpec(ITestOutputHelper output, SqlServerContainer fixture)
+            : base(TagMode.Csv, output, nameof(SqlServerEventsByTagSpec), fixture) { }
     }
 }

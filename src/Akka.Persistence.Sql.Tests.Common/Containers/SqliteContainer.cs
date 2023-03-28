@@ -31,6 +31,8 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
 
         public string ContainerName => string.Empty;
 
+        public string ProviderName => LinqToDB.ProviderName.SQLiteClassic;
+
         public event EventHandler<OutputReceivedArgs>? OnStdOut;
 
         public DockerClient? Client => null;
@@ -69,7 +71,7 @@ DROP TABLE IF EXISTS tags;",
             await command.ExecuteNonQueryAsync();
         }
 
-        public async ValueTask DisposeAsync()
+        public async Task DisposeAsync()
         {
             if (_heldConnection is null)
                 return;

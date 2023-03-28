@@ -5,8 +5,10 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.Sql.Tests.Internal;
 using Akka.Persistence.Sql.Tests.Internal.Events;
 using Akka.TestKit;
@@ -16,13 +18,17 @@ using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Tests
 {
-    public abstract class SqlCommonSnapshotCompatibilitySpec : IAsyncLifetime
+    public abstract class SqlCommonSnapshotCompatibilitySpec<T> : IAsyncLifetime where T : ITestContainer
     {
-        public SqlCommonSnapshotCompatibilitySpec(ITestOutputHelper helper)
-            => Output = helper;
+        public SqlCommonSnapshotCompatibilitySpec(T fixture, ITestOutputHelper helper)
+        {
+            Output = helper;
+            Fixture = fixture;
+        }
 
         protected abstract Configuration.Config Config { get; }
 
+        protected T Fixture { get; }
         protected ITestOutputHelper Output { get; }
         protected abstract string OldSnapshot { get; }
         protected abstract string NewSnapshot { get; }
@@ -38,10 +44,21 @@ namespace Akka.Persistence.Sql.Tests
             return Task.CompletedTask;
         }
 
-        public virtual Task DisposeAsync()
+        public async Task DisposeAsync()
         {
             TestKit.Shutdown();
-            return Task.CompletedTask;
+
+            using var cts = new CancellationTokenSource(10.Seconds());
+            try
+            {
+                await Task.WhenAny(Task.Delay(Timeout.Infinite, cts.Token), Fixture.InitializeDbAsync());
+                if (cts.IsCancellationRequested)
+                    throw new Exception("Failed to clean up test after 10 seconds");
+            }
+            finally
+            {
+                cts.Cancel();
+            }
         }
 
         [Fact]

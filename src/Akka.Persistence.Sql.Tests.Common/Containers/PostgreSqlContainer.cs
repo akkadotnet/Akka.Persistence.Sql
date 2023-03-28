@@ -40,6 +40,8 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
 
         public override string ConnectionString { get; }
 
+        public override string ProviderName => LinqToDB.ProviderName.PostgreSQL95;
+
         private int Port { get; } = ThreadLocalRandom.Current.Next(9000, 10000);
 
         protected override string ReadyMarker => "ready to accept connections";

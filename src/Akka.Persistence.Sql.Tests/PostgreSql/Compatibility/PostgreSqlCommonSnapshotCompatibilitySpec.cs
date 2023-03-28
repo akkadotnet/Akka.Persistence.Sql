@@ -6,6 +6,7 @@
 
 using System.Threading.Tasks;
 using Akka.Persistence.Sql.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using Xunit;
 using Xunit.Abstractions;
 #if !DEBUG
@@ -17,21 +18,13 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
 #if !DEBUG
     [SkipWindows]
 #endif
-    [Collection("PersistenceSpec")]
-    public class PostgreSqlCommonSnapshotCompatibilitySpec : SqlCommonSnapshotCompatibilitySpec
+    [Collection(nameof(PostgreSqlPersistenceSpec))]
+    public class PostgreSqlCommonSnapshotCompatibilitySpec : SqlCommonSnapshotCompatibilitySpec<PostgreSqlContainer>
     {
-        private readonly TestFixture _fixture;
-
-        public PostgreSqlCommonSnapshotCompatibilitySpec(
-            ITestOutputHelper output,
-            TestFixture fixture)
-            : base(output)
+        public PostgreSqlCommonSnapshotCompatibilitySpec(ITestOutputHelper output, PostgreSqlContainer fixture)
+            : base(fixture, output)
         {
-            _fixture = fixture;
-
-            Config = PostgreSqlCompatibilitySpecConfig.InitSnapshotConfig(
-                _fixture,
-                "snapshot_store");
+            Config = PostgreSqlCompatibilitySpecConfig.InitSnapshotConfig(fixture, "snapshot_store");
         }
 
         protected override Configuration.Config Config { get; }
@@ -41,11 +34,5 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
 
         protected override string NewSnapshot
             => "akka.persistence.snapshot-store.sql";
-
-        public override async Task DisposeAsync()
-        {
-            await base.DisposeAsync();
-            await _fixture.InitializeDbAsync(Database.PostgreSql);
-        }
     }
 }

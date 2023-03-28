@@ -6,6 +6,7 @@
 
 using System.Threading.Tasks;
 using Akka.Persistence.Sql.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using Xunit;
 using Xunit.Abstractions;
 #if !DEBUG
@@ -17,22 +18,15 @@ namespace Akka.Persistence.Sql.Tests.SqlServer.Compatibility
 #if !DEBUG
     [SkipWindows]
 #endif
-    [Collection("PersistenceSpec")]
-    public class SqlServerSqlCommonSnapshotCompatibilitySpec : SqlCommonSnapshotCompatibilitySpec
+    [Collection(nameof(SqlServerPersistenceSpec))]
+    public class SqlServerSqlCommonSnapshotCompatibilitySpec : SqlCommonSnapshotCompatibilitySpec<SqlServerContainer>
     {
-        private readonly TestFixture _fixture;
-
         public SqlServerSqlCommonSnapshotCompatibilitySpec(
             ITestOutputHelper output,
-            TestFixture fixture)
-            : base(
-                output)
+            SqlServerContainer fixture)
+            : base(fixture, output)
         {
-            _fixture = fixture;
-
-            Config = SqlServerCompatibilitySpecConfig.InitSnapshotConfig(
-                _fixture,
-                "snapshot_compat");
+            Config = SqlServerCompatibilitySpecConfig.InitSnapshotConfig(fixture, "snapshot_compat");
         }
 
         protected override string OldSnapshot
@@ -42,11 +36,5 @@ namespace Akka.Persistence.Sql.Tests.SqlServer.Compatibility
             => "akka.persistence.snapshot-store.sql";
 
         protected override Configuration.Config Config { get; }
-
-        public override async Task DisposeAsync()
-        {
-            await base.DisposeAsync();
-            await _fixture.InitializeDbAsync(Database.SqlServer);
-        }
     }
 }

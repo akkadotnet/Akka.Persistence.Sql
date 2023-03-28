@@ -6,6 +6,7 @@
 
 using System.Threading.Tasks;
 using Akka.Persistence.Sql.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using Xunit;
 using Xunit.Abstractions;
 #if !DEBUG
@@ -17,22 +18,13 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
 #if !DEBUG
     [SkipWindows]
 #endif
-    [Collection("PersistenceSpec")]
-    public class PostgreSqlCommonJournalCompatibilitySpec : SqlCommonJournalCompatibilitySpec
+    [Collection(nameof(PostgreSqlPersistenceSpec))]
+    public class PostgreSqlCommonJournalCompatibilitySpec : SqlCommonJournalCompatibilitySpec<PostgreSqlContainer>
     {
-        private readonly TestFixture _fixture;
-
-        public PostgreSqlCommonJournalCompatibilitySpec(
-            ITestOutputHelper output,
-            TestFixture fixture)
-            : base(output)
+        public PostgreSqlCommonJournalCompatibilitySpec(ITestOutputHelper output, PostgreSqlContainer fixture)
+            : base(fixture, output)
         {
-            _fixture = fixture;
-
-            Config = PostgreSqlCompatibilitySpecConfig.InitJournalConfig(
-                _fixture,
-                "event_journal",
-                "metadata");
+            Config = PostgreSqlCompatibilitySpecConfig.InitJournalConfig(fixture, "event_journal", "metadata");
         }
 
         protected override Configuration.Config Config { get; }
@@ -40,11 +32,5 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
         protected override string OldJournal => "akka.persistence.journal.postgresql";
 
         protected override string NewJournal => "akka.persistence.journal.sql";
-
-        public override async Task DisposeAsync()
-        {
-            await base.DisposeAsync();
-            await _fixture.InitializeDbAsync(Database.PostgreSql);
-        }
     }
 }

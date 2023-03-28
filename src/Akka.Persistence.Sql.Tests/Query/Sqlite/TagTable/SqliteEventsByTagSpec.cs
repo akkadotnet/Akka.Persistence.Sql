@@ -4,17 +4,20 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.Sql.Tests.Common.Query;
+using Akka.Persistence.Sql.Tests.Sqlite;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Tests.Query.Sqlite.TagTable
 {
-    [Collection("PersistenceSpec")]
-    public class SqliteEventsByTagSpec : BaseEventsByTagSpec
+    [Collection(nameof(SqlitePersistenceSpec))]
+    public class SqliteEventsByTagSpec : BaseEventsByTagSpec<SqliteContainer>
     {
-        public SqliteEventsByTagSpec(ITestOutputHelper output, TestFixture fixture)
-            : base(SqliteConfig.TagTable, output, fixture) { }
+        public SqliteEventsByTagSpec(ITestOutputHelper output, SqliteContainer fixture)
+            : base(TagMode.TagTable, output, nameof(SqliteEventsByTagSpec), fixture) { }
     }
 }

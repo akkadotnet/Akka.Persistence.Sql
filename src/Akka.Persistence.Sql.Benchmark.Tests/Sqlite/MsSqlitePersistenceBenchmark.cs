@@ -4,11 +4,11 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using Akka.Persistence.Sql.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using Xunit;
 
-namespace Akka.Persistence.Sql.Tests
+namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
 {
-    [CollectionDefinition("PersistenceSpec")]
-    public sealed class SpecCollectionFixture : ICollectionFixture<TestFixture> { }
+    [CollectionDefinition(nameof(MsSqlitePersistenceBenchmark), DisableParallelization = true)]
+    public sealed class MsSqlitePersistenceBenchmark : ICollectionFixture<MsSqliteContainer> { }
 }

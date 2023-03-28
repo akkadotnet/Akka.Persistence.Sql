@@ -37,6 +37,8 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
 
         public bool Initialized { get; private set; }
 
+        public string ProviderName => LinqToDB.ProviderName.SQLiteMS;
+
         public async Task InitializeAsync()
         {
             if (Initialized)
@@ -69,7 +71,7 @@ DROP TABLE IF EXISTS tags;",
             await command.ExecuteNonQueryAsync();
         }
 
-        public async ValueTask DisposeAsync()
+        public async Task DisposeAsync()
         {
             if (_heldConnection is null)
                 return;

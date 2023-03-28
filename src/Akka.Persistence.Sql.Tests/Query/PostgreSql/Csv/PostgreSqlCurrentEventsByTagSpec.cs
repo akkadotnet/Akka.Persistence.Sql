@@ -4,8 +4,11 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.Sql.Tests.Common.Query;
+using Akka.Persistence.Sql.Tests.PostgreSql;
 using Xunit;
 using Xunit.Abstractions;
 #if !DEBUG
@@ -17,10 +20,10 @@ namespace Akka.Persistence.Sql.Tests.Query.PostgreSql.Csv
 #if !DEBUG
     [SkipWindows]
 #endif
-    [Collection("PersistenceSpec")]
-    public class PostgreSqlCurrentEventsByTagSpec : BaseCurrentEventsByTagSpec
+    [Collection(nameof(PostgreSqlPersistenceSpec))]
+    public class PostgreSqlCurrentEventsByTagSpec : BaseCurrentEventsByTagSpec<PostgreSqlContainer>
     {
-        public PostgreSqlCurrentEventsByTagSpec(ITestOutputHelper output, TestFixture fixture) 
-            : base(PostgreSqlConfig.Csv, output, fixture) { }
+        public PostgreSqlCurrentEventsByTagSpec(ITestOutputHelper output, PostgreSqlContainer fixture) 
+            : base(TagMode.Csv, output, nameof(PostgreSqlAllEventsSpec), fixture) { }
     }
 }

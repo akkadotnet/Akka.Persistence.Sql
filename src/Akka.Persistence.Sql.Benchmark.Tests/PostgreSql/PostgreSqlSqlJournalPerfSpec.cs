@@ -7,33 +7,28 @@
 using System.Threading.Tasks;
 using Akka.Persistence.Sql.Journal;
 using Akka.Persistence.Sql.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using LinqToDB;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
 {
-    [Collection("BenchmarkSpec")]
-    public class PostgreSqlSqlJournalPerfSpec : SqlJournalPerfSpec, IAsyncLifetime
+    [Collection(nameof(PostgreSqlPersistenceBenchmark))]
+    public class PostgreSqlSqlJournalPerfSpec : SqlJournalPerfSpec<PostgreSqlContainer>
     {
-        private readonly TestFixture _fixture;
-
         public PostgreSqlSqlJournalPerfSpec(
             ITestOutputHelper output,
-            TestFixture fixture)
+            PostgreSqlContainer fixture)
             : base(
-                Configuration(fixture.ConnectionString(Database.PostgreSql)),
+                Configuration(fixture.ConnectionString),
                 nameof(PostgreSqlSqlJournalPerfSpec),
                 output,
+                fixture,
                 40,
                 eventsCount: TestConstants.DockerNumMessages)
-            => _fixture = fixture;
-
-        public async Task InitializeAsync()
-            => await _fixture.InitializeDbAsync(Database.PostgreSql);
-
-        public Task DisposeAsync()
-            => Task.CompletedTask;
+        {
+        }
 
         private static Configuration.Config Configuration(string connString)
             => $@"

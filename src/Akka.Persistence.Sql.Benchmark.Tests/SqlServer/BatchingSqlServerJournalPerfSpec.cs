@@ -4,36 +4,29 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using System.Threading.Tasks;
-using Akka.Persistence.Sql.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
 {
-    [Collection("BenchmarkSpec")]
-    public class BatchingSqlServerJournalPerfSpec : SqlJournalPerfSpec, IAsyncLifetime
+    [Collection(nameof(SqlServerPersistenceBenchmark))]
+    public class BatchingSqlServerJournalPerfSpec : SqlJournalPerfSpec<SqlServerContainer>
     {
-        private readonly TestFixture _fixture;
-
         public BatchingSqlServerJournalPerfSpec(
             ITestOutputHelper output,
-            TestFixture fixture)
+            SqlServerContainer fixture)
             : base(
                 Configure(fixture),
                 nameof(BatchingSqlServerJournalPerfSpec),
                 output,
+                fixture,
                 40,
                 TestConstants.DockerNumMessages)
-            => _fixture = fixture;
+        {
+        }
 
-        public async Task InitializeAsync()
-            => await _fixture.InitializeDbAsync(Database.SqlServer).ConfigureAwait(false);
-
-        public Task DisposeAsync()
-            => Task.CompletedTask;
-
-        public static Configuration.Config Configure(TestFixture fixture)
+        public static Configuration.Config Configure(SqlServerContainer fixture)
             => $@"
                 akka.persistence {{
                     publish-plugin-commands = on
@@ -45,7 +38,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
                             table-name = EventJournal
                             schema-name = dbo
                             auto-initialize = on
-                            connection-string = ""{fixture.ConnectionString(Database.SqlServer)}""
+                            connection-string = ""{fixture.ConnectionString}""
                         }}
                     }}
                 }}";

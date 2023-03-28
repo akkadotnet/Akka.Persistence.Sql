@@ -4,8 +4,11 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.Sql.Tests.Common.Query;
+using Akka.Persistence.Sql.Tests.PostgreSql;
 using Xunit;
 using Xunit.Abstractions;
 #if !DEBUG
@@ -17,10 +20,10 @@ namespace Akka.Persistence.Sql.Tests.Query.PostgreSql.TagTable
 #if !DEBUG
     [SkipWindows]
 #endif
-    [Collection("PersistenceSpec")]
-    public class PostgreSqlPersistenceIdsSpec : BasePersistenceIdsSpec
+    [Collection(nameof(PostgreSqlPersistenceSpec))]
+    public class PostgreSqlPersistenceIdsSpec : BasePersistenceIdsSpec<PostgreSqlContainer>
     {
-        public PostgreSqlPersistenceIdsSpec(ITestOutputHelper output, TestFixture fixture)
-            : base(PostgreSqlConfig.TagTable, output, fixture) { }
+        public PostgreSqlPersistenceIdsSpec(ITestOutputHelper output, PostgreSqlContainer fixture)
+            : base(TagMode.TagTable, output, nameof(PostgreSqlPersistenceIdsSpec), fixture) { }
     }
 }

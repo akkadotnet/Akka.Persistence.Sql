@@ -4,33 +4,26 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using System.Threading.Tasks;
-using Akka.Persistence.Sql.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
 {
-    [Collection("BenchmarkSpec")]
-    public class SqliteJournalPerfSpec : SqlJournalPerfSpec, IAsyncLifetime
+    [Collection(nameof(MsSqlitePersistenceBenchmark))]
+    public class MsSqliteJournalPerfSpec : SqlJournalPerfSpec<MsSqliteContainer>
     {
-        private readonly TestFixture _fixture;
-
-        public SqliteJournalPerfSpec(
+        public MsSqliteJournalPerfSpec(
             ITestOutputHelper output,
-            TestFixture fixture)
+            MsSqliteContainer fixture)
             : base(
-                CreateSpecConfig(fixture.ConnectionString(Database.MsSqlite)),
-                nameof(SqliteJournalPerfSpec),
+                CreateSpecConfig(fixture.ConnectionString),
+                nameof(MsSqliteJournalPerfSpec),
                 output,
+                fixture,
                 eventsCount: TestConstants.NumMessages)
-            => _fixture = fixture;
-
-        public async Task InitializeAsync()
-            => await _fixture.InitializeDbAsync(Database.MsSqlite);
-
-        public Task DisposeAsync()
-            => Task.CompletedTask;
+        {
+        }
 
         private static Configuration.Config CreateSpecConfig(string connectionString)
             => @$"

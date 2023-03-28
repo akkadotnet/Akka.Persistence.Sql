@@ -4,17 +4,19 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using Akka.Persistence.Sql.Tests.Common;
+using Akka.Persistence.Sql.Config;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.Sql.Tests.Common.Query;
+using Akka.Persistence.Sql.Tests.Sqlite;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Tests.Query.MsSqlite.Csv
 {
-    [Collection("PersistenceSpec")]
-    public class MsSqliteCurrentEventsByTagSpec : BaseCurrentEventsByTagSpec
+    [Collection(nameof(MsSqlitePersistenceSpec))]
+    public class MsSqliteCurrentEventsByTagSpec : BaseCurrentEventsByTagSpec<MsSqliteContainer>
     {
-        public MsSqliteCurrentEventsByTagSpec(ITestOutputHelper output, TestFixture fixture) 
-            : base(SqliteConfig.MsCsv, output, fixture) { }
+        public MsSqliteCurrentEventsByTagSpec(ITestOutputHelper output, MsSqliteContainer fixture) 
+            : base(TagMode.Csv, output, nameof(MsSqliteCurrentEventsByTagSpec), fixture) { }
     }
 }

@@ -7,22 +7,22 @@
 using System;
 using Akka.Configuration;
 using Akka.Persistence.Query;
+using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Query;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.TCK.Query;
 using FluentAssertions.Extensions;
 using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Tests.Common.Query
 {
-    public abstract class BasePersistenceIdsSpec : PersistenceIdsSpec
+    public abstract class BasePersistenceIdsSpec<T> : PersistenceIdsSpec where T : ITestContainer
     {
-        private readonly ITestConfig _config;
-        private readonly TestFixture _fixture;
+        private readonly T _fixture;
 
-        protected BasePersistenceIdsSpec(ITestConfig config, ITestOutputHelper output, TestFixture fixture)
-            : base(Config(config, fixture), nameof(PersistenceIdsSpec), output)
+        protected BasePersistenceIdsSpec(TagMode tagMode, ITestOutputHelper output, string name, T fixture)
+            : base(Config(tagMode, fixture), name, output)
         {
-            _config = config;
             _fixture = fixture;
             ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
         }
@@ -31,11 +31,11 @@ namespace Akka.Persistence.Sql.Tests.Common.Query
         {
             base.AfterAll();
             Shutdown();
-            if (!_fixture.InitializeDbAsync(_config.Database).Wait(10.Seconds()))
+            if (!_fixture.InitializeDbAsync().Wait(10.Seconds()))
                 throw new Exception("Failed to clean up database in 10 seconds");
         }
 
-        private static Configuration.Config Config(ITestConfig config, TestFixture fixture)
+        private static Configuration.Config Config(TagMode tagMode, T fixture)
             => ConfigurationFactory.ParseString($@"
                     akka.loglevel = INFO
                     akka.actor{{
@@ -51,25 +51,25 @@ namespace Akka.Persistence.Sql.Tests.Common.Query
                         journal {{
                             plugin = ""akka.persistence.journal.sql""
                             sql {{
-                                provider-name = ""{config.Provider}""
-                                tag-write-mode = ""{config.TagMode}""
-                                connection-string = ""{fixture.ConnectionString(config.Database)}""
+                                provider-name = ""{fixture.ProviderName}""
+                                tag-write-mode = ""{tagMode}""
+                                connection-string = ""{fixture.ConnectionString}""
                                 auto-initialize = on
                             }}
                         }}
                         snapshot-store {{
                             plugin = ""akka.persistence.snapshot-store.sql""
                             sql {{
-                                provider-name = ""{config.Provider}""
-                                connection-string = ""{fixture.ConnectionString(config.Database)}""
+                                provider-name = ""{fixture.ProviderName}""
+                                connection-string = ""{fixture.ConnectionString}""
                                 auto-initialize = on
                             }}
                         }}
                     }}
                     akka.persistence.query.journal.sql {{
-                        provider-name = ""{config.Provider}""
-                        connection-string = ""{fixture.ConnectionString(config.Database)}""
-                        tag-read-mode = ""{config.TagMode}""
+                        provider-name = ""{fixture.ProviderName}""
+                        connection-string = ""{fixture.ConnectionString}""
+                        tag-read-mode = ""{tagMode}""
                         auto-initialize = on
                         refresh-interval = 200ms
                     }}

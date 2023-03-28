@@ -6,34 +6,29 @@
 
 using System.Threading.Tasks;
 using Akka.Persistence.Sql.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
 {
-    [Collection("BenchmarkSpec")]
-    public class PostgreSqlJournalPerfSpec : SqlJournalPerfSpec, IAsyncLifetime
+    [Collection(nameof(PostgreSqlPersistenceBenchmark))]
+    public class PostgreSqlJournalPerfSpec : SqlJournalPerfSpec<PostgreSqlContainer>
     {
-        private readonly TestFixture _fixture;
-
         public PostgreSqlJournalPerfSpec(
             ITestOutputHelper output,
-            TestFixture fixture)
+            PostgreSqlContainer fixture)
             : base(
                 InitConfig(fixture),
                 nameof(PostgreSqlJournalPerfSpec),
                 output,
+                fixture,
                 40,
                 TestConstants.DockerNumMessages)
-            => _fixture = fixture;
+        {
+        }
 
-        public async Task InitializeAsync()
-            => await _fixture.InitializeDbAsync(Database.PostgreSql);
-
-        public Task DisposeAsync()
-            => Task.CompletedTask;
-
-        public static Configuration.Config InitConfig(TestFixture fixture)
+        public static Configuration.Config InitConfig(PostgreSqlContainer fixture)
             => $@"
                 akka.persistence {{
                     publish-plugin-commands = on
@@ -46,7 +41,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
                             metadata-table-name = metadata
                             schema-name = public
                             auto-initialize = on
-                            connection-string = ""{fixture.ConnectionString(Database.PostgreSql)}""
+                            connection-string = ""{fixture.ConnectionString}""
                         }}
                     }}
                 }}";
