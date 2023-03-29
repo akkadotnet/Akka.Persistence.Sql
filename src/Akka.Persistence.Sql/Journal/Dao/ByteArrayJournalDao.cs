@@ -5,6 +5,9 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Event;
 using Akka.Persistence.Sql.Config;
@@ -23,7 +26,8 @@ namespace Akka.Persistence.Sql.Journal.Dao
             AkkaPersistenceDataConnectionFactory connection,
             JournalConfig journalConfig,
             Akka.Serialization.Serialization serializer,
-            ILoggingAdapter logger)
+            ILoggingAdapter logger,
+            CancellationToken shutdownToken)
             : base(
                 scheduler: scheduler,
                 materializer: mat,
@@ -33,45 +37,50 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     journalConfig,
                     serializer,
                     journalConfig.PluginConfig.TagSeparator),
-                logger: logger) { }
+                logger: logger,
+                shutdownToken: shutdownToken) { }
 
-        // TODO: change this to async
-        public void InitializeTables()
+        public async Task InitializeTables(CancellationToken token)
         {
-            using var connection = ConnectionFactory.GetConnection();
+            await using var connection = ConnectionFactory.GetConnection();
 
-            try
-            {
-                connection.CreateTable<JournalRow>();
-                if (JournalConfig.PluginConfig.TagMode is not TagMode.Csv)
-                    connection.CreateTable<JournalTagRow>();
-            }
-            catch (Exception e)
-            {
-                if (JournalConfig.WarnOnAutoInitializeFail)
-                {
-                    Logger.Warning(
-                        e,
-                        $"Could not Create Journal Table {JournalConfig.TableConfig.EventJournalTable.Name} as requested by config.");
-                }
-            }
-
-            if (JournalConfig.DaoConfig.SqlCommonCompatibilityMode)
+            // MS Sqlite does not support schema, we have to blindly try and create the tables
+            if (connection.DataProvider.Name is ProviderName.SQLiteMS)
             {
                 try
                 {
-                    connection.CreateTable<JournalMetaData>();
+                    await connection.CreateTableAsync<JournalRow>(token);
                 }
-                catch (Exception e)
-                {
-                    if (JournalConfig.WarnOnAutoInitializeFail)
+                catch { /* no-op */ }
+                
+                if (JournalConfig.PluginConfig.TagMode is not TagMode.Csv)
+                    try
                     {
-                        Logger.Warning(
-                            e,
-                            $"Could not Create Journal Metadata Table {JournalConfig.TableConfig.MetadataTable.Name} as requested by config.");
+                        await connection.CreateTableAsync<JournalTagRow>(token);
                     }
-                }
+                    catch { /* no-op */ }
+                
+                if (JournalConfig.DaoConfig.SqlCommonCompatibilityMode)
+                    try
+                    {
+                        await connection.CreateTableAsync<JournalMetaData>(token);
+                    }
+                    catch { /* no-op */ }
+
+                return;
             }
+
+            var schema = connection.GetSchema();
+            if(schema.Tables.All(t => t.TableName != JournalConfig.TableConfig.EventJournalTable.Name))
+                await connection.CreateTableAsync<JournalRow>(token);
+            
+            if (JournalConfig.PluginConfig.TagMode is not TagMode.Csv)
+                if(schema.Tables.All(t => t.TableName != JournalConfig.TableConfig.TagTable.Name))
+                    await connection.CreateTableAsync<JournalTagRow>(token);
+
+            if (JournalConfig.DaoConfig.SqlCommonCompatibilityMode)
+                if(schema.Tables.All(t => t.TableName != JournalConfig.TableConfig.MetadataTable.Name))
+                    await connection.CreateTableAsync<JournalMetaData>(token);
         }
     }
 }
