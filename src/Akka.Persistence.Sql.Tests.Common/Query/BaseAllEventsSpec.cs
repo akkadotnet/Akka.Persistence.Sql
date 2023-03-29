@@ -10,8 +10,6 @@ using Akka.Persistence.Query;
 using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Query;
 using Akka.Persistence.Sql.Tests.Common.Containers;
-using Akka.Persistence.Sql.Tests.Common.Internal;
-using Akka.Persistence.Sql.Tests.Internal;
 using Akka.Persistence.TCK.Query;
 using FluentAssertions.Extensions;
 using Xunit.Abstractions;
