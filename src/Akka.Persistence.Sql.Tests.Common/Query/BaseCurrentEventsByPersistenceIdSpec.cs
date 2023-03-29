@@ -34,6 +34,7 @@ akka.loglevel = INFO
 akka.persistence {{
     journal {{
         plugin = ""akka.persistence.journal.sql""
+        auto-start-journals = [ ""akka.persistence.journal.sql"" ]
         sql {{
             provider-name = ""{fixture.ProviderName}""
             tag-write-mode = ""{tagMode}""
