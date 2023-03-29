@@ -4,6 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using Xunit;
 using Xunit.Abstractions;
@@ -18,16 +19,13 @@ namespace Akka.Persistence.Sql.Tests.Sqlite.Compatibility
             MsSqliteContainer fixture)
             : base(fixture, outputHelper)
         {
-            Config = SqliteCompatibilitySpecConfig.InitJournalConfig(
-                "journal_compat", "journal_metadata_compat", fixture.ConnectionString);
         }
 
-        protected override string OldJournal
-            => "akka.persistence.journal.sqlite";
+        protected override string OldJournal => "akka.persistence.journal.sqlite";
 
-        protected override string NewJournal
-            => "akka.persistence.journal.sql";
+        protected override string NewJournal => "akka.persistence.journal.sql";
 
-        protected override Configuration.Config Config { get; }
+        protected override Func<MsSqliteContainer, Configuration.Config> Config => fixture
+            => SqliteCompatibilitySpecConfig.InitJournalConfig("journal_compat", "journal_metadata_compat", fixture.ConnectionString);
     }
 }

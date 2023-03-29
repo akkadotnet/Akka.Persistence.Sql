@@ -4,6 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using Xunit;
 using Xunit.Abstractions;
@@ -16,15 +17,13 @@ namespace Akka.Persistence.Sql.Tests.Sqlite.Compatibility
         public SqliteSqlCommonSnapshotCompatibilitySpec(ITestOutputHelper outputHelper, MsSqliteContainer fixture)
             : base(fixture, outputHelper)
         {
-            Config = SqliteCompatibilitySpecConfig.InitSnapshotConfig("snapshot_compat", fixture.ConnectionString);
         }
 
-        protected override Configuration.Config Config { get; }
+        protected override string OldSnapshot => "akka.persistence.snapshot-store.sqlite";
 
-        protected override string OldSnapshot
-            => "akka.persistence.snapshot-store.sqlite";
+        protected override string NewSnapshot => "akka.persistence.snapshot-store.sql";
 
-        protected override string NewSnapshot
-            => "akka.persistence.snapshot-store.sql";
+        protected override Func<MsSqliteContainer, Configuration.Config> Config => fixture
+            => SqliteCompatibilitySpecConfig.InitSnapshotConfig("snapshot_compat", fixture.ConnectionString);
     }
 }

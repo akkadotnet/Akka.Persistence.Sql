@@ -15,7 +15,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
     {
         public string ConnectionString { get; }
 
-        public string DatabaseName { get; }
+        public string? DatabaseName { get; }
 
         public string ContainerName { get; }
 

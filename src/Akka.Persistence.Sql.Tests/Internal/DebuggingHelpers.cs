@@ -14,16 +14,14 @@ namespace Akka.Persistence.Sql.Tests.Internal
 {
     public static class DebuggingHelpers
     {
-        public static void SetupTraceDump(
-            ITestOutputHelper outputHelper,
-            DataConnection connection)
+        public static void SetupTraceDump(ITestOutputHelper outputHelper)
         {
-            connection.TraceSwitchConnection = new TraceSwitch(
-                "DataConnection",
-                "DataConnection trace switch",
-                TraceLevel.Verbose.ToString());
+            DataConnection.TurnTraceSwitchOn(TraceLevel.Verbose);
 
-            connection.OnTraceConnection = info =>
+            DataConnection.WriteTraceLine = (message, category, level) =>
+                outputHelper.WriteLine($"[{level}] {message} {category}");
+            /*
+            DataConnection.OnTrace = info =>
             {
                 try
                 {
@@ -39,11 +37,11 @@ namespace Akka.Persistence.Sql.Tests.Internal
                         {
                             sb
                                 .AppendLine()
-                                .AppendLine("/*")
+                                .AppendLine("/>>")
                                 .AppendLine($"Exception: {ex.GetType()}")
                                 .AppendLine($"Message  : {ex.Message}")
                                 .AppendLine(ex.StackTrace)
-                                .AppendLine("*/");
+                                .AppendLine("<</");
                         }
 
                         outputHelper.WriteLine(sb.ToString());
@@ -64,6 +62,7 @@ namespace Akka.Persistence.Sql.Tests.Internal
                     // This will sometimes get thrown because of async and ITestOutputHelper interactions.
                 }
             };
+            */
         }
     }
 }

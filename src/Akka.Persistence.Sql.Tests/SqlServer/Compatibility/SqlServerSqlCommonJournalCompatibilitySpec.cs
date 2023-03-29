@@ -4,6 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Threading.Tasks;
 using Akka.Persistence.Sql.Tests.Common;
 using Akka.Persistence.Sql.Tests.Common.Containers;
@@ -24,18 +25,13 @@ namespace Akka.Persistence.Sql.Tests.SqlServer.Compatibility
         public SqlServerSqlCommonJournalCompatibilitySpec(ITestOutputHelper outputHelper, SqlServerContainer fixture)
             : base(fixture, outputHelper)
         {
-            Config = SqlServerCompatibilitySpecConfig.InitJournalConfig(
-                fixture,
-                "journal_compat",
-                "journal_metadata_compat");
         }
 
-        protected override string OldJournal
-            => "akka.persistence.journal.sql-server";
+        protected override string OldJournal => "akka.persistence.journal.sql-server";
 
-        protected override string NewJournal
-            => "akka.persistence.journal.sql";
+        protected override string NewJournal => "akka.persistence.journal.sql";
 
-        protected override Configuration.Config Config { get; }
+        protected override Func<SqlServerContainer, Configuration.Config> Config => fixture
+            => SqlServerCompatibilitySpecConfig.InitJournalConfig(fixture, "journal_compat", "journal_metadata_compat");
     }
 }

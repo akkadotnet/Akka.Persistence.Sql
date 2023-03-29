@@ -15,14 +15,11 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
     [Collection(nameof(MsSqlitePersistenceBenchmark))]
     public class MsSqliteLinq2DbJournalPerfSpec : SqlJournalPerfSpec<MsSqliteContainer>
     {
-        public MsSqliteLinq2DbJournalPerfSpec(
-            ITestOutputHelper output,
-            MsSqliteContainer fixture)
+        public MsSqliteLinq2DbJournalPerfSpec(ITestOutputHelper output, MsSqliteContainer fixture)
             : base(
-                SqliteJournalSpecConfig.Create(fixture.ConnectionString, ProviderName.SQLiteMS),
+                SqliteJournalSpecConfig.Create(fixture),
                 nameof(MsSqliteLinq2DbJournalPerfSpec),
                 output,
-                fixture,
                 eventsCount: TestConstants.NumMessages)
         {
         }

@@ -4,8 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using System.Threading.Tasks;
-using Akka.Persistence.Sql.Tests.Common;
+using System;
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using Xunit;
 using Xunit.Abstractions;
@@ -24,10 +23,10 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
         public PostgreSqlCommonJournalCompatibilitySpec(ITestOutputHelper output, PostgreSqlContainer fixture)
             : base(fixture, output)
         {
-            Config = PostgreSqlCompatibilitySpecConfig.InitJournalConfig(fixture, "event_journal", "metadata");
         }
 
-        protected override Configuration.Config Config { get; }
+        protected override Func<PostgreSqlContainer, Configuration.Config> Config => fixture 
+            => PostgreSqlCompatibilitySpecConfig.InitJournalConfig(fixture, "event_journal", "metadata");
 
         protected override string OldJournal => "akka.persistence.journal.postgresql";
 

@@ -17,29 +17,13 @@ namespace Akka.Persistence.Sql.Tests.Sqlite
     [Collection(nameof(MsSqlitePersistenceSpec))]
     public class MsSqliteSnapshotSpec : SnapshotStoreSpec
     {
-        private readonly MsSqliteContainer _fixture;
-
-        public MsSqliteSnapshotSpec(
-            ITestOutputHelper outputHelper,
-            MsSqliteContainer fixture)
-            : base(
-                SqliteSnapshotSpecConfig.Create(fixture.ConnectionString, ProviderName.SQLiteMS),
-                nameof(MsSqliteSnapshotSpec),
-                outputHelper)
+        public MsSqliteSnapshotSpec(ITestOutputHelper outputHelper, MsSqliteContainer fixture)
+            : base(SqliteSnapshotSpecConfig.Create(fixture), nameof(MsSqliteSnapshotSpec), outputHelper)
         {
-            _fixture = fixture;
             Initialize();
         }
 
         // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
         protected override bool SupportsSerialization => false;
-
-        protected override void AfterAll()
-        {
-            base.AfterAll();
-            Shutdown();
-            if (!_fixture.InitializeDbAsync().Wait(10.Seconds()))
-                throw new Exception("Failed to clean up database in 10 seconds");
-        }
     }
 }

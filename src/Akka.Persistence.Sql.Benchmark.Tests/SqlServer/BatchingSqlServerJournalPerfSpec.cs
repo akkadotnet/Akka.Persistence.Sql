@@ -4,7 +4,11 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System;
+using Akka.Configuration;
 using Akka.Persistence.Sql.Tests.Common.Containers;
+using Akka.Persistence.SqlServer;
+using FluentAssertions.Extensions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -13,21 +17,22 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
     [Collection(nameof(SqlServerPersistenceBenchmark))]
     public class BatchingSqlServerJournalPerfSpec : SqlJournalPerfSpec<SqlServerContainer>
     {
-        public BatchingSqlServerJournalPerfSpec(
-            ITestOutputHelper output,
-            SqlServerContainer fixture)
+        public BatchingSqlServerJournalPerfSpec(ITestOutputHelper output, SqlServerContainer fixture)
             : base(
                 Configure(fixture),
                 nameof(BatchingSqlServerJournalPerfSpec),
                 output,
-                fixture,
                 40,
                 TestConstants.DockerNumMessages)
         {
         }
 
         public static Configuration.Config Configure(SqlServerContainer fixture)
-            => $@"
+        {
+            if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
+                throw new Exception("Failed to clean up database in 10 seconds");
+            
+            return ConfigurationFactory.ParseString(@$"
                 akka.persistence {{
                     publish-plugin-commands = on
                     journal {{
@@ -41,7 +46,9 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
                             connection-string = ""{fixture.ConnectionString}""
                         }}
                     }}
-                }}";
+                }}")
+                .WithFallback(SqlServerPersistence.DefaultConfiguration());
+        }
 
         [Fact]
         public void PersistenceActor_Must_measure_PersistGroup1000()

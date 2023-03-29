@@ -4,6 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Threading.Tasks;
 using Akka.Persistence.Sql.Tests.Common;
 using Akka.Persistence.Sql.Tests.Common.Containers;
@@ -26,15 +27,13 @@ namespace Akka.Persistence.Sql.Tests.SqlServer.Compatibility
             SqlServerContainer fixture)
             : base(fixture, output)
         {
-            Config = SqlServerCompatibilitySpecConfig.InitSnapshotConfig(fixture, "snapshot_compat");
         }
 
-        protected override string OldSnapshot
-            => "akka.persistence.snapshot-store.sql-server";
+        protected override string OldSnapshot => "akka.persistence.snapshot-store.sql-server";
 
-        protected override string NewSnapshot
-            => "akka.persistence.snapshot-store.sql";
+        protected override string NewSnapshot => "akka.persistence.snapshot-store.sql";
 
-        protected override Configuration.Config Config { get; }
+        protected override Func<SqlServerContainer, Configuration.Config> Config => fixture
+            => SqlServerCompatibilitySpecConfig.InitSnapshotConfig(fixture, "snapshot_compat");
     }
 }

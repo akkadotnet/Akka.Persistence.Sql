@@ -23,30 +23,16 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
     [Collection(nameof(SqlServerPersistenceSpec))]
     public class SqlServerJournalCustomConfigSpec : JournalSpec
     {
-        private readonly SqlServerContainer _fixture;
-
-        public SqlServerJournalCustomConfigSpec(
-            ITestOutputHelper output,
-            SqlServerContainer fixture)
-            : base(
-                Configuration(fixture),
-                nameof(SqlServerJournalCustomConfigSpec),
-                output)
+        public SqlServerJournalCustomConfigSpec(ITestOutputHelper output, SqlServerContainer fixture)
+            : base(Configuration(fixture), nameof(SqlServerJournalCustomConfigSpec), output)
         {
-            _fixture = fixture;
+            if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
+                throw new Exception("Failed to clean up database in 10 seconds");
             Initialize();
         }
 
         // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
         protected override bool SupportsSerialization => false;
-
-        protected override void AfterAll()
-        {
-            base.AfterAll();
-            Shutdown();
-            if (!_fixture.InitializeDbAsync().Wait(10.Seconds()))
-                throw new Exception("Failed to clean up database in 10 seconds");
-        }
 
         private static Configuration.Config Configuration(SqlServerContainer fixture)
             => SqlJournalDefaultSpecConfig.GetCustomConfig(

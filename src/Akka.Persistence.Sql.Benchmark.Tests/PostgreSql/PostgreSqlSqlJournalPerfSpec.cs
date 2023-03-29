@@ -4,10 +4,13 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Threading.Tasks;
+using Akka.Configuration;
 using Akka.Persistence.Sql.Journal;
 using Akka.Persistence.Sql.Tests.Common;
 using Akka.Persistence.Sql.Tests.Common.Containers;
+using FluentAssertions.Extensions;
 using LinqToDB;
 using Xunit;
 using Xunit.Abstractions;
@@ -21,30 +24,29 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
             ITestOutputHelper output,
             PostgreSqlContainer fixture)
             : base(
-                Configuration(fixture.ConnectionString),
+                Configuration(fixture),
                 nameof(PostgreSqlSqlJournalPerfSpec),
                 output,
-                fixture,
                 40,
                 eventsCount: TestConstants.DockerNumMessages)
         {
         }
 
-        private static Configuration.Config Configuration(string connString)
-            => $@"
+        private static Configuration.Config Configuration(PostgreSqlContainer fixture)
+        {
+            if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
+                throw new Exception("Failed to clean up database in 10 seconds");
+            
+            return ConfigurationFactory.ParseString(@$"
                 akka.persistence {{
                     publish-plugin-commands = on
                     journal {{
                         plugin = ""akka.persistence.journal.sql""
                         sql {{
-                            class = ""{typeof(SqlWriteJournal).AssemblyQualifiedName}""
-                            plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
-
-                            connection-string = ""{connString}""
-                            provider-name = ""{ProviderName.PostgreSQL95}""
+                            connection-string = ""{fixture.ConnectionString}""
+                            provider-name = ""{fixture.ProviderName}""
                             use-clone-connection = true
                             auto-initialize = true
-                            warn-on-auto-init-fail = false
                             default {{
                                 journal {{
                                     table-name = testPerfTable
@@ -52,7 +54,9 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
                             }}
                         }}
                     }}
-                }}";
+                }}")
+                .WithFallback(SqlPersistence.DefaultConfiguration);
+        }
 
         [Fact]
         public void PersistenceActor_Must_measure_PersistGroup1000()

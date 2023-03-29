@@ -30,7 +30,7 @@ namespace Akka.Persistence.Sql.Tests
         protected T Fixture { get; }
         protected ITestOutputHelper Output { get; }
 
-        protected abstract Configuration.Config Config { get; }
+        protected abstract Func<T, Configuration.Config> Config { get; }
 
         protected abstract string OldJournal { get; }
         protected abstract string NewJournal { get; }
@@ -38,18 +38,8 @@ namespace Akka.Persistence.Sql.Tests
         protected Akka.TestKit.Xunit2.TestKit TestKit { get; private set; }
         protected TestProbe Probe { get; private set; }
 
-        public Task InitializeAsync()
+        public async Task InitializeAsync()
         {
-            Sys = ActorSystem.Create("test-sys", Config);
-            TestKit = new Akka.TestKit.Xunit2.TestKit(Sys, Output);
-            Probe = TestKit.CreateTestProbe();
-            return Task.CompletedTask;
-        }
-
-        public async Task DisposeAsync()
-        {
-            TestKit.Shutdown();
-
             using var cts = new CancellationTokenSource(10.Seconds());
             try
             {
@@ -61,6 +51,16 @@ namespace Akka.Persistence.Sql.Tests
             {
                 cts.Cancel();
             }
+            
+            Sys = ActorSystem.Create("test-sys", Config(Fixture));
+            TestKit = new Akka.TestKit.Xunit2.TestKit(Sys, Output);
+            Probe = TestKit.CreateTestProbe();
+        }
+
+        public Task DisposeAsync()
+        {
+            TestKit.Shutdown();
+            return Task.CompletedTask;
         }
 
         [Fact]

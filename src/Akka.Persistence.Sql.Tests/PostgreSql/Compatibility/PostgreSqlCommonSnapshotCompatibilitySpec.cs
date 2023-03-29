@@ -4,6 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Threading.Tasks;
 using Akka.Persistence.Sql.Tests.Common;
 using Akka.Persistence.Sql.Tests.Common.Containers;
@@ -24,15 +25,13 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
         public PostgreSqlCommonSnapshotCompatibilitySpec(ITestOutputHelper output, PostgreSqlContainer fixture)
             : base(fixture, output)
         {
-            Config = PostgreSqlCompatibilitySpecConfig.InitSnapshotConfig(fixture, "snapshot_store");
         }
 
-        protected override Configuration.Config Config { get; }
+        protected override string OldSnapshot => "akka.persistence.snapshot-store.postgresql";
 
-        protected override string OldSnapshot
-            => "akka.persistence.snapshot-store.postgresql";
+        protected override string NewSnapshot => "akka.persistence.snapshot-store.sql";
 
-        protected override string NewSnapshot
-            => "akka.persistence.snapshot-store.sql";
+        protected override Func<PostgreSqlContainer, Configuration.Config> Config => fixture
+            => PostgreSqlCompatibilitySpecConfig.InitSnapshotConfig(fixture, "snapshot_store");
     }
 }

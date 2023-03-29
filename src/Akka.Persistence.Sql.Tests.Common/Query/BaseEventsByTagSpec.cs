@@ -21,13 +21,16 @@ namespace Akka.Persistence.Sql.Tests.Common.Query
         protected BaseEventsByTagSpec(TagMode tagMode, ITestOutputHelper output, string name, T fixture)
             : base(Config(tagMode, fixture), name, output)
         {
-            if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
-                throw new Exception("Failed to clean up database in 10 seconds");
             ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
         }
 
         private static Configuration.Config Config(TagMode tagMode, T fixture)
-            => ConfigurationFactory.ParseString($@"
+        {
+            if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
+                throw new Exception("Failed to clean up database in 10 seconds");
+            
+            return ConfigurationFactory.ParseString(
+                    $@"
                     akka.loglevel = INFO
                     akka.persistence.journal.plugin = ""akka.persistence.journal.sql""
                     akka.persistence.journal.sql {{
@@ -52,5 +55,6 @@ namespace Akka.Persistence.Sql.Tests.Common.Query
                     }}
                     akka.test.single-expect-default = 10s")
                 .WithFallback(SqlPersistence.DefaultConfiguration);
+        }
     }
 }

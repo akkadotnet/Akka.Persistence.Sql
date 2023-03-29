@@ -4,7 +4,11 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System;
+using Akka.Configuration;
 using Akka.Persistence.Sql.Tests.Common.Containers;
+using Akka.Persistence.SqlServer;
+using FluentAssertions.Extensions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -18,27 +22,28 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
                 Configuration(fixture),
                 nameof(SqlServerJournalPerfSpec),
                 output,
-                fixture,
                 40,
                 eventsCount: TestConstants.DockerNumMessages)
         {
         }
 
         private static Configuration.Config Configuration(SqlServerContainer fixture)
-            => $@"
+        {
+            if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
+                throw new Exception("Failed to clean up database in 10 seconds");
+            
+            return ConfigurationFactory.ParseString(@$"
                 akka.persistence {{
                     publish-plugin-commands = on
                     journal {{
                         plugin = ""akka.persistence.journal.sql-server""
                         sql-server {{
-                            class = ""Akka.Persistence.SqlServer.Journal.SqlServerJournal, Akka.Persistence.SqlServer""
-                            plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
-                            table-name = EventJournal
-                            schema-name = dbo
                             auto-initialize = on
                             connection-string = ""{fixture.ConnectionString}""
                         }}
                     }}
-                }}";
+                }}")
+                .WithFallback(SqlServerPersistence.DefaultConfiguration());
+        }
     }
 }

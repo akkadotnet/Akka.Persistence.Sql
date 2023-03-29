@@ -40,7 +40,6 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             Configuration.Config config,
             string actorSystem,
             ITestOutputHelper output,
-            T fixture,
             int timeoutDurationSeconds = 30,
             int eventsCount = 10000)
             : base(config ?? Configuration.Config.Empty, actorSystem, output)
@@ -49,17 +48,6 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             _eventsCount = eventsCount;
             _expectDuration = TimeSpan.FromSeconds(timeoutDurationSeconds);
             _testProbe = CreateTestProbe();
-            Fixture = fixture;
-        }
-
-        protected T Fixture { get; }
-
-        protected override void AfterAll()
-        {
-            base.AfterAll();
-            Shutdown();
-            if (!Fixture.InitializeDbAsync().Wait(10.Seconds()))
-                throw new Exception("Failed to clean up database in 10 seconds");
         }
 
         private IReadOnlyList<int> Commands => Enumerable.Range(1, _eventsCount).ToList();

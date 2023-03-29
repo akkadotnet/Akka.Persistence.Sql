@@ -4,9 +4,10 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using Akka.Persistence.Sql.Journal;
+using System;
+using Akka.Configuration;
 using Akka.Persistence.Sql.Tests.Common.Containers;
-using LinqToDB;
+using FluentAssertions.Extensions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -17,30 +18,29 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
     {
         public SqlServerLinq2DbJournalPerfSpec(ITestOutputHelper output, SqlServerContainer fixture)
             : base(
-                Configure(fixture.ConnectionString),
+                Configure(fixture),
                 nameof(SqlServerLinq2DbJournalPerfSpec),
                 output,
-                fixture,
                 40,
                 eventsCount: TestConstants.DockerNumMessages)
         {
         }
 
-        private static Configuration.Config Configure(string connString)
-            => $@"
+        private static Configuration.Config Configure(SqlServerContainer fixture)
+        {
+            if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
+                throw new Exception("Failed to clean up database in 10 seconds");
+            
+            return ConfigurationFactory.ParseString(@$"
                 akka.persistence {{
                     publish-plugin-commands = on
                     journal {{
                         plugin = ""akka.persistence.journal.sql""
                         sql {{
-                            class = ""{typeof(SqlWriteJournal).AssemblyQualifiedName}""
-                            plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
-
-                            connection-string = ""{connString}""
-                            provider-name = ""{ProviderName.SqlServer2017}""
+                            connection-string = ""{fixture.ConnectionString}""
+                            provider-name = ""{fixture.ProviderName}""
                             use-clone-connection = true
                             auto-initialize = true
-                            warn-on-auto-init-fail = false
                             default {{
                                 journal {{
                                     table-name = testPerfTable
@@ -48,7 +48,8 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
                             }}
                         }}
                     }}
-                }}";
+                }}")
+                .WithFallback(SqlPersistence.DefaultConfiguration);        }
 
         [Fact]
         public void PersistenceActor_Must_measure_PersistGroup1000()

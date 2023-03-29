@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Data.SQLite;
 using System.Threading.Tasks;
 using Docker.DotNet;
@@ -16,18 +17,11 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
     /// </summary>
     public sealed class SqliteContainer : ITestContainer
     {
-        private SQLiteConnection? _heldConnection;
+        private List<SQLiteConnection>? _heldConnection;
 
-        public SqliteContainer()
-        {
-            ConnectionString = $"FullUri=file:memdb-{DatabaseName}?mode=memory&cache=shared";
+        public string ConnectionString => $"FullUri=file:memdb-{DatabaseName}?mode=memory&cache=shared";
 
-            Console.WriteLine($"Connection string: [{ConnectionString}]");
-        }
-
-        public string ConnectionString { get; }
-
-        public string DatabaseName { get; } = $"sql_tests_{Guid.NewGuid():N}";
+        public string DatabaseName { get; private set; } = string.Empty;
 
         public string ContainerName => string.Empty;
 
@@ -37,45 +31,28 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
 
         public DockerClient? Client => null;
 
-        public bool Initialized { get; private set; }
+        public bool Initialized => _heldConnection is { };
 
+        private void GenerateDatabaseName()
+        {
+            DatabaseName = $"sql_tests_{Guid.NewGuid():N}";
+        }
+        
         public async Task InitializeAsync()
         {
             if (Initialized)
                 return;
 
-            _heldConnection = new SQLiteConnection(ConnectionString);
-            await _heldConnection.OpenAsync();
-            GC.KeepAlive(_heldConnection);
-
-            Initialized = true;
+            _heldConnection = new List<SQLiteConnection>();
+            await InitializeDbAsync();
         }
 
-        private static readonly string[] Tables =
-        {
-            "event_journal",
-            "snapshot_store",
-            "journal",
-            "journal_metadata",
-            "tags",
-            "snapshot"
-        };
-        
         public async Task InitializeDbAsync()
         {
-            await using var connection = new SQLiteConnection(ConnectionString);
-            await connection.OpenAsync();
-
-            foreach (var table in Tables)
-            {
-                await using var command = new SQLiteCommand
-                {
-                    CommandText = $"DROP TABLE IF EXISTS {table};",
-                    Connection = connection
-                };
-
-                await command.ExecuteNonQueryAsync();
-            }
+            GenerateDatabaseName();
+            var conn = new SQLiteConnection(ConnectionString); 
+            await conn.OpenAsync();
+            _heldConnection!.Add(conn);
         }
 
         public async Task DisposeAsync()
@@ -83,8 +60,11 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
             if (_heldConnection is null)
                 return;
 
-            _heldConnection.Close();
-            await _heldConnection.DisposeAsync();
+            foreach (var conn in _heldConnection)
+            {
+                conn.Close();
+                await conn.DisposeAsync();
+            }
             _heldConnection = null;
         }
 
@@ -93,8 +73,11 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
             if (_heldConnection is null)
                 return;
 
-            _heldConnection.Close();
-            _heldConnection.Dispose();
+            foreach (var conn in _heldConnection)
+            {
+                conn.Close();
+                conn.Dispose();
+            }
             _heldConnection = null;
         }
     }

@@ -53,7 +53,12 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
 
         public abstract string ConnectionString { get; }
 
-        public string DatabaseName { get; } = $"sql_tests_{Guid.NewGuid():N}";
+        public string? DatabaseName { get; private set; }
+
+        protected virtual void GenerateDatabaseName()
+        {
+            DatabaseName = $"sql_tests_{Guid.NewGuid():N}";
+        }
 
         public string ContainerName { get; }
 

@@ -17,29 +17,13 @@ namespace Akka.Persistence.Sql.Tests.Sqlite
     [Collection(nameof(SqlitePersistenceSpec))]
     public class SystemDataSqliteJournalSpec : JournalSpec
     {
-        private readonly SqliteContainer _fixture;
-
-        public SystemDataSqliteJournalSpec(
-            ITestOutputHelper output,
-            SqliteContainer fixture)
-            : base(
-                SqliteJournalSpecConfig.Create(fixture.ConnectionString, ProviderName.SQLiteClassic),
-                nameof(SystemDataSqliteJournalSpec),
-                output)
+        public SystemDataSqliteJournalSpec(ITestOutputHelper output, SqliteContainer fixture)
+            : base(SqliteJournalSpecConfig.Create(fixture), nameof(SystemDataSqliteJournalSpec), output)
         {
-            _fixture = fixture;
             Initialize();
         }
 
         // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
         protected override bool SupportsSerialization => false;
-
-        protected override void AfterAll()
-        {
-            base.AfterAll();
-            Shutdown();
-            if (!_fixture.InitializeDbAsync().Wait(10.Seconds()))
-                throw new Exception("Failed to clean up database in 10 seconds");
-        }
     }
 }
