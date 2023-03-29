@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Threading;
 using Akka.Configuration;
 using Akka.Persistence.Query;
 using Akka.Persistence.Sql.Config;
@@ -12,6 +13,7 @@ using Akka.Persistence.Sql.Query;
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.TCK.Query;
 using FluentAssertions.Extensions;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Tests.Common.Query
@@ -22,6 +24,26 @@ namespace Akka.Persistence.Sql.Tests.Common.Query
             : base(Config(tagMode, fixture), name, output)
         {
             ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
+        }
+
+        // Unit tests suffer from racy condition where the read journal tries to access the database
+        // when the write journal has not been initialized
+        [Fact]
+        public override void ReadJournal_CurrentEventsByPersistenceId_should_return_empty_stream_for_empty_journal()
+        {
+            Persistence.Instance.Get(Sys).JournalFor(null);
+            Thread.Sleep(500);
+            base.ReadJournal_CurrentEventsByPersistenceId_should_return_empty_stream_for_empty_journal();
+        }
+
+        // Unit tests suffer from racy condition where the read journal tries to access the database
+        // when the write journal has not been initialized
+        [Fact]
+        public override void ReadJournal_CurrentEventsByPersistenceId_should_return_empty_stream_for_empty_journal_from_0_to_0()
+        {
+            Persistence.Instance.Get(Sys).JournalFor(null);
+            Thread.Sleep(500);
+            base.ReadJournal_CurrentEventsByPersistenceId_should_return_empty_stream_for_empty_journal_from_0_to_0();
         }
 
         private static Configuration.Config Config(TagMode tagMode, T fixture)
