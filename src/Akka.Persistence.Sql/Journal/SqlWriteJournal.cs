@@ -52,6 +52,8 @@ namespace Akka.Persistence.Sql.Journal
         private readonly Dictionary<string, Task> _writeInProgress = new();
         private readonly CancellationTokenSource _pendingWriteCts;
 
+        // Stash is needed because we need to stash all incoming messages while we're waiting for the
+        // journal DAO to be properly initialized.
         public IStash Stash { get; set; }
 
         public SqlWriteJournal(Configuration.Config journalConfig)
@@ -67,6 +69,11 @@ namespace Akka.Persistence.Sql.Journal
         {
             base.PreStart();
             Initialize().PipeTo(Self);
+            
+            // We have to use BecomeStacked here because the default Receive method is sealed in the
+            // base class and it uses a custom code to handle received messages.
+            // We need to suspend the base class behavior while we're waiting for the journal DAO to be properly
+            // initialized.
             BecomeStacked(Initializing);
         }
 
