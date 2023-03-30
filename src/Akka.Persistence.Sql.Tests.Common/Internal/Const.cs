@@ -9,5 +9,6 @@ namespace Akka.Persistence.Sql.Tests.Common.Internal
     public static class Const
     {
         public const string Repository = "akkadotnet";
+        public const bool DebugConnections = true;
     }
 }

@@ -4,41 +4,26 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using System.Threading.Tasks;
-using Akka.Persistence.Sql.Tests.Common;
+using System;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.TCK.Snapshot;
+using FluentAssertions.Extensions;
 using LinqToDB;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Tests.Sqlite
 {
-    [Collection("PersistenceSpec")]
-    public class MsSqliteSnapshotSpec : SnapshotStoreSpec, IAsyncLifetime
+    [Collection(nameof(MsSqlitePersistenceSpec))]
+    public class MsSqliteSnapshotSpec : SnapshotStoreSpec
     {
-        private readonly TestFixture _fixture;
-
-        public MsSqliteSnapshotSpec(
-            ITestOutputHelper outputHelper,
-            TestFixture fixture)
-            : base(
-                SqliteSnapshotSpecConfig.Create(
-                    fixture.ConnectionString(Database.MsSqlite),
-                    ProviderName.SQLiteMS),
-                nameof(MsSqliteSnapshotSpec),
-                outputHelper)
-            => _fixture = fixture;
-
-        // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
-        protected override bool SupportsSerialization => false;
-
-        public async Task InitializeAsync()
+        public MsSqliteSnapshotSpec(ITestOutputHelper outputHelper, MsSqliteContainer fixture)
+            : base(SqliteSnapshotSpecConfig.Create(fixture), nameof(MsSqliteSnapshotSpec), outputHelper)
         {
-            await _fixture.InitializeDbAsync(Database.MsSqlite);
             Initialize();
         }
 
-        public Task DisposeAsync()
-            => Task.CompletedTask;
+        // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
+        protected override bool SupportsSerialization => false;
     }
 }

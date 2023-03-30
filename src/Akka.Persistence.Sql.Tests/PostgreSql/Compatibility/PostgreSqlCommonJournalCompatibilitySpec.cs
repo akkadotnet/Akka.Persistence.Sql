@@ -4,12 +4,12 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using System.Threading.Tasks;
-using Akka.Persistence.Sql.Tests.Common;
+using System;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using Xunit;
 using Xunit.Abstractions;
 #if !DEBUG
-using Akka.Persistence.Sql.Tests.Internal.Xunit;
+using Akka.Persistence.Sql.Tests.Common.Internal.Xunit;
 #endif
 
 namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
@@ -17,34 +17,19 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
 #if !DEBUG
     [SkipWindows]
 #endif
-    [Collection("PersistenceSpec")]
-    public class PostgreSqlCommonJournalCompatibilitySpec : SqlCommonJournalCompatibilitySpec
+    [Collection(nameof(PostgreSqlPersistenceSpec))]
+    public class PostgreSqlCommonJournalCompatibilitySpec : SqlCommonJournalCompatibilitySpec<PostgreSqlContainer>
     {
-        private readonly TestFixture _fixture;
-
-        public PostgreSqlCommonJournalCompatibilitySpec(
-            ITestOutputHelper output,
-            TestFixture fixture)
-            : base(output)
+        public PostgreSqlCommonJournalCompatibilitySpec(ITestOutputHelper output, PostgreSqlContainer fixture)
+            : base(fixture, output)
         {
-            _fixture = fixture;
-
-            Config = PostgreSqlCompatibilitySpecConfig.InitJournalConfig(
-                _fixture,
-                "event_journal",
-                "metadata");
         }
 
-        protected override Configuration.Config Config { get; }
+        protected override Func<PostgreSqlContainer, Configuration.Config> Config => fixture 
+            => PostgreSqlCompatibilitySpecConfig.InitJournalConfig(fixture, "event_journal", "metadata");
 
         protected override string OldJournal => "akka.persistence.journal.postgresql";
 
         protected override string NewJournal => "akka.persistence.journal.sql";
-
-        public override async Task InitializeAsync()
-        {
-            await base.InitializeAsync();
-            await _fixture.InitializeDbAsync(Database.PostgreSql);
-        }
     }
 }

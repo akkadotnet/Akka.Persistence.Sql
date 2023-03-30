@@ -6,7 +6,7 @@
 
 using Akka.Persistence.Sql.Journal;
 using Akka.Persistence.Sql.Snapshot;
-using Akka.Persistence.Sql.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using LinqToDB;
 
 namespace Akka.Persistence.Sql.Tests.SqlServer.Compatibility
@@ -14,7 +14,7 @@ namespace Akka.Persistence.Sql.Tests.SqlServer.Compatibility
     public class SqlServerCompatibilitySpecConfig
     {
         public static Configuration.Config InitSnapshotConfig(
-            TestFixture fixture,
+            ITestContainer fixture,
             string tableName)
             => $@"
                 akka.persistence {{
@@ -23,7 +23,7 @@ namespace Akka.Persistence.Sql.Tests.SqlServer.Compatibility
 		                sql-server {{
 			                class = ""Akka.Persistence.SqlServer.Snapshot.SqlServerSnapshotStore, Akka.Persistence.SqlServer""
 			                plugin-dispatcher = ""akka.actor.default-dispatcher""
-			                connection-string = ""{fixture.ConnectionString(Database.SqlServer)}""
+			                connection-string = ""{fixture.ConnectionString}""
 			                connection-timeout = 30s
 			                schema-name = dbo
 			                table-name = ""{tableName}""
@@ -35,7 +35,7 @@ namespace Akka.Persistence.Sql.Tests.SqlServer.Compatibility
                         sql {{
                             class = ""{typeof(SqlSnapshotStore).AssemblyQualifiedName}""
                             plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
-                            connection-string = ""{fixture.ConnectionString(Database.SqlServer)}""
+                            connection-string = ""{fixture.ConnectionString}""
                             provider-name = ""{ProviderName.SqlServer2017}""
                             table-mapping = sql-server
                             auto-initialize = true
@@ -49,7 +49,7 @@ namespace Akka.Persistence.Sql.Tests.SqlServer.Compatibility
                 }}";
 
         public static Configuration.Config InitJournalConfig(
-            TestFixture fixture,
+            ITestContainer fixture,
             string tableName,
             string metadataTableName)
             => $@"
@@ -63,13 +63,13 @@ namespace Akka.Persistence.Sql.Tests.SqlServer.Compatibility
                             metadata-table-name = ""{metadataTableName}""
                             schema-name = dbo
                             auto-initialize = on
-                            connection-string = ""{fixture.ConnectionString(Database.SqlServer)}""
+                            connection-string = ""{fixture.ConnectionString}""
                         }}
 
                         sql {{
                             class = ""{typeof(SqlWriteJournal).AssemblyQualifiedName}""
                             plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
-                            connection-string = ""{fixture.ConnectionString(Database.SqlServer)}""
+                            connection-string = ""{fixture.ConnectionString}""
                             provider-name = ""{ProviderName.SqlServer2017}""
                             parallelism = 3
                             table-mapping = sql-server

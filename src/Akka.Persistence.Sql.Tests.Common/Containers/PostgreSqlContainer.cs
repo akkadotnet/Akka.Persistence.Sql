@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Akka.Util;
 using Docker.DotNet.Models;
@@ -24,27 +23,34 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
 
         private const string Password = "postgres";
 
+        private readonly DbConnectionStringBuilder _connectionStringBuilder;
+        
         public PostgreSqlContainer() : base("postgres", "latest", $"postgresql-{Guid.NewGuid():N}")
         {
-            ConnectionString = new DbConnectionStringBuilder
+            _connectionStringBuilder = new DbConnectionStringBuilder
             {
                 ["Server"] = "localhost",
                 ["Port"] = Port,
-                ["Database"] = DatabaseName,
                 ["User Id"] = User,
                 ["Password"] = Password
-            }.ToString();
-
-            Console.WriteLine($"Connection string: [{ConnectionString}]");
+            };
         }
 
-        public override string ConnectionString { get; }
+        public override string ConnectionString => _connectionStringBuilder.ToString();
+
+        public override string ProviderName => LinqToDB.ProviderName.PostgreSQL95;
 
         private int Port { get; } = ThreadLocalRandom.Current.Next(9000, 10000);
 
         protected override string ReadyMarker => "ready to accept connections";
 
         protected override int ReadyCount => 2;
+
+        protected override void GenerateDatabaseName()
+        {
+            base.GenerateDatabaseName();
+            _connectionStringBuilder["Database"] = DatabaseName;
+        }
 
         protected override void ConfigureContainer(CreateContainerParameters parameters)
         {
@@ -64,67 +70,41 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
             parameters.Env = new[]
             {
                 $"POSTGRES_PASSWORD={Password}",
-                $"POSTGRES_USER={User}",
-                $"POSTGRES_DB={DatabaseName}"
+                $"POSTGRES_USER={User}"
             };
         }
 
         public override async Task InitializeDbAsync()
         {
+            var oldName = DatabaseName;
+            _connectionStringBuilder["Database"] = "postgres";
             await using var connection = new NpgsqlConnection(ConnectionString);
-
             await connection.OpenAsync();
 
+            // PostgreSql creates a connection pool on the __server__ side for __each__ database
+            // while having a global maximum connection count.
+            // We have to kill the database to drop all these connection pools else we'll get
+            // the dreaded "too many client" error.
+            if (!string.IsNullOrWhiteSpace(oldName))
+            {
+                await using var dropCommand = new NpgsqlCommand
+                {
+                    CommandText = $"DROP DATABASE {oldName} WITH (FORCE)",
+                    Connection = connection
+                };
+
+                await dropCommand.ExecuteNonQueryAsync();
+            }
+            
+            GenerateDatabaseName();
             await using var command = new NpgsqlCommand
             {
-                CommandText = $"SELECT TRUE FROM pg_database WHERE datname='{DatabaseName}'",
-                Connection = connection
-            };
-
-            var result = command.ExecuteScalar();
-
-            var dbExists = result != null && Convert.ToBoolean(result);
-
-            if (dbExists)
-            {
-                await DoCleanAsync(connection);
-            }
-            else
-            {
-                await DoCreateAsync(connection, DatabaseName);
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static async Task DoCreateAsync(NpgsqlConnection connection, string databaseName)
-        {
-            await using var command = new NpgsqlCommand
-            {
-                CommandText = $"CREATE DATABASE {databaseName}",
+                CommandText = $"CREATE DATABASE {DatabaseName}",
                 Connection = connection
             };
 
             await command.ExecuteNonQueryAsync();
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static async Task DoCleanAsync(NpgsqlConnection connection)
-        {
-            await using var command = new NpgsqlCommand
-            {
-                CommandText = @"
-DROP TABLE IF EXISTS public.event_journal;
-DROP TABLE IF EXISTS public.snapshot_store;
-DROP TABLE IF EXISTS public.metadata;
-
-DROP TABLE IF EXISTS public.journal;
-DROP TABLE IF EXISTS public.journal_metadata;
-DROP TABLE IF EXISTS public.tags;
-DROP TABLE IF EXISTS public.snapshot;",
-                Connection = connection
-            };
-
-            await command.ExecuteNonQueryAsync();
+            await connection.CloseAsync();
         }
     }
 }

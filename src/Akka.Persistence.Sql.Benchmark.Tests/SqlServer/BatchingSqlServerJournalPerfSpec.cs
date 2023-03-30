@@ -4,37 +4,35 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using System.Threading.Tasks;
-using Akka.Persistence.Sql.Tests.Common;
+using System;
+using Akka.Configuration;
+using Akka.Persistence.Sql.Tests.Common.Containers;
+using Akka.Persistence.SqlServer;
+using FluentAssertions.Extensions;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
 {
-    [Collection("BenchmarkSpec")]
-    public class BatchingSqlServerJournalPerfSpec : SqlJournalPerfSpec, IAsyncLifetime
+    [Collection(nameof(SqlServerPersistenceBenchmark))]
+    public class BatchingSqlServerJournalPerfSpec : SqlJournalPerfSpec<SqlServerContainer>
     {
-        private readonly TestFixture _fixture;
-
-        public BatchingSqlServerJournalPerfSpec(
-            ITestOutputHelper output,
-            TestFixture fixture)
+        public BatchingSqlServerJournalPerfSpec(ITestOutputHelper output, SqlServerContainer fixture)
             : base(
                 Configure(fixture),
                 nameof(BatchingSqlServerJournalPerfSpec),
                 output,
                 40,
                 TestConstants.DockerNumMessages)
-            => _fixture = fixture;
+        {
+        }
 
-        public async Task InitializeAsync()
-            => await _fixture.InitializeDbAsync(Database.SqlServer).ConfigureAwait(false);
-
-        public Task DisposeAsync()
-            => Task.CompletedTask;
-
-        public static Configuration.Config Configure(TestFixture fixture)
-            => $@"
+        public static Configuration.Config Configure(SqlServerContainer fixture)
+        {
+            if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
+                throw new Exception("Failed to clean up database in 10 seconds");
+            
+            return ConfigurationFactory.ParseString(@$"
                 akka.persistence {{
                     publish-plugin-commands = on
                     journal {{
@@ -45,10 +43,12 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
                             table-name = EventJournal
                             schema-name = dbo
                             auto-initialize = on
-                            connection-string = ""{fixture.ConnectionString(Database.SqlServer)}""
+                            connection-string = ""{fixture.ConnectionString}""
                         }}
                     }}
-                }}";
+                }}")
+                .WithFallback(SqlServerPersistence.DefaultConfiguration());
+        }
 
         [Fact]
         public void PersistenceActor_Must_measure_PersistGroup1000()

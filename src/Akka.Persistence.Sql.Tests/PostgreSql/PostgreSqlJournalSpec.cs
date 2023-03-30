@@ -4,15 +4,17 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using System.Threading.Tasks;
+using System;
+using Akka.Configuration;
 using Akka.Persistence.Sql.Journal;
-using Akka.Persistence.Sql.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.TCK.Journal;
+using FluentAssertions.Extensions;
 using LinqToDB;
 using Xunit;
 using Xunit.Abstractions;
 #if !DEBUG
-using Akka.Persistence.Sql.Tests.Internal.Xunit;
+using Akka.Persistence.Sql.Tests.Common.Internal.Xunit;
 #endif
 
 namespace Akka.Persistence.Sql.Tests.PostgreSql
@@ -20,46 +22,36 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql
 #if !DEBUG
     [SkipWindows]
 #endif
-    [Collection("PersistenceSpec")]
-    public class PostgreSqlJournalSpec : JournalSpec, IAsyncLifetime
+    [Collection(nameof(PostgreSqlPersistenceSpec))]
+    public class PostgreSqlJournalSpec : JournalSpec
     {
-        private readonly TestFixture _fixture;
-
-        public PostgreSqlJournalSpec(
-            ITestOutputHelper output,
-            TestFixture fixture)
-            : base(
-                Configuration(fixture),
-                nameof(PostgreSqlJournalSpec),
-                output)
-            => _fixture = fixture;
-
-        protected override bool SupportsSerialization => false;
-
-        public async Task InitializeAsync()
+        public PostgreSqlJournalSpec(ITestOutputHelper output, PostgreSqlContainer fixture)
+            : base(Configuration(fixture), nameof(PostgreSqlJournalSpec), output)
         {
-            await _fixture.InitializeDbAsync(Database.PostgreSql);
             Initialize();
         }
 
-        public Task DisposeAsync()
-            => Task.CompletedTask;
+        protected override bool SupportsSerialization => false;
 
-        public static Configuration.Config Configuration(TestFixture fixture)
-            => @$"
-                akka.persistence {{
-                    publish-plugin-commands = on
-                    journal {{
-                        plugin = ""akka.persistence.journal.sql""
-                        sql {{
-                            class = ""{typeof(SqlWriteJournal).AssemblyQualifiedName}""
-                            plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
-                            connection-string = ""{fixture.ConnectionString(Database.PostgreSql)}""
-                            provider-name = ""{ProviderName.PostgreSQL95}""
-                            use-clone-connection = true
-                            auto-initialize = true
-                        }}
-                    }}
-                }}";
+        public static Configuration.Config Configuration(PostgreSqlContainer fixture)
+        {
+            if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
+                throw new Exception("Failed to clean up database in 10 seconds");
+            
+            return ConfigurationFactory.ParseString(@$"
+akka.persistence {{
+    publish-plugin-commands = on
+    journal {{
+        plugin = ""akka.persistence.journal.sql""
+        sql {{
+            connection-string = ""{fixture.ConnectionString}""
+            provider-name = ""{fixture.ProviderName}""
+            use-clone-connection = true
+            auto-initialize = true
+        }}
+    }}
+}}")
+                .WithFallback(SqlPersistence.DefaultConfiguration);
+        }
     }
 }
