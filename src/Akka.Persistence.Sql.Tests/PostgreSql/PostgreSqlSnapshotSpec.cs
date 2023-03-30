@@ -4,15 +4,17 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using System.Threading.Tasks;
+using System;
+using Akka.Configuration;
 using Akka.Persistence.Sql.Snapshot;
-using Akka.Persistence.Sql.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.TCK.Snapshot;
+using FluentAssertions.Extensions;
 using LinqToDB;
 using Xunit;
 using Xunit.Abstractions;
 #if !DEBUG
-using Akka.Persistence.Sql.Tests.Internal.Xunit;
+using Akka.Persistence.Sql.Tests.Common.Internal.Xunit;
 #endif
 
 namespace Akka.Persistence.Sql.Tests.PostgreSql
@@ -20,50 +22,42 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql
 #if !DEBUG
     [SkipWindows]
 #endif
-    [Collection("PersistenceSpec")]
-    public class PostgreSqlSnapshotSpec : SnapshotStoreSpec, IAsyncLifetime
+    [Collection(nameof(PostgreSqlPersistenceSpec))]
+    public class PostgreSqlSnapshotSpec : SnapshotStoreSpec
     {
-        private readonly TestFixture _fixture;
-
-        public PostgreSqlSnapshotSpec(
-            ITestOutputHelper output,
-            TestFixture fixture) :
-            base(
-                Configuration(fixture),
-                nameof(PostgreSqlSnapshotSpec),
-                output)
-            => _fixture = fixture;
-
-        public async Task InitializeAsync()
+        public PostgreSqlSnapshotSpec(ITestOutputHelper output, PostgreSqlContainer fixture) :
+            base(Configuration(fixture), nameof(PostgreSqlSnapshotSpec), output)
         {
-            await _fixture.InitializeDbAsync(Database.PostgreSql);
             Initialize();
         }
 
-        public Task DisposeAsync()
-            => Task.CompletedTask;
-
-        private static Configuration.Config Configuration(TestFixture fixture)
-            => @$"
-                akka.persistence {{
-                    publish-plugin-commands = on
-                    snapshot-store {{
-                        plugin = ""akka.persistence.snapshot-store.sql""
-                        sql {{
-                            class = ""{typeof(SqlSnapshotStore).AssemblyQualifiedName}""
-                            plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
-                            connection-string = ""{fixture.ConnectionString(Database.PostgreSql)}""
-                            provider-name = ""{ProviderName.PostgreSQL95}""
-                            use-clone-connection = true
-                            auto-initialize = true
-                            warn-on-auto-init-fail = false
-                            default {{
-                                journal {{
-                                    table-name = l2dbSnapshotSpec
-                                }}
-                            }}
-                        }}
-                    }}
-                }}";
+        private static Configuration.Config Configuration(PostgreSqlContainer fixture)
+        {
+            if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
+                throw new Exception("Failed to clean up database in 10 seconds");
+            
+            return ConfigurationFactory.ParseString(@$"
+akka.persistence {{
+    publish-plugin-commands = on
+    snapshot-store {{
+        plugin = ""akka.persistence.snapshot-store.sql""
+        sql {{
+            class = ""{typeof(SqlSnapshotStore).AssemblyQualifiedName}""
+            plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
+            connection-string = ""{fixture.ConnectionString}""
+            provider-name = ""{fixture.ProviderName}""
+            use-clone-connection = true
+            auto-initialize = true
+            warn-on-auto-init-fail = false
+            default {{
+                journal {{
+                    table-name = l2dbSnapshotSpec
+                }}
+            }}
+        }}
+    }}
+}}")
+                .WithFallback(SqlPersistence.DefaultConfiguration);
+        }
     }
 }

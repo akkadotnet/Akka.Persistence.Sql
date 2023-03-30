@@ -7,7 +7,7 @@
 using Akka.Persistence.PostgreSql.Snapshot;
 using Akka.Persistence.Sql.Journal;
 using Akka.Persistence.Sql.Snapshot;
-using Akka.Persistence.Sql.Tests.Common;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using LinqToDB;
 
 namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
@@ -15,7 +15,7 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
     public class PostgreSqlCompatibilitySpecConfig
     {
         public static Configuration.Config InitSnapshotConfig(
-            TestFixture fixture,
+            PostgreSqlContainer fixture,
             string tableName)
             => $@"
                 akka.persistence {{
@@ -24,7 +24,7 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
 		                postgresql {{
 			                class = ""{typeof(PostgreSqlSnapshotStore).AssemblyQualifiedName}""
 			                plugin-dispatcher = ""akka.actor.default-dispatcher""
-			                connection-string = ""{fixture.ConnectionString(Database.PostgreSql)}""
+			                connection-string = ""{fixture.ConnectionString}""
 			                connection-timeout = 30s
 			                schema-name = public
 			                table-name = {tableName}
@@ -35,7 +35,7 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
                         sql {{
                             class = ""{typeof(SqlSnapshotStore).AssemblyQualifiedName}""
                             plugin-dispatcher = ""akka.actor.default-dispatcher""
-                            connection-string = ""{fixture.ConnectionString(Database.PostgreSql)}""
+                            connection-string = ""{fixture.ConnectionString}""
                             provider-name = {ProviderName.PostgreSQL95}
                             table-mapping = postgresql
                             auto-initialize = true
@@ -49,7 +49,7 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
                 }}";
 
         public static Configuration.Config InitJournalConfig(
-            TestFixture fixture,
+            PostgreSqlContainer fixture,
             string tableName,
             string metadataTableName)
             => $@"
@@ -59,7 +59,7 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
                         postgresql {{
                             class = ""Akka.Persistence.PostgreSql.Journal.PostgreSqlJournal, Akka.Persistence.PostgreSql""
                             plugin-dispatcher = ""akka.actor.default-dispatcher""
-                            connection-string = ""{fixture.ConnectionString(Database.PostgreSql)}""
+                            connection-string = ""{fixture.ConnectionString}""
                             connection-timeout = 30s
                             schema-name = public
                             table-name = ""{tableName}""
@@ -70,7 +70,7 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
                         sql {{
                             class = ""{typeof(SqlWriteJournal).AssemblyQualifiedName}""
                             plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
-                            connection-string = ""{fixture.ConnectionString(Database.PostgreSql)}""
+                            connection-string = ""{fixture.ConnectionString}""
                             provider-name = ""{ProviderName.PostgreSQL95}""
                             parallelism = 3
                             table-mapping = postgresql

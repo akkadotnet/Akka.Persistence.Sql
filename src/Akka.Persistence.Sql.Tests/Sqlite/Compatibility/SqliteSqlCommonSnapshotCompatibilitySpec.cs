@@ -4,43 +4,26 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using System.Threading.Tasks;
-using Akka.Persistence.Sql.Tests.Common;
+using System;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Tests.Sqlite.Compatibility
 {
-    [Collection("PersistenceSpec")]
-    public class SqliteSqlCommonSnapshotCompatibilitySpec : SqlCommonSnapshotCompatibilitySpec
+    [Collection(nameof(MsSqlitePersistenceSpec))]
+    public class SqliteSqlCommonSnapshotCompatibilitySpec : SqlCommonSnapshotCompatibilitySpec<MsSqliteContainer>
     {
-        private readonly TestFixture _fixture;
-
-        public SqliteSqlCommonSnapshotCompatibilitySpec(
-            ITestOutputHelper outputHelper,
-            TestFixture fixture)
-            : base(
-                outputHelper)
+        public SqliteSqlCommonSnapshotCompatibilitySpec(ITestOutputHelper outputHelper, MsSqliteContainer fixture)
+            : base(fixture, outputHelper)
         {
-            _fixture = fixture;
-
-            Config = SqliteCompatibilitySpecConfig.InitSnapshotConfig(
-                "snapshot_compat",
-                fixture.ConnectionString(Database.MsSqlite));
         }
 
-        protected override Configuration.Config Config { get; }
+        protected override string OldSnapshot => "akka.persistence.snapshot-store.sqlite";
 
-        protected override string OldSnapshot
-            => "akka.persistence.snapshot-store.sqlite";
+        protected override string NewSnapshot => "akka.persistence.snapshot-store.sql";
 
-        protected override string NewSnapshot
-            => "akka.persistence.snapshot-store.sql";
-
-        public override async Task InitializeAsync()
-        {
-            await base.InitializeAsync();
-            await _fixture.InitializeDbAsync(Database.MsSqlite);
-        }
+        protected override Func<MsSqliteContainer, Configuration.Config> Config => fixture
+            => SqliteCompatibilitySpecConfig.InitSnapshotConfig("snapshot_compat", fixture.ConnectionString);
     }
 }

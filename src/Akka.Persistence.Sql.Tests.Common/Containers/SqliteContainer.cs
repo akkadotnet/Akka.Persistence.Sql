@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Data.SQLite;
 using System.Threading.Tasks;
 using Docker.DotNet;
@@ -16,66 +17,54 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
     /// </summary>
     public sealed class SqliteContainer : ITestContainer
     {
-        private static SQLiteConnection? _heldConnection;
+        private List<SQLiteConnection>? _heldConnection;
 
-        public SqliteContainer()
-        {
-            ConnectionString = $"FullUri=file:memdb-{DatabaseName}?mode=memory&cache=shared";
+        public string ConnectionString => $"FullUri=file:memdb-{DatabaseName}?mode=memory&cache=shared";
 
-            Console.WriteLine($"Connection string: [{ConnectionString}]");
-        }
-
-        public string ConnectionString { get; }
-
-        public string DatabaseName { get; } = $"sql_tests_{Guid.NewGuid():N}";
+        public string DatabaseName { get; private set; } = string.Empty;
 
         public string ContainerName => string.Empty;
+
+        public string ProviderName => LinqToDB.ProviderName.SQLiteClassic;
 
         public event EventHandler<OutputReceivedArgs>? OnStdOut;
 
         public DockerClient? Client => null;
 
-        public bool Initialized { get; private set; }
+        public bool Initialized => _heldConnection is { };
 
+        private void GenerateDatabaseName()
+        {
+            DatabaseName = $"sql_tests_{Guid.NewGuid():N}";
+        }
+        
         public async Task InitializeAsync()
         {
             if (Initialized)
                 return;
 
-            _heldConnection = new SQLiteConnection(ConnectionString);
-            await _heldConnection.OpenAsync();
-            GC.KeepAlive(_heldConnection);
-
-            Initialized = true;
+            _heldConnection = new List<SQLiteConnection>();
+            await InitializeDbAsync();
         }
 
         public async Task InitializeDbAsync()
         {
-            await using var connection = new SQLiteConnection(ConnectionString);
-
-            await connection.OpenAsync();
-
-            await using var command = new SQLiteCommand
-            {
-                CommandText = @"
-DROP TABLE IF EXISTS event_journal;
-DROP TABLE IF EXISTS snapshot;
-DROP TABLE IF EXISTS journal_metadata;
-DROP TABLE IF EXISTS journal;
-DROP TABLE IF EXISTS tags;",
-                Connection = connection
-            };
-
-            await command.ExecuteNonQueryAsync();
+            GenerateDatabaseName();
+            var conn = new SQLiteConnection(ConnectionString); 
+            await conn.OpenAsync();
+            _heldConnection!.Add(conn);
         }
 
-        public async ValueTask DisposeAsync()
+        public async Task DisposeAsync()
         {
             if (_heldConnection is null)
                 return;
 
-            _heldConnection.Close();
-            await _heldConnection.DisposeAsync();
+            foreach (var conn in _heldConnection)
+            {
+                conn.Close();
+                await conn.DisposeAsync();
+            }
             _heldConnection = null;
         }
 
@@ -84,8 +73,11 @@ DROP TABLE IF EXISTS tags;",
             if (_heldConnection is null)
                 return;
 
-            _heldConnection.Close();
-            _heldConnection.Dispose();
+            foreach (var conn in _heldConnection)
+            {
+                conn.Close();
+                conn.Dispose();
+            }
             _heldConnection = null;
         }
     }

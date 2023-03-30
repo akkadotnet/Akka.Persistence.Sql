@@ -4,39 +4,26 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using System.Threading.Tasks;
-using Akka.Persistence.Sql.Tests.Common;
+using System;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.TCK.Journal;
+using FluentAssertions.Extensions;
 using LinqToDB;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Tests.Sqlite
 {
-    [Collection("PersistenceSpec")]
-    public class SystemDataSqliteJournalSpec : JournalSpec, IAsyncLifetime
+    [Collection(nameof(SqlitePersistenceSpec))]
+    public class SystemDataSqliteJournalSpec : JournalSpec
     {
-        private readonly TestFixture _fixture;
-
-        public SystemDataSqliteJournalSpec(
-            ITestOutputHelper output,
-            TestFixture fixture)
-            : base(
-                SqliteJournalSpecConfig.Create(fixture.ConnectionString(Database.Sqlite), ProviderName.SQLiteClassic),
-                nameof(SystemDataSqliteJournalSpec),
-                output)
-            => _fixture = fixture;
-
-        // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
-        protected override bool SupportsSerialization => false;
-
-        public async Task InitializeAsync()
+        public SystemDataSqliteJournalSpec(ITestOutputHelper output, SqliteContainer fixture)
+            : base(SqliteJournalSpecConfig.Create(fixture), nameof(SystemDataSqliteJournalSpec), output)
         {
-            await _fixture.InitializeDbAsync(Database.Sqlite);
             Initialize();
         }
 
-        public Task DisposeAsync()
-            => Task.CompletedTask;
+        // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
+        protected override bool SupportsSerialization => false;
     }
 }

@@ -12,10 +12,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
+using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Routing;
 using Akka.TestKit;
 using Akka.Util;
 using Akka.Util.Internal;
+using FluentAssertions.Extensions;
 using JetBrains.dotMemoryUnit;
 using JetBrains.dotMemoryUnit.Kernel;
 using Xunit;
@@ -23,7 +25,7 @@ using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Benchmark.Tests
 {
-    public abstract class SqlJournalPerfSpec : Akka.TestKit.Xunit2.TestKit
+    public abstract class SqlJournalPerfSpec<T> : Akka.TestKit.Xunit2.TestKit where T : ITestContainer
     {
         // Number of measurement iterations each test will be run.
         private const int MeasurementIterations = 10;
