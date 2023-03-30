@@ -25,7 +25,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         private const string Password = "Password12!";
 
         private readonly DbConnectionStringBuilder _connectionStringBuilder;
-        
+
         public SqlServerContainer() : base("mcr.microsoft.com/mssql/server", "2019-latest", $"mssql-{Guid.NewGuid():N}")
         {
             _connectionStringBuilder = new DbConnectionStringBuilder
@@ -48,6 +48,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         protected override void GenerateDatabaseName()
         {
             base.GenerateDatabaseName();
+
             _connectionStringBuilder["Database"] = DatabaseName;
         }
 
@@ -77,10 +78,12 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         public override async Task InitializeDbAsync()
         {
             _connectionStringBuilder["Database"] = "master";
+
             await using var connection = new SqlConnection(ConnectionString);
             await connection.OpenAsync();
 
             GenerateDatabaseName();
+
             await using var command = new SqlCommand
             {
                 CommandText = $"CREATE DATABASE {DatabaseName}",

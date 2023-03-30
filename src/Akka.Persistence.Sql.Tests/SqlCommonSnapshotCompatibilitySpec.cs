@@ -42,6 +42,7 @@ namespace Akka.Persistence.Sql.Tests
             try
             {
                 await Task.WhenAny(Task.Delay(Timeout.Infinite, cts.Token), Fixture.InitializeDbAsync());
+
                 if (cts.IsCancellationRequested)
                     throw new Exception("Failed to clean up test after 10 seconds");
             }
@@ -49,7 +50,7 @@ namespace Akka.Persistence.Sql.Tests
             {
                 cts.Cancel();
             }
-            
+
             Sys = ActorSystem.Create("test-sys", Config(Fixture));
             TestKit = new Akka.TestKit.Xunit2.TestKit(Sys, Output);
             Probe = TestKit.CreateTestProbe();
