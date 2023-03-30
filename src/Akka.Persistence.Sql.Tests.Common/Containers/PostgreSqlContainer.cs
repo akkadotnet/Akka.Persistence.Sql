@@ -24,7 +24,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         private const string Password = "postgres";
 
         private readonly DbConnectionStringBuilder _connectionStringBuilder;
-        
+
         public PostgreSqlContainer() : base("postgres", "latest", $"postgresql-{Guid.NewGuid():N}")
         {
             _connectionStringBuilder = new DbConnectionStringBuilder
@@ -49,6 +49,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         protected override void GenerateDatabaseName()
         {
             base.GenerateDatabaseName();
+
             _connectionStringBuilder["Database"] = DatabaseName;
         }
 
@@ -78,6 +79,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         {
             var oldName = DatabaseName;
             _connectionStringBuilder["Database"] = "postgres";
+
             await using var connection = new NpgsqlConnection(ConnectionString);
             await connection.OpenAsync();
 
@@ -95,8 +97,9 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
 
                 await dropCommand.ExecuteNonQueryAsync();
             }
-            
+
             GenerateDatabaseName();
+
             await using var command = new NpgsqlCommand
             {
                 CommandText = $"CREATE DATABASE {DatabaseName}",
