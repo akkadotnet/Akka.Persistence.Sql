@@ -43,7 +43,6 @@ namespace Akka.Persistence.Sql.Journal.Dao
         private readonly Flow<JournalRow, Util.Try<ReplayCompletion>, NotUsed> _deserializeFlowMapped;
         private readonly TagMode _tagWriteMode;
         protected readonly JournalConfig JournalConfig;
-        protected readonly string SelfUuid;
 
         protected readonly ILoggingAdapter Logger;
         protected readonly FlowPersistentReprSerializer<JournalRow> Serializer;
@@ -55,13 +54,13 @@ namespace Akka.Persistence.Sql.Journal.Dao
             AkkaPersistenceDataConnectionFactory connectionFactory,
             JournalConfig config,
             Akka.Serialization.Serialization serializer,
-            ILoggingAdapter logger)
+            ILoggingAdapter logger,
+            string selfUuid)
             : base(scheduler, materializer, connectionFactory)
         {
             Logger = logger;
             JournalConfig = config;
-            SelfUuid = Guid.NewGuid().ToString("N");
-            Serializer = new ByteArrayJournalSerializer(config, serializer, config.PluginConfig.TagSeparator, SelfUuid);
+            Serializer = new ByteArrayJournalSerializer(config, serializer, config.PluginConfig.TagSeparator, selfUuid);
             _deserializeFlowMapped = Serializer.DeserializeFlow().Select(MessageWithBatchMapper());
             _tagWriteMode = JournalConfig.PluginConfig.TagMode;
 

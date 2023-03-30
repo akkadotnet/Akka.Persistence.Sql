@@ -54,6 +54,7 @@ namespace Akka.Persistence.Sql.Journal
         public SqlWriteJournal(Configuration.Config journalConfig)
         {
             _log = Context.GetLogger();
+            var selfUuid = Guid.NewGuid().ToString("N");
 
             try
             {
@@ -75,7 +76,8 @@ namespace Akka.Persistence.Sql.Journal
                         connection: new AkkaPersistenceDataConnectionFactory(_journalConfig),
                         journalConfig: _journalConfig,
                         serializer: Context.System.Serialization,
-                        logger: Context.GetLogger());
+                        logger: Context.GetLogger(),
+                        selfUuid: selfUuid);
                 }
                 catch (Exception e)
                 {

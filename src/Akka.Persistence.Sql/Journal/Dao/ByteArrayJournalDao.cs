@@ -23,14 +23,16 @@ namespace Akka.Persistence.Sql.Journal.Dao
             AkkaPersistenceDataConnectionFactory connection,
             JournalConfig journalConfig,
             Akka.Serialization.Serialization serializer,
-            ILoggingAdapter logger)
+            ILoggingAdapter logger,
+            string selfUuid)
             : base(
                 scheduler: scheduler,
                 materializer: mat,
                 connectionFactory: connection,
                 config: journalConfig,
                 serializer: serializer,
-                logger: logger) { }
+                logger: logger,
+                selfUuid: selfUuid) { }
 
         // TODO: change this to async
         public void InitializeTables()
