@@ -136,12 +136,23 @@ namespace Akka.Persistence.Sql.Db
                 .Member(r => r.Timestamp)
                 .HasColumnName(columnNames.Created)
 
-                // TODO: Disabling this for now, will need a migration script to support this
-                .Member(r => r.WriteUuid)
-                .IsNotColumn()
-
                 .Member(r => r.TagArr)
                 .IsNotColumn();
+
+            if (journalConfig.TableMapName == "default")
+            {
+                journalRowBuilder
+                    .Member(r => r.WriteUuid)
+                    .HasColumnName(columnNames.WriterUuid)
+                    .HasLength(128);
+            } 
+            else
+            {
+                // non-default legacy tables does not have WriterUuid column defined.
+                journalRowBuilder
+                    .Member(r => r.WriteUuid)
+                    .IsNotColumn();
+            }
 
             // We can skip writing tags the old way by ignoring the column in mapping.
             if (config.PluginConfig.TagMode == TagMode.TagTable)
@@ -174,6 +185,7 @@ namespace Akka.Persistence.Sql.Db
                     .Member(r => r.SequenceNumber).IsPrimaryKey();
             }
 
+            // TODO: UseEventManifestColumn is always false
             if (config.TableConfig.UseEventManifestColumn)
             {
                 journalRowBuilder

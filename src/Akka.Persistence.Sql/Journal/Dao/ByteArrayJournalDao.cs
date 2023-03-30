@@ -29,10 +29,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 materializer: mat,
                 connectionFactory: connection,
                 config: journalConfig,
-                serializer: new ByteArrayJournalSerializer(
-                    journalConfig,
-                    serializer,
-                    journalConfig.PluginConfig.TagSeparator),
+                serializer: serializer,
                 logger: logger) { }
 
         // TODO: change this to async

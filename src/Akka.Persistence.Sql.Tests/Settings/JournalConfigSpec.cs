@@ -96,6 +96,7 @@ namespace Akka.Persistence.Sql.Tests.Settings
             journalColumns.Message.Should().Be("message");
             journalColumns.Identifier.Should().Be("identifier");
             journalColumns.Manifest.Should().Be("manifest");
+            journalColumns.WriterUuid.Should().Be("writer_uuid");
 
             // assert default metadata column names
             var metaColumns = metadataTable.ColumnNames;

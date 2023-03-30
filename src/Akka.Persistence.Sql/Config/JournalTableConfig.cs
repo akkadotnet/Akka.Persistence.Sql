@@ -33,14 +33,14 @@ namespace Akka.Persistence.Sql.Config
 
             SchemaName = mappingConfig.GetString("schema-name");
 
-            EventJournalTable = new EventJournalTableConfig(mappingConfig);
-            MetadataTable = new MetadataTableConfig(mappingConfig);
-            TagTable = new TagTableConfig(mappingConfig);
+            EventJournalTable = new EventJournalTableConfig(mappingConfig, mappingPath);
+            MetadataTable = new MetadataTableConfig(mappingConfig, mappingPath);
+            TagTable = new TagTableConfig(mappingConfig, mappingPath);
         }
 
         public string SchemaName { get; }
 
-        // TODO: implement this settings
+        [Obsolete("Not implemented")]
         public bool UseEventManifestColumn { get; } = false;
 
         public EventJournalTableConfig EventJournalTable { get; }

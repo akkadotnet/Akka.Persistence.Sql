@@ -10,13 +10,16 @@ namespace Akka.Persistence.Sql.Config
 {
     public sealed class EventJournalTableConfig : IEquatable<EventJournalTableConfig>
     {
-        public EventJournalTableConfig(Configuration.Config config)
+        public EventJournalTableConfig(Configuration.Config config, string tableMapName)
         {
             var journalConfig = config.GetConfig("journal");
+            TableMapName = tableMapName;
             Name = journalConfig.GetString("table-name");
             ColumnNames = new JournalTableColumnNames(journalConfig);
         }
 
+        public string TableMapName { get; }
+        
         public string Name { get; }
 
         public JournalTableColumnNames ColumnNames { get; }

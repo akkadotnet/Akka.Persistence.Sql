@@ -4,6 +4,8 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using Akka.Configuration;
+
 namespace Akka.Persistence.Sql.Tests
 {
     public static class SqlJournalDefaultSpecConfig
@@ -83,5 +85,19 @@ akka{{
                 metadataTableName,
                 providerName,
                 connectionString);
+        
+        public static Configuration.Config GetDefaultConfig(
+            string providerName,
+            string connectionString)
+            => ConfigurationFactory.ParseString($@"
+akka.persistence.journal {{
+    plugin = akka.persistence.journal.sql
+    sql {{
+        provider-name = ""{providerName}""
+        connection-string = ""{connectionString}""
+        auto-initialize = true
+    }}
+}}")
+                .WithFallback(SqlPersistence.DefaultConfiguration);
     }
 }

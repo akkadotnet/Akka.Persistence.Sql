@@ -27,17 +27,20 @@ namespace Akka.Persistence.Sql.Journal.Dao
         private readonly string[] _separatorArray;
         private readonly Akka.Serialization.Serialization _serializer;
         private readonly TagMode _tagWriteMode;
+        private readonly string _writerUuid;
 
         public ByteArrayJournalSerializer(
             IProviderConfig<JournalTableConfig> journalConfig,
             Akka.Serialization.Serialization serializer,
-            string separator)
+            string separator, 
+            string writerUuid)
         {
             _journalConfig = journalConfig;
             _serializer = serializer;
             _separator = separator;
             _separatorArray = new[] { _separator };
             _tagWriteMode = journalConfig.PluginConfig.TagMode;
+            _writerUuid = writerUuid;
         }
 
         /// <summary>
@@ -58,7 +61,8 @@ namespace Akka.Persistence.Sql.Journal.Dao
             IPersistentRepresentation representation,
             long timestamp,
             TagMode tagWriteMode,
-            string separator)
+            string separator,
+            string uuid)
             => tagWriteMode switch
             {
                 TagMode.Csv => new JournalRow
@@ -66,7 +70,8 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     Tags = StringSep(tags, separator),
                     Timestamp = representation.Timestamp == 0
                         ? timestamp
-                        : representation.Timestamp
+                        : representation.Timestamp,
+                    WriteUuid = uuid
                 },
 
                 TagMode.TagTable => new JournalRow
@@ -75,7 +80,8 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     TagArr = tags.ToArray(),
                     Timestamp = representation.Timestamp == 0
                         ? timestamp
-                        : representation.Timestamp
+                        : representation.Timestamp,
+                    WriteUuid = uuid
                 },
 
                 TagMode.Both => new JournalRow
@@ -84,7 +90,8 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     TagArr = tags.ToArray(),
                     Timestamp = representation.Timestamp == 0
                         ? timestamp
-                        : representation.Timestamp
+                        : representation.Timestamp,
+                    WriteUuid = uuid
                 },
 
                 _ => throw new Exception($"Invalid Tag Write Mode! Was: {tagWriteMode}")
@@ -106,7 +113,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                             _serializer.FindSerializerForType(
                                 persistentRepresentation.Payload.GetType(),
                                 _journalConfig.DefaultSerializer),
-                            CreateJournalRow(tTags, persistentRepresentation, timeStamp, _tagWriteMode, _separator)
+                            CreateJournalRow(tTags, persistentRepresentation, timeStamp, _tagWriteMode, _separator, _writerUuid)
                         ),
                         action: state =>
                         {
@@ -150,7 +157,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                             manifest: t.EventManifest ?? t.Manifest,
                             isDeleted: t.Deleted,
                             sender: ActorRefs.NoSender,
-                            writerGuid: null,
+                            writerGuid: t.WriteUuid,
                             timestamp: t.Timestamp),
                         t.Tags?
                             .Split(_separatorArray, StringSplitOptions.RemoveEmptyEntries)
@@ -172,7 +179,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                         manifest: t.EventManifest ?? t.Manifest,
                         isDeleted: t.Deleted,
                         sender: ActorRefs.NoSender,
-                        writerGuid: null,
+                        writerGuid: t.WriteUuid,
                         timestamp: t.Timestamp),
                     t.Tags?
                         .Split(_separatorArray, StringSplitOptions.RemoveEmptyEntries)

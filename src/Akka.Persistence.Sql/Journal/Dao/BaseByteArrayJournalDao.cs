@@ -29,38 +29,6 @@ using Array = System.Array;
 
 namespace Akka.Persistence.Sql.Journal.Dao
 {
-    public static class SequentialUuidGenerator
-    {
-        private static readonly AtomicCounterLong Counter = new(DateTime.UtcNow.Ticks);
-
-        /// <summary>
-        ///     Gets a value to be assigned to a property.
-        /// </summary>
-        /// <param name="entry">The change tracking entry of the entity for which the value is being generated.</param>
-        /// <returns>The value to be assigned to a property.</returns>
-        public static Guid Next()
-        {
-            var guidBytes = Guid.NewGuid().ToByteArray();
-            var counterBytes = BitConverter.GetBytes(Counter.GetAndIncrement());
-
-            if (!BitConverter.IsLittleEndian)
-            {
-                Array.Reverse(counterBytes);
-            }
-
-            guidBytes[08] = counterBytes[1];
-            guidBytes[09] = counterBytes[0];
-            guidBytes[10] = counterBytes[7];
-            guidBytes[11] = counterBytes[6];
-            guidBytes[12] = counterBytes[5];
-            guidBytes[13] = counterBytes[4];
-            guidBytes[14] = counterBytes[3];
-            guidBytes[15] = counterBytes[2];
-
-            return new Guid(guidBytes);
-        }
-    }
-
     public abstract class BaseByteArrayJournalDao : BaseJournalDaoWithReadMessages, IJournalDaoWithUpdates
     {
         protected static readonly Expression<Func<JournalMetaData, PersistenceIdAndSequenceNumber>> MetaDataSelector =
@@ -75,6 +43,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
         private readonly Flow<JournalRow, Util.Try<ReplayCompletion>, NotUsed> _deserializeFlowMapped;
         private readonly TagMode _tagWriteMode;
         protected readonly JournalConfig JournalConfig;
+        protected readonly string SelfUuid;
 
         protected readonly ILoggingAdapter Logger;
         protected readonly FlowPersistentReprSerializer<JournalRow> Serializer;
@@ -85,13 +54,14 @@ namespace Akka.Persistence.Sql.Journal.Dao
             IMaterializer materializer,
             AkkaPersistenceDataConnectionFactory connectionFactory,
             JournalConfig config,
-            ByteArrayJournalSerializer serializer,
+            Akka.Serialization.Serialization serializer,
             ILoggingAdapter logger)
             : base(scheduler, materializer, connectionFactory)
         {
             Logger = logger;
             JournalConfig = config;
-            Serializer = serializer;
+            SelfUuid = Guid.NewGuid().ToString("N");
+            Serializer = new ByteArrayJournalSerializer(config, serializer, config.PluginConfig.TagSeparator, SelfUuid);
             _deserializeFlowMapped = Serializer.DeserializeFlow().Select(MessageWithBatchMapper());
             _tagWriteMode = JournalConfig.PluginConfig.TagMode;
 
@@ -455,10 +425,6 @@ namespace Akka.Persistence.Sql.Journal.Dao
                         .WithUseParameters(config.PreferParametersOnMultiRowInsert)
                         .WithMaxBatchSize(config.DbRoundTripBatchSize),
                     xs);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static Guid NextUuid()
-            => SequentialUuidGenerator.Next();
 
         // By using a custom flatten here, we avoid an Enumerable/LINQ allocation
         // And are able to have a little more control over default capacity of array.
