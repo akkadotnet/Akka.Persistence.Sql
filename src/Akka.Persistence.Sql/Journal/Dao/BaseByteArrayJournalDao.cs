@@ -55,7 +55,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
             IMaterializer materializer,
             AkkaPersistenceDataConnectionFactory connectionFactory,
             JournalConfig config,
-            ByteArrayJournalSerializer serializer,
+            Akka.Serialization.Serialization serializer,
             ILoggingAdapter logger, 
             string selfUuid, 
             CancellationToken shutdownToken)
