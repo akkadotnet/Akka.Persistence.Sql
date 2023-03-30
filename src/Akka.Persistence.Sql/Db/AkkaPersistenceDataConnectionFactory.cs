@@ -142,7 +142,7 @@ namespace Akka.Persistence.Sql.Db
             if (journalConfig.TableMapName == "default")
             {
                 journalRowBuilder
-                    .Member(r => r.WriteUuid)
+                    .Member(r => r.WriterUuid)
                     .HasColumnName(columnNames.WriterUuid)
                     .HasLength(128);
             } 
@@ -150,7 +150,7 @@ namespace Akka.Persistence.Sql.Db
             {
                 // non-default legacy tables does not have WriterUuid column defined.
                 journalRowBuilder
-                    .Member(r => r.WriteUuid)
+                    .Member(r => r.WriterUuid)
                     .IsNotColumn();
             }
 

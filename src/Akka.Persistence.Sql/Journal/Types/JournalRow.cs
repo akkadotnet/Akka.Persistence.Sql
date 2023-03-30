@@ -30,7 +30,7 @@ namespace Akka.Persistence.Sql.Journal.Types
 
         public string[] TagArr { get; set; }
 
-        public string? WriteUuid { get; set; }
+        public string WriterUuid { get; set; }
 
         public string EventManifest { get; set; }
     }

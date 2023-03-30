@@ -71,7 +71,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     Timestamp = representation.Timestamp == 0
                         ? timestamp
                         : representation.Timestamp,
-                    WriteUuid = uuid
+                    WriterUuid = uuid
                 },
 
                 TagMode.TagTable => new JournalRow
@@ -81,7 +81,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     Timestamp = representation.Timestamp == 0
                         ? timestamp
                         : representation.Timestamp,
-                    WriteUuid = uuid
+                    WriterUuid = uuid
                 },
 
                 TagMode.Both => new JournalRow
@@ -91,7 +91,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     Timestamp = representation.Timestamp == 0
                         ? timestamp
                         : representation.Timestamp,
-                    WriteUuid = uuid
+                    WriterUuid = uuid
                 },
 
                 _ => throw new Exception($"Invalid Tag Write Mode! Was: {tagWriteMode}")
@@ -157,7 +157,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                             manifest: t.EventManifest ?? t.Manifest,
                             isDeleted: t.Deleted,
                             sender: ActorRefs.NoSender,
-                            writerGuid: t.WriteUuid,
+                            writerGuid: t.WriterUuid,
                             timestamp: t.Timestamp),
                         t.Tags?
                             .Split(_separatorArray, StringSplitOptions.RemoveEmptyEntries)
@@ -179,7 +179,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                         manifest: t.EventManifest ?? t.Manifest,
                         isDeleted: t.Deleted,
                         sender: ActorRefs.NoSender,
-                        writerGuid: t.WriteUuid,
+                        writerGuid: t.WriterUuid,
                         timestamp: t.Timestamp),
                     t.Tags?
                         .Split(_separatorArray, StringSplitOptions.RemoveEmptyEntries)
