@@ -119,9 +119,9 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
             foreach (var column in _tagTableColumnNames)
             {
                 if (!tagColumns.Remove(column))
-                    throw new XunitException($"Journal metadata table does not contain the required column {column}");
+                    throw new XunitException($"Tag table does not contain the required column {column}");
             }
-            tagColumns.Should().BeEmpty("Journal metadata table should not contain any superfluous columns");
+            tagColumns.Should().BeEmpty("Tag table should not contain any superfluous columns");
         }
 
         private JournalConfig GetConfig()
