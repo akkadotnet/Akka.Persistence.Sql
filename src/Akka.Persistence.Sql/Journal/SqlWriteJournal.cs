@@ -38,29 +38,56 @@ namespace Akka.Persistence.Sql.Journal
             => UnixEpoch.AddMilliseconds(unixEpochMillis);
     }
 
-    public class SqlWriteJournal : AsyncWriteJournal
+    public class SqlWriteJournal : AsyncWriteJournal, IWithUnboundedStash
     {
         [Obsolete(message: "Use SqlPersistence.DefaultConfiguration or SqlPersistence.Get(ActorSystem).DefaultConfig instead")]
         public static readonly Configuration.Config DefaultConfiguration = SqlPersistence.DefaultConfiguration;
 
-        private readonly ByteArrayJournalDao _journal;
+        private ByteArrayJournalDao _journal;
         private readonly JournalConfig _journalConfig;
         private readonly ILoggingAdapter _log;
 
-        private readonly ActorMaterializer _mat;
+        private ActorMaterializer _mat;
 
         private readonly Dictionary<string, Task> _writeInProgress = new();
+        private readonly CancellationTokenSource _pendingWriteCts;
+
+        // Stash is needed because we need to stash all incoming messages while we're waiting for the
+        // journal DAO to be properly initialized.
+        public IStash Stash { get; set; }
 
         public SqlWriteJournal(Configuration.Config journalConfig)
         {
             _log = Context.GetLogger();
-            var selfUuid = Guid.NewGuid().ToString("N");
+            _pendingWriteCts = new CancellationTokenSource();
 
+            var config = journalConfig.WithFallback(SqlPersistence.DefaultJournalConfiguration);
+            _journalConfig = new JournalConfig(config);
+        }
+
+        protected override void PreStart()
+        {
+            base.PreStart();
+            Initialize().PipeTo(Self);
+            
+            // We have to use BecomeStacked here because the default Receive method is sealed in the
+            // base class and it uses a custom code to handle received messages.
+            // We need to suspend the base class behavior while we're waiting for the journal DAO to be properly
+            // initialized.
+            BecomeStacked(Initializing);
+        }
+
+        protected override void PostStop()
+        {
+            base.PostStop();
+            _pendingWriteCts.Cancel();
+            _pendingWriteCts.Dispose();
+        }
+
+        private async Task<Status> Initialize()
+        {
             try
             {
-                var config = journalConfig.WithFallback(SqlPersistence.DefaultJournalConfiguration);
-                _journalConfig = new JournalConfig(config);
-
                 _mat = Materializer.CreateSystemMaterializer(
                     context: (ExtendedActorSystem)Context.System,
                     settings: ActorMaterializerSettings
@@ -68,42 +95,49 @@ namespace Akka.Persistence.Sql.Journal
                         .WithDispatcher(_journalConfig.MaterializerDispatcher),
                     namePrefix: "l2dbWriteJournal");
 
-                try
-                {
-                    _journal = new ByteArrayJournalDao(
-                        scheduler: Context.System.Scheduler.Advanced,
-                        mat: _mat,
-                        connection: new AkkaPersistenceDataConnectionFactory(_journalConfig),
-                        journalConfig: _journalConfig,
-                        serializer: Context.System.Serialization,
-                        logger: Context.GetLogger(),
-                        selfUuid: selfUuid);
-                }
-                catch (Exception e)
-                {
-                    Context.GetLogger().Error(e, "Error Initializing Journal!");
-                    throw;
-                }
+                var selfUuid = Guid.NewGuid().ToString("N");
 
+                _journal = new ByteArrayJournalDao(
+                    scheduler: Context.System.Scheduler.Advanced,
+                    mat: _mat,
+                    connection: new AkkaPersistenceDataConnectionFactory(_journalConfig),
+                    journalConfig: _journalConfig,
+                    serializer: Context.System.Serialization,
+                    logger: Context.GetLogger(),
+                    selfUuid: selfUuid, 
+                    shutdownToken: _pendingWriteCts.Token);
+                
                 if (!_journalConfig.AutoInitialize)
-                    return;
-
-                try
-                {
-                    _journal.InitializeTables();
-                }
-                catch (Exception e)
-                {
-                    Context.GetLogger().Warning(e, "Unable to Initialize Persistence Journal Table!");
-                }
+                    return Status.Success.Instance;
+                
+                await _journal.InitializeTables(_pendingWriteCts.Token);
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                _log.Warning(ex, "Unexpected error initializing journal!");
-                throw;
+                return new Status.Failure(e);
             }
+            
+            return Status.Success.Instance;
         }
 
+        private bool Initializing(object message)
+        {
+            switch (message)
+            {
+                case Status.Success:
+                    UnbecomeStacked();
+                    Stash.UnstashAll();
+                    return true;
+                case Status.Failure fail:
+                    _log.Error(fail.Cause, "Failure during {0} initialization.", Self);
+                    Context.Stop(Self);
+                    return true;
+                default:
+                    Stash.Stash();
+                    return true;
+            }
+        }
+        
         protected override bool ReceivePluginInternal(object message)
         {
             if (message is not WriteFinished wf)
@@ -172,7 +206,7 @@ namespace Akka.Persistence.Sql.Journal
             // Sequence Number reads won't block/await/etc.
             future.ContinueWith(
                 continuationAction: p => self.Tell(new WriteFinished(persistenceId, p)),
-                cancellationToken: CancellationToken.None,
+                cancellationToken: _pendingWriteCts.Token,
                 continuationOptions: TaskContinuationOptions.ExecuteSynchronously,
                 scheduler: TaskScheduler.Default);
 
