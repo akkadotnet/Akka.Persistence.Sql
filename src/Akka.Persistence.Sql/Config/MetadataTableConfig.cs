@@ -10,15 +10,12 @@ namespace Akka.Persistence.Sql.Config
 {
     public sealed class MetadataTableConfig : IEquatable<MetadataTableConfig>
     {
-        public MetadataTableConfig(Configuration.Config config, string tableMapName)
+        public MetadataTableConfig(Configuration.Config config)
         {
             var journalConfig = config.GetConfig("metadata");
-            TableMapName = tableMapName;
             Name = journalConfig.GetString("table-name");
             ColumnNames = new MetadataTableColumnNames(journalConfig);
         }
-
-        public string TableMapName { get; }
 
         public string Name { get; }
 

@@ -139,7 +139,7 @@ namespace Akka.Persistence.Sql.Db
                 .Member(r => r.TagArr)
                 .IsNotColumn();
 
-            if (journalConfig.TableMapName == "default")
+            if (journalConfig.UseWriterUuidColumn)
             {
                 journalRowBuilder
                     .Member(r => r.WriterUuid)

@@ -10,15 +10,12 @@ namespace Akka.Persistence.Sql.Config
 {
     public class TagTableConfig : IEquatable<TagTableConfig>
     {
-        public TagTableConfig(Configuration.Config config, string tableMapName)
+        public TagTableConfig(Configuration.Config config)
         {
             var journalConfig = config.GetConfig("tag");
-            TableMapName = tableMapName;
             Name = journalConfig.GetString("table-name");
             ColumnNames = new TagTableColumnNames(journalConfig);
         }
-
-        public string TableMapName { get; }
 
         public string Name { get; }
 

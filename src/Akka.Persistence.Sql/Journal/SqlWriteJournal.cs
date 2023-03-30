@@ -45,6 +45,7 @@ namespace Akka.Persistence.Sql.Journal
 
         private ByteArrayJournalDao _journal;
         private readonly JournalConfig _journalConfig;
+        private readonly bool _useWriterUuid;
         private readonly ILoggingAdapter _log;
 
         private ActorMaterializer _mat;
@@ -63,6 +64,7 @@ namespace Akka.Persistence.Sql.Journal
 
             var config = journalConfig.WithFallback(SqlPersistence.DefaultJournalConfiguration);
             _journalConfig = new JournalConfig(config);
+            _useWriterUuid = _journalConfig.TableConfig.EventJournalTable.UseWriterUuidColumn;
         }
 
         protected override void PreStart()
@@ -95,8 +97,6 @@ namespace Akka.Persistence.Sql.Journal
                         .WithDispatcher(_journalConfig.MaterializerDispatcher),
                     namePrefix: "l2dbWriteJournal");
 
-                var selfUuid = Guid.NewGuid().ToString("N");
-
                 _journal = new ByteArrayJournalDao(
                     scheduler: Context.System.Scheduler.Advanced,
                     mat: _mat,
@@ -104,7 +104,7 @@ namespace Akka.Persistence.Sql.Journal
                     journalConfig: _journalConfig,
                     serializer: Context.System.Serialization,
                     logger: Context.GetLogger(),
-                    selfUuid: selfUuid, 
+                    selfUuid: _useWriterUuid ? Guid.NewGuid().ToString("N") : null, 
                     shutdownToken: _pendingWriteCts.Token);
                 
                 if (!_journalConfig.AutoInitialize)

@@ -33,9 +33,9 @@ namespace Akka.Persistence.Sql.Config
 
             SchemaName = mappingConfig.GetString("schema-name");
 
-            EventJournalTable = new EventJournalTableConfig(mappingConfig, mappingPath);
-            MetadataTable = new MetadataTableConfig(mappingConfig, mappingPath);
-            TagTable = new TagTableConfig(mappingConfig, mappingPath);
+            EventJournalTable = new EventJournalTableConfig(mappingConfig);
+            MetadataTable = new MetadataTableConfig(mappingConfig);
+            TagTable = new TagTableConfig(mappingConfig);
         }
 
         public string SchemaName { get; }

@@ -10,18 +10,18 @@ namespace Akka.Persistence.Sql.Config
 {
     public sealed class EventJournalTableConfig : IEquatable<EventJournalTableConfig>
     {
-        public EventJournalTableConfig(Configuration.Config config, string tableMapName)
+        public EventJournalTableConfig(Configuration.Config config)
         {
             var journalConfig = config.GetConfig("journal");
-            TableMapName = tableMapName;
             Name = journalConfig.GetString("table-name");
+            UseWriterUuidColumn = journalConfig.GetBoolean("use-writer-uuid-column");
             ColumnNames = new JournalTableColumnNames(journalConfig);
         }
 
-        public string TableMapName { get; }
-        
         public string Name { get; }
 
+        public bool UseWriterUuidColumn { get; }
+        
         public JournalTableColumnNames ColumnNames { get; }
 
         public bool Equals(EventJournalTableConfig other)

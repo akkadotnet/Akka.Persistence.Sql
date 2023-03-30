@@ -12,7 +12,7 @@ using LinqToDB;
 
 namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
 {
-    public class PostgreSqlCompatibilitySpecConfig
+    public static class PostgreSqlCompatibilitySpecConfig
     {
         public static Configuration.Config InitSnapshotConfig(
             PostgreSqlContainer fixture,
@@ -36,7 +36,7 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
                             class = ""{typeof(SqlSnapshotStore).AssemblyQualifiedName}""
                             plugin-dispatcher = ""akka.actor.default-dispatcher""
                             connection-string = ""{fixture.ConnectionString}""
-                            provider-name = {ProviderName.PostgreSQL95}
+                            provider-name = {fixture.ProviderName}
                             table-mapping = postgresql
                             auto-initialize = true
                             postgresql {{
@@ -71,7 +71,7 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
                             class = ""{typeof(SqlWriteJournal).AssemblyQualifiedName}""
                             plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
                             connection-string = ""{fixture.ConnectionString}""
-                            provider-name = ""{ProviderName.PostgreSQL95}""
+                            provider-name = ""{fixture.ProviderName}""
                             parallelism = 3
                             table-mapping = postgresql
                             auto-initialize = true
