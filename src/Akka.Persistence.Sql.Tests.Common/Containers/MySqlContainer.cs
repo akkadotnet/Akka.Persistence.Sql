@@ -25,7 +25,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         private const string Password = "Password12!";
 
         private readonly DbConnectionStringBuilder _connectionStringBuilder;
-        
+
         public MySqlContainer() : base("mysql", "latest", $"mysql-{Guid.NewGuid():N}")
         {
             _connectionStringBuilder = new DbConnectionStringBuilder
@@ -48,6 +48,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         protected override void GenerateDatabaseName()
         {
             base.GenerateDatabaseName();
+
             _connectionStringBuilder["Database"] = DatabaseName;
         }
 
@@ -76,9 +77,10 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         public override async Task InitializeDbAsync()
         {
             GenerateDatabaseName();
+
             await using var connection = new MySqlConnection(ConnectionString);
             await connection.OpenAsync();
-            
+
             await using var command = new MySqlCommand
             {
                 CommandText = $"CREATE DATABASE {DatabaseName}",

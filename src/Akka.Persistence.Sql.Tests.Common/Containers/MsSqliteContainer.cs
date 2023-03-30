@@ -37,21 +37,24 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         {
             DatabaseName = $"sql_tests_{Guid.NewGuid():N}";
         }
-        
+
         public async Task InitializeAsync()
         {
             if (Initialized)
                 return;
 
             _heldConnection = new List<SqliteConnection>();
+
             await InitializeDbAsync();
         }
 
         public async Task InitializeDbAsync()
         {
             GenerateDatabaseName();
-            var conn = new SqliteConnection(ConnectionString); 
+
+            var conn = new SqliteConnection(ConnectionString);
             await conn.OpenAsync();
+
             _heldConnection!.Add(conn);
         }
 
@@ -65,6 +68,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
                 conn.Close();
                 await conn.DisposeAsync();
             }
+
             _heldConnection = null;
         }
 
@@ -78,6 +82,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
                 conn.Close();
                 conn.Dispose();
             }
+
             _heldConnection = null;
         }
     }
