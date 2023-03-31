@@ -6,12 +6,19 @@
 
 namespace Akka.Persistence.Sql.Utility
 {
+    /// <summary>
+    /// Sent to the write journal to check if the write journal has completed initializing.
+    /// </summary>
     internal sealed class IsInitialized
     {
         public static readonly IsInitialized Instance = new();
         private IsInitialized() { }
     }
 
+    /// <summary>
+    /// Sent from the write journal in response to <see cref="IsInitialized"/>
+    /// message, indicating that the write journal has completed initializing
+    /// </summary>
     internal sealed class Initialized
     {
         public static readonly Initialized Instance = new();

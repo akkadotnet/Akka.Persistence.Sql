@@ -143,9 +143,14 @@ namespace Akka.Persistence.Sql.Journal
                     if (_writeInProgress.TryGetValue(wf.PersistenceId, out var latestPending) & (latestPending == wf.Future))
                         _writeInProgress.Remove(wf.PersistenceId);
                     return true;
+                
+                // `IsInitialized` and `Initialized` are used mostly for testing purposes,
+                // to make sure that the write journal has been initialized before we
+                // start the query read journal tests.
                 case IsInitialized:
                     Sender.Tell(Initialized.Instance);
                     return true;
+                
                 default:
                     return false;
             }
