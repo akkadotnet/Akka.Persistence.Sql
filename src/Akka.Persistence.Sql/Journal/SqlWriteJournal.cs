@@ -137,13 +137,18 @@ namespace Akka.Persistence.Sql.Journal
         
         protected override bool ReceivePluginInternal(object message)
         {
-            if (message is not WriteFinished wf)
-                return false;
-
-            if (_writeInProgress.TryGetValue(wf.PersistenceId, out var latestPending) & (latestPending == wf.Future))
-                _writeInProgress.Remove(wf.PersistenceId);
-
-            return true;
+            switch (message)
+            {
+                case WriteFinished wf:
+                    if (_writeInProgress.TryGetValue(wf.PersistenceId, out var latestPending) & (latestPending == wf.Future))
+                        _writeInProgress.Remove(wf.PersistenceId);
+                    return true;
+                case IsInitialized:
+                    Sender.Tell(Initialized.Instance);
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         public override void AroundPreRestart(Exception cause, object message)

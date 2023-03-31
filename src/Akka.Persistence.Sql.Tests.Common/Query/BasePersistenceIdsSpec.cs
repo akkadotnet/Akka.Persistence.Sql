@@ -12,6 +12,7 @@ using Akka.Persistence.Query;
 using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Query;
 using Akka.Persistence.Sql.Tests.Common.Containers;
+using Akka.Persistence.Sql.Utility;
 using Akka.Persistence.TCK.Query;
 using Akka.TestKit.Extensions;
 using FluentAssertions.Extensions;
@@ -34,7 +35,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Query
             var journal = Persistence.Instance.Apply(Sys).JournalFor(null);
             
             // Wait until journal is ready
-            var _ = await journal.Ask<ActorIdentity>(new Identify(1)).ShouldCompleteWithin(3.Seconds());
+            var _ = await journal.Ask<Initialized>(IsInitialized.Instance).ShouldCompleteWithin(3.Seconds());
         }
 
         public Task DisposeAsync()
