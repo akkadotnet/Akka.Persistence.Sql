@@ -5,20 +5,22 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Threading;
+using System.Threading.Tasks;
+using Akka.Actor;
 using Akka.Configuration;
 using Akka.Persistence.Query;
 using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Query;
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.TCK.Query;
+using Akka.TestKit.Extensions;
 using FluentAssertions.Extensions;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Tests.Common.Query
 {
-    public abstract class BaseCurrentEventsByPersistenceIdSpec<T> : CurrentEventsByPersistenceIdSpec where T : ITestContainer
+    public abstract class BaseCurrentEventsByPersistenceIdSpec<T> : CurrentEventsByPersistenceIdSpec, IAsyncLifetime where T : ITestContainer
     {
         protected BaseCurrentEventsByPersistenceIdSpec(TagMode tagMode, ITestOutputHelper output, string name, T fixture)
             : base(Config(tagMode, fixture), name, output)
@@ -26,25 +28,17 @@ namespace Akka.Persistence.Sql.Tests.Common.Query
             ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
         }
 
-        // Unit tests suffer from racy condition where the read journal tries to access the database
-        // when the write journal has not been initialized
-        [Fact]
-        public override void ReadJournal_CurrentEventsByPersistenceId_should_return_empty_stream_for_empty_journal()
+        public async Task InitializeAsync()
         {
-            Persistence.Instance.Get(Sys).JournalFor(null);
-            Thread.Sleep(500);
-            base.ReadJournal_CurrentEventsByPersistenceId_should_return_empty_stream_for_empty_journal();
+            // Force start read journal
+            var journal = Persistence.Instance.Apply(Sys).JournalFor(null);
+            
+            // Wait until journal is ready
+            var _ = await journal.Ask<ActorIdentity>(new Identify(1)).ShouldCompleteWithin(3.Seconds());
         }
 
-        // Unit tests suffer from racy condition where the read journal tries to access the database
-        // when the write journal has not been initialized
-        [Fact]
-        public override void ReadJournal_CurrentEventsByPersistenceId_should_return_empty_stream_for_empty_journal_from_0_to_0()
-        {
-            Persistence.Instance.Get(Sys).JournalFor(null);
-            Thread.Sleep(500);
-            base.ReadJournal_CurrentEventsByPersistenceId_should_return_empty_stream_for_empty_journal_from_0_to_0();
-        }
+        public Task DisposeAsync()
+            => Task.CompletedTask;
 
         private static Configuration.Config Config(TagMode tagMode, T fixture)
         {
