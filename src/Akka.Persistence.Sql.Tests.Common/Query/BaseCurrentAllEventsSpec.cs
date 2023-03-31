@@ -5,36 +5,41 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Threading;
+using System.Threading.Tasks;
+using Akka.Actor;
 using Akka.Configuration;
 using Akka.Persistence.Query;
 using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Query;
 using Akka.Persistence.Sql.Tests.Common.Containers;
+using Akka.Persistence.Sql.Utility;
 using Akka.Persistence.TCK.Query;
+using Akka.TestKit.Extensions;
 using FluentAssertions.Extensions;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Tests.Common.Query
 {
-    public abstract class BaseCurrentAllEventsSpec<T> : CurrentAllEventsSpec where T : ITestContainer
+    public abstract class BaseCurrentAllEventsSpec<T> : CurrentAllEventsSpec, IAsyncLifetime where T : ITestContainer
     {
         protected BaseCurrentAllEventsSpec(TagMode tagMode, ITestOutputHelper output, string name, T fixture)
             : base(Config(tagMode, fixture), name, output)
         {
             ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
         }
-        
-        // Unit tests suffer from racy condition where the read journal tries to access the database
-        // when the write journal has not been initialized
-        [Fact]
-        public override void ReadJournal_query_AllEvents_should_complete_when_no_events()
+
+        public async Task InitializeAsync()
         {
-            Persistence.Instance.Get(Sys).JournalFor(null);
-            Thread.Sleep(500);
-            base.ReadJournal_query_AllEvents_should_complete_when_no_events();
+            // Force start read journal
+            var journal = Persistence.Instance.Apply(Sys).JournalFor(null);
+            
+            // Wait until journal is ready
+            var _ = await journal.Ask<Initialized>(IsInitialized.Instance).ShouldCompleteWithin(3.Seconds());
         }
+
+        public Task DisposeAsync()
+            => Task.CompletedTask;
         
         private static Configuration.Config Config(TagMode tagMode, T fixture)
         {
