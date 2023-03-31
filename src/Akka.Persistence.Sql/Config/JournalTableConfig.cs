@@ -40,7 +40,7 @@ namespace Akka.Persistence.Sql.Config
 
         public string SchemaName { get; }
 
-        [Obsolete("Not implemented")]
+        // TODO: implement this settings
         public bool UseEventManifestColumn { get; } = false;
 
         public EventJournalTableConfig EventJournalTable { get; }
