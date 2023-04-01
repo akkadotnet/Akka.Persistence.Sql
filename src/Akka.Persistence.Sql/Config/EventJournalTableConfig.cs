@@ -14,11 +14,14 @@ namespace Akka.Persistence.Sql.Config
         {
             var journalConfig = config.GetConfig("journal");
             Name = journalConfig.GetString("table-name");
+            UseWriterUuidColumn = journalConfig.GetBoolean("use-writer-uuid-column");
             ColumnNames = new JournalTableColumnNames(journalConfig);
         }
 
         public string Name { get; }
 
+        public bool UseWriterUuidColumn { get; }
+        
         public JournalTableColumnNames ColumnNames { get; }
 
         public bool Equals(EventJournalTableConfig other)

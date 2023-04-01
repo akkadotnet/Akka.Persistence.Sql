@@ -22,6 +22,7 @@ namespace Akka.Persistence.Sql.Config
             Message = cfg.GetString("message", "message");
             Identifier = cfg.GetString("identifier", "identifier");
             Manifest = cfg.GetString("manifest", "manifest");
+            WriterUuid = cfg.GetString("writer-uuid", "writer_uuid");
         }
 
         public string Ordering { get; }
@@ -41,6 +42,8 @@ namespace Akka.Persistence.Sql.Config
         public string Identifier { get; }
 
         public string Manifest { get; }
+        
+        public string WriterUuid { get; }
 
         public bool Equals(JournalTableColumnNames other)
             => other is { } &&

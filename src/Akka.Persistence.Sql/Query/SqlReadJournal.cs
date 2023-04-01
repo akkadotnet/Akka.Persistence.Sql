@@ -79,7 +79,8 @@ namespace Akka.Persistence.Sql.Query
                 serializer: new ByteArrayJournalSerializer(
                     journalConfig: _readJournalConfig,
                     serializer: system.Serialization,
-                    separator: _readJournalConfig.PluginConfig.TagSeparator));
+                    separator: _readJournalConfig.PluginConfig.TagSeparator, 
+                    writerUuid: null));
 
             _journalSequenceActor = system.ActorOf(
                 props: Props.Create(

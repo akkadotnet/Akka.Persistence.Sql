@@ -59,6 +59,7 @@ namespace Akka.Persistence.Sql.Tests.Settings
 
             var journalTable = journalTables.GetConfig("journal");
             journalTable.GetString("table-name", "invalid").Should().Be("journal");
+            journalTable.GetBoolean("use-writer-uuid-column").Should().BeTrue();
 
             var metadataTable = journalTables.GetConfig("metadata");
             metadataTable.GetString("table-name", "invalid").Should().Be("journal_metadata");
@@ -83,6 +84,7 @@ namespace Akka.Persistence.Sql.Tests.Settings
 
             tableConfig.SchemaName.Should().BeNullOrEmpty();
             journalTable.Name.Should().Be("journal");
+            journalTable.UseWriterUuidColumn.Should().BeTrue();
             metadataTable.Name.Should().Be("journal_metadata");
 
             // assert default journal column names
@@ -96,6 +98,7 @@ namespace Akka.Persistence.Sql.Tests.Settings
             journalColumns.Message.Should().Be("message");
             journalColumns.Identifier.Should().Be("identifier");
             journalColumns.Manifest.Should().Be("manifest");
+            journalColumns.WriterUuid.Should().Be("writer_uuid");
 
             // assert default metadata column names
             var metaColumns = metadataTable.ColumnNames;
@@ -124,6 +127,7 @@ namespace Akka.Persistence.Sql.Tests.Settings
 
             tableConfig.SchemaName.Should().Be("dbo");
             journalTable.Name.Should().Be("EventJournal");
+            journalTable.UseWriterUuidColumn.Should().BeFalse();
             metadataTable.Name.Should().Be("Metadata");
 
             // assert default journal column names
@@ -161,6 +165,7 @@ namespace Akka.Persistence.Sql.Tests.Settings
 
             var tableConfig = journal.TableConfig;
             var journalTable = tableConfig.EventJournalTable;
+            journalTable.UseWriterUuidColumn.Should().BeFalse();
             var metadataTable = tableConfig.MetadataTable;
 
             tableConfig.SchemaName.Should().BeNullOrEmpty();
@@ -206,6 +211,7 @@ namespace Akka.Persistence.Sql.Tests.Settings
 
             tableConfig.SchemaName.Should().Be("public");
             journalTable.Name.Should().Be("event_journal");
+            journalTable.UseWriterUuidColumn.Should().BeFalse();
             metadataTable.Name.Should().Be("metadata");
 
             // assert default journal column names
@@ -247,6 +253,7 @@ namespace Akka.Persistence.Sql.Tests.Settings
 
             tableConfig.SchemaName.Should().BeNullOrEmpty();
             journalTable.Name.Should().Be("event_journal");
+            journalTable.UseWriterUuidColumn.Should().BeFalse();
             metadataTable.Name.Should().Be("metadata");
 
             // assert default journal column names

@@ -27,17 +27,16 @@ namespace Akka.Persistence.Sql.Journal.Dao
             JournalConfig journalConfig,
             Akka.Serialization.Serialization serializer,
             ILoggingAdapter logger,
+            string selfUuid, 
             CancellationToken shutdownToken)
             : base(
                 scheduler: scheduler,
                 materializer: mat,
                 connectionFactory: connection,
                 config: journalConfig,
-                serializer: new ByteArrayJournalSerializer(
-                    journalConfig,
-                    serializer,
-                    journalConfig.PluginConfig.TagSeparator),
+                serializer: serializer,
                 logger: logger,
+                selfUuid: selfUuid, 
                 shutdownToken: shutdownToken) { }
 
         public async Task InitializeTables(CancellationToken token)
