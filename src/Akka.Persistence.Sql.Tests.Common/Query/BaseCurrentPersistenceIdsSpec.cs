@@ -54,14 +54,12 @@ akka.persistence.journal.sql {{
     provider-name = ""{fixture.ProviderName}""
     tag-write-mode = ""{tagMode}""
     connection-string = ""{fixture.ConnectionString}""
-    auto-initialize = on
 }}
 akka.persistence.query.journal.sql
 {{
     provider-name = ""{fixture.ProviderName}""
     connection-string = ""{fixture.ConnectionString}""
     tag-read-mode = ""{tagMode}""
-    auto-initialize = on
     refresh-interval = 1s
 }}
 akka.test.single-expect-default = 10s")

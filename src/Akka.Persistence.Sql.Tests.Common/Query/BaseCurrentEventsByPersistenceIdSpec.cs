@@ -56,7 +56,6 @@ akka.persistence {{
             provider-name = ""{fixture.ProviderName}""
             tag-write-mode = ""{tagMode}""
             connection-string = ""{fixture.ConnectionString}""
-            auto-initialize = on
         }}
     }}
     query {{
@@ -65,7 +64,6 @@ akka.persistence {{
                 provider-name = ""{fixture.ProviderName}""
                 connection-string = ""{fixture.ConnectionString}""
                 tag-read-mode = ""{tagMode}""
-                auto-initialize = on
                 refresh-interval = 1s
             }}
         }}

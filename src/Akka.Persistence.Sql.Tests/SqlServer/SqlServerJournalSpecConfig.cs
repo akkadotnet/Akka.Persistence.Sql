@@ -6,8 +6,6 @@
 
 using System;
 using Akka.Configuration;
-using Akka.Persistence.Sql.Journal;
-using Akka.Persistence.Sql.Snapshot;
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using FluentAssertions.Extensions;
 
@@ -15,11 +13,7 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
 {
     public static class SqlServerJournalSpecConfig
     {
-        public static Configuration.Config Create(
-            SqlServerContainer fixture,
-            string tableName,
-            int batchSize = 100,
-            int parallelism = 2)
+        public static Configuration.Config Create(SqlServerContainer fixture, string tableName)
         {
             if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
                 throw new Exception("Failed to clean up database in 10 seconds");
@@ -32,9 +26,6 @@ akka.persistence {{
         sql {{
             connection-string = ""{fixture.ConnectionString}""
             provider-name = ""{fixture.ProviderName}""
-            parallelism = {parallelism}
-            batch-size = {batchSize}
-            auto-initialize = true
             default {{
                 journal {{
                     table-name = ""{tableName}""
@@ -49,11 +40,7 @@ akka.persistence {{
 
     public static class SqlServerSnapshotSpecConfig
     {
-        public static Configuration.Config Create(
-            SqlServerContainer fixture,
-            string tableName,
-            int batchSize = 100,
-            int parallelism = 2)
+        public static Configuration.Config Create(SqlServerContainer fixture, string tableName)
         {
             if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
                 throw new Exception("Failed to clean up database in 10 seconds");
@@ -66,9 +53,6 @@ akka.persistence {{
         sql {{
             connection-string = ""{fixture.ConnectionString}""
             provider-name = ""{fixture.ProviderName}""
-            parallelism = {parallelism}
-            batch-size = {batchSize}
-            auto-initialize = true
             default {{
                 journal {{
                     table-name = ""{tableName}""

@@ -42,18 +42,8 @@ akka.persistence {{
     snapshot-store {{
         plugin = ""akka.persistence.snapshot-store.sql""
         sql {{
-            class = ""{typeof(SqlSnapshotStore).AssemblyQualifiedName}""
-            plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
             connection-string = ""{fixture.ConnectionString}""
             provider-name = ""{fixture.ProviderName}""
-            use-clone-connection = true
-            auto-initialize = true
-            warn-on-auto-init-fail = false
-            default {{
-                journal {{
-                    table-name = l2dbSnapshotSpec
-                }}
-            }}
         }}
     }}
 }}")

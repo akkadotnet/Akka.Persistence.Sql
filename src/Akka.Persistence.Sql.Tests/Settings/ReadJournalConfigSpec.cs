@@ -45,7 +45,7 @@ namespace Akka.Persistence.Sql.Tests.Settings
             query.GetInt("replay-batch-size").Should().Be(1000);
             query.GetInt("parallelism").Should().Be(3);
             query.GetInt("max-row-by-row-size").Should().Be(100);
-            query.GetBoolean("use-clone-connection").Should().BeFalse();
+            query.GetBoolean("use-clone-connection").Should().BeTrue();
             query.GetString("tag-separator", "invalid").Should().Be(";");
             query.GetString("dao", "invalid").Should().Be("Akka.Persistence.Sql.Journal.Dao.ByteArrayJournalDao, Akka.Persistence.Sql");
 
@@ -271,7 +271,7 @@ namespace Akka.Persistence.Sql.Tests.Settings
         {
             journal.ConnectionString.Should().BeNullOrEmpty();
             journal.ProviderName.Should().BeNullOrEmpty();
-            journal.UseCloneConnection.Should().BeFalse();
+            journal.UseCloneConnection.Should().BeTrue();
             journal.RefreshInterval.Should().Be(1.Seconds());
             journal.MaxBufferSize.Should().Be(500);
             journal.AddShutdownHook.Should().BeTrue();
