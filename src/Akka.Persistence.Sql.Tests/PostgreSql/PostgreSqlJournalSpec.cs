@@ -46,8 +46,6 @@ akka.persistence {{
         sql {{
             connection-string = ""{fixture.ConnectionString}""
             provider-name = ""{fixture.ProviderName}""
-            use-clone-connection = true
-            auto-initialize = true
         }}
     }}
 }}")

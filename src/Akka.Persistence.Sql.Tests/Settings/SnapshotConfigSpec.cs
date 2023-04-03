@@ -35,11 +35,11 @@ namespace Akka.Persistence.Sql.Tests.Settings
             snapshot.GetString("plugin-dispatcher").Should().Be("akka.persistence.dispatchers.default-plugin-dispatcher");
             snapshot.GetString("connection-string", "invalid").Should().BeNullOrEmpty();
             snapshot.GetString("provider-name", "invalid").Should().BeNullOrEmpty();
-            snapshot.GetBoolean("use-clone-connection").Should().BeFalse();
+            snapshot.GetBoolean("use-clone-connection").Should().BeTrue();
             snapshot.GetString("table-mapping", "invalid").Should().Be("default");
             snapshot.GetString("serializer", "invalid").Should().BeNullOrEmpty();
             snapshot.GetString("dao", "invalid").Should().Be("Akka.Persistence.Sql.Snapshot.ByteArraySnapshotDao, Akka.Persistence.Sql");
-            snapshot.GetBoolean("auto-initialize").Should().BeFalse();
+            snapshot.GetBoolean("auto-initialize").Should().BeTrue();
             snapshot.GetBoolean("warn-on-auto-init-fail").Should().BeTrue();
 
             var snapshotConfig = snapshot.GetConfig("default");
@@ -197,7 +197,7 @@ namespace Akka.Persistence.Sql.Tests.Settings
         {
             snapshot.ConnectionString.Should().BeNullOrEmpty();
             snapshot.ProviderName.Should().BeNullOrEmpty();
-            snapshot.UseCloneConnection.Should().BeFalse();
+            snapshot.UseCloneConnection.Should().BeTrue();
             snapshot.DefaultSerializer.Should().BeNullOrEmpty();
             snapshot.UseSharedDb.Should().BeNullOrEmpty();
 

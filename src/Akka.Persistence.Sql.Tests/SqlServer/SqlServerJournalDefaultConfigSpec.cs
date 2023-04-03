@@ -101,17 +101,6 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
             }
             journalColumns.Should().BeEmpty("Journal table should not contain any superfluous columns");
             
-            // metadata table
-            var metadataTable = schema.Tables.FirstOrDefault(t => t.TableName == "journal_metadata");
-            metadataTable.Should().NotBeNull();
-            var metadataColumns = metadataTable!.Columns.Select(c => c.ColumnName).ToList();
-            foreach (var column in _metadataTableColumnNames)
-            {
-                if (!metadataColumns.Remove(column))
-                    throw new XunitException($"Journal metadata table does not contain the required column {column}");
-            }
-            metadataColumns.Should().BeEmpty("Journal metadata table should not contain any superfluous columns");
-
             // tag table
             var tagTable = schema.Tables.FirstOrDefault(t => t.TableName == "tags");
             tagTable.Should().NotBeNull();
@@ -122,6 +111,20 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
                     throw new XunitException($"Tag table does not contain the required column {column}");
             }
             tagColumns.Should().BeEmpty("Tag table should not contain any superfluous columns");
+        }
+
+        // Used to test that metadata table is valid
+        private void AssertMetadataTableExistsAndValid(DatabaseSchema schema)
+        {
+            var metadataTable = schema.Tables.FirstOrDefault(t => t.TableName == "journal_metadata");
+            metadataTable.Should().NotBeNull();
+            var metadataColumns = metadataTable!.Columns.Select(c => c.ColumnName).ToList();
+            foreach (var column in _metadataTableColumnNames)
+            {
+                if (!metadataColumns.Remove(column))
+                    throw new XunitException($"Journal metadata table does not contain the required column {column}");
+            }
+            metadataColumns.Should().BeEmpty("Journal metadata table should not contain any superfluous columns");
         }
 
         private JournalConfig GetConfig()

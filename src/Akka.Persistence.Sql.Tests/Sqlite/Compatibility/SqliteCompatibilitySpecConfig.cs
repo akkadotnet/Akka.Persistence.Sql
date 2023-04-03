@@ -73,6 +73,7 @@ namespace Akka.Persistence.Sql.Tests.Sqlite.Compatibility
                             table-mapping = sqlite
                             tag-write-mode = Csv
                             auto-initialize = true
+                            delete-compatibility-mode = true
                             sqlite {{
                                 journal {{
                                     table-name = ""{tableName}""

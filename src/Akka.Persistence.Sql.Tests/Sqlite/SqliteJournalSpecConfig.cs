@@ -27,10 +27,6 @@ namespace Akka.Persistence.Sql.Tests.Sqlite
                         sql {{
                             connection-string = ""{fixture.ConnectionString}""
                             provider-name = ""{fixture.ProviderName}""
-                            parallelism = 1
-                            max-row-by-row-size = 100
-                            auto-initialize = true
-                            use-clone-connection = {(fixture.ProviderName == ProviderName.SQLiteMS ? "on" : "off")}
                         }}
                     }}
                 }}")
@@ -55,11 +51,6 @@ namespace Akka.Persistence.Sql.Tests.Sqlite
                         sql {{
                             connection-string = ""{fixture.ConnectionString}""
                             provider-name = ""{fixture.ProviderName}""
-                            parallelism = 1
-                            max-row-by-row-size = 100
-                            delete-compatibility-mode = {(nativeMode == false ? "on" : "off")}
-                            auto-initialize = true
-                            use-clone-connection = {(fixture.ProviderName == ProviderName.SQLiteMS ? "on" : "off")}
                         }}
                     }}
                 }}")
