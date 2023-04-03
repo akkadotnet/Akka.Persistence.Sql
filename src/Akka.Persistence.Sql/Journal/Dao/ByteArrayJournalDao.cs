@@ -43,43 +43,41 @@ namespace Akka.Persistence.Sql.Journal.Dao
         {
             await using var connection = ConnectionFactory.GetConnection();
 
-            // MS Sqlite does not support schema, we have to blindly try and create the tables
-            if (connection.DataProvider.Name is ProviderName.SQLiteMS)
-            {
-                try
-                {
-                    await connection.CreateTableAsync<JournalRow>(token);
-                }
-                catch { /* no-op */ }
-                
-                if (JournalConfig.PluginConfig.TagMode is not TagMode.Csv)
-                    try
-                    {
-                        await connection.CreateTableAsync<JournalTagRow>(token);
-                    }
-                    catch { /* no-op */ }
-                
-                if (JournalConfig.DaoConfig.SqlCommonCompatibilityMode)
-                    try
-                    {
-                        await connection.CreateTableAsync<JournalMetaData>(token);
-                    }
-                    catch { /* no-op */ }
-
-                return;
-            }
-
-            var schema = connection.GetSchema();
-            if(schema.Tables.All(t => t.TableName != JournalConfig.TableConfig.EventJournalTable.Name))
-                await connection.CreateTableAsync<JournalRow>(token);
+            var journalFooter = GenerateFooter();
+            await connection.CreateTableAsync<JournalRow>(TableOptions.CreateIfNotExists, journalFooter, token);
             
             if (JournalConfig.PluginConfig.TagMode is not TagMode.Csv)
-                if(schema.Tables.All(t => t.TableName != JournalConfig.TableConfig.TagTable.Name))
-                    await connection.CreateTableAsync<JournalTagRow>(token);
+                await connection.CreateTableAsync<JournalTagRow>(TableOptions.CreateIfNotExists, cancellationToken: token);
 
             if (JournalConfig.DaoConfig.SqlCommonCompatibilityMode)
-                if(schema.Tables.All(t => t.TableName != JournalConfig.TableConfig.MetadataTable.Name))
-                    await connection.CreateTableAsync<JournalMetaData>(token);
+                await connection.CreateTableAsync<JournalMetaData>(TableOptions.CreateIfNotExists, cancellationToken: token);
+        }
+
+        private string GenerateFooter()
+        {
+            var tableName = JournalConfig.TableConfig.EventJournalTable.Name;
+            var columns = JournalConfig.TableConfig.EventJournalTable.ColumnNames;
+            var journalFullTableName = string.IsNullOrEmpty(JournalConfig.TableConfig.SchemaName) 
+                ? tableName 
+                : $"{JournalConfig.TableConfig.SchemaName}.{tableName}";
+                            
+            if (JournalConfig.ProviderName.StartsWith("SqlServer"))
+                return @$";
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.indexes
+    WHERE object_id = OBJECT_ID('{journalFullTableName}')
+    AND name = 'IX_{tableName}_{columns.SequenceNumber}')
+CREATE INDEX IX_{tableName}_{columns.SequenceNumber} ON {journalFullTableName}({columns.SequenceNumber});
+
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.indexes
+    WHERE object_id = OBJECT_ID('{journalFullTableName}')
+    AND name = 'IX_{tableName}_{columns.Created}')
+CREATE INDEX IX_{tableName}_{columns.Created} ON {journalFullTableName}({columns.Created});";
+            
+            return default;
         }
     }
 }
