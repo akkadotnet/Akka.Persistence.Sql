@@ -76,6 +76,7 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
                             table-mapping = postgresql
                             auto-initialize = true
                             tag-write-mode = Csv
+                            delete-compatibility-mode = true
                             postgresql {{
                                 journal {{
                                     table-name = ""{tableName}""

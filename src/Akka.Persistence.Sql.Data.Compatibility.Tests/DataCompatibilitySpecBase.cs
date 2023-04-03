@@ -74,10 +74,12 @@ akka.persistence {{
 		sql {{
 			connection-string = ""{Fixture.ConnectionString}""
 			provider-name = {Settings.ProviderName}
+
+            # Compatibility settings
 			table-mapping = {Settings.TableMapping}
             auto-initialize = off
-            warn-on-auto-init-fail = true
             tag-write-mode = Csv
+            delete-compatibility-mode = true
 
             # Testing for https://github.com/akkadotnet/Akka.Persistence.Sql/pull/117#discussion_r1027345449
             batch-size = 3
@@ -93,9 +95,9 @@ akka.persistence {{
 	query.journal.sql {{
 		connection-string = ""{Fixture.ConnectionString}""
 		provider-name = {Settings.ProviderName}
+
+        # Compatibility settings
 		table-mapping = {Settings.TableMapping}
-        auto-initialize = off
-        warn-on-auto-init-fail = true
         tag-read-mode = Csv
 
         # Testing for https://github.com/akkadotnet/Akka.Persistence.Sql/pull/117#discussion_r1027345449
@@ -108,6 +110,8 @@ akka.persistence {{
 		sql {{
 			connection-string = ""{Fixture.ConnectionString}""
 			provider-name = {Settings.ProviderName}
+
+            # Compatibility settings
 			table-mapping = {Settings.TableMapping}
             auto-initialize = off
 

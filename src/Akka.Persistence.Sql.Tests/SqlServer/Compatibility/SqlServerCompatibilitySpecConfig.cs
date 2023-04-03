@@ -70,11 +70,12 @@ namespace Akka.Persistence.Sql.Tests.SqlServer.Compatibility
                             class = ""{typeof(SqlWriteJournal).AssemblyQualifiedName}""
                             plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
                             connection-string = ""{fixture.ConnectionString}""
-                            provider-name = ""{ProviderName.SqlServer2017}""
+                            provider-name = ""{fixture.ProviderName}""
                             parallelism = 3
                             table-mapping = sql-server
                             tag-write-mode = Csv
                             auto-initialize = true
+                            delete-compatibility-mode = true
                             sql-server {{
                                 journal {{
                                     table-name = ""{tableName}""
