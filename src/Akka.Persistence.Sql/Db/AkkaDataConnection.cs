@@ -61,8 +61,13 @@ namespace Akka.Persistence.Sql.Db
             => _connection.CreateTable<T>();
 
         public async Task CreateTableAsync<T>(
+            TableOptions tableOptions,
+            string statementFooter = default,
             CancellationToken cancellationToken = default)
-            => await _connection.CreateTableAsync<T>(token: cancellationToken);
+            => await _connection.CreateTableAsync<T>(
+                tableOptions: tableOptions,
+                statementFooter: statementFooter,
+                token: cancellationToken);
 
         public ITable<T> GetTable<T>() where T : class
             => _connection.GetTable<T>();
