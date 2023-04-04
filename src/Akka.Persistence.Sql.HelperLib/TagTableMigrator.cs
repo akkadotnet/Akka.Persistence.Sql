@@ -52,10 +52,7 @@ namespace Akka.Persistence.Sql.HelperLib
             await using var connection = _connectionFactory.GetConnection();
 
             // Create the tag table if it doesn't exist
-            var dbSchema = connection.GetSchema();
-
-            if (dbSchema.Tables.All(t => t.TableName != _journalConfig.TableConfig.TagTable.Name))
-                await connection.CreateTableAsync<JournalTagRow>();
+            await connection.CreateTableAsync<JournalTagRow>(TableOptions.CreateIfNotExists);
 
             long maxId;
             if (endOffset is null)
