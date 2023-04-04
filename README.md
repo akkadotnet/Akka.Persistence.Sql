@@ -121,7 +121,7 @@ akka.persistence {
 
 ## Performance
 
-Tests based on i-7 8750H, 32GB Ram, 2TB SSD, Windows 10 version Version 10.0.19041.630.
+Tests based on AMD Ryzen 9 3900X, 32GB Ram, Windows 10 Version 22H2.
 Databases running on Docker WSL2.
 
 All numbers are in msg/sec.
