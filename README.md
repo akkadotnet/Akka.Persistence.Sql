@@ -6,29 +6,62 @@ This is a port of the amazing [akka-persistence-jdbc](https://github.com/akka/ak
 
 Please read the documentation carefully. Some features may be specific to use case and have trade-offs (namely, compatibility modes)
 
-## Status
+## Notes
 
-- Usable for basic Read/Writes
-- Implements the following from `Akka.Persistence.Query`:
-    - IPersistenceIdsQuery
-    - ICurrentPersistenceIdsQuery
-    - IEventsByPersistenceIdQuery
-    - ICurrentEventsByPersistenceIdQuery
-    - IEventsByTagQuery
-    - ICurrentEventsByTagQuery
-    - IAllEventsQuery
-    - ICurrentAllEventsQuery
-- Snapshot Store Support
+### This Is Still a Beta
 
-#### This is still a WORK IN PROGRESS
+Please note this is still considered 'work in progress' and only used if one understands the risks. While the TCK Specs pass you should still test in a 'safe' non-production environment carefully before deciding to fully deploy.
 
- **Pull Requests are Welcome** but please note this is still considered 'work in progress' and only used if one understands the risks. While the TCK Specs pass you should still test in a 'safe' non-production environment carefully before deciding to fully deploy.
+### Suitable For Greenfield Projects Only
 
-Working:
+Until backward compatibility is properly tested and documented, it is recommended to use this plugin only on new greenfield projects that does not rely on existing persisted data.
 
-- Persistence
-- Recovery
-- Snapshots
+## Setup
+
+These are the minimum HOCON configuration you need to start using Akka.Persistence.Sql:
+```hocon
+akka.persistence {
+    journal {
+        plugin = "akka.persistence.journal.sql"
+        sql {
+            connection-string = "{database-connection-string}"
+            provider-name = "{provider-name}"
+        }
+    }
+    snapshot-store {
+        plugin = "akka.persistence.snapshot-store.sql"
+        sql {
+            connection-string = "{database-connection-string}"
+            provider-name = "{provider-name}"
+        }
+    }
+}
+```
+
+* **database-connection-string**: The proper connection string to your database of choice.
+* **provider-name**: A string constant defining the database type to connect to, valid values are defined inside `LinqToDB.ProviderName` static class. Refer to the Members of [`LinqToDb.ProviderName`](https://linq2db.github.io/api/LinqToDB.ProviderName.html) for included providers.
+
+**Note**: For best performance, one should use the most specific provider name possible. i.e. `LinqToDB.ProviderName.SqlServer2012` instead of `LinqToDB.ProviderName.SqlServer`. Otherwise certain provider detections have to run more frequently which may impair performance slightly.
+
+## Supported Database Providers
+
+### Tested Database Providers
+- Microsoft SQL Server
+- MS SQLite
+- System.Data.SQLite
+- PostgreSQL using binary payload
+
+### Supported By Linq2Db But Untested In Akka.Persistence 
+- MySql
+- Firebird
+- Microsoft Access OleDB
+- Microsoft Access ODBC
+- IBM DB2
+- Informix
+- Oracle
+- Sybase
+- SAP HANA
+- ClickHouse
 
 ## Features/Architecture
 
@@ -52,32 +85,22 @@ Working:
   - If more messages are to be recovered, additional passes will be made.
 
 - Attempts to stay in spirit and Structure of JDBC Port with a few differences:
-  - Linq2Db isn't a Reactive Streams Compatible DB Provider (I don't know of any that are at this time for .NET)
-    - This means Some of the Query architecture is different, to deal with required semantic changes (i.e. Connection scoping)
+  - Linq2Db isn't a Reactive Streams Compatible DB Provider; this means Some of the Query architecture is different, to deal with required semantic changes (i.e. Connection scoping)
   - Both due to above and differences between Scala and C#, Some changes have been made for optimal performance (i.e. memory, GC)
     - Classes used in place of ValueTuples in certain areas
     - We don't have separate Query classes at this time. This can definitely be improved in future
     - A couple of places around `WriteMessagesAsync` have had their logic moved to facilitate performance (i.e. use of `await` instead of `ContinueWith`)
   - Backwards Compatibility mode is implemented, to interoperate with existing journals and snapshot stores.
 
-- Tag Table Support (Alpha):
+- Tag Table Support:
     - Allows the writing of tags to a separate table to allow for different performance strategies when working with tags.
-        - Supports Two Tag Table Modes:
-            - WriteUUID: The tag table and join uses a 'sequential-uuid' type field that will have lower page splits while allowing for good row locality on insert.
-                - This option is intended for those who want maximum write performance, at the expense of database storage and load.
-            - OrderingId: Uses the Journal Row's 'ordering' sequential Int64 for the tag table and join.
-                - This option is intended for those who want more efficient use of the DB's space
-                - This will result in slower writes, but faster/more efficient reads.
-    - Provides multiple modes of operation for reads and writes, note that there are separate switches for both read and write!
-        - CommaSeparatedOnly: The old behavior, where the comma separated tags are held in a column
-        - CommaSeparatedAndTagTable: Will Read/Write from both the Comma Separated column as well as the Tag Table
-        - TagTableOnly: will only use the tag table for Read/Write
-    - 'Live' Migration should be possible via the following flow:
-        1. Run Migration scripts to create new columns/tables.
-        2. Rolling Deploy your system with Reads and Writes in 'CommaSeparatedAndTagTable' mode.
-        3. Rolling deploy your system (again), with Writes now in 'TagTableOnly' mode.
-        4. Run Migration App/Script to move existing tags into tag table.
-        5. Rolling deploy your system (last one!) with Reads now in 'TagTableOnly' mode.
+    - Provides multiple modes of operation for reads and writes, note that there are separate switches for both read and write.
+        - Csv: The old behavior, where the comma separated tags are held in a column
+        - TagTable: will use the tag table for Read/Write
+        - Both: (write only) will write to both csv column and tag table
+    - Migration should be possible via the following ways:
+        1. Run Migration script. The migration script will create new tables and migrate the legacy CSV column to the new tag table.
+        2. Use the migration application.
 
 ## Currently Implemented
 
@@ -88,58 +111,37 @@ Working:
 - Configuration
   - Only Functional tests at this time.
   - Custom provider configurations are supported.
+- Compatibility with existing Akka.Persistence plugins is implemented via `table-mapping` setting.
 
 ## Incomplete
 
 - Tests for Schema Usage
-- Some Akka.NET specfic Journal Queries (those not mentioned above)
 - Cleanup of Configuration classes/fallbacks.
   - Should still be usable in most common scenarios including multiple configuration instances: see [`SqlServerCustomConfigSpec`](src/Akka.Persistence.Sql.Tests/SqlServer/SQLServerJournalCustomConfigSpec.cs) for test and examples.
 
-DB Compatibility:
-
-- SQL Server: Tests Pass
-- MS SQLite: Tests Pass
-- System.Data.SQLite: Functional tests pass, perf tests partially fail.
-  - For whatever reason SDS doesn't cope well here.
-- PostgreSQL: Tests pass
-- MySql: Not Tested Yet
-- Firebird: Not Tested Yet
-
-Compatibility with existing Providers is partially implemented via `table-compatibility-mode` flag. Please note there are not tests for compatibility with Sql.Common Query journals at this time:
-
-- SQL Server: Basic Persist and Recovery tests pass for both Snapshot and Journal.
-  - Still needs Delete tests
-- SQLite: Persist and Recovery tests pass for both Snapshot and Journal.
-- PostgreSQL: Basic Persist and Recovery tests pass for both Snapshot and Journal.
-  - Only Binary payloads are supported at this time.
-  - Note that not all possible permutations of table names have been tested.
-    - i.e. there may be concerns around casing
-- MySql: Not Implemented yet
-
-# Performance
+## Performance
 
 Tests based on i-7 8750H, 32GB Ram, 2TB SSD, Windows 10 version Version 10.0.19041.630.
 Databases running on Docker WSL2.
 
 All numbers are in msg/sec.
 
-|Test |SqlServer (normal)       |  SqlServer Batching     | Linq2Db     |vs Normal| vs Batching|
-|:-------------  |:------------- | :----------: | -----------: | -----------: | -----------: |
-|Persist |  164|427| 235|143.29%|55.04%|
-|PersistAll |  782|875| 5609|717.26%|641.03%|
-|PersistAsync |  630|846| 16099|2555.40%|1902.96%|
-|PersistAllAsync |  2095|902| 15681|748.50%|1738.47%|
-|PersistGroup10 |  590|680| 1069|181.19%|157.21%|
-|PersistGroup100 |  607|965| 5537|912.19%|573.78%|
-|PersistGroup200 |  628|1356| 7966|1268.47%|587.46%|
-|PersistGroup25 |  629|675| 2189|348.01%|324.30%|
-|PersistGroup400 |  612|1011| 7237|1182.52%|715.83%|
-|PersistGroup50 |  612|654| 3867|631.86%|591.28%|
-|Recovering |  41903|38766| 42592|101.64%|109.87%|
-|Recovering8 |  75466|65515| 63960|84.75%|97.63%|
-|RecoveringFour |  59259|51355| 58437|98.61%|113.79%|
-|RecoveringTwo |  41745|35512| 41108|98.47%|115.76%|
+| Test            |          SqlServer | SqlServer Batching | Linq2Db | vs Normal | vs Batching |
+|:----------------|-------------------:|-------------------:|--------:|----------:|------------:|
+| Persist         |                304 |                299 |     496 |   163.16% |     165.89% |
+| PersistAll      |               1139 |               1275 |    7893 |   692.98% |     619.06% |
+| PersistAsync    |               1021 |               1371 |   31813 |  3115.87% |    2320.42% |
+| PersistAllAsync |               2828 |               1395 |   29634 |  1047.88% |    2124.30% |
+| PersistGroup10  |                986 |               1034 |    1675 |   169.88% |     161.99% |
+| PersistGroup100 |               1054 |               1304 |    6249 |   592.88% |     479.22% |
+| PersistGroup200 |                990 |               1662 |    8086 |   816.77% |     486.52% |
+| PersistGroup25  |               1034 |               1010 |    3054 |   295.36% |     302.38% |
+| PersistGroup400 |               1049 |               2113 |    7237 |   689.59% |     342.50% |
+| PersistGroup50  |                971 |                980 |    4932 |   507.93% |     503.27% |
+| Recovering      |              60516 |              77688 |   64457 |   106.51% |      82.96% |
+| Recovering8     |             116401 |             101549 |  103463 |    88.89% |     101.88% |
+| RecoveringFour  |              86107 |              73218 |   66512 |    77.24% |      90.84% |
+| RecoveringTwo   |              60730 |              53062 |   43325 |    71.34% |      81.65% |
 
 ## Sql.Common Compatibility modes
 
@@ -147,7 +149,7 @@ All numbers are in msg/sec.
   - This mode will utilize a `journal_metadata` table containing the last sequence number
   - The main table delete is done the same way regardless of delete compatibility mode
 
-### *Delete Compatibility mode is expensive.*
+**Delete Compatibility mode is expensive.**
 
 - Normal Deletes involve first marking the deleted records as deleted, and then deleting them
   - Table compatibility mode adds an additional InsertOrUpdate and Delete
@@ -160,10 +162,7 @@ All numbers are in msg/sec.
 
 Please note that you -must- provide a Connection String (`connection-string`) and Provider name (`provider-name`).
 
-- Refer to the Members of [`LinqToDb.ProviderName`](https://linq2db.github.io/api/LinqToDB.ProviderName.html) for included providers.
-    - Note: For best performance, one should use the most specific provider name possible. i.e. `LinqToDB.ProviderName.SqlServer2012` instead of `LinqToDB.ProviderName.SqlServer`. Otherwise certain provider detections have to run more frequently which may impair performance slightly.
-
-- `parallelism` controls the number of Akka.Streams Queues used to write to the DB.
+* `parallelism` controls the number of Akka.Streams Queues used to write to the DB.
   - Default in JVM is `8`. We use `3`
     - For SQL Server, Based on testing `3` is a fairly optimal number in .NET and thusly chosen as the default. You may wish to adjust up if you are dealing with a large number of actors.
       - Testing indicates that `2` will provide performance on par or better than both batching and non-batching journal.
@@ -173,7 +172,8 @@ Please note that you -must- provide a Connection String (`connection-string`) an
     - It's worth noting that LinqToDb's Bulk Copy implementations are very efficient here, since under many DBs the batch can be done in a single async round-trip.
 - `materializer-dispatcher` may be used to change the dispatcher that the Akka.Streams Queues use for scheduling.
   - You can define a different dispatcher here if worried about stealing from the thread-pool, for instance a Dedicated thread-pool dispatcher.
-- `logical-delete` if `true` will only set the deleted flag for items, i.e. will not actually delete records from DB.
+- `logical-delete` 
+  - if `true` will only set the deleted flag for items, i.e. will not actually delete records from DB.
   - if `false` all records are set as deleted, and then all but the top record is deleted. This top record is used for sequence number tracking in case no other records exist in the table.
 - `delete-compatibility-mode` specifies to perform deletes in a way that is compatible with Akka.Persistence.Sql.Common.
   - This will use a Journal_Metadata table (or otherwise defined )
@@ -196,22 +196,11 @@ Please note that you -must- provide a Connection String (`connection-string`) an
 
 ```hocon
 akka.persistence {
-  publish-plugin-commands = on
-
   journal {
-    plugin = "akka.persistence.journal.sql"
-
     sql {
       class = "Akka.Persistence.Sql.Journal.SqlWriteJournal, Akka.Persistence.Sql"
       plugin-dispatcher = "akka.persistence.dispatchers.default-plugin-dispatcher"
       connection-string = "" # Connection String is Required!
-
-      # This dispatcher will be used for the Stream Materializers
-      # Note that while all calls will be Async to Linq2Db,
-      # If your provider for some reason does not support async,
-      # or you are a very heavily loaded system,
-      # You may wish to provide a dedicated dispatcher instead
-      materializer-dispatcher = "akka.actor.default-dispatcher"
 
       # Provider name is required.
       # Refer to LinqToDb.ProviderName for values
@@ -221,18 +210,16 @@ akka.persistence {
       # Just pick the newest one (if yours is still newer)
       provider-name = ""
 
-      # If True, Deletes are done by updating Journal records
-      # Rather than actual physical deletions
-      logical-delete = false
+      # If true, journal_metadata is created and used for deletes
+      # and max sequence number queries.
+      # note that there is a performance penalty for using this.
+      delete-compatibility-mode = false
 
-      # If true, journal_metadata is created
-      delete-compatibility-mode = true
-
-      # If "sqlite", "sqlserver", or "postgresql"
-      # column names are compatible with
-      # Akka.Persistence.Sql Default Column names.
-      # You still -MUST- Set your appropriate table names!
-      table-compatibility-mode = null
+      # The database schema, table names, and column names configuration mapping.
+      # The details are described in their respective configuration block below.
+      # If set to "sqlite", "sql-server", "mysql", or "postgresql",
+      # column names will be compatible with legacy Akka.NET persistence sql plugins
+      table-mapping = default
 
       # If more entries than this are pending, writes will be rejected.
       # This setting is higher than JDBC because smaller batch sizes
@@ -240,7 +227,9 @@ akka.persistence {
       # For that penalty.
       buffer-size = 5000
 
-      # Batch size refers to the maximum number of items included in a batch (transaction) to DB
+      # Batch size refers to the number of items included in a batch to DB
+      #  (In cases where an AtomicWrite is greater than batch-size,
+      #   The Atomic write will still be handled in a single batch.)
       # JDBC Default is/was 400 but testing against scenarios indicates
       # 100 is better for overall latency. That said,
       # larger batches may be better if you have A fast/local DB.
@@ -256,7 +245,7 @@ akka.persistence {
       # Linq2Db by default will use a built string for multi-row inserts
       # Somewhat counterintuitively, this is faster than using parameters in most cases,
       # But if you would prefer parameters, you can set this to true.
-      prefer-parameters-on-multirow-insert = true
+      prefer-parameters-on-multirow-insert = false
 
       # Denotes the number of messages retrieved
       # Per round-trip to DB on recovery.
@@ -280,125 +269,433 @@ akka.persistence {
 
       # Only set to TRUE if unit tests pass with the connection string you intend to use!
       # This setting will go away once https://github.com/linq2db/linq2db/issues/2466 is resolved
-      use-clone-connection = false
+      use-clone-connection = true
 
-      tables.journal {
-        # If delete-compatibility-mode is true, both tables are created
-        # If delete-compatibility-mode is false, only journal table will be created.
-        auto-init = true
+      # This dispatcher will be used for the Stream Materializers
+      # Note that while all calls will be Async to Linq2Db,
+      # If your provider for some reason does not support async,
+      # or you are a very heavily loaded system,
+      # You may wish to provide a dedicated dispatcher instead
+      materializer-dispatcher = "akka.actor.default-dispatcher"
 
-        table-name = "journal"
-        metadata-table-name = "journal_metadata"
+      # This setting dictates how journal event tags are being stored inside the database.
+      # Valid values:
+      #   * Csv 
+      #     This value will make the plugin stores event tags in a CSV format in the 
+      #     `tags` column inside the journal table. This is the backward compatible
+      #     way of storing event tag information.
+      #   * TagTable
+      #     This value will make the plugin stores event tags inside a separate tag
+      #     table to improve tag related query speed.
+      tag-write-mode = TagTable
 
+      # The character used to delimit the CSV formatted tag column.
+      # This setting is only effective if `tag-write-mode` is set to `Csv`
+      tag-separator = ";"
+
+      # should corresponding journal table be initialized automatically
+      # if delete-compatibility-mode is true, both tables are created
+      # if delete-compatibility-mode is false, only journal table will be created.
+      auto-initialize = true
+
+      # if true, a warning will be logged
+      # if auto-init of tables fails.
+      # set to false if you don't want this warning logged
+      # perhaps if running CI tests or similar.
+      warn-on-auto-init-fail = true
+
+      dao = "Akka.Persistence.Sql.Journal.Dao.ByteArrayJournalDao, Akka.Persistence.Sql"
+
+      # Default serializer used as manifest serializer when applicable and payload serializer when
+      # no specific binding overrides are specified.
+      # If set to null, the default `System.Object` serializer is used.
+      serializer = null
+
+      # Default table name and column name mapping
+      # Use this if you're not migrating from old Akka.Persistence plugins
+      default {
         # If you want to specify a schema for your tables, you can do so here.
         schema-name = null
 
-        column-names {
-          "ordering" = "ordering"
-          "deleted" = "deleted"
-          "persistenceId" = "persistence_id"
-          "sequenceNumber" = "sequence_number"
-          "created" = "created"
-          "tags" = "tags"
-          "message" = "message"
-          "identifier" = "identifier"
-          "manifest" = "manifest"
+        journal {
+          # A flag to indicate if the writer_uuid column should be generated and be populated in run-time.
+          # Notes: 
+          #   1. The column will only be generated if auto-initialize is set to true.
+          #   2. This feature is Akka.Persistence.Sql specific, setting this to true will break 
+          #      backward compatibility with databases generated by other Akka.Persistence plugins.
+          #   3. To make this feature work with legacy plugins, you will have to alter the old
+          #      journal table:
+          #        ALTER TABLE [journal_table_name] ADD [writer_uuid_column_name] VARCHAR(128);
+          #   4. If set to true, the code will not check for backward compatibility. It will expect 
+          #      that the `writer-uuid` column to be present inside the journal table.
+          use-writer-uuid-column = true
+
+          table-name = "journal"
+          columns {
+            ordering = ordering
+            deleted = deleted
+            persistence-id = persistence_id
+            sequence-number = sequence_number
+            created = created
+            tags = tags
+            message = message
+            identifier = identifier
+            manifest = manifest
+            writer-uuid = writer_uuid
+          }
         }
 
-        sqlserver-compatibility-column-names {
-          "ordering" = "ordering"
-          "deleted" = "isdeleted"
-          "persistenceId" = "persistenceId"
-          "sequenceNumber" = "sequenceNr"
-          "created" = "Timestamp"
-          "tags" = "tags"
-          "message" = "payload"
-          "identifier" = "serializerid"
-          "manifest" = "manifest"
+        metadata {
+          table-name = "journal_metadata"
+          columns {
+            persistence-id = persistence_id
+            sequence-number = sequence_number
+          }
         }
 
-        sqlite-compatibility-column-names {
-          "ordering" = "ordering"
-          "deleted" = "is_deleted"
-          "persistenceId" = "persistence_Id"
-          "sequenceNumber" = "sequence_nr"
-          "created" = "Timestamp"
-          "tags" = "tags"
-          "message" = "payload"
-          "identifier" = "serializer_id"
-          "manifest" = "manifest"
+        tag {
+          table-name = "tags"
+          columns {
+            ordering-id = ordering_id
+            tag-value = tag
+            persistence-id = persistence_id
+            sequence-nr = sequence_nr
+          }
+        }
+      }
+
+      # Akka.Persistence.SqlServer compatibility table name and column name mapping
+      sql-server {
+        schema-name = dbo
+        journal {
+          use-writer-uuid-column = false
+          table-name = "EventJournal"
+          columns {
+            ordering = Ordering
+            deleted = IsDeleted
+            persistence-id = PersistenceId
+            sequence-number = SequenceNr
+            created = Timestamp
+            tags = Tags
+            message = Payload
+            identifier = SerializerId
+            manifest = Manifest
+          }
         }
 
-        postgresql-compatibility-column-names {
-          "ordering" = "ordering"
-          "deleted" = "is_deleted"
-          "persistenceId" = "persistence_id"
-          "sequenceNumber" = "sequence_nr"
-          "created" = "created_at"
-          "tags" = "tags"
-          "message" = "payload"
-          "identifier" = "serializer_id"
-          "manifest" = "manifest"
+        metadata {
+          table-name = "Metadata"
+          columns {
+            persistence-id = PersistenceId
+            sequence-number = SequenceNr
+          }
+        }
+      }
+
+      sqlserver = ${akka.persistence.journal.sql.sql-server} # backward compatibility naming
+
+      # Akka.Persistence.Sqlite compatibility table name and column name mapping
+      sqlite {
+        schema-name = null
+
+        journal {
+          use-writer-uuid-column = false
+          table-name = "event_journal"
+          columns {
+            ordering = ordering
+            deleted = is_deleted
+            persistence-id = persistence_id
+            sequence-number = sequence_nr
+            created = timestamp
+            tags = tags
+            message = payload
+            identifier = serializer_id
+            manifest = manifest
+          }
         }
 
-        metadata-column-names {
-          "persistenceId" = "persistenceId"
-          "sequenceNumber" = "sequenceNr"
+        metadata {
+          table-name = "journal_metadata"
+          columns {
+            persistence-id = persistence_id
+            sequence-number = sequence_nr
+          }
+        }
+      }
+
+      # Akka.Persistence.PostgreSql compatibility table name and column name mapping
+      postgresql {
+        schema-name = public
+        journal {
+          use-writer-uuid-column = false
+          table-name = "event_journal"
+          columns {
+            ordering = ordering
+            deleted = is_deleted
+            persistence-id = persistence_id
+            sequence-number = sequence_nr
+            created = created_at
+            tags = tags
+            message = payload
+            identifier = serializer_id
+            manifest = manifest
+          }
         }
 
-        sqlserver-compatibility-metadata-column-names {
-          "persistenceId" = "persistenceId"
-          "sequenceNumber" = "sequenceNr"
+        metadata {
+          table-name = "metadata"
+          columns {
+            persistence-id = persistence_id
+            sequence-number = sequence_nr
+          }
+        }
+      }
+
+      # Akka.Persistence.MySql compatibility table name and column name mapping
+      mysql {
+        schema-name = null
+        journal {
+          use-writer-uuid-column = false
+          table-name = "event_journal"
+          columns {
+            ordering = ordering
+            deleted = is_deleted
+            persistence-id = persistence_id
+            sequence-number = sequence_nr
+            created = created_at
+            tags = tags
+            message = payload
+            identifier = serializer_id
+            manifest = manifest
+          }
         }
 
-        sqlite-compatibility-metadata-column-names {
-          "persistenceId" = "persistence_Id"
-          "sequenceNumber" = "sequence_nr"
-        }
-
-        postgresql-compatibility-metadata-column-names {
-          "persistenceId" = "persistence_id"
-          "sequenceNumber" = "sequence_nr"
+        metadata {
+          table-name = "metadata"
+          columns {
+            persistence-id = persistence_id
+            sequence-number = sequence_nr
+          }
         }
       }
     }
   }
+
+  query {
+    journal {
+      sql {
+        class = "Akka.Persistence.Sql.Query.SqlReadJournalProvider, Akka.Persistence.Sql"
+
+        # You should specify your proper sql journal plugin configuration path here.
+        write-plugin = ""
+
+        max-buffer-size = 500 # Number of events to buffer at a time.
+        refresh-interval = 1s # interval for refreshing
+
+        connection-string = "" # Connection String is Required!
+
+        # This setting dictates how journal event tags are being read from the database.
+        # Valid values:
+        #   * Csv 
+        #     This value will make the plugin read event tags from a CSV formatted string 
+        #     `tags` column inside the journal table. This is the backward compatible
+        #     way of reading event tag information.
+        #   * TagTable
+        #     This value will make the plugin read event tags from the tag
+        #     table to improve tag related query speed.
+        tag-read-mode = TagTable
+
+        journal-sequence-retrieval{
+          batch-size = 10000
+          max-tries = 10
+          query-delay = 1s
+          max-backoff-query-delay = 60s
+          ask-timeout = 1s
+        }
+
+        # Provider name is required.
+        # Refer to LinqToDb.ProviderName for values
+        # Always use a specific version if possible
+        # To avoid provider detection performance penalty
+        # Don't worry if your DB is newer than what is listed;
+        # Just pick the newest one (if yours is still newer)
+        provider-name = ""
+
+        # if set to "sqlite", "sqlserver", "mysql", or "postgresql",
+        # Column names will be compatible with Akka.Persistence.Sql
+        # You still must set your table name!
+        table-mapping = default
+
+        # If more entries than this are pending, writes will be rejected.
+        # This setting is higher than JDBC because smaller batch sizes
+        # Work better in testing and we want to add more buffer to make up
+        # For that penalty.
+        buffer-size = 5000
+
+        # Batch size refers to the number of items included in a batch to DB
+        # JDBC Default is/was 400 but testing against scenarios indicates
+        # 100 is better for overall latency. That said,
+        # larger batches may be better if you have A fast/local DB.
+        batch-size = 100
+
+        # Denotes the number of messages retrieved
+        # Per round-trip to DB on recovery.
+        # This is to limit both size of dataset from DB (possibly lowering locking requirements)
+        # As well as limit memory usage on journal retrieval in CLR
+        replay-batch-size = 1000
+
+        # Number of Concurrennt writers.
+        # On larger servers with more cores you can increase this number
+        # But in most cases 2-4 is a safe bet.
+        parallelism = 3
+
+        # If a batch is larger than this number,
+        # Plugin will utilize Linq2db's
+        # Default bulk copy rather than row-by-row.
+        # Currently this setting only really has an impact on
+        # SQL Server and IBM Informix (If someone decides to test that out)
+        # SQL Server testing indicates that under this number of rows, (or thereabouts,)
+        # MultiRow is faster than Row-By-Row.
+        max-row-by-row-size = 100
+
+        # Only set to TRUE if unit tests pass with the connection string you intend to use!
+        # This setting will go away once https://github.com/linq2db/linq2db/issues/2466 is resolved
+        use-clone-connection = true
+
+        tag-separator = ";"
+
+        dao = "Akka.Persistence.Sql.Journal.Dao.ByteArrayJournalDao, Akka.Persistence.Sql"
+
+        default = ${akka.persistence.journal.sql.default}
+        sql-server = ${akka.persistence.journal.sql.sql-server}
+        sqlite = ${akka.persistence.journal.sql.sqlite}
+        postgresql = ${akka.persistence.journal.sql.postgresql}
+        mysql = ${akka.persistence.journal.sql.mysql}
+      }
+    }
+  }
 }
+
 ```
 
 ### Snapshot Store
 
 Please note that you -must- provide a Connection String and Provider name.
 
-- Refer to the Members of `LinqToDb.ProviderName` for included providers.
-  - Note: For best performance, one should use the most specific provider name possible. i.e. `LinqToDB.ProviderName.SqlServer2012` instead of `LinqToDB.ProviderName.SqlServer`. Otherwise certain provider detections have to run more frequently which may impair performance slightly.
-
 ```hocon
 akka.persistence {
   snapshot-store {
-    plugin = "akka.persistence.snapshot-store.sql"
-
     sql {
-      class = "Akka.Persistence.Sql.Snapshot.SqlSnapshotStore"
+      class = "Akka.Persistence.Sql.Snapshot.SqlSnapshotStore, Akka.Persistence.Sql"
       plugin-dispatcher = "akka.persistence.dispatchers.default-plugin-dispatcher"
       connection-string = ""
+
+      # Provider name is required.
+      # Refer to LinqToDb.ProviderName for values
+      # Always use a specific version if possible
+      # To avoid provider detection performance penalty
+      # Don't worry if your DB is newer than what is listed;
+      # Just pick the newest one (if yours is still newer)
       provider-name = ""
-      use-clone-connection = false
 
-      # sqlserver, postgresql, sqlite
-      table-compatibility-mode = false
-      tables.snapshot {
+      # Only set to TRUE if unit tests pass with the connection string you intend to use!
+      # This setting will go away once https://github.com/linq2db/linq2db/issues/2466 is resolved
+      use-clone-connection = true
+
+      # The database schema, table names, and column names configuration mapping.
+      # The details are described in their respective configuration block below.
+      # If set to "sqlite", "sql-server", "mysql", or "postgresql",
+      # column names will be compatible with Akka.Persistence.Sql
+      table-mapping = default
+
+      # Default serializer used as manifest serializer when applicable and payload serializer when
+      # no specific binding overrides are specified.
+      # If set to null, the default `System.Object` serializer is used.
+      serializer = null
+
+      dao = "Akka.Persistence.Sql.Snapshot.ByteArraySnapshotDao, Akka.Persistence.Sql"
+
+      # if true, tables will attempt to be created.
+      auto-initialize = true
+
+      # if true, a warning will be logged
+      # if auto-init of tables fails.
+      # set to false if you don't want this warning logged
+      # perhaps if running CI tests or similar.
+      warn-on-auto-init-fail = true
+
+      default {
         schema-name = null
-        table-name = "snapshot"
-        auto-init = true
+        snapshot {
+          table-name = "snapshot"
+          columns {
+            persistence-id = persistence_id
+            sequence-number = sequence_number
+            created = created
+            snapshot = snapshot
+            manifest = manifest
+            serializerId = serializer_id
+          }
+        }
+      }
 
-        column-names {
-          persistenceId = "persistence_id"
-          sequenceNumber = "sequence_number"
-          created = "created"
-          snapshot = "snapshot"
-          manifest = "manifest"
-          serializerId = "serializer_id"
+      sql-server {
+        schema-name = dbo
+        snapshot {
+          table-name = "SnapshotStore"
+          columns {
+            persistence-id = PersistenceId
+            sequence-number = SequenceNr
+            created = Timestamp
+            snapshot = Snapshot
+            manifest = Manifest
+            serializerId = SerializerId
+          }
+        }
+      }
+
+      sqlite {
+        schema-name = null
+        snapshot {
+          table-name = "snapshot"
+          columns {
+            persistence-id = persistence_id
+            sequence-number = sequence_nr
+            snapshot = payload
+            manifest = manifest
+            created = created_at
+            serializerId = serializer_id
+          }
+        }
+      }
+
+      postgresql {
+        schema-name = public
+        snapshot {
+          table-name = "snapshot_store"
+          columns {
+            persistence-id = persistence_id
+            sequence-number = sequence_nr
+            snapshot = payload
+            manifest = manifest
+            created = created_at
+            serializerId = serializer_id
+          }
+        }
+      }
+
+      mysql {
+        schema-name = null
+        snapshot {
+          table-name = "snapshot_store"
+          columns {
+            persistence-id = persistence_id,
+            sequence-number = sequence_nr,
+            snapshot = snapshot,
+            manifest = manifest,
+            created = created_at,
+            serializerId = serializer_id,
+          }
         }
       }
     }
