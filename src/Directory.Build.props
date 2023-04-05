@@ -20,7 +20,7 @@
     <NetCoreTestVersion>net7.0</NetCoreTestVersion>
 
     <AkkaVersion>1.5.1</AkkaVersion>
-    <AkkaHostingVersion>1.5.1</AkkaHostingVersion>
+    <AkkaHostingVersion>1.5.1.1</AkkaHostingVersion>
 
     <Linq2DbVersion>5.1.1</Linq2DbVersion>
     <LanguageExtVersion>4.4.2</LanguageExtVersion>
