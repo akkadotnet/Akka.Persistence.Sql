@@ -5,8 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Akka" />
-    <PackageReference Include="Akka.Persistence" />
     <PackageReference Include="Akka.Persistence.Query" />
     <PackageReference Include="Akka.Streams" />
     <PackageReference Include="LanguageExt.Core" />
