@@ -31,8 +31,8 @@ namespace Akka.Persistence.Sql.Db
             _connection = connection;
 
             UseDateTime =
-                !_providerName.Contains("sqlite") &&
-                !_providerName.Contains("postgresql");
+                !_providerName.ToLowerInvariant().Contains("sqlite") &&
+                !_providerName.ToLowerInvariant().Contains("postgresql");
         }
 
         public bool UseDateTime { get; }
