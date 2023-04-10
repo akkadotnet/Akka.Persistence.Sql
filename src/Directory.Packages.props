@@ -68,6 +68,7 @@
 
     <!-- Test dependencies -->
     <ItemGroup>
+      <PackageVersion Include="Akka.Hosting.TestKit" Version="$(AkkaHostingVersion)" />
       <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
       <PackageVersion Include="Docker.DotNet" Version="$(DockerDotNetVersion)" />
       <PackageVersion Include="FluentAssertions" Version="$(FluentAssertionVersion)" />
