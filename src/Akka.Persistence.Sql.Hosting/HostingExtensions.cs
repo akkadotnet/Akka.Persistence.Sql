@@ -72,7 +72,7 @@ namespace Akka.Persistence.Sql.Hosting
         ///     Thrown when <see cref="journalBuilder"/> is set and <see cref="mode"/> is set to
         ///     <see cref="PersistenceMode.SnapshotStore"/>
         /// </exception>
-        public static AkkaConfigurationBuilder WithSqlServerPersistence(
+        public static AkkaConfigurationBuilder WithSqlPersistence(
             this AkkaConfigurationBuilder builder,
             string connectionString,
             string providerName,
