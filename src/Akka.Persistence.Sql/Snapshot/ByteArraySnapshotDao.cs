@@ -320,30 +320,16 @@ namespace Akka.Persistence.Sql.Snapshot
             }
         }
 
-        // TODO: This should be converted to async
-        public void InitializeTables()
+        public async Task InitializeTables()
         {
-            using var connection = _connectionFactory.GetConnection();
-
-            try
+            await using var connection = _connectionFactory.GetConnection();
+            if (connection.UseDateTime)
             {
-                if (connection.UseDateTime)
-                {
-                    connection.CreateTable<DateTimeSnapshotRow>();
-                }
-                else
-                {
-                    connection.CreateTable<LongSnapshotRow>();
-                }
+                await connection.CreateTableAsync<DateTimeSnapshotRow>(TableOptions.CreateIfNotExists);
             }
-            catch (Exception e)
+            else
             {
-                if (_snapshotConfig.WarnOnAutoInitializeFail)
-                {
-                    _logger.Warning(
-                        e,
-                        $"Could not Create Snapshot Table {_snapshotConfig.TableConfig.SnapshotTable.Name} as requested by config.");
-                }
+                await connection.CreateTableAsync<LongSnapshotRow>(TableOptions.CreateIfNotExists);
             }
         }
     }
