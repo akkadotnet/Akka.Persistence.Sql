@@ -21,12 +21,10 @@ using Akka.Persistence.Sql.Journal.Types;
 using Akka.Persistence.Sql.Serialization;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using Akka.Util.Internal;
 using LanguageExt;
 using LinqToDB;
 using LinqToDB.Data;
 using static LanguageExt.Prelude;
-using Array = System.Array;
 
 namespace Akka.Persistence.Sql.Journal.Dao
 {
@@ -336,7 +334,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
         {
             await using var connection = ConnectionFactory.GetConnection();
 
-            await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, ShutdownToken);
+            await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.Serializable, ShutdownToken);
 
             try
             {
