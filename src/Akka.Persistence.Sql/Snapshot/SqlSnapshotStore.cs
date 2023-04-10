@@ -16,40 +16,73 @@ using Akka.Persistence.Sql.Utility;
 
 namespace Akka.Persistence.Sql.Snapshot
 {
-    public class SqlSnapshotStore : SnapshotStore
+    public class SqlSnapshotStore : SnapshotStore, IWithUnboundedStash
     {
         [Obsolete(message: "Use SqlPersistence.Get(ActorSystem).DefaultConfig instead")]
         public static readonly Configuration.Config DefaultConfiguration =
             ConfigurationFactory.FromResource<SqlSnapshotStore>("Akka.Persistence.Sql.snapshot.conf");
 
         private readonly ByteArraySnapshotDao _dao;
+        private readonly ILoggingAdapter _log;
+        private readonly SnapshotConfig _settings;
 
         public SqlSnapshotStore(Configuration.Config snapshotConfig)
         {
+            _log = Context.GetLogger();
+            
             var config = snapshotConfig.WithFallback(SqlPersistence.DefaultSnapshotConfiguration);
-
-            var snapshotConfig1 = new SnapshotConfig(config);
+            _settings = new SnapshotConfig(config);
 
             _dao = new ByteArraySnapshotDao(
-                connectionFactory: new AkkaPersistenceDataConnectionFactory(snapshotConfig1),
-                snapshotConfig: snapshotConfig1,
+                connectionFactory: new AkkaPersistenceDataConnectionFactory(_settings),
+                snapshotConfig: _settings,
                 serialization: Context.System.Serialization,
                 materializer: Materializer.CreateSystemMaterializer((ExtendedActorSystem)Context.System),
                 logger: Context.GetLogger());
+        }
 
-            if (!snapshotConfig1.AutoInitialize)
-                return;
+        public IStash Stash { get; set; }
+
+        protected override void PreStart()
+        {
+            base.PreStart();
+            Initialize().PipeTo(Self);
+            BecomeStacked(WaitingForInitialization);
+        }
+
+        private bool WaitingForInitialization(object message)
+        {
+            switch(message)
+            {
+                case Status.Success :
+                    UnbecomeStacked();
+                    Stash.UnstashAll();
+                    return true;
+                case Status.Failure msg:
+                    _log.Error(msg.Cause, "Error during {0} initialization", Self);
+                    Context.Stop(Self);
+                    return true;
+                default:
+                    Stash.Stash();
+                    return true;
+            }
+        }
+
+        private async Task<Status> Initialize()
+        {
+            if (!_settings.AutoInitialize)
+                return new Status.Success(NotUsed.Instance);
 
             try
             {
-                _dao.InitializeTables();
+                await _dao.InitializeTables();
             }
             catch (Exception e)
             {
-                Context.GetLogger().Warning(
-                    e,
-                    "Unable to Initialize Persistence Snapshot Table!");
+                return new Status.Failure(e);
             }
+
+            return Status.Success.Instance;
         }
 
         protected override async Task<SelectedSnapshot> LoadAsync(
