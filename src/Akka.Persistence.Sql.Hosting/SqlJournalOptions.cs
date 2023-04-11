@@ -8,6 +8,7 @@ using System;
 using System.Text;
 using Akka.Hosting;
 using Akka.Persistence.Hosting;
+using Akka.Persistence.Sql.Config;
 
 namespace Akka.Persistence.Sql.Hosting
 {
@@ -67,6 +68,19 @@ namespace Akka.Persistence.Sql.Hosting
         /// </summary>
         public JournalDatabaseOptions? DatabaseOptions { get; set; }
         
+        /// <summary>
+        ///     <para>
+        ///         Describe how tags are being stored inside the database. Setting this to
+        ///         <see cref="TagMode.Csv"/> will store the tags as a comma delimited value
+        ///         in a column named <c>tags</c> inside the event journal. Setting this to
+        ///         <see cref="TagMode.TagTable"/> will store the tags inside a separate
+        ///         tag table instead. 
+        ///     </para>
+        ///     <b>NOTE</b>: This is used primarily for backward compatibility,
+        ///     you leave this empty for greenfield projects.
+        /// </summary>
+        public TagMode? TagStorageMode { get; set; }
+        
         protected override Configuration.Config InternalDefaultConfig => Default;
 
         protected override StringBuilder Build(StringBuilder sb)
@@ -79,6 +93,9 @@ namespace Akka.Persistence.Sql.Hosting
             
             sb.AppendLine($"connection-string = {ConnectionString.ToHocon()}");
             sb.AppendLine($"provider-name = {ProviderName.ToHocon()}");
+
+            if (TagStorageMode is { })
+                sb.AppendLine($"tag-write-mode = {TagStorageMode.ToString().ToHocon()}");
             
             if (DatabaseOptions is { })
                 sb.AppendLine($"table-mapping = {DatabaseOptions.Mapping.Name().ToHocon()}");
@@ -86,6 +103,17 @@ namespace Akka.Persistence.Sql.Hosting
             DatabaseOptions?.Build(sb);
             
             base.Build(sb);
+            
+            if (IsDefaultPlugin)
+            {
+                sb.AppendLine("akka.persistence.query.journal.sql {");
+                sb.AppendLine($"connection-string = {ConnectionString.ToHocon()}");
+                sb.AppendLine($"provider-name = {ProviderName.ToHocon()}");
+
+                if (TagStorageMode is { })
+                    sb.AppendLine($"tag-read-mode = {TagStorageMode.ToString().ToHocon()}");
+                sb.AppendLine("}");
+            }
             
             if(QueryRefreshInterval is { })
                 sb.AppendLine($"akka.persistence.query.journal.sql.refresh-interval = {QueryRefreshInterval.ToHocon()}");
