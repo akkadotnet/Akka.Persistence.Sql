@@ -44,6 +44,7 @@
     <MySqlVersion>8.0.32.1</MySqlVersion>
 
     <TestSdkVersion>17.5.0</TestSdkVersion>
+    <BenchmarkDotNetVersion>0.13.5</BenchmarkDotNetVersion>
     <DockerDotNetVersion>3.125.13</DockerDotNetVersion>
     <FluentAssertionVersion>6.10.0</FluentAssertionVersion>
     <JetBrainsDotMemoryVersion>3.2.20220510</JetBrainsDotMemoryVersion>

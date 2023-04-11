@@ -74,6 +74,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Sql.Hostin
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Sql.Hosting.Tests", "src\Akka.Persistence.Sql.Hosting.Tests\Akka.Persistence.Sql.Hosting.Tests.csproj", "{F68A1A98-17C4-4D13-9422-D93D49886008}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Sql.Benchmarks", "src\Akka.Persistence.Sql.Benchmarks\Akka.Persistence.Sql.Benchmarks.csproj", "{1BE5B28E-0AB1-44BC-A5E8-5D352B42ACCF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Persistence.Sql.Benchmark.Common", "src\Akka.Persistence.Sql.Benchmark.Common\Akka.Persistence.Sql.Benchmark.Common.csproj", "{C9617439-6923-4257-B1E5-54BCF8B281CB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -120,6 +124,14 @@ Global
 		{F68A1A98-17C4-4D13-9422-D93D49886008}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F68A1A98-17C4-4D13-9422-D93D49886008}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F68A1A98-17C4-4D13-9422-D93D49886008}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1BE5B28E-0AB1-44BC-A5E8-5D352B42ACCF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1BE5B28E-0AB1-44BC-A5E8-5D352B42ACCF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1BE5B28E-0AB1-44BC-A5E8-5D352B42ACCF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1BE5B28E-0AB1-44BC-A5E8-5D352B42ACCF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C9617439-6923-4257-B1E5-54BCF8B281CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9617439-6923-4257-B1E5-54BCF8B281CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9617439-6923-4257-B1E5-54BCF8B281CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9617439-6923-4257-B1E5-54BCF8B281CB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -133,6 +145,8 @@ Global
 		{11DAD9A0-1DDF-4A32-BC17-091220045D1E} = {C4AC49FF-9ECF-4D38-A201-1105BBF7E628}
 		{74AFECF0-CC70-47C9-9393-2AB952B23BBD} = {C4AC49FF-9ECF-4D38-A201-1105BBF7E628}
 		{4ACEF3FD-F5B4-4C07-B85A-AD4D6AB68F4D} = {C59D2898-1994-4C40-B152-1798060051ED}
+		{1BE5B28E-0AB1-44BC-A5E8-5D352B42ACCF} = {3E392F73-EB03-4148-BC60-A1F734486190}
+		{C9617439-6923-4257-B1E5-54BCF8B281CB} = {3E392F73-EB03-4148-BC60-A1F734486190}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B99E6BB8-642A-4A68-86DF-69567CBA700A}

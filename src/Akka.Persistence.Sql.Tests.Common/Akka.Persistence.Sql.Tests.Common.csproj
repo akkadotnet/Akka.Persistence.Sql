@@ -43,9 +43,4 @@
     <ProjectReference Include="..\Akka.Persistence.Sql\Akka.Persistence.Sql.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="Akka.Persistence.Sql.Tests">
-      <HintPath>..\Akka.Persistence.Sql.Benchmark.Tests\bin\Debug\net7.0\Akka.Persistence.Sql.Tests.dll</HintPath>
-    </Reference>
-  </ItemGroup>
 </Project>
