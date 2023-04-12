@@ -18,13 +18,15 @@ using BenchmarkDotNet.Engines;
 
 namespace Akka.Persistence.Sql.Benchmarks.SqlServer
 {
-    //[Config(typeof(MicroBenchmarkConfig))]
-    [SimpleJob(RunStrategy.ColdStart, iterationCount:1, warmupCount:0)]
+    [Config(typeof(MicroBenchmarkConfig))]
+    //[SimpleJob(RunStrategy.ColdStart, iterationCount:1, warmupCount:0)]
     public class SqlServerCsvTagBenchmark
     {
-        private const string ConnectionString = "Server=localhost,9908;User Id=sa;Password=Password12!;TrustServerCertificate=true;Database=sql_tests_3d8f4ff9fff543cb8cbb0cce57b81ef6";
+        private const string ConnectionString = "Server=localhost,9936;User Id=sa;Password=Password12!;TrustServerCertificate=true;Database=sql_tests_c3da546bd02a4bd4b30f16d0e6960025";
         private const string ProviderName = "SqlServer.2019";
-        private const string TagMode = "TagTable";
+
+        [Params("TagTable", "Csv")] 
+        public string? TagMode { get; set; }
         
         private ActorSystem? _sys;
         private IReadJournal? _readJournal;
@@ -61,7 +63,7 @@ akka.persistence.query.journal.sql {{
             _materializer = _sys.Materializer();
             _readJournal = _sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
             
-            DebuggingHelpers.TraceDumpOn(_sys.Log);
+            //DebuggingHelpers.TraceDumpOn(_sys.Log);
         }
 
         [GlobalCleanup]

@@ -28,11 +28,6 @@ akka.persistence.journal {{
             ""System.Int32"" = event-tagger
         }}
     }}
-}}
-akka.persistence.query.journal.sql {{
-	connection-string = ""{fixture.ConnectionString}""
-	provider-name = {fixture.ProviderName}
-    tag-read-mode = {args[0]}
 }}")
                 .WithFallback(Persistence.DefaultConfig())
                 .WithFallback(SqlPersistence.DefaultConfiguration);
