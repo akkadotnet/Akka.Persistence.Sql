@@ -37,6 +37,8 @@ namespace Akka.Persistence.Sql.Db
 
             var fmb = new FluentMappingBuilder(mappingSchema);
             MapJournalRow(config, fmb);
+            MapMetadataRow(config, fmb);
+            MapTagRow(config, fmb);
             fmb.Build();
 
             _useCloneDataConnection = config.UseCloneConnection;
@@ -107,6 +109,11 @@ namespace Akka.Persistence.Sql.Db
 
             journalRowBuilder
                 .HasTableName(journalConfig.Name)
+                
+                .Member(r => r.Ordering)
+                .HasColumnName(columnNames.Ordering)
+                .IsIdentity()
+                .IsPrimaryKey()
 
                 .Member(r => r.Deleted)
                 .HasColumnName(columnNames.Deleted)
@@ -118,9 +125,6 @@ namespace Akka.Persistence.Sql.Db
                 .Member(r => r.Message)
                 .HasColumnName(columnNames.Message)
                 .IsNullable(false)
-
-                .Member(r => r.Ordering)
-                .HasColumnName(columnNames.Ordering)
 
                 .Member(r => r.Identifier)
                 .HasColumnName(columnNames.Identifier)
@@ -139,6 +143,13 @@ namespace Akka.Persistence.Sql.Db
                 .Member(r => r.TagArr)
                 .IsNotColumn();
 
+            if (config.ProviderName.ToLower().Contains("sqlite"))
+            {
+                journalRowBuilder
+                    .Member(r => r.Ordering)
+                    .HasDbType("INTEGER");
+            }
+            
             if (journalConfig.UseWriterUuidColumn)
             {
                 journalRowBuilder
@@ -169,22 +180,6 @@ namespace Akka.Persistence.Sql.Db
                     .HasLength(100);
             }
 
-            if (config.ProviderName.ToLower().Contains("sqlite"))
-            {
-                journalRowBuilder
-                    .Member(r => r.Ordering)
-                    .IsPrimaryKey()
-                    .HasDbType("INTEGER")
-                    .IsIdentity();
-            }
-            else
-            {
-                journalRowBuilder
-                    .Member(r => r.Ordering).IsIdentity()
-                    .Member(r => r.PersistenceId).IsPrimaryKey()
-                    .Member(r => r.SequenceNumber).IsPrimaryKey();
-            }
-
             // TODO: UseEventManifestColumn is always false
             if (config.TableConfig.UseEventManifestColumn)
             {
@@ -199,89 +194,80 @@ namespace Akka.Persistence.Sql.Db
                     .Member(r => r.EventManifest)
                     .IsNotColumn();
             }
+        }
 
-            if (config.PluginConfig.TagMode is not TagMode.Csv)
-            {
-                var tagConfig = tableConfig.TagTable;
-                var tagColumns = tagConfig.ColumnNames;
-
-                var rowBuilder = fmb.Entity<JournalTagRow>();
-                if (tableConfig.SchemaName is { })
-                    rowBuilder.HasSchemaName(tableConfig.SchemaName);
-
-                rowBuilder
-                    .HasTableName(tagConfig.Name)
-
-                    .Member(r => r.TagValue)
-                    .HasColumnName(tagColumns.Tag)
-                    .IsColumn()
-                    .IsNullable(false)
-                    .HasLength(64)
-                    .IsPrimaryKey()
-
-                    .Member(r => r.SequenceNumber)
-                    .HasColumnName(tagColumns.SequenceNumber)
-                    .IsColumn()
-                    .IsNullable(false)
-
-                    .Member(r => r.PersistenceId)
-                    .HasColumnName(tagColumns.PersistenceId)
-                    .HasLength(255)
-                    .IsColumn()
-                    .IsNullable(false)
-                    .IsPrimaryKey();
-
-                if (config.ProviderName.ToLower().Contains("sqlite"))
-                {
-                    rowBuilder
-                        .Member(r => r.OrderingId)
-                        .HasColumnName(tagColumns.OrderingId)
-                        .HasDbType("INTEGER")
-                        .IsColumn()
-                        .IsNullable(false)
-                        .IsPrimaryKey();
-
-                    rowBuilder
-                        .Member(r => r.SequenceNumber)
-                        .HasColumnName(tagColumns.SequenceNumber)
-                        .HasDbType("INTEGER")
-                        .IsColumn()
-                        .IsNullable(false);
-                }
-                else
-                {
-                    rowBuilder
-                        .Member(r => r.OrderingId)
-                        .HasColumnName(tagColumns.OrderingId)
-                        .IsColumn()
-                        .IsNullable(false)
-                        .IsPrimaryKey();
-
-                    rowBuilder
-                        .Member(r => r.SequenceNumber)
-                        .HasColumnName(tagColumns.SequenceNumber)
-                        .IsColumn()
-                        .IsNullable(false);
-                }
-            }
-
+        private static void MapMetadataRow(
+            IProviderConfig<JournalTableConfig> config,
+            FluentMappingBuilder fmb)
+        {
+            if (!config.IDaoConfig.SqlCommonCompatibilityMode)
+                return;
+            
             // Probably overkill, but we only set Metadata Mapping if specified
             // That we are in delete compatibility mode.
-            if (config.IDaoConfig.SqlCommonCompatibilityMode)
+            var tableConfig = config.TableConfig;
+            var rowBuilder = fmb.Entity<JournalMetaData>();
+            if (tableConfig.SchemaName is { })
+                rowBuilder.HasSchemaName(tableConfig.SchemaName);
+            
+            rowBuilder
+                .HasTableName(tableConfig.MetadataTable.Name)
+                
+                .Member(r => r.PersistenceId)
+                .HasColumnName(tableConfig.MetadataTable.ColumnNames.PersistenceId)
+                .HasLength(255)
+                .IsPrimaryKey()
+                
+                .Member(r => r.SequenceNumber)
+                .HasColumnName(tableConfig.MetadataTable.ColumnNames.SequenceNumber)
+                .IsPrimaryKey();
+        }
+
+        private static void MapTagRow(
+            IProviderConfig<JournalTableConfig> config,
+            FluentMappingBuilder fmb)
+        {
+            if (config.PluginConfig.TagMode is TagMode.Csv)
+                return;
+
+            var tableConfig = config.TableConfig;
+            var tagConfig = tableConfig.TagTable;
+            var tagColumns = tagConfig.ColumnNames;
+
+            var rowBuilder = fmb.Entity<JournalTagRow>();
+            if (tableConfig.SchemaName is { })
+                rowBuilder.HasSchemaName(tableConfig.SchemaName);
+
+            rowBuilder
+                .HasTableName(tagConfig.Name)
+                
+                .Member(r => r.OrderingId)
+                .HasColumnName(tagColumns.OrderingId)
+                .IsNullable(false)
+                .IsPrimaryKey()
+                
+                .Member(r => r.TagValue)
+                .HasColumnName(tagColumns.Tag)
+                .IsNullable(false)
+                .HasLength(64)
+                .IsPrimaryKey()
+                
+                .Member(r => r.PersistenceId)
+                .HasColumnName(tagColumns.PersistenceId)
+                .IsNullable(false)
+                
+                .Member(r => r.SequenceNumber)
+                .HasColumnName(tagColumns.SequenceNumber)
+                .IsNullable(false);
+            
+            if (config.ProviderName.ToLower().Contains("sqlite"))
             {
-                var rowBuilder = fmb.Entity<JournalMetaData>();
-                if (tableConfig.SchemaName is { })
-                    rowBuilder.HasSchemaName(tableConfig.SchemaName);
-
                 rowBuilder
-                    .HasTableName(tableConfig.MetadataTable.Name)
-
-                    .Member(r => r.PersistenceId)
-                    .HasColumnName(tableConfig.MetadataTable.ColumnNames.PersistenceId)
-                    .HasLength(255)
-
+                    .Member(r => r.OrderingId)
+                    .HasDbType("INTEGER")
+                    
                     .Member(r => r.SequenceNumber)
-                    .HasColumnName(tableConfig.MetadataTable.ColumnNames.SequenceNumber);
+                    .HasDbType("INTEGER");
             }
         }
 

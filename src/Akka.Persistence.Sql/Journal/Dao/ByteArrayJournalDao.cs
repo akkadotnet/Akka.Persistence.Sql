@@ -43,41 +43,17 @@ namespace Akka.Persistence.Sql.Journal.Dao
         {
             await using var connection = ConnectionFactory.GetConnection();
 
-            var journalFooter = GenerateFooter();
+            var journalFooter = JournalConfig.GenerateJournalFooter();
             await connection.CreateTableAsync<JournalRow>(TableOptions.CreateIfNotExists, journalFooter, token);
             
             if (JournalConfig.PluginConfig.TagMode is not TagMode.Csv)
-                await connection.CreateTableAsync<JournalTagRow>(TableOptions.CreateIfNotExists, cancellationToken: token);
+            {
+                var tagFooter = JournalConfig.GenerateTagFooter();
+                await connection.CreateTableAsync<JournalTagRow>(TableOptions.CreateIfNotExists, tagFooter, token);
+            }
 
             if (JournalConfig.DaoConfig.SqlCommonCompatibilityMode)
-                await connection.CreateTableAsync<JournalMetaData>(TableOptions.CreateIfNotExists, cancellationToken: token);
-        }
-
-        private string GenerateFooter()
-        {
-            var tableName = JournalConfig.TableConfig.EventJournalTable.Name;
-            var columns = JournalConfig.TableConfig.EventJournalTable.ColumnNames;
-            var journalFullTableName = string.IsNullOrEmpty(JournalConfig.TableConfig.SchemaName) 
-                ? tableName 
-                : $"{JournalConfig.TableConfig.SchemaName}.{tableName}";
-                            
-            if (JournalConfig.ProviderName.StartsWith("SqlServer"))
-                return @$";
-IF NOT EXISTS (
-    SELECT 1
-    FROM sys.indexes
-    WHERE object_id = OBJECT_ID('{journalFullTableName}')
-    AND name = 'IX_{tableName}_{columns.SequenceNumber}')
-CREATE INDEX IX_{tableName}_{columns.SequenceNumber} ON {journalFullTableName}({columns.SequenceNumber});
-
-IF NOT EXISTS (
-    SELECT 1
-    FROM sys.indexes
-    WHERE object_id = OBJECT_ID('{journalFullTableName}')
-    AND name = 'IX_{tableName}_{columns.Created}')
-CREATE INDEX IX_{tableName}_{columns.Created} ON {journalFullTableName}({columns.Created});";
-            
-            return default;
+                await connection.CreateTableAsync<JournalMetaData>(TableOptions.CreateIfNotExists, null, token);
         }
     }
 }
