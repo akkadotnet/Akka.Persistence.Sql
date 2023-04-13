@@ -4,6 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System.Collections.Generic;
 using Akka.Persistence.Journal;
 
 namespace Akka.Persistence.Sql.Benchmarks
@@ -14,10 +15,18 @@ namespace Akka.Persistence.Sql.Benchmarks
 
         public object ToJournal(object evt)
         {
-            if (evt is not int i || i is <= Const.TagLowerBound or > Const.TagUpperBound)
+            if (evt is not int i)
                 return evt;
 
-            return new Tagged(i, new[] { "TAG" });
+            return i switch
+            {
+                <= Const.TagLowerBound => evt,
+                <= Const.Tag10UpperBound => new Tagged(evt, new[] { Const.Tag10, Const.Tag100, Const.Tag1000, Const.Tag10000 }),
+                <= Const.Tag100UpperBound => new Tagged(evt, new[] { Const.Tag100, Const.Tag1000, Const.Tag10000 }),
+                <= Const.Tag1000UpperBound => new Tagged(evt, new[] { Const.Tag1000, Const.Tag10000 }),
+                <= Const.Tag10000UpperBound => new Tagged(evt, new[] { Const.Tag10000 }),
+                _ => evt
+            };
         }
     }
 }
