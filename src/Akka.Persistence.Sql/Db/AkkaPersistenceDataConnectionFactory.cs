@@ -285,6 +285,15 @@ namespace Akka.Persistence.Sql.Db
             builder
                 .HasTableName(snapshotConfig.Name)
 
+                .Member(r => r.PersistenceId)
+                .HasColumnName(snapshotConfig.ColumnNames.PersistenceId)
+                .HasLength(255)
+                .IsPrimaryKey()
+                
+                .Member(r => r.SequenceNumber)
+                .HasColumnName(snapshotConfig.ColumnNames.SequenceNumber)
+                .IsPrimaryKey()
+                
                 .Member(r => r.Created)
                 .HasColumnName(snapshotConfig.ColumnNames.Created)
 
@@ -295,15 +304,8 @@ namespace Akka.Persistence.Sql.Db
                 .Member(r => r.Payload)
                 .HasColumnName(snapshotConfig.ColumnNames.Snapshot)
 
-                .Member(r => r.SequenceNumber)
-                .HasColumnName(snapshotConfig.ColumnNames.SequenceNumber)
-
                 .Member(r => r.SerializerId)
-                .HasColumnName(snapshotConfig.ColumnNames.SerializerId)
-
-                .Member(r => r.PersistenceId)
-                .HasColumnName(snapshotConfig.ColumnNames.PersistenceId)
-                .HasLength(255);
+                .HasColumnName(snapshotConfig.ColumnNames.SerializerId);
 
             if (config.IDaoConfig.SqlCommonCompatibilityMode)
             {
@@ -327,6 +329,15 @@ namespace Akka.Persistence.Sql.Db
             builder
                 .HasTableName(snapshotConfig.Name)
 
+                .Member(r => r.PersistenceId)
+                .HasColumnName(snapshotConfig.ColumnNames.PersistenceId)
+                .HasLength(255)
+                .IsPrimaryKey()
+                
+                .Member(r => r.SequenceNumber)
+                .HasColumnName(snapshotConfig.ColumnNames.SequenceNumber)
+                .IsPrimaryKey()
+                
                 .Member(r => r.Created)
                 .HasColumnName(snapshotConfig.ColumnNames.Created)
 
@@ -337,15 +348,8 @@ namespace Akka.Persistence.Sql.Db
                 .Member(r => r.Payload)
                 .HasColumnName(snapshotConfig.ColumnNames.Snapshot)
 
-                .Member(r => r.SequenceNumber)
-                .HasColumnName(snapshotConfig.ColumnNames.SequenceNumber)
-
                 .Member(r => r.SerializerId)
-                .HasColumnName(snapshotConfig.ColumnNames.SerializerId)
-
-                .Member(r => r.PersistenceId)
-                .HasColumnName(snapshotConfig.ColumnNames.PersistenceId)
-                .HasLength(255);
+                .HasColumnName(snapshotConfig.ColumnNames.SerializerId);
 
             if (config.IDaoConfig.SqlCommonCompatibilityMode)
             {

@@ -247,5 +247,107 @@ CREATE INDEX IF NOT EXISTS {tableName}_{columns.Tag}_idx ON {tagFullTableName} (
 	        
 	        return null;
         }
+
+        public static string? GenerateSnapshotFooter(this SnapshotConfig config)
+        {
+	        var tableName = config.TableConfig.SnapshotTable.Name;
+	        var columns = config.TableConfig.SnapshotTable.ColumnNames;
+	        var fullTableName = string.IsNullOrEmpty(config.TableConfig.SchemaName)
+		        ? tableName : $"{config.TableConfig.SchemaName}.{tableName}";
+
+	        #region SqlServer
+	        if (config.ProviderName.StartsWith(ProviderName.SqlServer))
+		        return @$";
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.indexes
+    WHERE
+        object_id = OBJECT_ID('{fullTableName}') AND
+        name = 'IX_{tableName}_{columns.SequenceNumber}'
+)
+CREATE INDEX IX_{tableName}_{columns.SequenceNumber} ON {fullTableName}({columns.SequenceNumber});
+
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.indexes
+    WHERE 
+        object_id = OBJECT_ID('{fullTableName}') AND
+        name = 'IX_{tableName}_{columns.Created}'
+)
+CREATE INDEX IX_{tableName}_{columns.Created} ON {fullTableName}({columns.Created});";
+	        #endregion
+
+            #region MySql
+            if (config.ProviderName.StartsWith(ProviderName.MySql))
+                return $@";
+DROP PROCEDURE IF EXISTS AKKA_Journal_Setup;
+
+DELIMITER ??
+CREATE PROCEDURE AKKA_Journal_Setup()
+BEGIN
+	DECLARE CreatedIndexExists TINYINT UNSIGNED DEFAULT 0;
+	DECLARE SequenceIndexExists TINYINT UNSIGNED DEFAULT 0;
+
+	SELECT 1 INTO CreatedIndexExists
+	FROM information_schema.INNODB_INDEXES
+	WHERE NAME = '{tableName}_{columns.Created}_idx';
+
+	SELECT 1 INTO SequenceIndexExists
+	FROM information_schema.INNODB_INDEXES
+	WHERE NAME = '{tableName}_{columns.SequenceNumber}_idx';
+
+	IF (CreatedIndexExists = 0) THEN
+		CREATE INDEX {tableName}_{columns.Created}_idx ON {fullTableName} ({columns.Created});
+	END IF;
+
+	IF (SequenceIndexExists = 0) THEN
+		CREATE INDEX {tableName}_{columns.SequenceNumber}_idx ON {fullTableName} ({columns.SequenceNumber});
+	END IF;
+END??
+DELIMITER ;
+
+CALL AKKA_Journal_Setup();
+
+DROP PROCEDURE IF EXISTS AKKA_Journal_Setup;";
+            #endregion
+			
+            #region PostgreSql
+            // These SQL syntax should be supported from PostgreSql 9.0
+            if (config.ProviderName.StartsWith(ProviderName.PostgreSQL))
+            {
+	            fullTableName = string.IsNullOrEmpty(config.TableConfig.SchemaName) 
+		            ? tableName : $"\"{config.TableConfig.SchemaName}\".\"{tableName}\"";
+	            
+	            return $@";
+do $BLOCK$
+begin
+	begin
+		create index {tableName}_{columns.PersistenceId}_idx on {fullTableName} ({columns.PersistenceId});
+	exception
+		when duplicate_table
+		then raise notice 'index ""{tableName}_{columns.PersistenceId}_idx"" on {fullTableName} already exists, skipping';
+	end;
+
+	begin
+		create index {tableName}_{columns.SequenceNumber}_idx on {fullTableName} ({columns.SequenceNumber});
+	exception
+		when duplicate_table
+		then raise notice 'index ""{tableName}_{columns.SequenceNumber}_idx"" on {fullTableName} already exists, skipping';
+	end;
+end;
+$BLOCK$
+";
+            }
+            #endregion
+			
+            #region Sqlite
+            if (config.ProviderName.StartsWith(ProviderName.SQLite))
+	            return $@";
+CREATE INDEX IF NOT EXISTS {tableName}_{columns.PersistenceId}_idx ON {fullTableName} ({columns.PersistenceId});
+CREATE INDEX IF NOT EXISTS {tableName}_{columns.SequenceNumber}_idx ON {fullTableName} ({columns.SequenceNumber});";
+            #endregion
+
+            return null;
+        }
     }
 }

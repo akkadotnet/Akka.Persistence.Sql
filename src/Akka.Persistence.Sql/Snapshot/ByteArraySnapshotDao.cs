@@ -323,13 +323,14 @@ namespace Akka.Persistence.Sql.Snapshot
         public async Task InitializeTables()
         {
             await using var connection = _connectionFactory.GetConnection();
+            var footer = _snapshotConfig.GenerateSnapshotFooter();
             if (connection.UseDateTime)
             {
-                await connection.CreateTableAsync<DateTimeSnapshotRow>(TableOptions.CreateIfNotExists);
+                await connection.CreateTableAsync<DateTimeSnapshotRow>(TableOptions.CreateIfNotExists, footer);
             }
             else
             {
-                await connection.CreateTableAsync<LongSnapshotRow>(TableOptions.CreateIfNotExists);
+                await connection.CreateTableAsync<LongSnapshotRow>(TableOptions.CreateIfNotExists, footer);
             }
         }
     }
