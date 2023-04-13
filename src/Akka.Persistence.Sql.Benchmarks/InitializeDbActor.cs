@@ -42,7 +42,7 @@ namespace Akka.Persistence.Sql.Benchmarks
             var pending = -1;
             
             var messages = Enumerable.Range(1, Const.TotalMessages)
-                .Chunk(100000)
+                .Chunk(10000)
                 .ToList();
             
             Command<Initialize>(_ =>

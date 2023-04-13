@@ -78,15 +78,51 @@ akka.persistence.query.journal.sql {{
         }
 
         [Benchmark]
-        public async Task QueryByTag()
+        public async Task QueryByTag10()
         {
             var events = new List<EventEnvelope>();
-            var source = ((ICurrentEventsByTagQuery)_readJournal!).CurrentEventsByTag("TAG", NoOffset.Instance);
+            var source = ((ICurrentEventsByTagQuery)_readJournal!).CurrentEventsByTag(Const.Tag10, NoOffset.Instance);
             await source.RunForeach(msg =>
             {
                 events.Add(msg);
             }, _materializer);
             events.Select(e => e.SequenceNr).Should().BeEquivalentTo(Enumerable.Range(2000001, 10));
+        }
+
+        [Benchmark]
+        public async Task QueryByTag100()
+        {
+            var events = new List<EventEnvelope>();
+            var source = ((ICurrentEventsByTagQuery)_readJournal!).CurrentEventsByTag(Const.Tag100, NoOffset.Instance);
+            await source.RunForeach(msg =>
+            {
+                events.Add(msg);
+            }, _materializer);
+            events.Select(e => e.SequenceNr).Should().BeEquivalentTo(Enumerable.Range(2000001, 100));
+        }
+
+        [Benchmark]
+        public async Task QueryByTag1000()
+        {
+            var events = new List<EventEnvelope>();
+            var source = ((ICurrentEventsByTagQuery)_readJournal!).CurrentEventsByTag(Const.Tag1000, NoOffset.Instance);
+            await source.RunForeach(msg =>
+            {
+                events.Add(msg);
+            }, _materializer);
+            events.Select(e => e.SequenceNr).Should().BeEquivalentTo(Enumerable.Range(2000001, 1000));
+        }
+
+        [Benchmark]
+        public async Task QueryByTag10000()
+        {
+            var events = new List<EventEnvelope>();
+            var source = ((ICurrentEventsByTagQuery)_readJournal!).CurrentEventsByTag(Const.Tag10000, NoOffset.Instance);
+            await source.RunForeach(msg =>
+            {
+                events.Add(msg);
+            }, _materializer);
+            events.Select(e => e.SequenceNr).Should().BeEquivalentTo(Enumerable.Range(2000001, 10000));
         }
     }
 }
