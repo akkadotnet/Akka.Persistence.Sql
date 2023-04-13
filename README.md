@@ -18,6 +18,23 @@ Until backward compatibility is properly tested and documented, it is recommende
 
 ## Setup
 
+### The Easy Way, Using `Akka.Hosting`
+
+Assuming a MS SQL Server 2019 setup:
+```csharp
+var host = new HostBuilder()
+    .ConfigureServices((context, services) => {
+        services.AddAkka("my-system-name", (builder, provider) =>
+        {
+            builder.WithSqlPersistence(
+                connectionString: _myConnectionString,
+                providerName: ProviderName.SqlServer2019)
+        });
+    })
+```
+
+### The Classic Way, Using HOCON
+
 These are the minimum HOCON configuration you need to start using Akka.Persistence.Sql:
 ```hocon
 akka.persistence {
@@ -27,6 +44,10 @@ akka.persistence {
             connection-string = "{database-connection-string}"
             provider-name = "{provider-name}"
         }
+    }
+    query.journal.sql {
+        connection-string = "{database-connection-string}"
+        provider-name = "{provider-name}"
     }
     snapshot-store {
         plugin = "akka.persistence.snapshot-store.sql"
