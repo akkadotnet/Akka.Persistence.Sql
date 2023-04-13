@@ -1,31 +1,54 @@
-#### 1.4.28 Nov 18 2021 ####
+#### 1.5.2-beta1 April 12 2023 ###
 
-**Perf Enhancements and fixes to failure reporting**
+> **NOTE: This beta release is intended for greenfield projects only.**
+>
+> Until backward compatibility is properly tested and documented, it is recommended to use this plugin only on new greenfield projects that does not rely on existing persisted data.
 
-There was an issue found where persistence failures were being reported as rejections when they should not have. This has been fixed alongside some logic cleanup that should lead to more consistent performance.
+Akka.Persistence.Sql is a successor of Akka.Persistence.Linq2Db. It is being retooled to provide a better inter-compatibility with other SQL based Akka.Persistence plugin family.
 
-#### 1.4.21 July 6 2021 ####
+Currently supported database family:
+* Microsoft SQL Server
+* MS SQLite
+* System.Data.SQLite
+* PostgreSQL using binary payload
 
-**First official Release for Akka.Persistence.Sql**
+**Akka.Hosting Extension Setup**
 
-Akka.Persistence.Sql is an Akka.Net Persistence plug-in that is designed for both high performance as well as easy cross-database compatibility.
+Assuming a MS SQL Server 2019 setup:
+```csharp
+var host = new HostBuilder()
+    .ConfigureServices((context, services) => {
+        services.AddAkka("my-system-name", (builder, provider) =>
+        {
+            builder.WithSqlPersistence(
+                connectionString: _myConnectionString,
+                providerName: ProviderName.SqlServer2019)
+        });
+    })
+```
 
-There is a compatibility mode also available for those who wish to migrate from the existing Sql.Common journals.
+ProviderName is a string constant defining the database type to connect to, valid values are defined inside `LinqToDB.ProviderName` static class. Refer to the Members of [`LinqToDb.ProviderName`](https://linq2db.github.io/api/LinqToDB.ProviderName.html) for included providers.
 
-This release contains fixes for Transactions around batched writes, a fix for Sequence Number reading on Aggressive PersistAsync Usage, improved serialization/deserialization pipelines for improved write speed, and easier snapshot compatibility with Akka.Persistence.Sql.Common.
+**HOCON Configuration Setup**
 
-We are still looking for community help with adding tests/configurations for MySql and Oracle, as well as trying out the new plugin and [providing feedback](https://github.com/akkadotnet/Akka.Persistence.Sql/issues).
+```hocon
+akka.persistence {
+    journal {
+        plugin = "akka.persistence.journal.sql"
+        sql {
+            connection-string = "{database-connection-string}"
+            provider-name = "{provider-name}"
+        }
+    }
+    snapshot-store {
+        plugin = "akka.persistence.snapshot-store.sql"
+        sql {
+            connection-string = "{database-connection-string}"
+            provider-name = "{provider-name}"
+        }
+    }
+}
+```
 
-[Please refer to the project page](https://github.com/akkadotnet/Akka.Persistence.Sql/) for information on configuration.
-
-#### 0.90.1 Feb 3 2021 ####
-
-**Preview Release for Akka.Persistence.Sql**
-
-Akka.Persistence.Sql is an Akka.Net Persistence plug-in that is designed for both high performance as well as easy cross-database compatibility.
-
-This is currently marked as a preview release, with tests passing for MS Sql Server, PostgreSQL, and SQLite. We are looking for community help with adding tests, as well as trying out the new plugin and [providing feedback](https://github.com/akkadotnet/Akka.Persistence.Sql/issues).
-
-There is a compatibility mode also available for those who wish to migrate from the existing Sql.Common journals.
-
-[Please refer to the project page](https://github.com/akkadotnet/Akka.Persistence.Sql/) for information on configuration.
+* **database-connection-string**: The proper connection string to your database of choice.
+* **provider-name**: A string constant defining the database type to connect to, valid values are defined inside `LinqToDB.ProviderName` static class. Refer to the Members of [`LinqToDb.ProviderName`](https://linq2db.github.io/api/LinqToDB.ProviderName.html) for included providers.
