@@ -8,7 +8,7 @@ using System.Linq;
 using Akka.Actor;
 using Akka.Event;
 
-namespace Akka.Persistence.Sql.Benchmark.Common
+namespace Akka.Persistence.Sql.Benchmarks
 {
     public class InitializeDbActor : ReceivePersistentActor
     {

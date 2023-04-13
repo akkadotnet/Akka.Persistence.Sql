@@ -4,7 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-namespace Akka.Persistence.Sql.Benchmark.Common
+namespace Akka.Persistence.Sql.Benchmarks
 {
     internal static class Const
     {

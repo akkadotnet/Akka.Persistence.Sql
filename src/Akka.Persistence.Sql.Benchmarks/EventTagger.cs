@@ -6,7 +6,7 @@
 
 using Akka.Persistence.Journal;
 
-namespace Akka.Persistence.Sql.Benchmark.Common
+namespace Akka.Persistence.Sql.Benchmarks
 {
     public sealed class EventTagger : IWriteEventAdapter
     {

@@ -15,7 +15,13 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Akka.Persistence.Sql.Benchmark.Common\Akka.Persistence.Sql.Benchmark.Common.csproj" />
+      <ProjectReference Include="..\Akka.Persistence.Sql.Tests.Common\Akka.Persistence.Sql.Tests.Common.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="benchmark.conf">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

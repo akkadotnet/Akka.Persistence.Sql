@@ -5,16 +5,19 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Configuration;
 using Akka.Persistence.Query;
-using Akka.Persistence.Sql.Benchmark.Common;
 using Akka.Persistence.Sql.Benchmarks.Configurations;
 using Akka.Persistence.Sql.Query;
 using Akka.Streams;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Engines;
+using FluentAssertions;
 
 namespace Akka.Persistence.Sql.Benchmarks.SqlServer
 {
@@ -22,9 +25,6 @@ namespace Akka.Persistence.Sql.Benchmarks.SqlServer
     //[SimpleJob(RunStrategy.ColdStart, iterationCount:1, warmupCount:0)]
     public class SqlServerCsvTagBenchmark
     {
-        private const string ConnectionString = "Server=localhost,9936;User Id=sa;Password=Password12!;TrustServerCertificate=true;Database=sql_tests_c3da546bd02a4bd4b30f16d0e6960025";
-        private const string ProviderName = "SqlServer.2019";
-
         [Params("TagTable", "Csv")] 
         public string? TagMode { get; set; }
         
@@ -35,12 +35,16 @@ namespace Akka.Persistence.Sql.Benchmarks.SqlServer
         [GlobalSetup]
         public async Task Setup()
         {
+            var benchConfig = ConfigurationFactory.ParseString(await File.ReadAllTextAsync("benchmark.conf"));
+            var connectionString = benchConfig.GetString("benchmark.connection-string");
+            var providerName = benchConfig.GetString("benchmark.provider-name");
+            
             var config = ConfigurationFactory.ParseString(@$"
 akka.persistence.journal {{
     plugin = akka.persistence.journal.sql
     sql {{
-        connection-string = ""{ConnectionString}""
-        provider-name = ""{ProviderName}""
+        connection-string = ""{connectionString}""
+        provider-name = ""{providerName}""
         tag-write-mode = {TagMode}
         event-adapters {{
             event-tagger = ""{typeof(EventTagger).AssemblyQualifiedName}""
@@ -51,8 +55,8 @@ akka.persistence.journal {{
     }}
 }}
 akka.persistence.query.journal.sql {{
-	connection-string = ""{ConnectionString}""
-	provider-name = {ProviderName}
+	connection-string = ""{connectionString}""
+	provider-name = {providerName}
     tag-read-mode = {TagMode}
     # journal-sequence-retrieval.query-delay = 50ms
 }}")
@@ -76,14 +80,13 @@ akka.persistence.query.journal.sql {{
         [Benchmark]
         public async Task QueryByTag()
         {
-            var count = 0;
+            var events = new List<EventEnvelope>();
             var source = ((ICurrentEventsByTagQuery)_readJournal!).CurrentEventsByTag("TAG", NoOffset.Instance);
-            await source.RunForeach(_ =>
+            await source.RunForeach(msg =>
             {
-                count++;
+                events.Add(msg);
             }, _materializer);
-            if (count != 10)
-                throw new Exception($"Assertion failed, expected count: 10, received: {count}");
+            events.Select(e => e.SequenceNr).Should().BeEquivalentTo(Enumerable.Range(2000001, 10));
         }
     }
 }
