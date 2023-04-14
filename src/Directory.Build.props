@@ -4,10 +4,11 @@
   <PropertyGroup>
     <Copyright>Copyright © 2013-2023 Akka.NET Team</Copyright>
     <Authors>Akka.NET Team</Authors>
-    <PackageIconUrl>http://getakka.net/images/akkalogo.png</PackageIconUrl>
+    <PackageIcon>akkalogo.png</PackageIcon>
     <PackageProjectUrl>https://github.com/akkadotnet/Akka.Persistence.Sql</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/akkadotnet/Akka.Persistence.Sql/blob/dev/LICENSE.md</PackageLicenseUrl>
-    <PackageTags>akka;actors;actor model;Akka;concurrency</PackageTags>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>akka;actors;actor model;Akka;concurrency;persistence;sql</PackageTags>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -54,6 +55,11 @@
     <NBenchVersion>1.2.2</NBenchVersion>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)\..\docs\images\akkalogo.png" Pack="true" Visible="false" PackagePath="\" />
+    <None Include="$(MSBuildThisFileDirectory)\..\README.md" Pack="true" Visible="false" PackagePath="\" />
+  </ItemGroup>
+  
   <PropertyGroup>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
