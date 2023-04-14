@@ -54,48 +54,49 @@ CREATE INDEX IX_{tableName}_{columns.Created} ON {journalFullTableName}({columns
             #region MySql
             if (config.ProviderName.StartsWith(ProviderName.MySql))
                 return $@";
-DROP PROCEDURE IF EXISTS AKKA_Journal_Setup;
 
-DELIMITER ??
-CREATE PROCEDURE AKKA_Journal_Setup()
-BEGIN
-	DECLARE UniqueExists TINYINT UNSIGNED DEFAULT 0;
-	DECLARE CreatedIndexExists TINYINT UNSIGNED DEFAULT 0;
-	DECLARE SequenceIndexExists TINYINT UNSIGNED DEFAULT 0;
+SET @akka_journal_setup = IF(
+	EXISTS (
+		SELECT 1
+		FROM information_schema.TABLE_CONSTRAINTS
+		WHERE
+        	CONSTRAINT_SCHEMA = DATABASE() AND
+        	TABLE_NAME = '{tableName}' AND
+        	CONSTRAINT_NAME   = '{columns.PersistenceId}' AND
+        	CONSTRAINT_TYPE   = 'UNIQUE'
+	), 
+	'SELECT ''Unique constraint already exist. Skipping.'';',
+	'ALTER TABLE {journalFullTableName} ADD UNIQUE ({columns.PersistenceId}, {columns.SequenceNumber})'
+);
+PREPARE akka_statement_journal_setup FROM @akka_journal_setup;
+EXECUTE akka_statement_journal_setup;
+DEALLOCATE PREPARE akka_statement_journal_setup;
 
-	SELECT 1 INTO UniqueExists
-	FROM information_schema.TABLE_CONSTRAINTS
-	WHERE
-        CONSTRAINT_SCHEMA = DATABASE() AND
-        TABLE_NAME = '{tableName}' AND
-        CONSTRAINT_NAME   = '{columns.PersistenceId}' AND
-        CONSTRAINT_TYPE   = 'UNIQUE';
+SET @akka_journal_setup = IF(
+	EXISTS (
+		SELECT 1
+		FROM information_schema.INNODB_INDEXES
+		WHERE NAME = '{tableName}_{columns.Created}_idx'
+	), 
+	'SELECT ''Index {tableName}_{columns.Created}_idx already exist. Skipping.'';',
+	'CREATE INDEX {tableName}_{columns.Created}_idx ON {journalFullTableName} ({columns.Created})'
+);
+PREPARE akka_statement_journal_setup FROM @akka_journal_setup;
+EXECUTE akka_statement_journal_setup;
+DEALLOCATE PREPARE akka_statement_journal_setup;
 
-	SELECT 1 INTO CreatedIndexExists
-	FROM information_schema.INNODB_INDEXES
-	WHERE NAME = '{tableName}_{columns.Created}_idx';
-
-	SELECT 1 INTO SequenceIndexExists
-	FROM information_schema.INNODB_INDEXES
-	WHERE NAME = '{tableName}_{columns.SequenceNumber}_idx';
-
-	IF (UniqueExists = 0) THEN
-		ALTER TABLE {journalFullTableName} ADD UNIQUE ({columns.PersistenceId}, {columns.SequenceNumber});
-	END IF;
-
-	IF (CreatedIndexExists = 0) THEN
-		CREATE INDEX {tableName}_{columns.Created}_idx ON {journalFullTableName} ({columns.Created});
-	END IF;
-
-	IF (SequenceIndexExists = 0) THEN
-		CREATE INDEX {tableName}_{columns.SequenceNumber}_idx ON {journalFullTableName} ({columns.SequenceNumber});
-	END IF;
-END??
-DELIMITER ;
-
-CALL AKKA_Journal_Setup();
-
-DROP PROCEDURE IF EXISTS AKKA_Journal_Setup;";
+SET @akka_journal_setup = IF(
+	EXISTS (
+		SELECT 1
+		FROM information_schema.INNODB_INDEXES
+		WHERE NAME = '{tableName}_{columns.SequenceNumber}_idx'
+	), 
+	'SELECT ''Index {tableName}_{columns.SequenceNumber}_idx already exist. Skipping.'';',
+	'CREATE INDEX {tableName}_{columns.SequenceNumber}_idx ON {journalFullTableName} ({columns.SequenceNumber})'
+);
+PREPARE akka_statement_journal_setup FROM @akka_journal_setup;
+EXECUTE akka_statement_journal_setup;
+DEALLOCATE PREPARE akka_statement_journal_setup;";
             #endregion
 			
             #region PostgreSql
@@ -116,10 +117,10 @@ begin
 	end;
 
 	begin
-		create index {tableName}_{columns.PersistenceId}_idx on {journalFullTableName} ({columns.PersistenceId});
+		create index {tableName}_{columns.Created}_idx on {journalFullTableName} ({columns.Created});
 	exception
 		when duplicate_table
-		then raise notice 'index ""{tableName}_{columns.PersistenceId}_idx"" on {journalFullTableName} already exists, skipping';
+		then raise notice 'index ""{tableName}_{columns.Created}_idx"" on {journalFullTableName} already exists, skipping';
 	end;
 
 	begin
@@ -138,7 +139,7 @@ $BLOCK$
             if (config.ProviderName.StartsWith(ProviderName.SQLite))
 	            return $@";
 CREATE UNIQUE INDEX IF NOT EXISTS {tableName}_uq ON {journalFullTableName} ({columns.PersistenceId}, {columns.SequenceNumber});
-CREATE INDEX IF NOT EXISTS {tableName}_{columns.PersistenceId}_idx ON {journalFullTableName} ({columns.PersistenceId});
+CREATE INDEX IF NOT EXISTS {tableName}_{columns.Created}_idx ON {journalFullTableName} ({columns.Created});
 CREATE INDEX IF NOT EXISTS {tableName}_{columns.SequenceNumber}_idx ON {journalFullTableName} ({columns.SequenceNumber});";
             #endregion
 			
@@ -178,35 +179,32 @@ CREATE INDEX IX_{tableName}_{columns.Tag} ON {tagFullTableName} ({columns.Tag});
 	        #region MySql
 	        if (config.ProviderName.StartsWith(ProviderName.MySql))
 		        return $@";
-DROP PROCEDURE IF EXISTS AKKA_Tag_Setup;
 
-DELIMITER ??
-CREATE PROCEDURE AKKA_Tag_Setup()
-BEGIN
-	DECLARE DeleteIndexExists TINYINT UNSIGNED DEFAULT 0;
-	DECLARE TagIndexExists TINYINT UNSIGNED DEFAULT 0;
+SET @akka_journal_setup = IF(
+	EXISTS (
+		SELECT 1
+		FROM information_schema.INNODB_INDEXES
+		WHERE NAME = '{tableName}_{columns.PersistenceId}_{columns.SequenceNumber}_idx'
+	), 
+	'SELECT ''Index {tableName}_{columns.PersistenceId}_{columns.SequenceNumber}_idx already exist. Skipping.'';',
+	'CREATE INDEX {tableName}_{columns.PersistenceId}_{columns.SequenceNumber}_idx ON {tagFullTableName} ({columns.PersistenceId}, {columns.SequenceNumber})'
+);
+PREPARE akka_statement_journal_setup FROM @akka_journal_setup;
+EXECUTE akka_statement_journal_setup;
+DEALLOCATE PREPARE akka_statement_journal_setup;
 
-	SELECT 1 INTO DeleteIndexExists
-	FROM information_schema.INNODB_INDEXES
-	WHERE NAME = '{tableName}_{columns.PersistenceId}_{columns.SequenceNumber}_idx';
-
-	SELECT 1 INTO TagIndexExists
-	FROM information_schema.INNODB_INDEXES
-	WHERE NAME = '{tableName}_{columns.Tag}_idx';
-
-	IF (DeleteIndexExists = 0) THEN
-		CREATE INDEX {tableName}_{columns.PersistenceId}_{columns.SequenceNumber}_idx ON {tagFullTableName} ({columns.PersistenceId}, {columns.SequenceNumber});
-	END IF;
-
-	IF (TagIndexExists = 0) THEN
-		CREATE INDEX {tableName}_{columns.Tag}_idx ON {tagFullTableName} ({columns.Tag});
-	END IF;
-END??
-DELIMITER ;
-
-CALL AKKA_Journal_Setup();
-
-DROP PROCEDURE IF EXISTS AKKA_Tag_Setup;";
+SET @akka_journal_setup = IF(
+	EXISTS (
+		SELECT 1
+		FROM information_schema.INNODB_INDEXES
+		WHERE NAME = '{tableName}_{columns.Tag}_idx'
+	), 
+	'SELECT ''Index {tableName}_{columns.Tag}_idx already exist. Skipping.'';',
+	'CREATE INDEX {tableName}_{columns.Tag}_idx ON {tagFullTableName} ({columns.Tag})'
+);
+PREPARE akka_statement_journal_setup FROM @akka_journal_setup;
+EXECUTE akka_statement_journal_setup;
+DEALLOCATE PREPARE akka_statement_journal_setup;";
 	        #endregion
 			
 	        #region PostgreSql
@@ -280,35 +278,32 @@ CREATE INDEX IX_{tableName}_{columns.Created} ON {fullTableName}({columns.Create
             #region MySql
             if (config.ProviderName.StartsWith(ProviderName.MySql))
                 return $@";
-DROP PROCEDURE IF EXISTS AKKA_Journal_Setup;
 
-DELIMITER ??
-CREATE PROCEDURE AKKA_Journal_Setup()
-BEGIN
-	DECLARE CreatedIndexExists TINYINT UNSIGNED DEFAULT 0;
-	DECLARE SequenceIndexExists TINYINT UNSIGNED DEFAULT 0;
+SET @akka_journal_setup = IF(
+	EXISTS (
+		SELECT 1
+		FROM information_schema.INNODB_INDEXES
+		WHERE NAME = '{tableName}_{columns.SequenceNumber}_idx'
+	), 
+	'SELECT ''Index {tableName}_{columns.SequenceNumber}_idx already exist. Skipping.'';',
+	'CREATE INDEX {tableName}_{columns.SequenceNumber}_idx ON {fullTableName} ({columns.SequenceNumber})'
+);
+PREPARE akka_statement_journal_setup FROM @akka_journal_setup;
+EXECUTE akka_statement_journal_setup;
+DEALLOCATE PREPARE akka_statement_journal_setup;
 
-	SELECT 1 INTO CreatedIndexExists
-	FROM information_schema.INNODB_INDEXES
-	WHERE NAME = '{tableName}_{columns.Created}_idx';
-
-	SELECT 1 INTO SequenceIndexExists
-	FROM information_schema.INNODB_INDEXES
-	WHERE NAME = '{tableName}_{columns.SequenceNumber}_idx';
-
-	IF (CreatedIndexExists = 0) THEN
-		CREATE INDEX {tableName}_{columns.Created}_idx ON {fullTableName} ({columns.Created});
-	END IF;
-
-	IF (SequenceIndexExists = 0) THEN
-		CREATE INDEX {tableName}_{columns.SequenceNumber}_idx ON {fullTableName} ({columns.SequenceNumber});
-	END IF;
-END??
-DELIMITER ;
-
-CALL AKKA_Journal_Setup();
-
-DROP PROCEDURE IF EXISTS AKKA_Journal_Setup;";
+SET @akka_journal_setup = IF(
+	EXISTS (
+		SELECT 1
+		FROM information_schema.INNODB_INDEXES
+		WHERE NAME = '{tableName}_{columns.Created}_idx'
+	), 
+	'SELECT ''Index {tableName}_{columns.Created}_idx already exist. Skipping.'';',
+	'CREATE INDEX {tableName}_{columns.Created}_idx ON {fullTableName} ({columns.Created})'
+);
+PREPARE akka_statement_journal_setup FROM @akka_journal_setup;
+EXECUTE akka_statement_journal_setup;
+DEALLOCATE PREPARE akka_statement_journal_setup;";
             #endregion
 			
             #region PostgreSql
@@ -322,17 +317,17 @@ DROP PROCEDURE IF EXISTS AKKA_Journal_Setup;";
 do $BLOCK$
 begin
 	begin
-		create index {tableName}_{columns.PersistenceId}_idx on {fullTableName} ({columns.PersistenceId});
-	exception
-		when duplicate_table
-		then raise notice 'index ""{tableName}_{columns.PersistenceId}_idx"" on {fullTableName} already exists, skipping';
-	end;
-
-	begin
 		create index {tableName}_{columns.SequenceNumber}_idx on {fullTableName} ({columns.SequenceNumber});
 	exception
 		when duplicate_table
 		then raise notice 'index ""{tableName}_{columns.SequenceNumber}_idx"" on {fullTableName} already exists, skipping';
+	end;
+
+	begin
+		create index {tableName}_{columns.Created}_idx on {fullTableName} ({columns.Created});
+	exception
+		when duplicate_table
+		then raise notice 'index ""{tableName}_{columns.Created}_idx"" on {fullTableName} already exists, skipping';
 	end;
 end;
 $BLOCK$
@@ -343,8 +338,8 @@ $BLOCK$
             #region Sqlite
             if (config.ProviderName.StartsWith(ProviderName.SQLite))
 	            return $@";
-CREATE INDEX IF NOT EXISTS {tableName}_{columns.PersistenceId}_idx ON {fullTableName} ({columns.PersistenceId});
-CREATE INDEX IF NOT EXISTS {tableName}_{columns.SequenceNumber}_idx ON {fullTableName} ({columns.SequenceNumber});";
+CREATE INDEX IF NOT EXISTS {tableName}_{columns.SequenceNumber}_idx ON {fullTableName} ({columns.SequenceNumber});
+CREATE INDEX IF NOT EXISTS {tableName}_{columns.Created}_idx ON {fullTableName} ({columns.Created});";
             #endregion
 
             return null;

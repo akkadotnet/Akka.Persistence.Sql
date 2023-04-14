@@ -254,6 +254,7 @@ namespace Akka.Persistence.Sql.Db
                 
                 .Member(r => r.PersistenceId)
                 .HasColumnName(tagColumns.PersistenceId)
+                .HasLength(255)
                 .IsNullable(false)
                 
                 .Member(r => r.SequenceNumber)
