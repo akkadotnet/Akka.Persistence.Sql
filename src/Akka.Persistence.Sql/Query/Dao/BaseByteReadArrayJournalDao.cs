@@ -23,6 +23,7 @@ using Akka.Util;
 using LinqToDB;
 using LinqToDB.Data;
 using LinqToDB.Tools;
+using TaskExtensions = LanguageExt.TaskExtensions;
 
 namespace Akka.Persistence.Sql.Query.Dao
 {
@@ -197,11 +198,10 @@ namespace Akka.Persistence.Sql.Query.Dao
             await using var connection = ConnectionFactory.GetConnection();
 
             // persistence-jdbc does not filter deleted here.
-            return await connection
+            var result = await connection
                 .GetTable<JournalRow>()
-                .Select(r => r.Ordering)
-                .OrderByDescending(r => r)
-                .FirstOrDefaultAsync();
+                .MaxAsync<JournalRow, long?>(r => r.Ordering);
+            return result ?? 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -254,6 +254,11 @@ namespace Akka.Persistence.Sql.Query.Dao
             var tagRows = await connection
                 .GetTable<JournalTagRow>()
                 .Where(r => r.OrderingId.In(toAdd.Select(row => row.Ordering).Distinct()))
+                .Select(r => new TagRow
+                {
+                    OrderingId = r.OrderingId,
+                    TagValue = r.TagValue
+                })
                 .ToListAsync();
 
             foreach (var journalRow in toAdd)
