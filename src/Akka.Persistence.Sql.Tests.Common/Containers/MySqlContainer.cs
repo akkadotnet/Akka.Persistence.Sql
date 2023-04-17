@@ -26,20 +26,22 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
 
         private readonly DbConnectionStringBuilder _connectionStringBuilder;
 
-        public MySqlContainer() : base("mysql", "latest", $"mysql-{Guid.NewGuid():N}")
+        public MySqlContainer() : base("mysql", "8", $"mysql-{Guid.NewGuid():N}")
         {
             _connectionStringBuilder = new DbConnectionStringBuilder
             {
                 ["Server"] = "localhost",
                 ["Port"] = Port.ToString(),
                 ["User Id"] = User,
-                ["Password"] = Password
+                ["Password"] = Password,
+                ["allowPublicKeyRetrieval"] = "true",
+                ["Allow User Variables"] = "true"
             };
         }
 
         public override string ConnectionString => _connectionStringBuilder.ToString();
 
-        public override string ProviderName => LinqToDB.ProviderName.MySql;
+        public override string ProviderName => LinqToDB.ProviderName.MySqlOfficial;
 
         private int Port { get; } = ThreadLocalRandom.Current.Next(9000, 10000);
 
@@ -70,23 +72,56 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
             parameters.Env = new[]
             {
                 $"MYSQL_ROOT_PASSWORD={Password}",
-                $"MYSQL_DATABASE={DatabaseName}"
             };
+        }
+
+        protected override async Task AfterContainerStartedAsync()
+        {
+            await using var connection = new MySqlConnection(ConnectionString);
+            await connection.OpenAsync();
+            
+            await using var command = new MySqlCommand
+            {
+                CommandText = "SET GLOBAL max_connections = 999;",
+                Connection = connection
+            };
+            await command.ExecuteNonQueryAsync();
+            await connection.CloseAsync();
+            
+            await base.AfterContainerStartedAsync();
         }
 
         public override async Task InitializeDbAsync()
         {
-            GenerateDatabaseName();
+            _connectionStringBuilder["Database"] = "sys";
 
             await using var connection = new MySqlConnection(ConnectionString);
             await connection.OpenAsync();
 
+            if (!string.IsNullOrWhiteSpace(DatabaseName))
+            {
+                try
+                {
+                    await using var dropCommand = new MySqlCommand
+                    {
+                        CommandText = @$"DROP DATABASE IF EXISTS `{DatabaseName}`;",
+                        Connection = connection
+                    };
+                    await dropCommand.ExecuteNonQueryAsync();
+                }
+                catch
+                {
+                    // no-op
+                }
+            }
+            
+            GenerateDatabaseName();
+            
             await using var command = new MySqlCommand
             {
-                CommandText = $"CREATE DATABASE {DatabaseName}",
+                CommandText = $"CREATE DATABASE `{DatabaseName}`;",
                 Connection = connection
             };
-
             await command.ExecuteNonQueryAsync();
             await connection.CloseAsync();
         }

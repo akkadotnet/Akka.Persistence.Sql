@@ -13,6 +13,7 @@
     <PackageReference Include="Akka.Persistence.Sqlite" />
     <PackageReference Include="Akka.Persistence.SqlServer" />
     <PackageReference Include="Akka.Persistence.PostgreSql" />
+    <PackageReference Include="Akka.Persistence.MySql" />
     <PackageReference Include="Akka.Serialization.Hyperion" />
 
     <PackageReference Include="Docker.DotNet" />
@@ -21,6 +22,8 @@
     <PackageReference Include="Microsoft.Data.SqlClient" />
 
     <PackageReference Include="System.Data.SQLite.Core" />
+
+    <PackageReference Include="MySql.Data" />
 
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio">
