@@ -69,14 +69,13 @@ namespace Akka.Persistence.Sql.Db
 
             var fmb = new FluentMappingBuilder(mappingSchema);
 
-            if (config.ProviderName.ToLower().Contains("sqlite") ||
-                config.ProviderName.ToLower().Contains("postgresql"))
+            if (config.ProviderName.ToLower().Contains("sqlserver"))
             {
-                MapLongSnapshotRow(config, fmb);
+                MapDateTimeSnapshotRow(config, fmb);
             }
             else
             {
-                MapDateTimeSnapshotRow(config, fmb);
+                MapLongSnapshotRow(config, fmb);
             }
 
             fmb.Build();
@@ -143,6 +142,13 @@ namespace Akka.Persistence.Sql.Db
                 .Member(r => r.TagArr)
                 .IsNotColumn();
 
+            if (config.ProviderName.StartsWith(ProviderName.MySql))
+            {
+                journalRowBuilder
+                    .Member(r => r.Message)
+                    .HasDbType("LONGBLOB");
+            }
+            
             if (config.ProviderName.ToLower().Contains("sqlite"))
             {
                 journalRowBuilder
@@ -308,6 +314,13 @@ namespace Akka.Persistence.Sql.Db
                 .Member(r => r.SerializerId)
                 .HasColumnName(snapshotConfig.ColumnNames.SerializerId);
 
+            if (config.ProviderName.StartsWith(ProviderName.MySql))
+            {
+                builder
+                    .Member(r => r.Payload)
+                    .HasDbType("LONGBLOB");
+            }
+            
             if (config.IDaoConfig.SqlCommonCompatibilityMode)
             {
                 //builder.Member(r => r.Created)
@@ -352,6 +365,13 @@ namespace Akka.Persistence.Sql.Db
                 .Member(r => r.SerializerId)
                 .HasColumnName(snapshotConfig.ColumnNames.SerializerId);
 
+            if (config.ProviderName.StartsWith(ProviderName.MySql))
+            {
+                builder
+                    .Member(r => r.Payload)
+                    .HasDbType("LONGBLOB");
+            }
+            
             if (config.IDaoConfig.SqlCommonCompatibilityMode)
             {
                 //builder.Member(r => r.Created)
