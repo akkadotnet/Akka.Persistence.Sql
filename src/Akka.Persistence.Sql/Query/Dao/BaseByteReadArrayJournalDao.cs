@@ -253,7 +253,7 @@ namespace Akka.Persistence.Sql.Query.Dao
             var result = new List<JournalRow>();
             foreach (var row in res)
             {
-                row.row.TagArr = row.tags.Split(';');
+                row.row.TagArr = row.tags?.Split(';') ?? Array.Empty<string>();
                 result.Add(row.row);
             }
             return result;
