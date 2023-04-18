@@ -21,7 +21,6 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Util;
 using LinqToDB;
-using LinqToDB.Tools;
 
 namespace Akka.Persistence.Sql.Query.Dao
 {
@@ -247,19 +246,21 @@ namespace Akka.Persistence.Sql.Query.Dao
                 {
                     row = jr,
                     tags = tagTable
-                    .Where(r => r.OrderingId == jr.Ordering)
-                    .StringAggregate(";", r => r.TagValue)
-                    .ToValue()
+                        .Where(r => r.OrderingId == jr.Ordering)
+                        .StringAggregate(";", r => r.TagValue)
+                        .ToValue(),
                 };
 
             var res = await q.ToListAsync();
 
             var result = new List<JournalRow>();
+
             foreach (var row in res)
             {
                 row.row.TagArr = row.tags?.Split(';') ?? Array.Empty<string>();
                 result.Add(row.row);
             }
+
             return result;
         }
     }

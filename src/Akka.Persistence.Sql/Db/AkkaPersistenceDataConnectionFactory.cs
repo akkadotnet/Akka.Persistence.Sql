@@ -387,7 +387,7 @@ namespace Akka.Persistence.Sql.Db
                     _opts.ConnectionOptions.ProviderName,
                     new DataConnection(_opts)
                     {
-                        RetryPolicy = _policy
+                        RetryPolicy = _policy,
                     });
 
             var connection = _cloneConnection.Value.Clone();
