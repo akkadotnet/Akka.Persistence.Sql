@@ -96,14 +96,14 @@ namespace Akka.Persistence.Sql.Hosting
             {
                 ConnectionString = connectionString,
                 ProviderName = providerName,
-                AutoInitialize = autoInitialize
+                AutoInitialize = autoInitialize,
             };
 
             if (schemaName is { })
             {
                 journalOpt.DatabaseOptions = new JournalDatabaseOptions(DatabaseMapping.Default)
                 {
-                    SchemaName = schemaName
+                    SchemaName = schemaName,
                 };
             }
 
@@ -115,14 +115,14 @@ namespace Akka.Persistence.Sql.Hosting
             {
                 ConnectionString = connectionString,
                 ProviderName = providerName,
-                AutoInitialize = autoInitialize
+                AutoInitialize = autoInitialize,
             };
 
             if (schemaName is { })
             {
                 snapshotOpt.DatabaseOptions = new SnapshotDatabaseOptions(DatabaseMapping.Default)
                 {
-                    SchemaName = schemaName
+                    SchemaName = schemaName,
                 };
             }
 
@@ -131,7 +131,7 @@ namespace Akka.Persistence.Sql.Hosting
                 PersistenceMode.Journal => builder.WithSqlPersistence(journalOpt),
                 PersistenceMode.SnapshotStore => builder.WithSqlPersistence(null, snapshotOpt),
                 PersistenceMode.Both => builder.WithSqlPersistence(journalOpt, snapshotOpt),
-                _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Invalid PersistenceMode defined.")
+                _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Invalid PersistenceMode defined."),
             };
         }
 
@@ -245,7 +245,7 @@ namespace Akka.Persistence.Sql.Hosting
                         .AddHocon(journalOptions.ToConfig(), HoconAddMode.Prepend)
                         .AddHocon(snapshotOptions.ToConfig(), HoconAddMode.Prepend)
                         .AddHocon(journalOptions.DefaultConfig, HoconAddMode.Append)
-                        .AddHocon(snapshotOptions.DefaultConfig, HoconAddMode.Append)
+                        .AddHocon(snapshotOptions.DefaultConfig, HoconAddMode.Append),
             };
         }
     }

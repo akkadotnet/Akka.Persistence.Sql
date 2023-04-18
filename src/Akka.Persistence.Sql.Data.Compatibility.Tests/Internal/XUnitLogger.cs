@@ -45,7 +45,7 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
             => logLevel switch
             {
                 LogLevel.None => false,
-                _ => logLevel >= _logLevel
+                _ => logLevel >= _logLevel,
             };
 
         public IDisposable BeginScope<TState>(TState state)
@@ -61,7 +61,7 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
                 LogLevel.Information => "INF",
                 LogLevel.Warning => "WRN",
                 LogLevel.Trace => "DBG",
-                _ => "???"
+                _ => "???",
             };
 
             var msg = $"{DateTime.Now}:{level}:{_category}:{eventId} {message}";

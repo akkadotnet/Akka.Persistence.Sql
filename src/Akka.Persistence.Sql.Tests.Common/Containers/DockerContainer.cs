@@ -77,10 +77,10 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
                             "reference",
                             new Dictionary<string, bool>
                             {
-                                { FullImageName, true }
+                                { FullImageName, true },
                             }
-                        }
-                    }
+                        },
+                    },
                 });
 
             if (images.Count == 0)
@@ -119,7 +119,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
                     Follow = true,
                     ShowStdout = true,
                     ShowStderr = true,
-                    Timestamps = true
+                    Timestamps = true,
                 });
 
             _readDockerTask = ReadDockerStreamAsync();

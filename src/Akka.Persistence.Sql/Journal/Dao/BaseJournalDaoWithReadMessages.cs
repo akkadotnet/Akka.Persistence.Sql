@@ -116,7 +116,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                                     refreshInterval.Value.Item2,
                                     () => RetrieveNextBatch(opt.seqNr)),
 
-                            _ => InvalidFlowThrowHelper(opt)
+                            _ => InvalidFlowThrowHelper(opt),
                         };
                     })
                 .SelectMany(r => r);

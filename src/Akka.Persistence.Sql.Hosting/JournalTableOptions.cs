@@ -25,7 +25,7 @@ namespace Akka.Persistence.Sql.Hosting
             MessageColumnName = "message",
             IdentifierColumnName = "identifier",
             ManifestColumnName = "manifest",
-            WriterUuidColumnName = "writer_uuid"
+            WriterUuidColumnName = "writer_uuid",
         };
 
         public static JournalTableOptions SqlServer => new()
@@ -41,7 +41,7 @@ namespace Akka.Persistence.Sql.Hosting
             TagsColumnName = "Tags",
             MessageColumnName = "Payload",
             IdentifierColumnName = "SerializerId",
-            ManifestColumnName = "Manifest"
+            ManifestColumnName = "Manifest",
         };
 
         public static JournalTableOptions Sqlite => new()
@@ -57,7 +57,7 @@ namespace Akka.Persistence.Sql.Hosting
             TagsColumnName = "tags",
             MessageColumnName = "payload",
             IdentifierColumnName = "serializer_id",
-            ManifestColumnName = "manifest"
+            ManifestColumnName = "manifest",
         };
 
         public static JournalTableOptions PostgreSql => new()
@@ -73,7 +73,7 @@ namespace Akka.Persistence.Sql.Hosting
             TagsColumnName = "tags",
             MessageColumnName = "payload",
             IdentifierColumnName = "serializer_id",
-            ManifestColumnName = "manifest"
+            ManifestColumnName = "manifest",
         };
 
         public static JournalTableOptions MySql => new()
@@ -89,7 +89,7 @@ namespace Akka.Persistence.Sql.Hosting
             TagsColumnName = "tags",
             MessageColumnName = "payload",
             IdentifierColumnName = "serializer_id",
-            ManifestColumnName = "manifest"
+            ManifestColumnName = "manifest",
         };
 
         public bool? UseWriterUuidColumn { get; set; }

@@ -30,7 +30,7 @@ akka.persistence.journal.sql {
             var opt = new SqlJournalOptions
             {
                 ConnectionString = "a",
-                ProviderName = "b"
+                ProviderName = "b",
             };
             var actualConfig = opt.ToConfig().WithFallback(SqlPersistence.DefaultConfiguration);
 
@@ -102,13 +102,13 @@ akka.persistence.journal.sql {
                         MessageColumnName = "g",
                         IdentifierColumnName = "h",
                         ManifestColumnName = "i",
-                        WriterUuidColumnName = "j"
+                        WriterUuidColumnName = "j",
                     },
                     MetadataTable = new MetadataTableOptions
                     {
                         TableName = "bb",
                         PersistenceIdColumnName = "a",
-                        SequenceNumberColumnName = "b"
+                        SequenceNumberColumnName = "b",
                     },
                     TagTable = new TagTableOptions
                     {
@@ -116,9 +116,9 @@ akka.persistence.journal.sql {
                         OrderingColumnName = "a",
                         TagColumnName = "b",
                         PersistenceIdColumnName = "c",
-                        SequenceNumberColumnName = "d"
-                    }
-                }
+                        SequenceNumberColumnName = "d",
+                    },
+                },
             };
 
             var fullConfig = opt.ToConfig();

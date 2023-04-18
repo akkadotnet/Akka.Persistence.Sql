@@ -31,7 +31,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
                 ["Server"] = $"localhost,{Port}",
                 ["User Id"] = User,
                 ["Password"] = Password,
-                ["TrustServerCertificate"] = "true"
+                ["TrustServerCertificate"] = "true",
             };
 
         public override string ConnectionString => _connectionStringBuilder.ToString();
@@ -53,22 +53,22 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         {
             parameters.ExposedPorts = new Dictionary<string, EmptyStruct>
             {
-                ["1433/tcp"] = new()
+                ["1433/tcp"] = new(),
             };
 
             parameters.HostConfig = new HostConfig
             {
                 PortBindings = new Dictionary<string, IList<PortBinding>>
                 {
-                    ["1433/tcp"] = new List<PortBinding> { new() { HostPort = $"{Port}" } }
-                }
+                    ["1433/tcp"] = new List<PortBinding> { new() { HostPort = $"{Port}" } },
+                },
             };
 
             parameters.Env = new[]
             {
                 "ACCEPT_EULA=Y",
                 $"MSSQL_SA_PASSWORD={Password}",
-                "MSSQL_PID=Express"
+                "MSSQL_PID=Express",
             };
         }
 
@@ -84,7 +84,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
             await using var command = new SqlCommand
             {
                 CommandText = $"CREATE DATABASE {DatabaseName}",
-                Connection = connection
+                Connection = connection,
             };
 
             await command.ExecuteNonQueryAsync();

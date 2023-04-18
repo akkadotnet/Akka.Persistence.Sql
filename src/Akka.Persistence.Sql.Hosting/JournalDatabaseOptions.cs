@@ -19,33 +19,33 @@ namespace Akka.Persistence.Sql.Hosting
         {
             JournalTable = JournalTableOptions.Default,
             MetadataTable = MetadataTableOptions.Default,
-            TagTable = TagTableOptions.Default
+            TagTable = TagTableOptions.Default,
         };
 
         public static JournalDatabaseOptions SqlServer => new(DatabaseMapping.SqlServer)
         {
             SchemaName = "dbo",
             JournalTable = JournalTableOptions.SqlServer,
-            MetadataTable = MetadataTableOptions.SqlServer
+            MetadataTable = MetadataTableOptions.SqlServer,
         };
 
         public static JournalDatabaseOptions Sqlite => new(DatabaseMapping.Sqlite)
         {
             JournalTable = JournalTableOptions.Sqlite,
-            MetadataTable = MetadataTableOptions.Sqlite
+            MetadataTable = MetadataTableOptions.Sqlite,
         };
 
         public static JournalDatabaseOptions PostgreSql => new(DatabaseMapping.PostgreSql)
         {
             SchemaName = "public",
             JournalTable = JournalTableOptions.PostgreSql,
-            MetadataTable = MetadataTableOptions.PostgreSql
+            MetadataTable = MetadataTableOptions.PostgreSql,
         };
 
         public static JournalDatabaseOptions MySql => new(DatabaseMapping.MySql)
         {
             JournalTable = JournalTableOptions.MySql,
-            MetadataTable = MetadataTableOptions.MySql
+            MetadataTable = MetadataTableOptions.MySql,
         };
 
         public DatabaseMapping Mapping { get; }

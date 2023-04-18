@@ -17,7 +17,7 @@ namespace Akka.Persistence.Sql.Hosting
             OrderingColumnName = "ordering_id",
             TagColumnName = "tag",
             PersistenceIdColumnName = "persistence_id",
-            SequenceNumberColumnName = "sequence_nr"
+            SequenceNumberColumnName = "sequence_nr",
         };
 
         public string? TableName { get; set; }

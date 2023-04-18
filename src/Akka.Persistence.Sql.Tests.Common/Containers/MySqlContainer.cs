@@ -33,7 +33,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
                 ["User Id"] = User,
                 ["Password"] = Password,
                 ["allowPublicKeyRetrieval"] = "true",
-                ["Allow User Variables"] = "true"
+                ["Allow User Variables"] = "true",
             };
 
         public override string ConnectionString => _connectionStringBuilder.ToString();
@@ -55,20 +55,20 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         {
             parameters.ExposedPorts = new Dictionary<string, EmptyStruct>
             {
-                ["3306/tcp"] = new()
+                ["3306/tcp"] = new(),
             };
 
             parameters.HostConfig = new HostConfig
             {
                 PortBindings = new Dictionary<string, IList<PortBinding>>
                 {
-                    ["3306/tcp"] = new List<PortBinding> { new() { HostPort = $"{Port}" } }
-                }
+                    ["3306/tcp"] = new List<PortBinding> { new() { HostPort = $"{Port}" } },
+                },
             };
 
             parameters.Env = new[]
             {
-                $"MYSQL_ROOT_PASSWORD={Password}"
+                $"MYSQL_ROOT_PASSWORD={Password}",
             };
         }
 
@@ -80,7 +80,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
             await using var command = new MySqlCommand
             {
                 CommandText = "SET GLOBAL max_connections = 999;",
-                Connection = connection
+                Connection = connection,
             };
             await command.ExecuteNonQueryAsync();
             await connection.CloseAsync();
@@ -102,7 +102,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
                     await using var dropCommand = new MySqlCommand
                     {
                         CommandText = @$"DROP DATABASE IF EXISTS `{DatabaseName}`;",
-                        Connection = connection
+                        Connection = connection,
                     };
                     await dropCommand.ExecuteNonQueryAsync();
                 }
@@ -117,7 +117,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
             await using var command = new MySqlCommand
             {
                 CommandText = $"CREATE DATABASE `{DatabaseName}`;",
-                Connection = connection
+                Connection = connection,
             };
             await command.ExecuteNonQueryAsync();
             await connection.CloseAsync();

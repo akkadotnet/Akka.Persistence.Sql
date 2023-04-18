@@ -25,7 +25,7 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.PostgreSql
 
             var command = new NpgsqlCommand
             {
-                Connection = connection
+                Connection = connection,
             };
 
             command.CommandText = setup;

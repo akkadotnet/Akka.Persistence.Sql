@@ -19,7 +19,7 @@ namespace Akka.Persistence.Sql.Hosting
             CreatedColumnName = "created",
             SnapshotColumnName = "snapshot",
             ManifestColumnName = "manifest",
-            SerializerIdColumnName = "serializer_id"
+            SerializerIdColumnName = "serializer_id",
         };
 
         public static SnapshotTableOptions SqlServer => new()
@@ -30,7 +30,7 @@ namespace Akka.Persistence.Sql.Hosting
             CreatedColumnName = "Timestamp",
             SnapshotColumnName = "Snapshot",
             ManifestColumnName = "Manifest",
-            SerializerIdColumnName = "SerializerId"
+            SerializerIdColumnName = "SerializerId",
         };
 
         public static SnapshotTableOptions Sqlite => new()
@@ -41,7 +41,7 @@ namespace Akka.Persistence.Sql.Hosting
             CreatedColumnName = "created_at",
             SnapshotColumnName = "payload",
             ManifestColumnName = "manifest",
-            SerializerIdColumnName = "serializer_id"
+            SerializerIdColumnName = "serializer_id",
         };
 
         public static SnapshotTableOptions PostgreSql => new()
@@ -52,7 +52,7 @@ namespace Akka.Persistence.Sql.Hosting
             CreatedColumnName = "created_at",
             SnapshotColumnName = "payload",
             ManifestColumnName = "manifest",
-            SerializerIdColumnName = "serializer_id"
+            SerializerIdColumnName = "serializer_id",
         };
 
         public static SnapshotTableOptions MySql => new()
@@ -63,7 +63,7 @@ namespace Akka.Persistence.Sql.Hosting
             CreatedColumnName = "created_at",
             SnapshotColumnName = "snapshot",
             ManifestColumnName = "manifest",
-            SerializerIdColumnName = "serializer_id"
+            SerializerIdColumnName = "serializer_id",
         };
 
         public string? TableName { get; set; }

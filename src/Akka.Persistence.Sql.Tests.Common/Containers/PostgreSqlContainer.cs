@@ -31,7 +31,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
                 ["Server"] = "localhost",
                 ["Port"] = Port,
                 ["User Id"] = User,
-                ["Password"] = Password
+                ["Password"] = Password,
             };
 
         public override string ConnectionString => _connectionStringBuilder.ToString();
@@ -55,21 +55,21 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         {
             parameters.ExposedPorts = new Dictionary<string, EmptyStruct>
             {
-                ["5432/tcp"] = new()
+                ["5432/tcp"] = new(),
             };
 
             parameters.HostConfig = new HostConfig
             {
                 PortBindings = new Dictionary<string, IList<PortBinding>>
                 {
-                    ["5432/tcp"] = new List<PortBinding> { new() { HostPort = $"{Port}" } }
-                }
+                    ["5432/tcp"] = new List<PortBinding> { new() { HostPort = $"{Port}" } },
+                },
             };
 
             parameters.Env = new[]
             {
                 $"POSTGRES_PASSWORD={Password}",
-                $"POSTGRES_USER={User}"
+                $"POSTGRES_USER={User}",
             };
         }
 
@@ -90,7 +90,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
                 await using var dropCommand = new NpgsqlCommand
                 {
                     CommandText = $"DROP DATABASE {oldName} WITH (FORCE)",
-                    Connection = connection
+                    Connection = connection,
                 };
 
                 await dropCommand.ExecuteNonQueryAsync();
@@ -101,7 +101,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
             await using var command = new NpgsqlCommand
             {
                 CommandText = $"CREATE DATABASE {DatabaseName}",
-                Connection = connection
+                Connection = connection,
             };
 
             await command.ExecuteNonQueryAsync();

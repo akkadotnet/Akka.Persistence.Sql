@@ -11,6 +11,6 @@ namespace Akka.Persistence.Sql.Journal.Dao
         Unknown,
         Continue,
         Stop,
-        ContinueDelayed
+        ContinueDelayed,
     }
 }

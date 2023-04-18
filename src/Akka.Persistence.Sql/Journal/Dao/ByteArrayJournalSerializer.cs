@@ -71,7 +71,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     Timestamp = representation.Timestamp == 0
                         ? timestamp
                         : representation.Timestamp,
-                    WriterUuid = uuid
+                    WriterUuid = uuid,
                 },
 
                 TagMode.TagTable => new JournalRow
@@ -81,7 +81,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     Timestamp = representation.Timestamp == 0
                         ? timestamp
                         : representation.Timestamp,
-                    WriterUuid = uuid
+                    WriterUuid = uuid,
                 },
 
                 TagMode.Both => new JournalRow
@@ -91,10 +91,10 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     Timestamp = representation.Timestamp == 0
                         ? timestamp
                         : representation.Timestamp,
-                    WriterUuid = uuid
+                    WriterUuid = uuid,
                 },
 
-                _ => throw new Exception($"Invalid Tag Write Mode! Was: {tagWriteMode}")
+                _ => throw new Exception($"Invalid Tag Write Mode! Was: {tagWriteMode}"),
             };
 
         protected override Try<JournalRow> Serialize(
@@ -123,7 +123,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                             {
                                 SerializerWithStringManifest stringManifest => stringManifest.Manifest(representation.Payload),
                                 { IncludeManifest: true } => representation.Payload.GetType().TypeQualifiedName(),
-                                _ => string.Empty
+                                _ => string.Empty,
                             };
 
                             row.Message = serializer.ToBinary(representation.Payload);

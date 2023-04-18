@@ -13,6 +13,7 @@ namespace Akka.Persistence.Sql.Journal.Types
         [Column(IsPrimaryKey = true, CanBeNull = false)]
         public string PersistenceId { get; set; }
 
-        [PrimaryKey] public long SequenceNumber { get; set; }
+        [PrimaryKey]
+        public long SequenceNumber { get; set; }
     }
 }

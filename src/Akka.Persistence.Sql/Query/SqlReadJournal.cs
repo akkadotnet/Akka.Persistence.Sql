@@ -315,7 +315,7 @@ namespace Akka.Persistence.Sql.Query
                                     value: RetrieveNextBatch),
 
                             _ => Task.FromResult(
-                                Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>.None)
+                                Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>.None),
                         };
                     }).SelectMany(r => r);
         }
@@ -391,7 +391,7 @@ namespace Akka.Persistence.Sql.Query
                                     RetrieveNextBatch),
 
                             _ => Task.FromResult(
-                                Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>.None)
+                                Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>.None),
                         };
                     }).SelectMany(r => r);
         }

@@ -148,13 +148,13 @@ namespace Akka.Persistence.Sql.Journal.Dao
                             insertSetter: () => new JournalMetaData
                             {
                                 PersistenceId = persistenceId,
-                                SequenceNumber = maxMarkedDeletion
+                                SequenceNumber = maxMarkedDeletion,
                             },
                             onDuplicateKeyUpdateSetter: jmd => new JournalMetaData(),
                             keySelector: () => new JournalMetaData
                             {
                                 PersistenceId = persistenceId,
-                                SequenceNumber = maxMarkedDeletion
+                                SequenceNumber = maxMarkedDeletion,
                             },
                             token: ShutdownToken);
                 }
@@ -406,7 +406,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                             OrderingId = dbId,
                             TagValue = s1,
                             PersistenceId = journalRow.PersistenceId,
-                            SequenceNumber = journalRow.SequenceNumber
+                            SequenceNumber = journalRow.SequenceNumber,
                         }));
             }
 

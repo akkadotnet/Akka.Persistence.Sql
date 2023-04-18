@@ -125,7 +125,7 @@ namespace Akka.Persistence.Sql.Query.Dao
                         })
                     .Via(_deserializeFlow),
 
-                _ => throw new ArgumentOutOfRangeException()
+                _ => throw new ArgumentOutOfRangeException(),
             };
         }
 
@@ -259,7 +259,7 @@ namespace Akka.Persistence.Sql.Query.Dao
                     r => new TagRow
                     {
                         OrderingId = r.OrderingId,
-                        TagValue = r.TagValue
+                        TagValue = r.TagValue,
                     })
                 .ToListAsync();
 

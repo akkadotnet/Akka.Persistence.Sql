@@ -42,14 +42,14 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
             "message",
             "identifier",
             "manifest",
-            "writer_uuid"
+            "writer_uuid",
         };
 
         // metadata table column names
         private readonly string[] _metadataTableColumnNames =
         {
             "persistence_id",
-            "sequence_number"
+            "sequence_number",
         };
 
         // tag table column names
@@ -58,7 +58,7 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
             "ordering_id",
             "tag",
             "persistence_id",
-            "sequence_nr"
+            "sequence_nr",
         };
 
         public SqlServerJournalDefaultConfigSpec(ITestOutputHelper output, SqlServerContainer fixture)

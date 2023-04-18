@@ -29,7 +29,7 @@ akka.persistence.snapshot-store.sql {
             var opt = new SqlSnapshotOptions
             {
                 ConnectionString = "a",
-                ProviderName = "b"
+                ProviderName = "b",
             };
             var actualConfig = opt.ToConfig().WithFallback(SqlPersistence.DefaultConfiguration);
 
@@ -74,9 +74,9 @@ akka.persistence.snapshot-store.sql {
                         CreatedColumnName = "c",
                         SnapshotColumnName = "d",
                         ManifestColumnName = "e",
-                        SerializerIdColumnName = "f"
-                    }
-                }
+                        SerializerIdColumnName = "f",
+                    },
+                },
             };
 
             var fullConfig = opt.ToConfig();

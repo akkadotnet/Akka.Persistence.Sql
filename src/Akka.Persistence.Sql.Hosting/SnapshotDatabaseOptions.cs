@@ -17,27 +17,27 @@ namespace Akka.Persistence.Sql.Hosting
 
         public static SnapshotDatabaseOptions Default => new(DatabaseMapping.Default)
         {
-            SnapshotTable = SnapshotTableOptions.Default
+            SnapshotTable = SnapshotTableOptions.Default,
         };
 
         public static SnapshotDatabaseOptions SqlServer => new(DatabaseMapping.SqlServer)
         {
-            SnapshotTable = SnapshotTableOptions.SqlServer
+            SnapshotTable = SnapshotTableOptions.SqlServer,
         };
 
         public static SnapshotDatabaseOptions Sqlite => new(DatabaseMapping.Sqlite)
         {
-            SnapshotTable = SnapshotTableOptions.Sqlite
+            SnapshotTable = SnapshotTableOptions.Sqlite,
         };
 
         public static SnapshotDatabaseOptions PostgreSql => new(DatabaseMapping.PostgreSql)
         {
-            SnapshotTable = SnapshotTableOptions.PostgreSql
+            SnapshotTable = SnapshotTableOptions.PostgreSql,
         };
 
         public static SnapshotDatabaseOptions MySql => new(DatabaseMapping.MySql)
         {
-            SnapshotTable = SnapshotTableOptions.MySql
+            SnapshotTable = SnapshotTableOptions.MySql,
         };
 
         public DatabaseMapping Mapping { get; }

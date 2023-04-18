@@ -15,35 +15,35 @@ namespace Akka.Persistence.Sql.Hosting
         {
             TableName = "journal_metadata",
             PersistenceIdColumnName = "persistence_id",
-            SequenceNumberColumnName = "sequence_number"
+            SequenceNumberColumnName = "sequence_number",
         };
 
         public static MetadataTableOptions SqlServer => new()
         {
             TableName = "Metadata",
             PersistenceIdColumnName = "PersistenceId",
-            SequenceNumberColumnName = "SequenceNr"
+            SequenceNumberColumnName = "SequenceNr",
         };
 
         public static MetadataTableOptions Sqlite => new()
         {
             TableName = "journal_metadata",
             PersistenceIdColumnName = "persistence_id",
-            SequenceNumberColumnName = "sequence_nr"
+            SequenceNumberColumnName = "sequence_nr",
         };
 
         public static MetadataTableOptions PostgreSql => new()
         {
             TableName = "metadata",
             PersistenceIdColumnName = "persistence_id",
-            SequenceNumberColumnName = "sequence_nr"
+            SequenceNumberColumnName = "sequence_nr",
         };
 
         public static MetadataTableOptions MySql => new()
         {
             TableName = "metadata",
             PersistenceIdColumnName = "persistence_id",
-            SequenceNumberColumnName = "sequence_nr"
+            SequenceNumberColumnName = "sequence_nr",
         };
 
         public string? TableName { get; set; }

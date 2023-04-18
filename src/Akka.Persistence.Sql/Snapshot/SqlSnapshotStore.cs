@@ -103,7 +103,7 @@ namespace Akka.Persistence.Sql.Snapshot
                     : (await _dao.SnapshotForMaxSequenceNrAndMaxTimestamp(
                         persistenceId: persistenceId,
                         sequenceNr: criteria.MaxSequenceNr,
-                        timestamp: criteria.MaxTimeStamp)).GetOrElse(null)
+                        timestamp: criteria.MaxTimeStamp)).GetOrElse(null),
             };
 
         protected override async Task SaveAsync(SnapshotMetadata metadata, object snapshot)

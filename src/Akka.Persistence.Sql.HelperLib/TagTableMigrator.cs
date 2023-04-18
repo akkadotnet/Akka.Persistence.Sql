@@ -112,7 +112,7 @@ namespace Akka.Persistence.Sql.HelperLib
                                         OrderingId = row.Ordering,
                                         TagValue = tag,
                                         SequenceNumber = row.SequenceNumber,
-                                        PersistenceId = row.PersistenceId
+                                        PersistenceId = row.PersistenceId,
                                     }));
                         }
 

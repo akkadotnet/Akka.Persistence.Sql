@@ -4,10 +4,10 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+#nullable enable
 using Akka.Persistence.Sql.Config;
 using LinqToDB;
 
-#nullable enable
 namespace Akka.Persistence.Sql.Db
 {
     public static class FooterGenerator
@@ -16,9 +16,10 @@ namespace Akka.Persistence.Sql.Db
         {
             var tableName = config.TableConfig.EventJournalTable.Name;
             var columns = config.TableConfig.EventJournalTable.ColumnNames;
-            var journalFullTableName = string.IsNullOrEmpty(config.TableConfig.SchemaName) 
-                ? tableName : $"{config.TableConfig.SchemaName}.{tableName}";
-			
+            var journalFullTableName = string.IsNullOrEmpty(config.TableConfig.SchemaName)
+                ? tableName
+                : $"{config.TableConfig.SchemaName}.{tableName}";
+
             #region SqlServer
             if (config.ProviderName.StartsWith(ProviderName.SqlServer))
                 return @$";
@@ -50,7 +51,7 @@ IF NOT EXISTS (
 )
 CREATE INDEX IX_{tableName}_{columns.Created} ON {journalFullTableName}({columns.Created});";
             #endregion
-			
+
             #region MySql
             if (config.ProviderName.StartsWith(ProviderName.MySql))
                 return $@";
@@ -98,15 +99,16 @@ PREPARE akka_statement_journal_setup FROM @akka_journal_setup;
 EXECUTE akka_statement_journal_setup;
 DEALLOCATE PREPARE akka_statement_journal_setup;";
             #endregion
-			
+
             #region PostgreSql
             // These SQL syntax should be supported from PostgreSql 9.0
             if (config.ProviderName.StartsWith(ProviderName.PostgreSQL))
             {
-	            journalFullTableName = string.IsNullOrEmpty(config.TableConfig.SchemaName) 
-		            ? tableName : $"\"{config.TableConfig.SchemaName}\".\"{tableName}\"";
-	            
-	            return $@";
+                journalFullTableName = string.IsNullOrEmpty(config.TableConfig.SchemaName)
+                    ? tableName
+                    : $"\"{config.TableConfig.SchemaName}\".\"{tableName}\"";
+
+                return $@";
 do $BLOCK$
 begin
 	begin
@@ -134,28 +136,29 @@ $BLOCK$
 ";
             }
             #endregion
-			
+
             #region Sqlite
             if (config.ProviderName.StartsWith(ProviderName.SQLite))
-	            return $@";
+                return $@";
 CREATE UNIQUE INDEX IF NOT EXISTS {tableName}_uq ON {journalFullTableName} ({columns.PersistenceId}, {columns.SequenceNumber});
 CREATE INDEX IF NOT EXISTS {tableName}_{columns.Created}_idx ON {journalFullTableName} ({columns.Created});
 CREATE INDEX IF NOT EXISTS {tableName}_{columns.SequenceNumber}_idx ON {journalFullTableName} ({columns.SequenceNumber});";
             #endregion
-			
+
             return null;
         }
 
         public static string? GenerateTagFooter(this JournalConfig config)
         {
-	        var tableName = config.TableConfig.TagTable.Name;
-	        var columns = config.TableConfig.TagTable.ColumnNames;
-	        var tagFullTableName = string.IsNullOrEmpty(config.TableConfig.SchemaName)
-		        ? tableName : $"{config.TableConfig.SchemaName}.{tableName}";
-			
-	        #region SqlServer
-	        if (config.ProviderName.StartsWith(ProviderName.SqlServer))
-		        return $@";
+            var tableName = config.TableConfig.TagTable.Name;
+            var columns = config.TableConfig.TagTable.ColumnNames;
+            var tagFullTableName = string.IsNullOrEmpty(config.TableConfig.SchemaName)
+                ? tableName
+                : $"{config.TableConfig.SchemaName}.{tableName}";
+
+            #region SqlServer
+            if (config.ProviderName.StartsWith(ProviderName.SqlServer))
+                return $@";
 IF NOT EXISTS (
     SELECT 1
     FROM sys.indexes
@@ -174,11 +177,11 @@ IF NOT EXISTS (
 )
 CREATE INDEX IX_{tableName}_{columns.Tag} ON {tagFullTableName} ({columns.Tag});
 ";
-	        #endregion
-			
-	        #region MySql
-	        if (config.ProviderName.StartsWith(ProviderName.MySql))
-		        return $@";
+            #endregion
+
+            #region MySql
+            if (config.ProviderName.StartsWith(ProviderName.MySql))
+                return $@";
 
 SET @akka_journal_setup = IF(
 	EXISTS (
@@ -205,16 +208,17 @@ SET @akka_journal_setup = IF(
 PREPARE akka_statement_journal_setup FROM @akka_journal_setup;
 EXECUTE akka_statement_journal_setup;
 DEALLOCATE PREPARE akka_statement_journal_setup;";
-	        #endregion
-			
-	        #region PostgreSql
-	        // These SQL syntax should be supported from PostgreSql 9.0
-	        if (config.ProviderName.StartsWith(ProviderName.PostgreSQL))
-	        {
-		        tagFullTableName = string.IsNullOrEmpty(config.TableConfig.SchemaName) 
-			        ? tableName : $"\"{config.TableConfig.SchemaName}\".\"{tableName}\"";
-	            
-		        return $@";
+            #endregion
+
+            #region PostgreSql
+            // These SQL syntax should be supported from PostgreSql 9.0
+            if (config.ProviderName.StartsWith(ProviderName.PostgreSQL))
+            {
+                tagFullTableName = string.IsNullOrEmpty(config.TableConfig.SchemaName)
+                    ? tableName
+                    : $"\"{config.TableConfig.SchemaName}\".\"{tableName}\"";
+
+                return $@";
 do $BLOCK$
 begin
 	begin
@@ -233,29 +237,30 @@ begin
 end;
 $BLOCK$
 ";
-	        }
-	        #endregion
-			
-	        #region Sqlite
-	        if (config.ProviderName.StartsWith(ProviderName.SQLite))
-		        return $@";
+            }
+            #endregion
+
+            #region Sqlite
+            if (config.ProviderName.StartsWith(ProviderName.SQLite))
+                return $@";
 CREATE INDEX IF NOT EXISTS {tableName}_{columns.PersistenceId}_{columns.SequenceNumber}_idx ON {tagFullTableName} ({columns.PersistenceId}, {columns.SequenceNumber});
 CREATE INDEX IF NOT EXISTS {tableName}_{columns.Tag}_idx ON {tagFullTableName} ({columns.Tag});";
-	        #endregion
-	        
-	        return null;
+            #endregion
+
+            return null;
         }
 
         public static string? GenerateSnapshotFooter(this SnapshotConfig config)
         {
-	        var tableName = config.TableConfig.SnapshotTable.Name;
-	        var columns = config.TableConfig.SnapshotTable.ColumnNames;
-	        var fullTableName = string.IsNullOrEmpty(config.TableConfig.SchemaName)
-		        ? tableName : $"{config.TableConfig.SchemaName}.{tableName}";
+            var tableName = config.TableConfig.SnapshotTable.Name;
+            var columns = config.TableConfig.SnapshotTable.ColumnNames;
+            var fullTableName = string.IsNullOrEmpty(config.TableConfig.SchemaName)
+                ? tableName
+                : $"{config.TableConfig.SchemaName}.{tableName}";
 
-	        #region SqlServer
-	        if (config.ProviderName.StartsWith(ProviderName.SqlServer))
-		        return @$";
+            #region SqlServer
+            if (config.ProviderName.StartsWith(ProviderName.SqlServer))
+                return @$";
 IF NOT EXISTS (
     SELECT 1
     FROM sys.indexes
@@ -273,7 +278,7 @@ IF NOT EXISTS (
         name = 'IX_{tableName}_{columns.Created}'
 )
 CREATE INDEX IX_{tableName}_{columns.Created} ON {fullTableName}({columns.Created});";
-	        #endregion
+            #endregion
 
             #region MySql
             if (config.ProviderName.StartsWith(ProviderName.MySql))
@@ -305,15 +310,16 @@ PREPARE akka_statement_journal_setup FROM @akka_journal_setup;
 EXECUTE akka_statement_journal_setup;
 DEALLOCATE PREPARE akka_statement_journal_setup;";
             #endregion
-			
+
             #region PostgreSql
             // These SQL syntax should be supported from PostgreSql 9.0
             if (config.ProviderName.StartsWith(ProviderName.PostgreSQL))
             {
-	            fullTableName = string.IsNullOrEmpty(config.TableConfig.SchemaName) 
-		            ? tableName : $"\"{config.TableConfig.SchemaName}\".\"{tableName}\"";
-	            
-	            return $@";
+                fullTableName = string.IsNullOrEmpty(config.TableConfig.SchemaName)
+                    ? tableName
+                    : $"\"{config.TableConfig.SchemaName}\".\"{tableName}\"";
+
+                return $@";
 do $BLOCK$
 begin
 	begin
@@ -334,10 +340,10 @@ $BLOCK$
 ";
             }
             #endregion
-			
+
             #region Sqlite
             if (config.ProviderName.StartsWith(ProviderName.SQLite))
-	            return $@";
+                return $@";
 CREATE INDEX IF NOT EXISTS {tableName}_{columns.SequenceNumber}_idx ON {fullTableName} ({columns.SequenceNumber});
 CREATE INDEX IF NOT EXISTS {tableName}_{columns.Created}_idx ON {fullTableName} ({columns.Created});";
             #endregion
