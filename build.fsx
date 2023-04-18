@@ -244,7 +244,7 @@ Target "All" DoNothing
 Target "Nuget" DoNothing
 
 // build dependencies
-"Clean" ==> "AssemblyInfo" ==> "Build" ==> "BuildRelease"
+"Clean" ==> "AssemblyInfo" ==> "Build" ==> "InspectCode" ==> "BuildRelease"
 
 // tests dependencies
 "Build" ==> "RunTests"
