@@ -26,7 +26,7 @@ Supported `Akka.Persistence.Sql.Common` targets
 
 ### Akka.Hosting
 
-To migrate to `Akka.Persistence.Sql` from supported `Akka.Persistence.Sql.Common` plugins using, supply the required parameters:
+To migrate to `Akka.Persistence.Sql` from supported `Akka.Persistence.Sql.Common` plugins, supply the required parameters:
 
 ```csharp
 builder
@@ -51,11 +51,11 @@ builder
    | Sqlite     | `DatabaseMapping.SqLite`     |
 
 * `tagStoreMode` 
-  * Set to `TagMode.Csv` if you do not want to migrate your database to use tag table.
+  * Set to `TagMode.Csv` if you do not or have not migrated your database to use tag table.
   * Set to `TagMode.TagTable` if you migrated your database to use tag table.
 * `deleteCompatibilityMode` - always set this parameter to `true`
 * `useWriterUuidColumn`
-  * Set to `false` if you do not want to migrate your database to use `WriterUuid` feature
+  * Set to `false` if you do not or have not migrated your database to use `WriterUuid` feature
   * Set to `true` if you migrated your database to use `WriterUuid`.
 * `autoInitialize` - always set this to `false` to prevent any schema modification.
 
@@ -82,6 +82,9 @@ akka.persistence {
             
             # Required for migration
             delete-compatibility-mode = true
+            
+            # Required if you did not migrate your database to use WriterUuid
+            {table-mapping-name}.journal.use-writer-uuid-column = false
         }
     }
     query.journal.sql {
@@ -124,7 +127,8 @@ To migrate your database to use the new tag table based tag query feature, follo
 4. Execute SQL script "1_Migration_Setup.sql" against your database.
 5. Execute SQL script "2_Migration.sql" against your database.
 6. (Optional) Execute SQL script "3_Post_Migration_Cleanup.sql" against your database.
-7. Bring the cluster back up.
+7. Apply migration steps in [Migrating Using Compatibility Mode](#migrating-using-compatibility-mode) section.
+8. Bring the cluster back up.
 
 These SQL scripts are designed to be idempotent and can be run on the same database without creating any side effects.
 
@@ -151,19 +155,16 @@ To migrate your database to use the new WriterUuid feature, follow these steps:
    builder
        .WithSqlPersistence(
            connectionString: "my-connection-string",
-           providerName: ProviderName.SqlServer2019,
-           databaseMapping: DatabaseMapping.SqlServer,
-           tagStorageMode: TagMode.Csv,
-           deleteCompatibilityMode: true,
-           autoInitialize: false,
-           useWriterUuidColumn: true
+           // ...
+           useWriterUuidColumn: true // Use this setting
        );
    ```
    
    **Using HOCON**
 
    ```HOCON
-   # `mapping-name` can be either  "sqlite", "sql-server", "mysql", or "postgresql"
-   akka.persistence.journal.sql.[mapping-name].journal.use-writer-uuid-column = true
+   # replace {mapping-name} with "sqlite", "sql-server", "mysql", or "postgresql"
+   akka.persistence.journal.sql.{mapping-name}.journal.use-writer-uuid-column = true
    ```
-5. Bring the cluster back up.
+5. Apply migration steps in [Migrating Using Compatibility Mode](#migrating-using-compatibility-mode) section.   
+6. Bring the cluster back up.
