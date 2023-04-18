@@ -21,9 +21,6 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Util;
 using LinqToDB;
-using LinqToDB.Data;
-using LinqToDB.Tools;
-using TaskExtensions = LanguageExt.TaskExtensions;
 
 namespace Akka.Persistence.Sql.Query.Dao
 {
@@ -118,11 +115,7 @@ namespace Akka.Persistence.Sql.Query.Dao
                                 orderby r.Ordering
                                 select r;
 
-                            var mainRows = await query.ToListAsync();
-
-                            await AddTagDataFromTagTable(mainRows, connection);
-
-                            return mainRows;
+                            return await AddTagDataFromTagTable(query, connection);
                         })
                     .Via(_deserializeFlow),
 
@@ -141,7 +134,7 @@ namespace Akka.Persistence.Sql.Query.Dao
                     new { connection, persistenceId, fromSequenceNr, toSequenceNr, toTake = MaxTake(max) },
                     async state =>
                     {
-                        var mainRows = await connection
+                        var query = connection
                             .GetTable<JournalRow>()
                             .Where(r =>
                                 r.PersistenceId == state.persistenceId &&
@@ -149,13 +142,9 @@ namespace Akka.Persistence.Sql.Query.Dao
                                 r.SequenceNumber <= state.toSequenceNr &&
                                 r.Deleted == false)
                             .OrderBy(r => r.SequenceNumber)
-                            .Take(state.toTake)
-                            .ToListAsync();
+                            .Take(state.toTake);
 
-                        if (_readJournalConfig.PluginConfig.TagMode == TagMode.TagTable)
-                            await AddTagDataFromTagTable(mainRows, connection);
-
-                        return mainRows;
+                        return await AddTagDataIfNeeded(query, connection);
                     })
                 .Via(_deserializeFlow)
                 .Select(
@@ -223,51 +212,51 @@ namespace Akka.Persistence.Sql.Query.Dao
                 {
                     await using var connection = input._connectionFactory.GetConnection();
 
-                    var events = await connection
+                    var query = connection
                         .GetTable<JournalRow>()
                         .Where(r =>
                             r.Ordering > input.offset &&
                             r.Ordering <= input.maxOffset &&
                             r.Deleted == false)
                         .OrderBy(r => r.Ordering)
-                        .Take(input.maxTake)
-                        .ToListAsync();
+                        .Take(input.maxTake);
 
-                    return await AddTagDataIfNeeded(events, connection);
+                    return await AddTagDataIfNeeded(query, connection);
                 }
             ).Via(_deserializeFlow);
         }
 
-        private async Task<List<JournalRow>> AddTagDataIfNeeded(List<JournalRow> toAdd, AkkaDataConnection connection)
+        private async Task<List<JournalRow>> AddTagDataIfNeeded(IQueryable<JournalRow> rowQuery, AkkaDataConnection connection)
         {
-            if (_readJournalConfig.PluginConfig.TagMode == TagMode.TagTable)
-                await AddTagDataFromTagTable(toAdd, connection);
-
-            return toAdd;
+            if (_readJournalConfig.PluginConfig.TagMode != TagMode.TagTable)
+                return await rowQuery.ToListAsync();
+            
+            return await AddTagDataFromTagTable(rowQuery, connection);
         }
 
-        private static async Task AddTagDataFromTagTable(List<JournalRow> toAdd, AkkaDataConnection connection)
+        private static async Task<List<JournalRow>> AddTagDataFromTagTable(IQueryable<JournalRow> rowQuery, AkkaDataConnection connection)
         {
-            if (toAdd.Count == 0)
-                return;
-
-            var tagRows = await connection
-                .GetTable<JournalTagRow>()
-                .Where(r => r.OrderingId.In(toAdd.Select(row => row.Ordering).Distinct()))
-                .Select(r => new TagRow
+            var tagTable = connection.GetTable<JournalTagRow>();
+            var q =
+                from jr in rowQuery
+                select new
                 {
-                    OrderingId = r.OrderingId,
-                    TagValue = r.TagValue
-                })
-                .ToListAsync();
+                    row = jr, 
+                    tags = tagTable
+                    .Where(r => r.OrderingId == jr.Ordering)
+                    .StringAggregate(";", r => r.TagValue)
+                    .ToValue()
+                };
 
-            foreach (var journalRow in toAdd)
+            var res = await q.ToListAsync();
+
+            var result = new List<JournalRow>();
+            foreach (var row in res)
             {
-                journalRow.TagArr = tagRows
-                    .Where(r => r.OrderingId == journalRow.Ordering)
-                    .Select(r => r.TagValue)
-                    .ToArray();
+                row.row.TagArr = row.tags?.Split(';') ?? Array.Empty<string>();
+                result.Add(row.row);
             }
+            return result;
         }
     }
 }
