@@ -16,15 +16,16 @@ namespace Akka.Persistence.Sql.Hosting.Tests
         [Fact(DisplayName = "Default options should not override default hocon config")]
         public void DefaultOptionsTest()
         {
-            var defaultConfig = ConfigurationFactory.ParseString(@"
+            var defaultConfig = ConfigurationFactory.ParseString(
+                    @"
 akka.persistence.snapshot-store.sql {
     connection-string = a
     provider-name = b
 }")
                 .WithFallback(SqlPersistence.DefaultConfiguration);
-            
+
             defaultConfig = defaultConfig.GetConfig(SqlPersistence.SnapshotStoreConfigPath);
-            
+
             var opt = new SqlSnapshotOptions
             {
                 ConnectionString = "a",

@@ -29,7 +29,7 @@ namespace Akka.Persistence.Sql.Snapshot
         public SqlSnapshotStore(Configuration.Config snapshotConfig)
         {
             _log = Context.GetLogger();
-            
+
             var config = snapshotConfig.WithFallback(SqlPersistence.DefaultSnapshotConfiguration);
             _settings = new SnapshotConfig(config);
 
@@ -52,9 +52,9 @@ namespace Akka.Persistence.Sql.Snapshot
 
         private bool WaitingForInitialization(object message)
         {
-            switch(message)
+            switch (message)
             {
-                case Status.Success :
+                case Status.Success:
                     UnbecomeStacked();
                     Stash.UnstashAll();
                     return true;

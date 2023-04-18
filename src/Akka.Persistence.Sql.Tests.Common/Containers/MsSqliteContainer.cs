@@ -33,11 +33,6 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
 
         public string ProviderName => LinqToDB.ProviderName.SQLiteMS;
 
-        private void GenerateDatabaseName()
-        {
-            DatabaseName = $"sql_tests_{Guid.NewGuid():N}";
-        }
-
         public async Task InitializeAsync()
         {
             if (Initialized)
@@ -84,6 +79,11 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
             }
 
             _heldConnection = null;
+        }
+
+        private void GenerateDatabaseName()
+        {
+            DatabaseName = $"sql_tests_{Guid.NewGuid():N}";
         }
     }
 }

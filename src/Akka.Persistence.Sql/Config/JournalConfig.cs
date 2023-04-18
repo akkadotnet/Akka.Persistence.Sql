@@ -34,14 +34,14 @@ namespace Akka.Persistence.Sql.Config
 
         public BaseByteArrayJournalDaoConfig DaoConfig { get; }
 
-        public IPluginConfig PluginConfig { get; }
-
         /// <summary>
         ///     Flag determining in in case of event journal or metadata table missing, they should be automatically initialized.
         /// </summary>
         public bool AutoInitialize { get; }
 
         public bool WarnOnAutoInitializeFail { get; }
+
+        public IPluginConfig PluginConfig { get; }
 
         public IDaoConfig IDaoConfig => DaoConfig;
 
@@ -63,7 +63,7 @@ namespace Akka.Persistence.Sql.Config
         string ConnectionString { get; }
 
         TTable TableConfig { get; }
-        
+
         IPluginConfig PluginConfig { get; }
 
         IDaoConfig IDaoConfig { get; }
@@ -78,7 +78,7 @@ namespace Akka.Persistence.Sql.Config
         string TagSeparator { get; }
 
         string Dao { get; }
-        
+
         TagMode TagMode { get; }
     }
 

@@ -14,24 +14,25 @@ using Akka.Persistence.Sql.Tests.Common.Containers;
 using BenchmarkDotNet.Running;
 using LanguageExt.UnitsOfMeasure;
 
-namespace Akka.Persistence.Sql.Benchmarks;
-
-public static class Program
+namespace Akka.Persistence.Sql.Benchmarks
 {
-    public static async Task Main(string[] args)
+    public static class Program
     {
-        if(args.Length == 0)
+        public static async Task Main(string[] args)
         {
-            BenchmarkSwitcher.FromAssembly(Assembly.GetExecutingAssembly()).Run(args);
-            return;
-        }
+            if (args.Length == 0)
+            {
+                BenchmarkSwitcher.FromAssembly(Assembly.GetExecutingAssembly()).Run(args);
+                return;
+            }
 
-        if (args[0].ToLowerInvariant() == "generate")
-        {
-            var fixture = new SqlServerContainer();
-            await fixture.InitializeAsync();
-            
-            var config = ConfigurationFactory.ParseString(@$"
+            if (args[0].ToLowerInvariant() == "generate")
+            {
+                var fixture = new SqlServerContainer();
+                await fixture.InitializeAsync();
+
+                var config = ConfigurationFactory.ParseString(
+                        @$"
 akka.persistence.journal {{
     plugin = akka.persistence.journal.sql
     sql {{
@@ -46,24 +47,27 @@ akka.persistence.journal {{
         }}
     }}
 }}")
-                .WithFallback(Persistence.DefaultConfig())
-                .WithFallback(SqlPersistence.DefaultConfiguration);
-            
-            var sys = ActorSystem.Create("Initializer", config);
-            var initializer = sys.ActorOf(Props.Create(() => new InitializeDbActor()), "INITIALIZER");
-            await initializer.Ask<InitializeDbActor.Initialized>(
-                InitializeDbActor.Initialize.Instance,
-                20.Minutes());
-            await sys.Terminate();
-            
-            await File.WriteAllTextAsync("benchmark.conf", $@"
+                    .WithFallback(Persistence.DefaultConfig())
+                    .WithFallback(SqlPersistence.DefaultConfiguration);
+
+                var sys = ActorSystem.Create("Initializer", config);
+                var initializer = sys.ActorOf(Props.Create(() => new InitializeDbActor()), "INITIALIZER");
+                await initializer.Ask<InitializeDbActor.Initialized>(
+                    InitializeDbActor.Initialize.Instance,
+                    20.Minutes());
+                await sys.Terminate();
+
+                await File.WriteAllTextAsync(
+                    "benchmark.conf",
+                    $@"
 benchmark {{
     connection-string = ""{fixture.ConnectionString}""
     provider-name = ""{fixture.ProviderName}""
 }}");
-            
-            Console.WriteLine($"Connection String: {fixture.ConnectionString}");
-            Console.WriteLine($"Provider Name: {fixture.ProviderName}");
+
+                Console.WriteLine($"Connection String: {fixture.ConnectionString}");
+                Console.WriteLine($"Provider Name: {fixture.ProviderName}");
+            }
         }
     }
 }

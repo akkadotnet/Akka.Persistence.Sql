@@ -57,6 +57,7 @@ namespace Akka.Persistence.Sql.Streams
         public override string ToString() => "LanguageExtSeqStage";
 
         #region stage logic
+
         private sealed class Logic : InGraphStageLogic
         {
             private readonly TaskCompletionSource<Seq<T>> _promise;
@@ -100,6 +101,7 @@ namespace Akka.Persistence.Sql.Streams
 
             public override void PreStart() => Pull(_stage.In);
         }
+
         #endregion
     }
 }

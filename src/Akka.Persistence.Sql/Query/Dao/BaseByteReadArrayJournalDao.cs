@@ -21,9 +21,7 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Util;
 using LinqToDB;
-using LinqToDB.Data;
 using LinqToDB.Tools;
-using TaskExtensions = LanguageExt.TaskExtensions;
 
 namespace Akka.Persistence.Sql.Query.Dao
 {
@@ -87,11 +85,12 @@ namespace Akka.Persistence.Sql.Query.Dao
 
                             return await connection
                                 .GetTable<JournalRow>()
-                                .Where(r =>
-                                    r.Tags.Contains(tagValue) &&
-                                    !r.Deleted &&
-                                    r.Ordering > input.offset &&
-                                    r.Ordering <= input.maxOffset)
+                                .Where(
+                                    r =>
+                                        r.Tags.Contains(tagValue) &&
+                                        !r.Deleted &&
+                                        r.Ordering > input.offset &&
+                                        r.Ordering <= input.maxOffset)
                                 .OrderBy(r => r.Ordering)
                                 .Take(input.maxTake)
                                 .ToListAsync();
@@ -143,11 +142,12 @@ namespace Akka.Persistence.Sql.Query.Dao
                     {
                         var mainRows = await connection
                             .GetTable<JournalRow>()
-                            .Where(r =>
-                                r.PersistenceId == state.persistenceId &&
-                                r.SequenceNumber >= state.fromSequenceNr &&
-                                r.SequenceNumber <= state.toSequenceNr &&
-                                r.Deleted == false)
+                            .Where(
+                                r =>
+                                    r.PersistenceId == state.persistenceId &&
+                                    r.SequenceNumber >= state.fromSequenceNr &&
+                                    r.SequenceNumber <= state.toSequenceNr &&
+                                    r.Deleted == false)
                             .OrderBy(r => r.SequenceNumber)
                             .Take(state.toTake)
                             .ToListAsync();
@@ -225,10 +225,11 @@ namespace Akka.Persistence.Sql.Query.Dao
 
                     var events = await connection
                         .GetTable<JournalRow>()
-                        .Where(r =>
-                            r.Ordering > input.offset &&
-                            r.Ordering <= input.maxOffset &&
-                            r.Deleted == false)
+                        .Where(
+                            r =>
+                                r.Ordering > input.offset &&
+                                r.Ordering <= input.maxOffset &&
+                                r.Deleted == false)
                         .OrderBy(r => r.Ordering)
                         .Take(input.maxTake)
                         .ToListAsync();
@@ -254,11 +255,12 @@ namespace Akka.Persistence.Sql.Query.Dao
             var tagRows = await connection
                 .GetTable<JournalTagRow>()
                 .Where(r => r.OrderingId.In(toAdd.Select(row => row.Ordering).Distinct()))
-                .Select(r => new TagRow
-                {
-                    OrderingId = r.OrderingId,
-                    TagValue = r.TagValue
-                })
+                .Select(
+                    r => new TagRow
+                    {
+                        OrderingId = r.OrderingId,
+                        TagValue = r.TagValue
+                    })
                 .ToListAsync();
 
             foreach (var journalRow in toAdd)

@@ -21,7 +21,7 @@ namespace Akka.Persistence.Sql.Config
         public string Name { get; }
 
         public bool UseWriterUuidColumn { get; }
-        
+
         public JournalTableColumnNames ColumnNames { get; }
 
         public bool Equals(EventJournalTableConfig other)

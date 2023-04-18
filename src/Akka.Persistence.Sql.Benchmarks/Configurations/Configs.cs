@@ -1,8 +1,8 @@
-﻿//-----------------------------------------------------------------------
-// <copyright file="Configs.cs" company="Akka.NET Project">
-//     Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
-// </copyright>
-//-----------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------
+//  <copyright file="Configs.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  </copyright>
+// -----------------------------------------------------------------------
 
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
@@ -12,7 +12,7 @@ using BenchmarkDotNet.Loggers;
 namespace Akka.Persistence.Sql.Benchmarks.Configurations
 {
     /// <summary>
-    /// Basic BenchmarkDotNet configuration used for micro benchmarks.
+    ///     Basic BenchmarkDotNet configuration used for micro benchmarks.
     /// </summary>
     public class MicroBenchmarkConfig : ManualConfig
     {
@@ -25,7 +25,7 @@ namespace Akka.Persistence.Sql.Benchmarks.Configurations
     }
 
     /// <summary>
-    /// BenchmarkDotNet configuration used for monitored jobs (not for micro benchmarks).
+    ///     BenchmarkDotNet configuration used for monitored jobs (not for micro benchmarks).
     /// </summary>
     public class MonitoringConfig : ManualConfig
     {

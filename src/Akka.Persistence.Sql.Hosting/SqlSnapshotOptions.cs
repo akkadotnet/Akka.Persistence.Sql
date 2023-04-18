@@ -14,18 +14,16 @@ namespace Akka.Persistence.Sql.Hosting
     public sealed class SqlSnapshotOptions : SnapshotOptions
     {
         private static readonly Configuration.Config Default = SqlPersistence.DefaultSnapshotConfiguration;
-        
-        public SqlSnapshotOptions() : this(true)
-        {
-        }
-        
+
+        public SqlSnapshotOptions() : this(true) { }
+
         public SqlSnapshotOptions(bool isDefaultPlugin, string identifier = "sql") : base(isDefaultPlugin)
         {
             Identifier = identifier;
             Serializer = null!;
             AutoInitialize = true;
         }
-        
+
         /// <summary>
         ///     Connection string used for database access
         /// </summary>
@@ -34,12 +32,12 @@ namespace Akka.Persistence.Sql.Hosting
         /// <summary>
         ///     <para>
         ///         A string constant defining the database type to connect to, valid values are defined inside
-        ///         <see cref="LinqToDB.ProviderName"/> static class.
-        ///         Refer to the Members of <see cref="LinqToDB.ProviderName"/> for included providers.
+        ///         <see cref="LinqToDB.ProviderName" /> static class.
+        ///         Refer to the Members of <see cref="LinqToDB.ProviderName" /> for included providers.
         ///     </para>
         /// </summary>
         public string? ProviderName { get; set; }
-        
+
         /// <summary>
         ///     <para>
         ///         The plugin identifier for this persistence plugin
@@ -47,7 +45,7 @@ namespace Akka.Persistence.Sql.Hosting
         ///     <b>Default</b>: <c>"sql"</c>
         /// </summary>
         public override string Identifier { get; set; }
-        
+
         /// <summary>
         ///     <para>
         ///         The database options to modify database table column mapping for snapshot.
@@ -56,25 +54,25 @@ namespace Akka.Persistence.Sql.Hosting
         ///     you leave this empty for greenfield projects.
         /// </summary>
         public SnapshotDatabaseOptions? DatabaseOptions { get; set; }
-        
+
         protected override Configuration.Config InternalDefaultConfig => Default;
 
         protected override StringBuilder Build(StringBuilder sb)
         {
             if (string.IsNullOrWhiteSpace(ConnectionString))
                 throw new ArgumentNullException(nameof(ConnectionString), $"{nameof(ConnectionString)} can not be null or empty.");
-            
-            if(string.IsNullOrWhiteSpace(ProviderName))
+
+            if (string.IsNullOrWhiteSpace(ProviderName))
                 throw new ArgumentNullException(nameof(ProviderName), $"{nameof(ProviderName)} can not be null or empty.");
-            
+
             sb.AppendLine($"connection-string = {ConnectionString.ToHocon()}");
             sb.AppendLine($"provider-name = {ProviderName.ToHocon()}");
-            
+
             if (DatabaseOptions is { })
                 sb.AppendLine($"table-mapping = {DatabaseOptions.Mapping.Name().ToHocon()}");
-            
+
             DatabaseOptions?.Build(sb);
-            
+
             base.Build(sb);
             return sb;
         }

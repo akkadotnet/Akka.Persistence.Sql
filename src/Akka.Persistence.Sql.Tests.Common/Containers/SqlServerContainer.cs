@@ -7,11 +7,10 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using Microsoft.Data.SqlClient;
 using Akka.Util;
 using Docker.DotNet.Models;
+using Microsoft.Data.SqlClient;
 
 namespace Akka.Persistence.Sql.Tests.Common.Containers
 {
@@ -27,15 +26,13 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         private readonly DbConnectionStringBuilder _connectionStringBuilder;
 
         public SqlServerContainer() : base("mcr.microsoft.com/mssql/server", "2019-latest", $"mssql-{Guid.NewGuid():N}")
-        {
-            _connectionStringBuilder = new DbConnectionStringBuilder
+            => _connectionStringBuilder = new DbConnectionStringBuilder
             {
                 ["Server"] = $"localhost,{Port}",
                 ["User Id"] = User,
                 ["Password"] = Password,
                 ["TrustServerCertificate"] = "true"
             };
-        }
 
         public override string ConnectionString => _connectionStringBuilder.ToString();
 

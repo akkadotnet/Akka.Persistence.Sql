@@ -35,9 +35,10 @@ namespace Akka.Persistence.Sql.IndexHelperApp
                     {
                         var config = ConfigurationFactory.ParseString(File.ReadAllText(opts.File));
 
-                        var journalConfig = new JournalConfig(config
-                            .GetConfig(opts.HoconPath)
-                            .WithFallback(SqlPersistence.DefaultConfiguration));
+                        var journalConfig = new JournalConfig(
+                            config
+                                .GetConfig(opts.HoconPath)
+                                .WithFallback(SqlPersistence.DefaultConfiguration));
 
                         var generator = GetGenerator(journalConfig.ProviderName);
                         var helper = new JournalIndexHelper();

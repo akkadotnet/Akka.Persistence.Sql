@@ -4,7 +4,6 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using System.Collections.Generic;
 using Akka.Persistence.Journal;
 
 namespace Akka.Persistence.Sql.Benchmarks

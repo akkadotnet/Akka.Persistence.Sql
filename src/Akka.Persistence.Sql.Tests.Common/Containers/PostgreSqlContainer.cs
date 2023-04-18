@@ -26,15 +26,13 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         private readonly DbConnectionStringBuilder _connectionStringBuilder;
 
         public PostgreSqlContainer() : base("postgres", "latest", $"postgresql-{Guid.NewGuid():N}")
-        {
-            _connectionStringBuilder = new DbConnectionStringBuilder
+            => _connectionStringBuilder = new DbConnectionStringBuilder
             {
                 ["Server"] = "localhost",
                 ["Port"] = Port,
                 ["User Id"] = User,
                 ["Password"] = Password
             };
-        }
 
         public override string ConnectionString => _connectionStringBuilder.ToString();
 

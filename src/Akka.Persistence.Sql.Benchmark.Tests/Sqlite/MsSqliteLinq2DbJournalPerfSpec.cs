@@ -6,7 +6,6 @@
 
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.Sql.Tests.Sqlite;
-using LinqToDB;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -20,8 +19,6 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
                 SqliteJournalSpecConfig.Create(fixture),
                 nameof(MsSqliteLinq2DbJournalPerfSpec),
                 output,
-                eventsCount: TestConstants.NumMessages)
-        {
-        }
+                eventsCount: TestConstants.NumMessages) { }
     }
 }

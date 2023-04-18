@@ -48,17 +48,12 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         protected virtual TimeSpan ReadyTimeout { get; } = TimeSpan.FromMinutes(1);
 
         public bool Initialized { get; private set; }
-        
+
         public abstract string ProviderName { get; }
 
         public abstract string ConnectionString { get; }
 
         public string? DatabaseName { get; private set; }
-
-        protected virtual void GenerateDatabaseName()
-        {
-            DatabaseName = $"sql_tests_{Guid.NewGuid():N}";
-        }
 
         public string ContainerName { get; }
 
@@ -159,6 +154,11 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         }
 
         public abstract Task InitializeDbAsync();
+
+        protected virtual void GenerateDatabaseName()
+        {
+            DatabaseName = $"sql_tests_{Guid.NewGuid():N}";
+        }
 
         protected abstract void ConfigureContainer(CreateContainerParameters parameters);
 

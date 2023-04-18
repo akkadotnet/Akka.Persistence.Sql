@@ -4,8 +4,6 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using System;
-
 namespace Akka.Persistence.Sql.Journal.Types
 {
     public sealed class JournalRow

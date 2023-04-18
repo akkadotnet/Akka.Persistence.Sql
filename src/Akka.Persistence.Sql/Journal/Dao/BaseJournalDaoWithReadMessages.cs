@@ -14,7 +14,6 @@ using Akka.Persistence.Sql.Streams;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Util;
-using LinqToDB.Data;
 
 namespace Akka.Persistence.Sql.Journal.Dao
 {

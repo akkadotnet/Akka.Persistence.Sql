@@ -62,10 +62,11 @@ namespace Akka.Persistence.Sql.HelperLib
                     .Distinct();
 
                 maxId = await connection.GetTable<JournalRow>()
-                    .Where(r =>
-                        r.Tags != null &&
-                        r.Tags.Length > 0 &&
-                        r.Ordering.NotIn(jtrQuery))
+                    .Where(
+                        r =>
+                            r.Tags != null &&
+                            r.Tags.Length > 0 &&
+                            r.Ordering.NotIn(jtrQuery))
                     .Select(r => r.Ordering)
                     .OrderByDescending(r => r)
                     .FirstOrDefaultAsync();
@@ -89,11 +90,12 @@ namespace Akka.Persistence.Sql.HelperLib
                     {
                         var offset = startOffset;
                         var rows = await connection.GetTable<JournalRow>()
-                            .Where(r =>
-                                r.Ordering >= offset &&
-                                r.Ordering < offset + batchSize &&
-                                r.Tags != null &&
-                                r.Tags.Length > 0)
+                            .Where(
+                                r =>
+                                    r.Ordering >= offset &&
+                                    r.Ordering < offset + batchSize &&
+                                    r.Tags != null &&
+                                    r.Tags.Length > 0)
                             .ToListAsync();
 
                         var tagList = new List<JournalTagRow>();

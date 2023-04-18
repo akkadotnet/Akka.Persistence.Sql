@@ -31,11 +31,11 @@ namespace Akka.Persistence.Sql.Config
 
         public bool AddShutdownHook { get; }
 
-        public IPluginConfig PluginConfig { get; }
-
         public TimeSpan RefreshInterval { get; }
 
         public JournalSequenceRetrievalConfig JournalSequenceRetrievalConfiguration { get; }
+
+        public IPluginConfig PluginConfig { get; }
 
         public string ProviderName { get; }
 

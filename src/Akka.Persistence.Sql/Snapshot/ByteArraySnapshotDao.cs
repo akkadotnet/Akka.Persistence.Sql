@@ -18,10 +18,9 @@ namespace Akka.Persistence.Sql.Snapshot
 {
     public class ByteArraySnapshotDao : ISnapshotDao
     {
-        private readonly ILoggingAdapter _logger;
-
         private readonly AkkaPersistenceDataConnectionFactory _connectionFactory;
         private readonly ByteArrayDateTimeSnapshotSerializer _dateTimeSerializer;
+        private readonly ILoggingAdapter _logger;
         private readonly ByteArrayLongSnapshotSerializer _longSerializer;
         private readonly SnapshotConfig _snapshotConfig;
 
@@ -68,18 +67,20 @@ namespace Akka.Persistence.Sql.Snapshot
             {
                 await connection
                     .GetTable<DateTimeSnapshotRow>()
-                    .Where(r =>
-                        r.PersistenceId == persistenceId &&
-                        r.SequenceNumber <= maxSequenceNr)
+                    .Where(
+                        r =>
+                            r.PersistenceId == persistenceId &&
+                            r.SequenceNumber <= maxSequenceNr)
                     .DeleteAsync();
             }
             else
             {
                 await connection
                     .GetTable<LongSnapshotRow>()
-                    .Where(r =>
-                        r.PersistenceId == persistenceId &&
-                        r.SequenceNumber <= maxSequenceNr)
+                    .Where(
+                        r =>
+                            r.PersistenceId == persistenceId &&
+                            r.SequenceNumber <= maxSequenceNr)
                     .DeleteAsync();
             }
         }
@@ -92,18 +93,20 @@ namespace Akka.Persistence.Sql.Snapshot
             {
                 await connection
                     .GetTable<DateTimeSnapshotRow>()
-                    .Where(r =>
-                        r.PersistenceId == persistenceId &&
-                        r.Created <= maxTimestamp)
+                    .Where(
+                        r =>
+                            r.PersistenceId == persistenceId &&
+                            r.Created <= maxTimestamp)
                     .DeleteAsync();
             }
             else
             {
                 await connection
                     .GetTable<LongSnapshotRow>()
-                    .Where(r =>
-                        r.PersistenceId == persistenceId &&
-                        r.Created <= maxTimestamp.Ticks)
+                    .Where(
+                        r =>
+                            r.PersistenceId == persistenceId &&
+                            r.Created <= maxTimestamp.Ticks)
                     .DeleteAsync();
             }
         }
@@ -119,20 +122,22 @@ namespace Akka.Persistence.Sql.Snapshot
             {
                 await connection
                     .GetTable<DateTimeSnapshotRow>()
-                    .Where(r =>
-                        r.PersistenceId == persistenceId &&
-                        r.SequenceNumber <= maxSequenceNr &&
-                        r.Created <= maxTimestamp)
+                    .Where(
+                        r =>
+                            r.PersistenceId == persistenceId &&
+                            r.SequenceNumber <= maxSequenceNr &&
+                            r.Created <= maxTimestamp)
                     .DeleteAsync();
             }
             else
             {
                 await connection
                     .GetTable<LongSnapshotRow>()
-                    .Where(r =>
-                        r.PersistenceId == persistenceId &&
-                        r.SequenceNumber <= maxSequenceNr &&
-                        r.Created <= maxTimestamp.Ticks)
+                    .Where(
+                        r =>
+                            r.PersistenceId == persistenceId &&
+                            r.SequenceNumber <= maxSequenceNr &&
+                            r.Created <= maxTimestamp.Ticks)
                     .DeleteAsync();
             }
         }
@@ -175,9 +180,10 @@ namespace Akka.Persistence.Sql.Snapshot
             {
                 var row = await connection
                     .GetTable<DateTimeSnapshotRow>()
-                    .Where(r =>
-                        r.PersistenceId == persistenceId &&
-                        r.Created <= timestamp)
+                    .Where(
+                        r =>
+                            r.PersistenceId == persistenceId &&
+                            r.Created <= timestamp)
                     .OrderByDescending(t => t.SequenceNumber)
                     .FirstOrDefaultAsync();
 
@@ -189,9 +195,10 @@ namespace Akka.Persistence.Sql.Snapshot
             {
                 var row = await connection
                     .GetTable<LongSnapshotRow>()
-                    .Where(r =>
-                        r.PersistenceId == persistenceId &&
-                        r.Created <= timestamp.Ticks)
+                    .Where(
+                        r =>
+                            r.PersistenceId == persistenceId &&
+                            r.Created <= timestamp.Ticks)
                     .OrderByDescending(t => t.SequenceNumber)
                     .FirstOrDefaultAsync();
 
@@ -209,9 +216,10 @@ namespace Akka.Persistence.Sql.Snapshot
             {
                 var row = await connection
                     .GetTable<DateTimeSnapshotRow>()
-                    .Where(r =>
-                        r.PersistenceId == persistenceId &&
-                        r.SequenceNumber <= sequenceNr)
+                    .Where(
+                        r =>
+                            r.PersistenceId == persistenceId &&
+                            r.SequenceNumber <= sequenceNr)
                     .OrderByDescending(t => t.SequenceNumber)
                     .FirstOrDefaultAsync();
 
@@ -223,9 +231,10 @@ namespace Akka.Persistence.Sql.Snapshot
             {
                 var row = await connection
                     .GetTable<LongSnapshotRow>()
-                    .Where(r =>
-                        r.PersistenceId == persistenceId &&
-                        r.SequenceNumber <= sequenceNr)
+                    .Where(
+                        r =>
+                            r.PersistenceId == persistenceId &&
+                            r.SequenceNumber <= sequenceNr)
                     .OrderByDescending(t => t.SequenceNumber)
                     .FirstOrDefaultAsync();
 
@@ -246,10 +255,11 @@ namespace Akka.Persistence.Sql.Snapshot
             {
                 var row = await connection
                     .GetTable<DateTimeSnapshotRow>()
-                    .Where(r =>
-                        r.PersistenceId == persistenceId &&
-                        r.SequenceNumber <= sequenceNr &&
-                        r.Created <= timestamp)
+                    .Where(
+                        r =>
+                            r.PersistenceId == persistenceId &&
+                            r.SequenceNumber <= sequenceNr &&
+                            r.Created <= timestamp)
                     .OrderByDescending(t => t.SequenceNumber)
                     .FirstOrDefaultAsync();
 
@@ -261,10 +271,11 @@ namespace Akka.Persistence.Sql.Snapshot
             {
                 var row = await connection
                     .GetTable<LongSnapshotRow>()
-                    .Where(r =>
-                        r.PersistenceId == persistenceId &&
-                        r.SequenceNumber <= sequenceNr &&
-                        r.Created <= timestamp.Ticks)
+                    .Where(
+                        r =>
+                            r.PersistenceId == persistenceId &&
+                            r.SequenceNumber <= sequenceNr &&
+                            r.Created <= timestamp.Ticks)
                     .OrderByDescending(t => t.SequenceNumber)
                     .FirstOrDefaultAsync();
 
@@ -282,18 +293,20 @@ namespace Akka.Persistence.Sql.Snapshot
             {
                 await connection
                     .GetTable<DateTimeSnapshotRow>()
-                    .Where(r =>
-                        r.PersistenceId == persistenceId &&
-                        r.SequenceNumber == sequenceNr)
+                    .Where(
+                        r =>
+                            r.PersistenceId == persistenceId &&
+                            r.SequenceNumber == sequenceNr)
                     .DeleteAsync();
             }
             else
             {
                 await connection
                     .GetTable<LongSnapshotRow>()
-                    .Where(r =>
-                        r.PersistenceId == persistenceId &&
-                        r.SequenceNumber == sequenceNr)
+                    .Where(
+                        r =>
+                            r.PersistenceId == persistenceId &&
+                            r.SequenceNumber == sequenceNr)
                     .DeleteAsync();
             }
         }

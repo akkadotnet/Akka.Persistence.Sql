@@ -16,17 +16,15 @@ namespace Akka.Persistence.Sql.Hosting
     {
         private static readonly Configuration.Config Default = SqlPersistence.DefaultJournalConfiguration;
 
-        public SqlJournalOptions() : this(true)
-        {
-        }
-        
+        public SqlJournalOptions() : this(true) { }
+
         public SqlJournalOptions(bool isDefaultPlugin, string identifier = "sql") : base(isDefaultPlugin)
         {
             Identifier = identifier;
             Serializer = null!;
             AutoInitialize = true;
         }
-        
+
         /// <summary>
         ///     Connection string used for database access
         /// </summary>
@@ -35,12 +33,12 @@ namespace Akka.Persistence.Sql.Hosting
         /// <summary>
         ///     <para>
         ///         A string constant defining the database type to connect to, valid values are defined inside
-        ///         <see cref="LinqToDB.ProviderName"/> static class.
-        ///         Refer to the Members of <see cref="LinqToDB.ProviderName"/> for included providers.
+        ///         <see cref="LinqToDB.ProviderName" /> static class.
+        ///         Refer to the Members of <see cref="LinqToDB.ProviderName" /> for included providers.
         ///     </para>
         /// </summary>
         public string? ProviderName { get; set; }
-        
+
         /// <summary>
         ///     <para>
         ///         The plugin identifier for this persistence plugin
@@ -52,13 +50,13 @@ namespace Akka.Persistence.Sql.Hosting
         /// <summary>
         ///     <para>
         ///         The SQL write journal is notifying the query side as soon as things
-        ///         are persisted, but for efficiency reasons the query side retrieves the events 
-        ///         in batches that sometimes can be delayed up to the configured <see cref="QueryRefreshInterval"/>.
+        ///         are persisted, but for efficiency reasons the query side retrieves the events
+        ///         in batches that sometimes can be delayed up to the configured <see cref="QueryRefreshInterval" />.
         ///     </para>
         ///     <b>Default</b>: 3 seconds
         /// </summary>
         public TimeSpan? QueryRefreshInterval { get; set; }
-        
+
         /// <summary>
         ///     <para>
         ///         The database options to modify database table column mapping for this journal.
@@ -67,43 +65,43 @@ namespace Akka.Persistence.Sql.Hosting
         ///     you leave this empty for greenfield projects.
         /// </summary>
         public JournalDatabaseOptions? DatabaseOptions { get; set; }
-        
+
         /// <summary>
         ///     <para>
         ///         Describe how tags are being stored inside the database. Setting this to
-        ///         <see cref="TagMode.Csv"/> will store the tags as a comma delimited value
+        ///         <see cref="TagMode.Csv" /> will store the tags as a comma delimited value
         ///         in a column named <c>tags</c> inside the event journal. Setting this to
-        ///         <see cref="TagMode.TagTable"/> will store the tags inside a separate
-        ///         tag table instead. 
+        ///         <see cref="TagMode.TagTable" /> will store the tags inside a separate
+        ///         tag table instead.
         ///     </para>
         ///     <b>NOTE</b>: This is used primarily for backward compatibility,
         ///     you leave this empty for greenfield projects.
         /// </summary>
         public TagMode? TagStorageMode { get; set; }
-        
+
         protected override Configuration.Config InternalDefaultConfig => Default;
 
         protected override StringBuilder Build(StringBuilder sb)
         {
             if (string.IsNullOrWhiteSpace(ConnectionString))
                 throw new ArgumentNullException(nameof(ConnectionString), $"{nameof(ConnectionString)} can not be null or empty.");
-            
-            if(string.IsNullOrWhiteSpace(ProviderName))
+
+            if (string.IsNullOrWhiteSpace(ProviderName))
                 throw new ArgumentNullException(nameof(ProviderName), $"{nameof(ProviderName)} can not be null or empty.");
-            
+
             sb.AppendLine($"connection-string = {ConnectionString.ToHocon()}");
             sb.AppendLine($"provider-name = {ProviderName.ToHocon()}");
 
             if (TagStorageMode is { })
                 sb.AppendLine($"tag-write-mode = {TagStorageMode.ToString().ToHocon()}");
-            
+
             if (DatabaseOptions is { })
                 sb.AppendLine($"table-mapping = {DatabaseOptions.Mapping.Name().ToHocon()}");
-            
+
             DatabaseOptions?.Build(sb);
-            
+
             base.Build(sb);
-            
+
             if (IsDefaultPlugin)
             {
                 sb.AppendLine("akka.persistence.query.journal.sql {");
@@ -114,10 +112,10 @@ namespace Akka.Persistence.Sql.Hosting
                     sb.AppendLine($"tag-read-mode = {TagStorageMode.ToString().ToHocon()}");
                 sb.AppendLine("}");
             }
-            
-            if(QueryRefreshInterval is { })
+
+            if (QueryRefreshInterval is { })
                 sb.AppendLine($"akka.persistence.query.journal.sql.refresh-interval = {QueryRefreshInterval.ToHocon()}");
-            
+
             return sb;
         }
     }

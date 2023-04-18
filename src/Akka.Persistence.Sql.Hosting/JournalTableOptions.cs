@@ -15,7 +15,7 @@ namespace Akka.Persistence.Sql.Hosting
         {
             UseWriterUuidColumn = true,
             TableName = "journal",
-            
+
             OrderingColumnName = "ordering",
             DeletedColumnName = "deleted",
             PersistenceIdColumnName = "persistence_id",
@@ -32,7 +32,7 @@ namespace Akka.Persistence.Sql.Hosting
         {
             UseWriterUuidColumn = false,
             TableName = "EventJournal",
-            
+
             OrderingColumnName = "Ordering",
             DeletedColumnName = "IsDeleted",
             PersistenceIdColumnName = "PersistenceId",
@@ -41,14 +41,14 @@ namespace Akka.Persistence.Sql.Hosting
             TagsColumnName = "Tags",
             MessageColumnName = "Payload",
             IdentifierColumnName = "SerializerId",
-            ManifestColumnName = "Manifest",
+            ManifestColumnName = "Manifest"
         };
-        
+
         public static JournalTableOptions Sqlite => new()
         {
             UseWriterUuidColumn = false,
             TableName = "event_journal",
-            
+
             OrderingColumnName = "ordering",
             DeletedColumnName = "is_deleted",
             PersistenceIdColumnName = "persistence_id",
@@ -57,14 +57,14 @@ namespace Akka.Persistence.Sql.Hosting
             TagsColumnName = "tags",
             MessageColumnName = "payload",
             IdentifierColumnName = "serializer_id",
-            ManifestColumnName = "manifest",
+            ManifestColumnName = "manifest"
         };
-        
+
         public static JournalTableOptions PostgreSql => new()
         {
             UseWriterUuidColumn = false,
             TableName = "event_journal",
-            
+
             OrderingColumnName = "ordering",
             DeletedColumnName = "is_deleted",
             PersistenceIdColumnName = "persistence_id",
@@ -73,14 +73,14 @@ namespace Akka.Persistence.Sql.Hosting
             TagsColumnName = "tags",
             MessageColumnName = "payload",
             IdentifierColumnName = "serializer_id",
-            ManifestColumnName = "manifest",
+            ManifestColumnName = "manifest"
         };
-        
+
         public static JournalTableOptions MySql => new()
         {
             UseWriterUuidColumn = false,
             TableName = "event_journal",
-            
+
             OrderingColumnName = "ordering",
             DeletedColumnName = "is_deleted",
             PersistenceIdColumnName = "persistence_id",
@@ -89,12 +89,12 @@ namespace Akka.Persistence.Sql.Hosting
             TagsColumnName = "tags",
             MessageColumnName = "payload",
             IdentifierColumnName = "serializer_id",
-            ManifestColumnName = "manifest",
+            ManifestColumnName = "manifest"
         };
-        
+
         public bool? UseWriterUuidColumn { get; set; }
         public string? TableName { get; set; }
-        
+
         public string? OrderingColumnName { get; set; }
         public string? DeletedColumnName { get; set; }
         public string? PersistenceIdColumnName { get; set; }

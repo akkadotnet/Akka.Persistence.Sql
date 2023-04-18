@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Akka.Util;
 using Docker.DotNet.Models;
@@ -27,8 +26,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         private readonly DbConnectionStringBuilder _connectionStringBuilder;
 
         public MySqlContainer() : base("mysql", "8", $"mysql-{Guid.NewGuid():N}")
-        {
-            _connectionStringBuilder = new DbConnectionStringBuilder
+            => _connectionStringBuilder = new DbConnectionStringBuilder
             {
                 ["Server"] = "localhost",
                 ["Port"] = Port.ToString(),
@@ -37,7 +35,6 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
                 ["allowPublicKeyRetrieval"] = "true",
                 ["Allow User Variables"] = "true"
             };
-        }
 
         public override string ConnectionString => _connectionStringBuilder.ToString();
 
@@ -71,7 +68,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
 
             parameters.Env = new[]
             {
-                $"MYSQL_ROOT_PASSWORD={Password}",
+                $"MYSQL_ROOT_PASSWORD={Password}"
             };
         }
 
@@ -79,7 +76,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         {
             await using var connection = new MySqlConnection(ConnectionString);
             await connection.OpenAsync();
-            
+
             await using var command = new MySqlCommand
             {
                 CommandText = "SET GLOBAL max_connections = 999;",
@@ -87,7 +84,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
             };
             await command.ExecuteNonQueryAsync();
             await connection.CloseAsync();
-            
+
             await base.AfterContainerStartedAsync();
         }
 
@@ -114,9 +111,9 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
                     // no-op
                 }
             }
-            
+
             GenerateDatabaseName();
-            
+
             await using var command = new MySqlCommand
             {
                 CommandText = $"CREATE DATABASE `{DatabaseName}`;",

@@ -260,8 +260,8 @@ akka.persistence {{
             shardMessages.Count.Should().Be(200 * rounds);
             shardMessages.Aggregate(0, (accumulator, val) => accumulator + val).Should().Be(roundTotal * rounds);
 
-            customShardMessages = events.
-                Where(e => e.Event is CustomShardedMessage)
+            customShardMessages = events
+                .Where(e => e.Event is CustomShardedMessage)
                 .Select(e => ((CustomShardedMessage)e.Event).Message)
                 .ToList();
             customShardMessages.Count.Should().Be(200 * rounds);

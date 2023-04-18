@@ -17,39 +17,39 @@ namespace Akka.Persistence.Sql.Hosting
             PersistenceIdColumnName = "persistence_id",
             SequenceNumberColumnName = "sequence_number"
         };
-        
+
         public static MetadataTableOptions SqlServer => new()
         {
             TableName = "Metadata",
             PersistenceIdColumnName = "PersistenceId",
             SequenceNumberColumnName = "SequenceNr"
         };
-        
+
         public static MetadataTableOptions Sqlite => new()
         {
             TableName = "journal_metadata",
             PersistenceIdColumnName = "persistence_id",
             SequenceNumberColumnName = "sequence_nr"
         };
-        
+
         public static MetadataTableOptions PostgreSql => new()
         {
             TableName = "metadata",
             PersistenceIdColumnName = "persistence_id",
             SequenceNumberColumnName = "sequence_nr"
         };
-        
+
         public static MetadataTableOptions MySql => new()
         {
             TableName = "metadata",
             PersistenceIdColumnName = "persistence_id",
             SequenceNumberColumnName = "sequence_nr"
         };
-        
+
         public string? TableName { get; set; }
-        
+
         public string? PersistenceIdColumnName { get; set; }
-        
+
         public string? SequenceNumberColumnName { get; set; }
 
         internal void Build(StringBuilder psb)
@@ -57,11 +57,11 @@ namespace Akka.Persistence.Sql.Hosting
             var sb = new StringBuilder();
             if (TableName is { })
                 sb.AppendLine($"table-name = {TableName.ToHocon()}");
-            
+
             var columnSb = new StringBuilder();
             if (PersistenceIdColumnName is { })
                 columnSb.AppendLine($"persistence-id = {PersistenceIdColumnName.ToHocon()}");
-            
+
             if (SequenceNumberColumnName is { })
                 columnSb.AppendLine($"sequence-number = {SequenceNumberColumnName.ToHocon()}");
 

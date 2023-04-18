@@ -43,19 +43,16 @@ namespace Akka.Persistence.Sql.Journal
         [Obsolete(message: "Use SqlPersistence.DefaultConfiguration or SqlPersistence.Get(ActorSystem).DefaultConfig instead")]
         public static readonly Configuration.Config DefaultConfiguration = SqlPersistence.DefaultConfiguration;
 
-        private ByteArrayJournalDao _journal;
         private readonly JournalConfig _journalConfig;
-        private readonly bool _useWriterUuid;
         private readonly ILoggingAdapter _log;
-
-        private ActorMaterializer _mat;
+        private readonly CancellationTokenSource _pendingWriteCts;
+        private readonly bool _useWriterUuid;
 
         private readonly Dictionary<string, Task> _writeInProgress = new();
-        private readonly CancellationTokenSource _pendingWriteCts;
 
-        // Stash is needed because we need to stash all incoming messages while we're waiting for the
-        // journal DAO to be properly initialized.
-        public IStash Stash { get; set; }
+        private ByteArrayJournalDao _journal;
+
+        private ActorMaterializer _mat;
 
         public SqlWriteJournal(Configuration.Config journalConfig)
         {
@@ -67,11 +64,15 @@ namespace Akka.Persistence.Sql.Journal
             _useWriterUuid = _journalConfig.TableConfig.EventJournalTable.UseWriterUuidColumn;
         }
 
+        // Stash is needed because we need to stash all incoming messages while we're waiting for the
+        // journal DAO to be properly initialized.
+        public IStash Stash { get; set; }
+
         protected override void PreStart()
         {
             base.PreStart();
             Initialize().PipeTo(Self);
-            
+
             // We have to use BecomeStacked here because the default Receive method is sealed in the
             // base class and it uses a custom code to handle received messages.
             // We need to suspend the base class behavior while we're waiting for the journal DAO to be properly
@@ -104,19 +105,21 @@ namespace Akka.Persistence.Sql.Journal
                     journalConfig: _journalConfig,
                     serializer: Context.System.Serialization,
                     logger: Context.GetLogger(),
-                    selfUuid: _useWriterUuid ? Guid.NewGuid().ToString("N") : null, 
+                    selfUuid: _useWriterUuid
+                        ? Guid.NewGuid().ToString("N")
+                        : null,
                     shutdownToken: _pendingWriteCts.Token);
-                
+
                 if (!_journalConfig.AutoInitialize)
                     return Status.Success.Instance;
-                
+
                 await _journal.InitializeTables(_pendingWriteCts.Token);
             }
             catch (Exception e)
             {
                 return new Status.Failure(e);
             }
-            
+
             return Status.Success.Instance;
         }
 
@@ -137,7 +140,7 @@ namespace Akka.Persistence.Sql.Journal
                     return true;
             }
         }
-        
+
         protected override bool ReceivePluginInternal(object message)
         {
             switch (message)
@@ -146,14 +149,14 @@ namespace Akka.Persistence.Sql.Journal
                     if (_writeInProgress.TryGetValue(wf.PersistenceId, out var latestPending) & (latestPending == wf.Future))
                         _writeInProgress.Remove(wf.PersistenceId);
                     return true;
-                
+
                 // `IsInitialized` and `Initialized` are used mostly for testing purposes,
                 // to make sure that the write journal has been initialized before we
                 // start the query read journal tests.
                 case IsInitialized:
                     Sender.Tell(Initialized.Instance);
                     return true;
-                
+
                 default:
                     return false;
             }
