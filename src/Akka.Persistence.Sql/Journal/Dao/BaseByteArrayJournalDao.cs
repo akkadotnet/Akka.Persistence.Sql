@@ -143,7 +143,8 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
                 if (JournalConfig.DaoConfig.SqlCommonCompatibilityMode)
                 {
-                    await connection.GetTable<JournalMetaData>()
+                    await connection
+                        .GetTable<JournalMetaData>()
                         .InsertOrUpdateAsync(
                             insertSetter: () => new JournalMetaData
                             {
