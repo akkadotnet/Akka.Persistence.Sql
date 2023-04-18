@@ -7,7 +7,6 @@
 using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.Sql.Tests.Common.Query;
-using Akka.Persistence.Sql.Tests.PostgreSql;
 using Akka.Persistence.Sql.Tests.SqlServer;
 using Xunit;
 using Xunit.Abstractions;
@@ -23,7 +22,7 @@ namespace Akka.Persistence.Sql.Tests.Query.SqlServer.TagTable
     [Collection(nameof(SqlServerPersistenceSpec))]
     public class SqlServerAllEventsSpec : BaseAllEventsSpec<SqlServerContainer>
     {
-        public SqlServerAllEventsSpec(ITestOutputHelper output, SqlServerContainer fixture) 
+        public SqlServerAllEventsSpec(ITestOutputHelper output, SqlServerContainer fixture)
             : base(TagMode.TagTable, output, nameof(SqlServerAllEventsSpec), fixture) { }
     }
 }

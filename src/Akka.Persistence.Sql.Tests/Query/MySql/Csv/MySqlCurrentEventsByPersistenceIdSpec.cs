@@ -22,7 +22,7 @@ namespace Akka.Persistence.Sql.Tests.Query.MySql.Csv
     [Collection(nameof(MySqlPersistenceSpec))]
     public class MySqlCurrentEventsByPersistenceIdSpec : BaseCurrentEventsByPersistenceIdSpec<MySqlContainer>
     {
-        public MySqlCurrentEventsByPersistenceIdSpec(ITestOutputHelper output, MySqlContainer fixture) 
+        public MySqlCurrentEventsByPersistenceIdSpec(ITestOutputHelper output, MySqlContainer fixture)
             : base(TagMode.Csv, output, nameof(MySqlAllEventsSpec), fixture) { }
     }
 }

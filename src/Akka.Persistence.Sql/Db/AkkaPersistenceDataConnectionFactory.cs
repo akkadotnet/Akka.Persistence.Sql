@@ -108,7 +108,7 @@ namespace Akka.Persistence.Sql.Db
 
             journalRowBuilder
                 .HasTableName(journalConfig.Name)
-                
+
                 .Member(r => r.Ordering)
                 .HasColumnName(columnNames.Ordering)
                 .IsIdentity()
@@ -148,21 +148,21 @@ namespace Akka.Persistence.Sql.Db
                     .Member(r => r.Message)
                     .HasDbType("LONGBLOB");
             }
-            
+
             if (config.ProviderName.ToLower().Contains("sqlite"))
             {
                 journalRowBuilder
                     .Member(r => r.Ordering)
                     .HasDbType("INTEGER");
             }
-            
+
             if (journalConfig.UseWriterUuidColumn)
             {
                 journalRowBuilder
                     .Member(r => r.WriterUuid)
                     .HasColumnName(columnNames.WriterUuid)
                     .HasLength(128);
-            } 
+            }
             else
             {
                 // non-default legacy tables does not have WriterUuid column defined.
@@ -208,22 +208,22 @@ namespace Akka.Persistence.Sql.Db
         {
             if (!config.IDaoConfig.SqlCommonCompatibilityMode)
                 return;
-            
+
             // Probably overkill, but we only set Metadata Mapping if specified
             // That we are in delete compatibility mode.
             var tableConfig = config.TableConfig;
             var rowBuilder = fmb.Entity<JournalMetaData>();
             if (tableConfig.SchemaName is { })
                 rowBuilder.HasSchemaName(tableConfig.SchemaName);
-            
+
             rowBuilder
                 .HasTableName(tableConfig.MetadataTable.Name)
-                
+
                 .Member(r => r.PersistenceId)
                 .HasColumnName(tableConfig.MetadataTable.ColumnNames.PersistenceId)
                 .HasLength(255)
                 .IsPrimaryKey()
-                
+
                 .Member(r => r.SequenceNumber)
                 .HasColumnName(tableConfig.MetadataTable.ColumnNames.SequenceNumber)
                 .IsPrimaryKey();
@@ -246,33 +246,33 @@ namespace Akka.Persistence.Sql.Db
 
             rowBuilder
                 .HasTableName(tagConfig.Name)
-                
+
                 .Member(r => r.OrderingId)
                 .HasColumnName(tagColumns.OrderingId)
                 .IsNullable(false)
                 .IsPrimaryKey()
-                
+
                 .Member(r => r.TagValue)
                 .HasColumnName(tagColumns.Tag)
                 .IsNullable(false)
                 .HasLength(64)
                 .IsPrimaryKey()
-                
+
                 .Member(r => r.PersistenceId)
                 .HasColumnName(tagColumns.PersistenceId)
                 .HasLength(255)
                 .IsNullable(false)
-                
+
                 .Member(r => r.SequenceNumber)
                 .HasColumnName(tagColumns.SequenceNumber)
                 .IsNullable(false);
-            
+
             if (config.ProviderName.ToLower().Contains("sqlite"))
             {
                 rowBuilder
                     .Member(r => r.OrderingId)
                     .HasDbType("INTEGER")
-                    
+
                     .Member(r => r.SequenceNumber)
                     .HasDbType("INTEGER");
             }
@@ -296,11 +296,11 @@ namespace Akka.Persistence.Sql.Db
                 .HasColumnName(snapshotConfig.ColumnNames.PersistenceId)
                 .HasLength(255)
                 .IsPrimaryKey()
-                
+
                 .Member(r => r.SequenceNumber)
                 .HasColumnName(snapshotConfig.ColumnNames.SequenceNumber)
                 .IsPrimaryKey()
-                
+
                 .Member(r => r.Created)
                 .HasColumnName(snapshotConfig.ColumnNames.Created)
 
@@ -320,7 +320,7 @@ namespace Akka.Persistence.Sql.Db
                     .Member(r => r.Payload)
                     .HasDbType("LONGBLOB");
             }
-            
+
             if (config.IDaoConfig.SqlCommonCompatibilityMode)
             {
                 //builder.Member(r => r.Created)
@@ -347,11 +347,11 @@ namespace Akka.Persistence.Sql.Db
                 .HasColumnName(snapshotConfig.ColumnNames.PersistenceId)
                 .HasLength(255)
                 .IsPrimaryKey()
-                
+
                 .Member(r => r.SequenceNumber)
                 .HasColumnName(snapshotConfig.ColumnNames.SequenceNumber)
                 .IsPrimaryKey()
-                
+
                 .Member(r => r.Created)
                 .HasColumnName(snapshotConfig.ColumnNames.Created)
 
@@ -371,7 +371,7 @@ namespace Akka.Persistence.Sql.Db
                     .Member(r => r.Payload)
                     .HasDbType("LONGBLOB");
             }
-            
+
             if (config.IDaoConfig.SqlCommonCompatibilityMode)
             {
                 //builder.Member(r => r.Created)

@@ -22,7 +22,7 @@ namespace Akka.Persistence.Sql.Tests.Query.MySql.TagTable
     [Collection(nameof(MySqlPersistenceSpec))]
     public class MySqlCurrentEventsByTagSpec : BaseCurrentEventsByTagSpec<MySqlContainer>
     {
-        public MySqlCurrentEventsByTagSpec(ITestOutputHelper output, MySqlContainer fixture) 
+        public MySqlCurrentEventsByTagSpec(ITestOutputHelper output, MySqlContainer fixture)
             : base(TagMode.TagTable, output, nameof(MySqlCurrentEventsByTagSpec), fixture) { }
     }
 }

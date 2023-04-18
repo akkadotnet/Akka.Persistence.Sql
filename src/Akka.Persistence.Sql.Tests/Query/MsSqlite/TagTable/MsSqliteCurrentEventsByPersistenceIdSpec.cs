@@ -16,7 +16,7 @@ namespace Akka.Persistence.Sql.Tests.Query.MsSqlite.TagTable
     [Collection(nameof(MsSqlitePersistenceSpec))]
     public class MsSqliteCurrentEventsByPersistenceIdSpec : BaseCurrentEventsByPersistenceIdSpec<MsSqliteContainer>
     {
-        public MsSqliteCurrentEventsByPersistenceIdSpec(ITestOutputHelper output, MsSqliteContainer fixture) 
+        public MsSqliteCurrentEventsByPersistenceIdSpec(ITestOutputHelper output, MsSqliteContainer fixture)
             : base(TagMode.TagTable, output, nameof(MsSqliteCurrentEventsByPersistenceIdSpec), fixture) { }
     }
 }

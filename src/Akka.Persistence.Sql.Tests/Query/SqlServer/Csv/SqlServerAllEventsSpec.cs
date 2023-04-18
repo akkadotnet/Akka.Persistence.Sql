@@ -22,7 +22,7 @@ namespace Akka.Persistence.Sql.Tests.Query.SqlServer.Csv
     [Collection(nameof(SqlServerPersistenceSpec))]
     public class SqlServerAllEventsSpec : BaseAllEventsSpec<SqlServerContainer>
     {
-        public SqlServerAllEventsSpec(ITestOutputHelper output, SqlServerContainer fixture) 
+        public SqlServerAllEventsSpec(ITestOutputHelper output, SqlServerContainer fixture)
             : base(TagMode.Csv, output, nameof(SqlServerAllEventsSpec), fixture) { }
     }
 }

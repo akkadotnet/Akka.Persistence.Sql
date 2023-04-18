@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using Akka.Persistence.Sql.Config;
-using Akka.Persistence.Sql.Tests.Common;
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.Sql.Tests.Common.Query;
 using Akka.Persistence.Sql.Tests.PostgreSql;
@@ -23,7 +22,7 @@ namespace Akka.Persistence.Sql.Tests.Query.PostgreSql.TagTable
     [Collection(nameof(PostgreSqlPersistenceSpec))]
     public class PostgreSqlCurrentEventsByPersistenceIdSpec : BaseCurrentEventsByPersistenceIdSpec<PostgreSqlContainer>
     {
-        public PostgreSqlCurrentEventsByPersistenceIdSpec(ITestOutputHelper output, PostgreSqlContainer fixture) 
+        public PostgreSqlCurrentEventsByPersistenceIdSpec(ITestOutputHelper output, PostgreSqlContainer fixture)
             : base(TagMode.TagTable, output, nameof(PostgreSqlCurrentEventsByPersistenceIdSpec), fixture) { }
     }
 }

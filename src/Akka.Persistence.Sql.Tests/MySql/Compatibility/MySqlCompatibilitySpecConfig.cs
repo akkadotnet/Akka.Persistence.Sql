@@ -1,5 +1,5 @@
 // -----------------------------------------------------------------------
-//  <copyright file="PostgreSqlCompatibilitySpecConfig.cs" company="Akka.NET Project">
+//  <copyright file="MySqlCompatibilitySpecConfig.cs" company="Akka.NET Project">
 //      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
@@ -21,15 +21,15 @@ namespace Akka.Persistence.Sql.Tests.MySql.Compatibility
                 akka.persistence {{
                     publish-plugin-commands = on
                     snapshot-store {{
-		                mysql {{
-			                class = ""{typeof(MySqlSnapshotStore).AssemblyQualifiedName}""
-			                plugin-dispatcher = ""akka.actor.default-dispatcher""
-			                connection-string = ""{fixture.ConnectionString}""
-			                connection-timeout = 30s
-			                table-name = {tableName}
-			                auto-initialize = on
-			                sequential-access = on
-		                }}
+                        mysql {{
+                            class = ""{typeof(MySqlSnapshotStore).AssemblyQualifiedName}""
+                            plugin-dispatcher = ""akka.actor.default-dispatcher""
+                            connection-string = ""{fixture.ConnectionString}""
+                            connection-timeout = 30s
+                            table-name = {tableName}
+                            auto-initialize = on
+                            sequential-access = on
+                        }}
 
                         sql {{
                             class = ""{typeof(SqlSnapshotStore).AssemblyQualifiedName}""

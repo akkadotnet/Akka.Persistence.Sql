@@ -16,7 +16,7 @@ namespace Akka.Persistence.Sql.Tests.Query.MsSqlite.Csv
     [Collection(nameof(MsSqlitePersistenceSpec))]
     public class MsSqliteAllEventsSpec : BaseAllEventsSpec<MsSqliteContainer>
     {
-        public MsSqliteAllEventsSpec(ITestOutputHelper output, MsSqliteContainer fixture) 
+        public MsSqliteAllEventsSpec(ITestOutputHelper output, MsSqliteContainer fixture)
             : base(TagMode.Csv, output, nameof(MsSqliteAllEventsSpec), fixture) { }
     }
 }

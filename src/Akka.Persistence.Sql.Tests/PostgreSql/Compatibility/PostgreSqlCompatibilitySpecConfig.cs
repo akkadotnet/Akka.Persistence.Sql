@@ -8,7 +8,6 @@ using Akka.Persistence.PostgreSql.Snapshot;
 using Akka.Persistence.Sql.Journal;
 using Akka.Persistence.Sql.Snapshot;
 using Akka.Persistence.Sql.Tests.Common.Containers;
-using LinqToDB;
 
 namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
 {
