@@ -1,3 +1,37 @@
+#### 1.5.2-beta3 April 19 2023 ###
+
+> **NOTE: Database schema changes**
+>
+> 1.5.2-beta2 package should be considered as deprecated. If you experimented with 1.5.2-beta1 and/or 1.5.2-beta2, you will need to drop existing persistence tables and recreate them using 1.5.2-beta3
+
+* [Fix SQL scripts for database table constraint and indices](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/220)
+* [Add official MySql support](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/221)
+* [Optimize sequence number and tag query](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/222)
+* [Optimize tag query by avoiding multiple DB queries](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/223)
+* [Add missing migration support to hosting extension method](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/225)
+
+This beta version introduces database schema optimization to:
+* Improve the tag table based query performance even more.
+* Improve inter-compatibility with other SQL persistence plugins.
+
+**Tag Query Benchmark**
+
+Benchmark is performed on a worst possible scenario:
+* Event journal table with 3 million row entries
+* Tagged events near the end of the table
+* Numbers are measured as the time required to complete one operation (complete retrieval of N tagged events).
+
+| Tag Count |  TagMode |         Mean |      Error |     StdDev |
+|-----------|--------- |-------------:|-----------:|-----------:|
+| 10        |      Csv | 1,760.393 ms | 27.1970 ms | 25.4401 ms |
+| 100       |      Csv | 1,766.355 ms | 25.0182 ms | 23.4021 ms |
+| 1000      |      Csv | 1,755.960 ms | 33.8171 ms | 34.7276 ms |
+| 10000     |      Csv | 1,905.026 ms | 22.3564 ms | 20.9122 ms |
+| 10        | TagTable |     2.336 ms |  0.0389 ms |  0.0344 ms |
+| 100       | TagTable |     3.943 ms |  0.0705 ms |  0.0660 ms |
+| 1000      | TagTable |    18.597 ms |  0.3570 ms |  0.3506 ms |
+| 10000     | TagTable |   184.446 ms |  3.3447 ms |  2.9650 ms |
+
 #### 1.5.2-beta2 April 14 2023 ###
 
 > **NOTE: Database schema changes**
