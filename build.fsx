@@ -208,7 +208,7 @@ Target "DocFx" (fun _ ->
             info.WorkingDirectory <- (Path.GetDirectoryName (FullName docFxPath))
             info.Arguments <- args) (System.TimeSpan.FromMinutes 45.0) (* Reasonably long-running task. *)
     if result <> 0 then failwithf "DocFX failed. %s %s" docFxPath args
-}
+)
 
 //--------------------------------------------------------------------------------
 // JetBrain targets
