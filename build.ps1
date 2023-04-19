@@ -32,6 +32,7 @@ Param(
 $FakeVersion = "4.63.0"
 $NugetVersion = "5.8.0"
 $NugetUrl = "https://dist.nuget.org/win-x86-commandline/v$NugetVersion/nuget.exe"
+$DocfxVersion = "2.59.4"
 
 # Make sure tools folder exists
 $PSScriptRoot = Split-Path $MyInvocation.MyCommand.Path -Parent
@@ -63,6 +64,20 @@ if (!(Test-Path $FakeExePath)) {
     Invoke-Expression "&`"$NugetPath`" install Fake -ExcludeVersion -Version $FakeVersion -OutputDirectory `"$ToolPath`"" | Out-Null;
     if ($LASTEXITCODE -ne 0) {
         Throw "An error occured while restoring Fake from NuGet."
+    }
+}
+
+###########################################################################
+# Docfx
+###########################################################################
+
+# Make sure Docfx has been installed.
+$DocfxExePath = Join-Path $ToolPath "docfx.console/tools/docfx.exe"
+if (!(Test-Path $DocfxExePath)) {
+    Write-Host "Installing Docfx..."
+    Invoke-Expression "&`"$NugetPath`" install docfx.console -ExcludeVersion -Version $DocfxVersion -OutputDirectory `"$ToolPath`"" | Out-Null;
+    if ($LASTEXITCODE -ne 0) {
+        Throw "An error occured while restoring docfx.console from NuGet."
     }
 }
 

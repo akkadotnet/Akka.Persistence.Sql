@@ -7,6 +7,7 @@ open System.Text
 
 open Fake
 open Fake.DotNetCli
+open Fake.NuGet.Install
 
 // Information about the project for Nuget and Assembly info files
 let configuration = "Release"
@@ -173,6 +174,40 @@ Target "PublishNuget" (fun _ ->
                 (sprintf "nuget push %s --api-key %s --source %s" project apiKey source)
 
         projects |> Seq.iter (runSingleProject)
+)
+
+//--------------------------------------------------------------------------------
+// Documentation
+//--------------------------------------------------------------------------------
+Target "DocFx" (fun _ ->
+    // build the projects with samples
+    //let docsTestsProject = "./src/core/Akka.Docs.Tests/Akka.Docs.Tests.csproj"
+    //DotNetCli.Restore (fun p -> { p with Project = docsTestsProject })
+    //DotNetCli.Build (fun p -> { p with Project = docsTestsProject; Configuration = configuration })
+    //let docsTutorialsProject = "./src/core/Akka.Docs.Tutorials/Akka.Docs.Tutorials.csproj"
+    //DotNetCli.Restore (fun p -> { p with Project = docsTutorialsProject })
+    //DotNetCli.Build (fun p -> { p with Project = docsTutorialsProject; Configuration = configuration })
+
+    // install MSDN references
+    NugetInstall (fun p ->
+            { p with
+                ExcludeVersion = true
+                Version = "0.1.0-alpha-1611021200"
+                OutputDirectory = currentDirectory @@ "tools" }) "msdn.4.5.2"
+
+    let docsPath = FullName "./docs"
+    let docFxPath = FullName(findToolInSubPath "docfx.exe" "tools/docfx.console/tools")
+    
+    let args = StringBuilder()
+                |> append (docsPath @@ "docfx.json" )
+                |> append ("--warningsAsErrors")
+                |> toText
+    
+    let result = ExecProcess(fun info ->
+            info.FileName <- docFxPath
+            info.WorkingDirectory <- (Path.GetDirectoryName (FullName docFxPath))
+            info.Arguments <- args) (System.TimeSpan.FromMinutes 45.0) (* Reasonably long-running task. *)
+    if result <> 0 then failwithf "DocFX failed. %s %s" docFxPath args
 )
 
 //--------------------------------------------------------------------------------
