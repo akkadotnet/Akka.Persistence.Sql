@@ -6,19 +6,43 @@ This is a port of the amazing [akka-persistence-jdbc](https://github.com/akka/ak
 
 Please read the documentation carefully. Some features may be specific to use case and have trade-offs (namely, compatibility modes)
 
-## Notes
+> ### This Is Still a Beta
+>
+> Please note this is still considered 'work in progress' and only used if one understands the risks. While the TCK Specs pass you should still test in a 'safe' non-production environment carefully before deciding to fully deploy.
 
-### This Is Still a Beta
+> ### Suitable For Greenfield Projects Only
+>
+>Until backward compatibility is properly tested and documented, it is recommended to use this plugin only on new greenfield projects that does not rely on existing persisted data.
 
-Please note this is still considered 'work in progress' and only used if one understands the risks. While the TCK Specs pass you should still test in a 'safe' non-production environment carefully before deciding to fully deploy.
+# Table Of Content
+- [Akka.Persistence.Sql](#akkapersistencesql)
+- [Setup](#setup)
+  * [The Easy Way, Using `Akka.Hosting`](#the-easy-way-using-akkahosting)
+  * [The Classic Way, Using HOCON](#the-classic-way-using-hocon)
+  * [Supported Database Providers](#supported-database-providers)
+    + [Tested Database Providers](#tested-database-providers)
+    + [Supported By Linq2Db But Untested In Akka.Persistence ](#supported-by-linq2db-but-untested-in-akkapersistence)
+- [Migration Guide](#migration-guide)
+  * [Migrating Using Compatibility Mode](#migrating-using-compatibility-mode)
+    + [Akka.Hosting](#akkahosting)
+    + [HOCON](#hocon)
+  * [Migrating To Tag Table Based Tag Query](#migrating-to-tag-table-based-tag-query)
+  * [Migrating To Enable WriterUuid Anti-Corruption Layer Feature](#migrating-to-enable-writeruuid-anti-corruption-layer-feature)
+- [Features/Architecture](#featuresarchitecture)
+  * [Currently Implemented](#currently-implemented)
+  * [Incomplete](#incomplete)
+- [Performance](#performance)
+- [Sql.Common Compatibility modes](#sqlcommon-compatibility-modes)
+- [Configuration](#configuration)
+  * [Journal](#journal)
+  * [Snapshot Store](#snapshot-store)
+- [Building this solution](#building-this-solution)
+  + [Conventions](#conventions)
+  + [Release Notes, Version Numbers, Etc](#release-notes-version-numbers-etc)
 
-### Suitable For Greenfield Projects Only
+# Setup
 
-Until backward compatibility is properly tested and documented, it is recommended to use this plugin only on new greenfield projects that does not rely on existing persisted data.
-
-## Setup
-
-### The Easy Way, Using `Akka.Hosting`
+## The Easy Way, Using `Akka.Hosting`
 
 Assuming a MS SQL Server 2019 setup:
 ```csharp
@@ -33,7 +57,7 @@ var host = new HostBuilder()
     })
 ```
 
-### The Classic Way, Using HOCON
+## The Classic Way, Using HOCON
 
 These are the minimum HOCON configuration you need to start using Akka.Persistence.Sql:
 ```hocon
@@ -71,9 +95,9 @@ akka.persistence {
 - MS SQLite
 - System.Data.SQLite
 - PostgreSQL using binary payload
-
-### Supported By Linq2Db But Untested In Akka.Persistence 
 - MySql
+
+### Supported By Linq2Db But Untested In Akka.Persistence
 - Firebird
 - Microsoft Access OleDB
 - Microsoft Access ODBC
@@ -84,7 +108,173 @@ akka.persistence {
 - SAP HANA
 - ClickHouse
 
-## Features/Architecture
+# Migration Guide
+
+> [!Warning]
+> Some of the steps in this guide might change the database schema of your persistent
+> database, making it really hard to revert any changes.
+>
+> Always do a database backup before attempting to do any of these migration steps.
+>
+> Always test the result of any migration on a development environment
+
+## Migrating Using Compatibility Mode
+
+Supported `Akka.Persistence.Sql.Common` targets
+
+| Plugin                        | Server               |
+|-------------------------------|----------------------|
+| `Akka.Persistence.SqlServer`  | Microsoft SQL Server |
+| `Akka.Persistence.PostgreSql` | PostgreSql           |
+| `Akka.Persistence.MySql`      | MySql                |
+| `Akka.Persistence.Sqlite`     | SqLite               |
+
+### Akka.Hosting
+
+To migrate to `Akka.Persistence.Sql` from supported `Akka.Persistence.Sql.Common` plugins, supply the required parameters:
+
+```csharp
+builder
+    .WithSqlPersistence(
+        connectionString: "my-connection-string",
+        providerName: ProviderName.SqlServer2019,
+        databaseMapping: DatabaseMapping.SqlServer,
+        tagStorageMode: TagMode.Csv,
+        deleteCompatibilityMode: true,
+        useWriterUuidColumn: false,
+        autoInitialize: false
+    );
+```
+
+* `databaseMapping` - Set this parameter according to this table:
+
+  | Plugin     | databaseMapping              |
+     |------------|------------------------------|
+  | SqlServer  | `DatabaseMapping.SqlServer`  |
+  | PostgreSql | `DatabaseMapping.PostgreSql` |
+  | MySql      | `DatabaseMapping.MySql`      |
+  | Sqlite     | `DatabaseMapping.SqLite`     |
+
+* `tagStoreMode`
+  * Set to `TagMode.Csv` if you do not or have not migrated your database to use tag table.
+  * Set to `TagMode.TagTable` if you migrated your database to use tag table.
+* `deleteCompatibilityMode` - always set this parameter to `true`
+* `useWriterUuidColumn`
+  * Set to `false` if you do not or have not migrated your database to use `WriterUuid` feature
+  * Set to `true` if you migrated your database to use `WriterUuid`.
+* `autoInitialize` - always set this to `false` to prevent any schema modification.
+
+### HOCON
+
+```hocon
+akka.persistence {
+    journal {
+        plugin = "akka.persistence.journal.sql"
+        sql {
+            connection-string = "{database-connection-string}"
+            provider-name = "{provider-name}"
+            
+            # Required for migration, do not change existing schema
+            auto-initialize = false
+            
+            # Required for migration
+            # Set to "sqlite", "sql-server", "mysql", or "postgresql"
+            # depending on the plugin you're migrating from
+            table-mapping = sql-server
+            
+            # Required if you did not migrate your database to tag table mode
+            tag-write-mode = Csv
+            
+            # Required for migration
+            delete-compatibility-mode = true
+            
+            # Required if you did not migrate your database to use WriterUuid
+            {table-mapping-name}.journal.use-writer-uuid-column = false
+        }
+    }
+    query.journal.sql {
+        connection-string = "{database-connection-string}"
+        provider-name = "{provider-name}"
+            
+        # Required if you did not migrate your database to tag table mode
+        tag-write-mode = Csv
+    }
+    snapshot-store {
+        plugin = "akka.persistence.snapshot-store.sql"
+        sql {
+            connection-string = "{database-connection-string}"
+            provider-name = "{provider-name}"
+            
+            # Required for migration, do not change existing schema
+            auto-initialize = false
+            
+            # Required for migration
+            # Set to "sqlite", "sql-server", "mysql", or "postgresql"
+            # depending on the plugin you're migrating from
+            table-mapping = sql-server
+        }
+    }
+}
+```
+
+## Migrating To Tag Table Based Tag Query
+
+> [!Warning]
+> This guide WILL change the database schema of your persistent database.
+>
+> Always do a database backup before attempting to do any of these migration steps.
+
+To migrate your database to use the new tag table based tag query feature, follow these steps:
+
+1. Download the migration SQL scripts for your particular database type from the "Sql Scrips" folder in `Akka.Persistence.Sql` repository.
+2. Down your cluster.
+3. Do a database backup and save the backup file somewhere safe.
+4. Execute SQL script "1_Migration_Setup.sql" against your database.
+5. Execute SQL script "2_Migration.sql" against your database.
+6. (Optional) Execute SQL script "3_Post_Migration_Cleanup.sql" against your database.
+7. Apply migration steps in [Migrating Using Compatibility Mode](#migrating-using-compatibility-mode) section.
+8. Bring the cluster back up.
+
+These SQL scripts are designed to be idempotent and can be run on the same database without creating any side effects.
+
+## Migrating To Enable WriterUuid Anti-Corruption Layer Feature
+
+> [!Warning]
+> This guide WILL change the database schema of your persistent database.
+>
+> Always do a database backup before attempting to do any of these migration steps.
+
+To migrate your database to use the new WriterUuid feature, follow these steps:
+
+1. Do a database backup and save the backup file somewhere safe.
+2. Down your cluster.
+3. Execute this SQL script against your database:
+    ```sql
+    ALTER TABLE [journal_table_name] ADD writer_uuid VARCHAR(128);
+    ```
+4. Modify the database mapping configuration to enable the feature:
+
+   **Using Akka.Hosting**
+
+   ```csharp
+   builder
+       .WithSqlPersistence(
+           connectionString: "my-connection-string",
+           // ...
+           useWriterUuidColumn: true // Use this setting
+       );
+   ```
+
+   **Using HOCON**
+
+   ```HOCON
+   # replace {mapping-name} with "sqlite", "sql-server", "mysql", or "postgresql"
+   akka.persistence.journal.sql.{mapping-name}.journal.use-writer-uuid-column = true
+   ```
+5. Apply migration steps in [Migrating Using Compatibility Mode](#migrating-using-compatibility-mode) section.
+6. Bring the cluster back up.
+
+# Features/Architecture
 
 - Akka.Streams used aggressively for tune-able blocking overhead.
   - Up to `parallelism` writers write pushed messages
@@ -138,9 +328,9 @@ akka.persistence {
 
 - Tests for Schema Usage
 - Cleanup of Configuration classes/fallbacks.
-  - Should still be usable in most common scenarios including multiple configuration instances: see [`SqlServerCustomConfigSpec`](src/Akka.Persistence.Sql.Tests/SqlServer/SQLServerJournalCustomConfigSpec.cs) for test and examples.
+  - Should still be usable in most common scenarios including multiple configuration instances: see [`SqlServerCustomConfigSpec`](src/Akka.Persistence.Sql.Tests/SqlServer/SqlServerJournalCustomConfigSpec.cs) for test and examples.
 
-## Performance
+# Performance
 
 Tests based on AMD Ryzen 9 3900X, 32GB Ram, Windows 10 Version 22H2.
 Databases running on Docker WSL2.
@@ -164,7 +354,7 @@ All numbers are in msg/sec.
 | RecoveringFour  |              86107 |              73218 |   66512 |    77.24% |      90.84% |
 | RecoveringTwo   |              60730 |              53062 |   43325 |    71.34% |      81.65% |
 
-## Sql.Common Compatibility modes
+# Sql.Common Compatibility modes
 
 - Delete Compatibility mode is available.
   - This mode will utilize a `journal_metadata` table containing the last sequence number
@@ -177,9 +367,9 @@ All numbers are in msg/sec.
 - **This all happens in a transaction**
   - In SQL Server this can cause issues because of pagelocks/etc.
 
-## Configuration
+# Configuration
 
-### Journal
+## Journal
 
 Please note that you -must- provide a Connection String (`connection-string`) and Provider name (`provider-name`).
 
@@ -599,7 +789,7 @@ akka.persistence {
 
 ```
 
-### Snapshot Store
+## Snapshot Store
 
 Please note that you -must- provide a Connection String and Provider name.
 
@@ -724,7 +914,7 @@ akka.persistence {
 }
 ```
 
-## Building this solution
+# Building this solution
 
 To run the build script associated with this solution, execute the following:
 
