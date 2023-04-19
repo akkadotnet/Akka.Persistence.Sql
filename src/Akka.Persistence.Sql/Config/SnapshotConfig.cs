@@ -38,14 +38,14 @@ namespace Akka.Persistence.Sql.Config
 
         public string UseSharedDb { get; }
 
-        public IPluginConfig PluginConfig { get; }
-
         /// <summary>
         ///     Flag determining in in case of event journal or metadata table missing, they should be automatically initialized.
         /// </summary>
         public bool AutoInitialize { get; }
 
         public bool WarnOnAutoInitializeFail { get; }
+
+        public IPluginConfig PluginConfig { get; }
 
         public string ProviderName { get; }
 

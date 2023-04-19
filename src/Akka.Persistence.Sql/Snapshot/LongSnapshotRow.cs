@@ -11,7 +11,8 @@ namespace Akka.Persistence.Sql.Snapshot
 {
     public class LongSnapshotRow
     {
-        [PrimaryKey, NotNull]
+        [PrimaryKey]
+        [NotNull]
         public string PersistenceId { get; set; }
 
         [PrimaryKey]

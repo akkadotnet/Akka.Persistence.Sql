@@ -21,12 +21,10 @@ using Akka.Persistence.Sql.Journal.Types;
 using Akka.Persistence.Sql.Serialization;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using Akka.Util.Internal;
 using LanguageExt;
 using LinqToDB;
 using LinqToDB.Data;
 using static LanguageExt.Prelude;
-using Array = System.Array;
 
 namespace Akka.Persistence.Sql.Journal.Dao
 {
@@ -41,13 +39,15 @@ namespace Akka.Persistence.Sql.Journal.Dao
         private static readonly Expression<Func<PersistenceIdAndSequenceNumber, long>> SequenceNumberSelector =
             r => r.SequenceNumber;
 
-        protected readonly CancellationToken ShutdownToken;
         private readonly Flow<JournalRow, Util.Try<ReplayCompletion>, NotUsed> _deserializeFlowMapped;
         private readonly TagMode _tagWriteMode;
         protected readonly JournalConfig JournalConfig;
 
         protected readonly ILoggingAdapter Logger;
         protected readonly FlowPersistentReprSerializer<JournalRow> Serializer;
+
+        protected readonly CancellationToken ShutdownToken;
+
         public readonly ISourceQueueWithComplete<WriteQueueEntry> WriteQueue;
 
         protected BaseByteArrayJournalDao(
@@ -56,8 +56,8 @@ namespace Akka.Persistence.Sql.Journal.Dao
             AkkaPersistenceDataConnectionFactory connectionFactory,
             JournalConfig config,
             Akka.Serialization.Serialization serializer,
-            ILoggingAdapter logger, 
-            string selfUuid, 
+            ILoggingAdapter logger,
+            string selfUuid,
             CancellationToken shutdownToken)
             : base(scheduler, materializer, connectionFactory)
         {
@@ -131,9 +131,10 @@ namespace Akka.Persistence.Sql.Journal.Dao
             {
                 await connection
                     .GetTable<JournalRow>()
-                    .Where(r =>
-                        r.PersistenceId == persistenceId &&
-                        r.SequenceNumber <= maxSequenceNr)
+                    .Where(
+                        r =>
+                            r.PersistenceId == persistenceId &&
+                            r.SequenceNumber <= maxSequenceNr)
                     .Set(r => r.Deleted, true)
                     .UpdateAsync(ShutdownToken);
 
@@ -142,37 +143,40 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
                 if (JournalConfig.DaoConfig.SqlCommonCompatibilityMode)
                 {
-                    await connection.GetTable<JournalMetaData>()
+                    await connection
+                        .GetTable<JournalMetaData>()
                         .InsertOrUpdateAsync(
                             insertSetter: () => new JournalMetaData
                             {
                                 PersistenceId = persistenceId,
-                                SequenceNumber = maxMarkedDeletion
+                                SequenceNumber = maxMarkedDeletion,
                             },
                             onDuplicateKeyUpdateSetter: jmd => new JournalMetaData(),
                             keySelector: () => new JournalMetaData
                             {
                                 PersistenceId = persistenceId,
-                                SequenceNumber = maxMarkedDeletion
+                                SequenceNumber = maxMarkedDeletion,
                             },
                             token: ShutdownToken);
                 }
 
                 await connection
                     .GetTable<JournalRow>()
-                    .Where(r =>
-                        r.PersistenceId == persistenceId &&
-                        r.SequenceNumber <= maxSequenceNr &&
-                        r.SequenceNumber < maxMarkedDeletion)
+                    .Where(
+                        r =>
+                            r.PersistenceId == persistenceId &&
+                            r.SequenceNumber <= maxSequenceNr &&
+                            r.SequenceNumber < maxMarkedDeletion)
                     .DeleteAsync(token: ShutdownToken);
 
                 if (JournalConfig.DaoConfig.SqlCommonCompatibilityMode)
                 {
                     await connection
                         .GetTable<JournalMetaData>()
-                        .Where(r =>
-                            r.PersistenceId == persistenceId &&
-                            r.SequenceNumber < maxMarkedDeletion)
+                        .Where(
+                            r =>
+                                r.PersistenceId == persistenceId &&
+                                r.SequenceNumber < maxMarkedDeletion)
                         .DeleteAsync(token: ShutdownToken);
                 }
 
@@ -180,9 +184,10 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 {
                     await connection
                         .GetTable<JournalTagRow>()
-                        .Where(r =>
-                            r.SequenceNumber <= maxSequenceNr &&
-                            r.PersistenceId == persistenceId)
+                        .Where(
+                            r =>
+                                r.SequenceNumber <= maxSequenceNr &&
+                                r.PersistenceId == persistenceId)
                         .DeleteAsync(token: ShutdownToken);
                 }
 
@@ -222,9 +227,10 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
             await connection
                 .GetTable<JournalRow>()
-                .Where(r =>
-                    r.PersistenceId == persistenceId &&
-                    r.SequenceNumber == write.SequenceNr)
+                .Where(
+                    r =>
+                        r.PersistenceId == persistenceId &&
+                        r.SequenceNumber == write.SequenceNr)
                 .Set(r => r.Message, serialize.Get().Message)
                 .UpdateAsync(token: ShutdownToken);
 
@@ -258,11 +264,12 @@ namespace Akka.Persistence.Sql.Journal.Dao
         {
             IQueryable<JournalRow> query = connection
                 .GetTable<JournalRow>()
-                .Where(r =>
-                    r.PersistenceId == persistenceId &&
-                    r.SequenceNumber >= fromSequenceNr &&
-                    r.SequenceNumber <= toSequenceNr &&
-                    r.Deleted == false)
+                .Where(
+                    r =>
+                        r.PersistenceId == persistenceId &&
+                        r.SequenceNumber >= fromSequenceNr &&
+                        r.SequenceNumber <= toSequenceNr &&
+                        r.Deleted == false)
                 .OrderBy(r => r.SequenceNumber);
 
             if (max <= int.MaxValue)
@@ -400,7 +407,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                             OrderingId = dbId,
                             TagValue = s1,
                             PersistenceId = journalRow.PersistenceId,
-                            SequenceNumber = journalRow.SequenceNumber
+                            SequenceNumber = journalRow.SequenceNumber,
                         }));
             }
 
@@ -510,9 +517,10 @@ namespace Akka.Persistence.Sql.Journal.Dao
             long minSequenceNumber)
             => connection
                 .GetTable<JournalRow>()
-                .Where(r =>
-                    r.PersistenceId == persistenceId &&
-                    r.SequenceNumber > minSequenceNumber)
+                .Where(
+                    r =>
+                        r.PersistenceId == persistenceId &&
+                        r.SequenceNumber > minSequenceNumber)
                 .Select(r => (long?)r.SequenceNumber);
 
         private static IQueryable<long?> MaxSeqForPersistenceIdQueryableCompatibilityModeWithMinId(
@@ -521,16 +529,18 @@ namespace Akka.Persistence.Sql.Journal.Dao
             long minSequenceNumber)
             => connection
                 .GetTable<JournalRow>()
-                .Where(r =>
-                    r.PersistenceId == persistenceId &&
-                    r.SequenceNumber > minSequenceNumber)
+                .Where(
+                    r =>
+                        r.PersistenceId == persistenceId &&
+                        r.SequenceNumber > minSequenceNumber)
                 .Select(r => LinqToDB.Sql.Ext.Max<long?>(r.SequenceNumber).ToValue())
                 .Union(
                     connection
                         .GetTable<JournalMetaData>()
-                        .Where(r =>
-                            r.SequenceNumber > minSequenceNumber &&
-                            r.PersistenceId == persistenceId)
+                        .Where(
+                            r =>
+                                r.SequenceNumber > minSequenceNumber &&
+                                r.PersistenceId == persistenceId)
                         .Select(r => LinqToDB.Sql.Ext.Max<long?>(r.SequenceNumber).ToValue()));
 
         private static IQueryable<long?> MaxSeqForPersistenceIdQueryableCompatibilityMode(

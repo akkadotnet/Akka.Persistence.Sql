@@ -208,6 +208,37 @@ Target "DocFx" (fun _ ->
             info.WorkingDirectory <- (Path.GetDirectoryName (FullName docFxPath))
             info.Arguments <- args) (System.TimeSpan.FromMinutes 45.0) (* Reasonably long-running task. *)
     if result <> 0 then failwithf "DocFX failed. %s %s" docFxPath args
+}
+
+//--------------------------------------------------------------------------------
+// JetBrain targets
+//--------------------------------------------------------------------------------
+Target "InspectCode" (fun _ ->
+    DotNetCli.RunCommand
+        (fun p ->
+            { p with
+                TimeOut = TimeSpan.FromMinutes 10. })
+        "tool restore"
+
+    DotNetCli.RunCommand
+        (fun p ->
+            { p with
+                TimeOut = TimeSpan.FromMinutes 10. })
+        "dotnet jb inspectcode Akka.Persistence.Sql.sln --build --swea --properties=\"Configuration=Release\" --telemetry-optout --format=\"Html;Xml;Text\" --output=\"TestResults/Akka.Persistence.Sql.jb\""
+)
+
+Target "CleanupCode" (fun _ ->
+    DotNetCli.RunCommand
+        (fun p ->
+            { p with
+                TimeOut = TimeSpan.FromMinutes 10. })
+        "tool restore"
+
+    DotNetCli.RunCommand
+        (fun p ->
+            { p with
+                TimeOut = TimeSpan.FromMinutes 10. })
+        "dotnet jb cleanupcode Akka.Persistence.Sql.sln --profile=\"Akka.NET\" --properties=\"Configuration=Release\" --telemetry-optout"
 )
 
 //--------------------------------------------------------------------------------
@@ -248,7 +279,7 @@ Target "All" DoNothing
 Target "Nuget" DoNothing
 
 // build dependencies
-"Clean" ==> "AssemblyInfo" ==> "Build" ==> "BuildRelease"
+"Clean" ==> "AssemblyInfo" ==> "Build" ==> "InspectCode" ==> "BuildRelease"
 
 // tests dependencies
 "Build" ==> "RunTests"
@@ -256,6 +287,10 @@ Target "Nuget" DoNothing
 // nuget dependencies
 "Clean" ==> "Build" ==> "CreateNuget"
 "CreateNuget" ==> "PublishNuget" ==> "Nuget"
+
+// jetbrain dependencies
+"InspectCode"
+"Build" ==> "CleanupCode"
 
 // all
 "BuildRelease" ==> "All"

@@ -4,7 +4,6 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using System.Collections.Generic;
 using Akka.Persistence.Journal;
 
 namespace Akka.Persistence.Sql.Benchmarks
@@ -25,7 +24,7 @@ namespace Akka.Persistence.Sql.Benchmarks
                 <= Const.Tag100UpperBound => new Tagged(evt, new[] { Const.Tag100, Const.Tag1000, Const.Tag10000 }),
                 <= Const.Tag1000UpperBound => new Tagged(evt, new[] { Const.Tag1000, Const.Tag10000 }),
                 <= Const.Tag10000UpperBound => new Tagged(evt, new[] { Const.Tag10000 }),
-                _ => evt
+                _ => evt,
             };
         }
     }

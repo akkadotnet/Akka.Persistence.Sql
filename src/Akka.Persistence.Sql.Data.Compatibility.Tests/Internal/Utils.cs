@@ -28,7 +28,7 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
             {
                 0 => msg,
                 1 => new Tagged(msg, new[] { Tags[0] }),
-                _ => new Tagged(msg, new[] { Tags[0], Tags[1] })
+                _ => new Tagged(msg, new[] { Tags[0], Tags[1] }),
             };
         }
 

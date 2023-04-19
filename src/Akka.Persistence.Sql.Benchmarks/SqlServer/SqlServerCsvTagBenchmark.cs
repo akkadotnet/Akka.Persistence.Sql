@@ -4,7 +4,6 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -16,7 +15,6 @@ using Akka.Persistence.Sql.Benchmarks.Configurations;
 using Akka.Persistence.Sql.Query;
 using Akka.Streams;
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Engines;
 using FluentAssertions;
 
 namespace Akka.Persistence.Sql.Benchmarks.SqlServer
@@ -25,12 +23,13 @@ namespace Akka.Persistence.Sql.Benchmarks.SqlServer
     //[SimpleJob(RunStrategy.ColdStart, iterationCount:1, warmupCount:0)]
     public class SqlServerCsvTagBenchmark
     {
-        [Params("TagTable", "Csv")] 
-        public string? TagMode { get; set; }
-        
-        private ActorSystem? _sys;
-        private IReadJournal? _readJournal;
         private IMaterializer? _materializer;
+        private IReadJournal? _readJournal;
+
+        private ActorSystem? _sys;
+
+        [Params("TagTable", "Csv")]
+        public string? TagMode { get; set; }
 
         [GlobalSetup]
         public async Task Setup()
@@ -38,8 +37,9 @@ namespace Akka.Persistence.Sql.Benchmarks.SqlServer
             var benchConfig = ConfigurationFactory.ParseString(await File.ReadAllTextAsync("benchmark.conf"));
             var connectionString = benchConfig.GetString("benchmark.connection-string");
             var providerName = benchConfig.GetString("benchmark.provider-name");
-            
-            var config = ConfigurationFactory.ParseString(@$"
+
+            var config = ConfigurationFactory.ParseString(
+                    @$"
 akka.persistence.journal {{
     plugin = akka.persistence.journal.sql
     sql {{
@@ -62,18 +62,18 @@ akka.persistence.query.journal.sql {{
 }}")
                 .WithFallback(Persistence.DefaultConfig())
                 .WithFallback(SqlPersistence.DefaultConfiguration);
-            
+
             _sys = ActorSystem.Create("system", config);
             _materializer = _sys.Materializer();
             _readJournal = _sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
-            
+
             //DebuggingHelpers.TraceDumpOn(_sys.Log);
         }
 
         [GlobalCleanup]
         public async Task Cleanup()
         {
-            if(_sys is { })
+            if (_sys is { })
                 await _sys.Terminate();
         }
 
@@ -82,10 +82,9 @@ akka.persistence.query.journal.sql {{
         {
             var events = new List<EventEnvelope>();
             var source = ((ICurrentEventsByTagQuery)_readJournal!).CurrentEventsByTag(Const.Tag10, NoOffset.Instance);
-            await source.RunForeach(msg =>
-            {
-                events.Add(msg);
-            }, _materializer);
+            await source.RunForeach(
+                msg => { events.Add(msg); },
+                _materializer);
             events.Select(e => e.SequenceNr).Should().BeEquivalentTo(Enumerable.Range(2000001, 10));
         }
 
@@ -94,10 +93,9 @@ akka.persistence.query.journal.sql {{
         {
             var events = new List<EventEnvelope>();
             var source = ((ICurrentEventsByTagQuery)_readJournal!).CurrentEventsByTag(Const.Tag100, NoOffset.Instance);
-            await source.RunForeach(msg =>
-            {
-                events.Add(msg);
-            }, _materializer);
+            await source.RunForeach(
+                msg => { events.Add(msg); },
+                _materializer);
             events.Select(e => e.SequenceNr).Should().BeEquivalentTo(Enumerable.Range(2000001, 100));
         }
 
@@ -106,10 +104,9 @@ akka.persistence.query.journal.sql {{
         {
             var events = new List<EventEnvelope>();
             var source = ((ICurrentEventsByTagQuery)_readJournal!).CurrentEventsByTag(Const.Tag1000, NoOffset.Instance);
-            await source.RunForeach(msg =>
-            {
-                events.Add(msg);
-            }, _materializer);
+            await source.RunForeach(
+                msg => { events.Add(msg); },
+                _materializer);
             events.Select(e => e.SequenceNr).Should().BeEquivalentTo(Enumerable.Range(2000001, 1000));
         }
 
@@ -118,10 +115,9 @@ akka.persistence.query.journal.sql {{
         {
             var events = new List<EventEnvelope>();
             var source = ((ICurrentEventsByTagQuery)_readJournal!).CurrentEventsByTag(Const.Tag10000, NoOffset.Instance);
-            await source.RunForeach(msg =>
-            {
-                events.Add(msg);
-            }, _materializer);
+            await source.RunForeach(
+                msg => { events.Add(msg); },
+                _materializer);
             events.Select(e => e.SequenceNr).Should().BeEquivalentTo(Enumerable.Range(2000001, 10000));
         }
     }

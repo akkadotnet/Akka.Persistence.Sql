@@ -22,7 +22,7 @@ namespace Akka.Persistence.Sql.Tests.Query.PostgreSql.Csv
     [Collection(nameof(PostgreSqlPersistenceSpec))]
     public class PostgreSqlAllEventsSpec : BaseAllEventsSpec<PostgreSqlContainer>
     {
-        public PostgreSqlAllEventsSpec(ITestOutputHelper output, PostgreSqlContainer fixture) 
+        public PostgreSqlAllEventsSpec(ITestOutputHelper output, PostgreSqlContainer fixture)
             : base(TagMode.Csv, output, nameof(PostgreSqlAllEventsSpec), fixture) { }
     }
 }

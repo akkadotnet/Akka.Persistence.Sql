@@ -42,7 +42,7 @@ namespace Akka.Persistence.Sql.Config
         public string Identifier { get; }
 
         public string Manifest { get; }
-        
+
         public string WriterUuid { get; }
 
         public bool Equals(JournalTableColumnNames other)

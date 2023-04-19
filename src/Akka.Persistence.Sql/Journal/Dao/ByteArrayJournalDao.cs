@@ -4,8 +4,6 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
@@ -27,7 +25,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
             JournalConfig journalConfig,
             Akka.Serialization.Serialization serializer,
             ILoggingAdapter logger,
-            string selfUuid, 
+            string selfUuid,
             CancellationToken shutdownToken)
             : base(
                 scheduler: scheduler,
@@ -36,7 +34,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 config: journalConfig,
                 serializer: serializer,
                 logger: logger,
-                selfUuid: selfUuid, 
+                selfUuid: selfUuid,
                 shutdownToken: shutdownToken) { }
 
         public async Task InitializeTables(CancellationToken token)
@@ -45,7 +43,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
             var journalFooter = JournalConfig.GenerateJournalFooter();
             await connection.CreateTableAsync<JournalRow>(TableOptions.CreateIfNotExists, journalFooter, token);
-            
+
             if (JournalConfig.PluginConfig.TagMode is not TagMode.Csv)
             {
                 var tagFooter = JournalConfig.GenerateTagFooter();

@@ -4,11 +4,8 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using System;
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.TCK.Snapshot;
-using FluentAssertions.Extensions;
-using LinqToDB;
 using Xunit;
 using Xunit.Abstractions;
 

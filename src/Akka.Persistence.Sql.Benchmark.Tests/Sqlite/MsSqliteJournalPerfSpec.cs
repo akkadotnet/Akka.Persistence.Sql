@@ -22,16 +22,15 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
                 CreateSpecConfig(fixture),
                 nameof(MsSqliteJournalPerfSpec),
                 output,
-                eventsCount: TestConstants.NumMessages)
-        {
-        }
+                eventsCount: TestConstants.NumMessages) { }
 
         private static Configuration.Config CreateSpecConfig(MsSqliteContainer fixture)
         {
             if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
                 throw new Exception("Failed to clean up database in 10 seconds");
 
-            return ConfigurationFactory.ParseString(@$"
+            return ConfigurationFactory.ParseString(
+                    @$"
 akka.persistence {{
     publish-plugin-commands = on
     journal {{

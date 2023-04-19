@@ -13,7 +13,7 @@ namespace Akka.Persistence.Sql.TagTableMigration
         SqlServer,
         Sqlite,
         PostgreSql,
-        MySql
+        MySql,
     }
 
     public enum ProviderType
@@ -37,7 +37,7 @@ namespace Akka.Persistence.Sql.TagTableMigration
         PostgreSql15,
         Sqlite,
         SqliteClassic,
-        SqliteMs
+        SqliteMs,
     }
 
     public static class Extensions
@@ -49,7 +49,7 @@ namespace Akka.Persistence.Sql.TagTableMigration
                 DatabaseType.Sqlite => "sqlite",
                 DatabaseType.PostgreSql => "postgresql",
                 DatabaseType.MySql => "mysql",
-                _ => throw new ArgumentException($"Unknown database type: {databaseType}")
+                _ => throw new ArgumentException($"Unknown database type: {databaseType}"),
             };
 
         public static string ToHocon(this ProviderType type)
@@ -75,7 +75,7 @@ namespace Akka.Persistence.Sql.TagTableMigration
                 ProviderType.Sqlite => ProviderName.SQLite,
                 ProviderType.SqliteClassic => ProviderName.SQLiteClassic,
                 ProviderType.SqliteMs => ProviderName.SQLiteMS,
-                _ => throw new ArgumentException($"Unknown provider type: {type}")
+                _ => throw new ArgumentException($"Unknown provider type: {type}"),
             };
 
         public static Configuration.Config ToHocon(this Options opt)

@@ -16,19 +16,20 @@ namespace Akka.Persistence.Sql.Hosting.Tests
         [Fact(DisplayName = "Default options should not override default hocon config")]
         public void DefaultOptionsTest()
         {
-            var defaultConfig = ConfigurationFactory.ParseString(@"
+            var defaultConfig = ConfigurationFactory.ParseString(
+                    @"
 akka.persistence.snapshot-store.sql {
     connection-string = a
     provider-name = b
 }")
                 .WithFallback(SqlPersistence.DefaultConfiguration);
-            
+
             defaultConfig = defaultConfig.GetConfig(SqlPersistence.SnapshotStoreConfigPath);
-            
+
             var opt = new SqlSnapshotOptions
             {
                 ConnectionString = "a",
-                ProviderName = "b"
+                ProviderName = "b",
             };
             var actualConfig = opt.ToConfig().WithFallback(SqlPersistence.DefaultConfiguration);
 
@@ -73,9 +74,9 @@ akka.persistence.snapshot-store.sql {
                         CreatedColumnName = "c",
                         SnapshotColumnName = "d",
                         ManifestColumnName = "e",
-                        SerializerIdColumnName = "f"
-                    }
-                }
+                        SerializerIdColumnName = "f",
+                    },
+                },
             };
 
             var fullConfig = opt.ToConfig();

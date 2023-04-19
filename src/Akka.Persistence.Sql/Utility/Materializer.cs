@@ -22,7 +22,7 @@ namespace Akka.Persistence.Sql.Utility
                 ExtendedActorSystem system => system,
                 IActorContext actorContext => actorContext.System,
                 _ => throw new ArgumentException(
-                    $"ActorRefFactory context must be a ActorSystem or ActorContext, got [{context.GetType()}]")
+                    $"ActorRefFactory context must be a ActorSystem or ActorContext, got [{context.GetType()}]"),
             };
         }
 

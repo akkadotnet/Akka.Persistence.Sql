@@ -19,9 +19,9 @@ namespace Akka.Persistence.Sql.Hosting
             CreatedColumnName = "created",
             SnapshotColumnName = "snapshot",
             ManifestColumnName = "manifest",
-            SerializerIdColumnName = "serializer_id"
+            SerializerIdColumnName = "serializer_id",
         };
-        
+
         public static SnapshotTableOptions SqlServer => new()
         {
             TableName = "SnapshotStore",
@@ -30,9 +30,9 @@ namespace Akka.Persistence.Sql.Hosting
             CreatedColumnName = "Timestamp",
             SnapshotColumnName = "Snapshot",
             ManifestColumnName = "Manifest",
-            SerializerIdColumnName = "SerializerId"
+            SerializerIdColumnName = "SerializerId",
         };
-        
+
         public static SnapshotTableOptions Sqlite => new()
         {
             TableName = "snapshot",
@@ -41,9 +41,9 @@ namespace Akka.Persistence.Sql.Hosting
             CreatedColumnName = "created_at",
             SnapshotColumnName = "payload",
             ManifestColumnName = "manifest",
-            SerializerIdColumnName = "serializer_id"
+            SerializerIdColumnName = "serializer_id",
         };
-        
+
         public static SnapshotTableOptions PostgreSql => new()
         {
             TableName = "snapshot_store",
@@ -52,9 +52,9 @@ namespace Akka.Persistence.Sql.Hosting
             CreatedColumnName = "created_at",
             SnapshotColumnName = "payload",
             ManifestColumnName = "manifest",
-            SerializerIdColumnName = "serializer_id"
+            SerializerIdColumnName = "serializer_id",
         };
-        
+
         public static SnapshotTableOptions MySql => new()
         {
             TableName = "snapshot_store",
@@ -63,9 +63,9 @@ namespace Akka.Persistence.Sql.Hosting
             CreatedColumnName = "created_at",
             SnapshotColumnName = "snapshot",
             ManifestColumnName = "manifest",
-            SerializerIdColumnName = "serializer_id"
+            SerializerIdColumnName = "serializer_id",
         };
-        
+
         public string? TableName { get; set; }
 
         public string? PersistenceIdColumnName { get; set; }
@@ -74,17 +74,17 @@ namespace Akka.Persistence.Sql.Hosting
         public string? SnapshotColumnName { get; set; }
         public string? ManifestColumnName { get; set; }
         public string? SerializerIdColumnName { get; set; }
-        
+
         internal void Build(StringBuilder psb)
         {
             var sb = new StringBuilder();
             if (TableName is { })
                 sb.AppendLine($"table-name = {TableName.ToHocon()}");
-            
+
             var columnSb = new StringBuilder();
             if (PersistenceIdColumnName is { })
                 columnSb.AppendLine($"persistence-id = {PersistenceIdColumnName.ToHocon()}");
-            
+
             if (SequenceNumberColumnName is { })
                 columnSb.AppendLine($"sequence-number = {SequenceNumberColumnName.ToHocon()}");
 

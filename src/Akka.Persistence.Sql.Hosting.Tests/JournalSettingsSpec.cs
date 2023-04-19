@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+//  <copyright file="JournalSettingsSpec.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  </copyright>
+// -----------------------------------------------------------------------
+
 using Akka.Configuration;
 using Akka.Persistence.Sql.Config;
 using FluentAssertions;
@@ -11,19 +17,20 @@ namespace Akka.Persistence.Sql.Hosting.Tests
         [Fact(DisplayName = "Default options should not override default hocon config")]
         public void DefaultOptionsTest()
         {
-            var defaultConfig = ConfigurationFactory.ParseString(@"
+            var defaultConfig = ConfigurationFactory.ParseString(
+                    @"
 akka.persistence.journal.sql {
     connection-string = a
     provider-name = b
 }")
                 .WithFallback(SqlPersistence.DefaultConfiguration);
-        
+
             defaultConfig = defaultConfig.GetConfig(SqlPersistence.JournalConfigPath);
-        
+
             var opt = new SqlJournalOptions
             {
                 ConnectionString = "a",
-                ProviderName = "b"
+                ProviderName = "b",
             };
             var actualConfig = opt.ToConfig().WithFallback(SqlPersistence.DefaultConfiguration);
 
@@ -61,7 +68,7 @@ akka.persistence.journal.sql {
 
             var defaultTagConfig = defaultConfig.GetConfig("default.tag");
             var actualTagConfig = actualConfig.GetConfig("default.tag");
-        
+
             actualTagConfig.GetString("table-name").Should().Be(defaultTagConfig.GetString("table-name"));
             actualTagConfig.GetString("columns.ordering-id").Should().Be(defaultTagConfig.GetString("columns.ordering-id"));
             actualTagConfig.GetString("columns.tag-value").Should().Be(defaultTagConfig.GetString("columns.tag-value"));
@@ -95,13 +102,13 @@ akka.persistence.journal.sql {
                         MessageColumnName = "g",
                         IdentifierColumnName = "h",
                         ManifestColumnName = "i",
-                        WriterUuidColumnName = "j"
+                        WriterUuidColumnName = "j",
                     },
                     MetadataTable = new MetadataTableOptions
                     {
                         TableName = "bb",
                         PersistenceIdColumnName = "a",
-                        SequenceNumberColumnName = "b"
+                        SequenceNumberColumnName = "b",
                     },
                     TagTable = new TagTableOptions
                     {
@@ -109,9 +116,9 @@ akka.persistence.journal.sql {
                         OrderingColumnName = "a",
                         TagColumnName = "b",
                         PersistenceIdColumnName = "c",
-                        SequenceNumberColumnName = "d"
-                    }
-                }
+                        SequenceNumberColumnName = "d",
+                    },
+                },
             };
 
             var fullConfig = opt.ToConfig();
@@ -121,14 +128,14 @@ akka.persistence.journal.sql {
             var config = new JournalConfig(journalConfig);
 
             fullConfig.GetTimeSpan("akka.persistence.query.journal.sql.refresh-interval").Should().Be(5.Seconds());
-        
+
             config.AutoInitialize.Should().BeFalse();
             config.ConnectionString.Should().Be("a");
             config.ProviderName.Should().Be("b");
             config.DefaultSerializer.Should().Be("hyperion");
 
             config.TableConfig.SchemaName.Should().Be("schema");
-        
+
             var journalTable = config.TableConfig.EventJournalTable;
             journalTable.UseWriterUuidColumn.Should().BeFalse();
             journalTable.Name.Should().Be("aa");

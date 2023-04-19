@@ -75,7 +75,7 @@ namespace Akka.Persistence.Sql.Snapshot
             {
                 SerializerWithStringManifest stringManifest => stringManifest.Manifest(snapshot),
                 { IncludeManifest: true } => snapshotType.TypeQualifiedName(),
-                _ => string.Empty
+                _ => string.Empty,
             };
 
             return new LongSnapshotRow
@@ -85,7 +85,7 @@ namespace Akka.Persistence.Sql.Snapshot
                 Created = metadata.Timestamp.Ticks,
                 Manifest = manifest,
                 Payload = binary,
-                SerializerId = serializer.Identifier
+                SerializerId = serializer.Identifier,
             };
         }
     }

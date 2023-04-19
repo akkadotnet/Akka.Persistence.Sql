@@ -40,22 +40,22 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.SqlServer
         {
             parameters.ExposedPorts = new Dictionary<string, EmptyStruct>
             {
-                ["1433/tcp"] = new()
+                ["1433/tcp"] = new(),
             };
 
             parameters.HostConfig = new HostConfig
             {
                 PortBindings = new Dictionary<string, IList<PortBinding>>
                 {
-                    ["1433/tcp"] = new List<PortBinding> { new() { HostPort = $"{Port}" } }
-                }
+                    ["1433/tcp"] = new List<PortBinding> { new() { HostPort = $"{Port}" } },
+                },
             };
 
             parameters.Env = new[]
             {
                 "ACCEPT_EULA=Y",
                 $"MSSQL_SA_PASSWORD={Password}",
-                "MSSQL_PID=Express"
+                "MSSQL_PID=Express",
             };
         }
 
@@ -67,7 +67,7 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.SqlServer
                 ["Database"] = DatabaseName,
                 ["User Id"] = User,
                 ["Password"] = Password,
-                ["TrustServerCertificate"] = "true"
+                ["TrustServerCertificate"] = "true",
             };
 
             _connectionString = builder.ToString();

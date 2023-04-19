@@ -25,16 +25,15 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
                 nameof(PostgreSqlJournalPerfSpec),
                 output,
                 40,
-                TestConstants.DockerNumMessages)
-        {
-        }
+                TestConstants.DockerNumMessages) { }
 
         public static Configuration.Config InitConfig(PostgreSqlContainer fixture)
         {
             if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
                 throw new Exception("Failed to clean up database in 10 seconds");
-            
-            return ConfigurationFactory.ParseString(@$"
+
+            return ConfigurationFactory.ParseString(
+                    @$"
 akka.persistence {{
     publish-plugin-commands = on
     journal {{

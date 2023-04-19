@@ -31,23 +31,6 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
     [Collection(nameof(SqlServerPersistenceSpec))]
     public class SqlServerJournalDefaultConfigSpec : JournalSpec
     {
-        public SqlServerJournalDefaultConfigSpec(ITestOutputHelper output, SqlServerContainer fixture)
-            : base(Configuration(fixture), nameof(SqlServerJournalDefaultConfigSpec), output)
-        {
-            Initialize();
-        }
-
-        // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
-        protected override bool SupportsSerialization => false;
-
-        private static Configuration.Config Configuration(SqlServerContainer fixture)
-        {
-            if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
-                throw new Exception("Failed to clean up database in 10 seconds");
-            
-            return SqlJournalDefaultSpecConfig.GetDefaultConfig(fixture.ProviderName, fixture.ConnectionString);
-        }
-        
         // journal table column names
         private readonly string[] _journalTableColumnNames =
         {
@@ -61,12 +44,12 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
             "manifest",
             "writer_uuid",
         };
-        
+
         // metadata table column names
         private readonly string[] _metadataTableColumnNames =
         {
             "persistence_id",
-            "sequence_number"
+            "sequence_number",
         };
 
         // tag table column names
@@ -75,21 +58,38 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
             "ordering_id",
             "tag",
             "persistence_id",
-            "sequence_nr"
+            "sequence_nr",
         };
-        
+
+        public SqlServerJournalDefaultConfigSpec(ITestOutputHelper output, SqlServerContainer fixture)
+            : base(Configuration(fixture), nameof(SqlServerJournalDefaultConfigSpec), output)
+        {
+            Initialize();
+        }
+
+        // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
+        protected override bool SupportsSerialization => false;
+
+        private static Configuration.Config Configuration(SqlServerContainer fixture)
+        {
+            if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
+                throw new Exception("Failed to clean up database in 10 seconds");
+
+            return SqlJournalDefaultSpecConfig.GetDefaultConfig(fixture.ProviderName, fixture.ConnectionString);
+        }
+
         [Fact(DisplayName = "Database created using default configuration should contain proper tables and columns")]
         public async Task DefaultTableTest()
         {
             // Initialize journal
             var journal = Persistence.Instance.Apply(Sys).JournalFor(null);
-            
+
             // wait until journal is initialized
             var _ = await journal.Ask<ActorIdentity>(new Identify(null)).ShouldCompleteWithin(3.Seconds());
 
             var config = GetConfig();
             var schema = GetSchema(config);
-            
+
             // journal table
             var journalTable = schema.Tables.FirstOrDefault(t => t.TableName == "journal");
             journalTable.Should().NotBeNull();
@@ -99,8 +99,9 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
                 if (!journalColumns.Remove(column))
                     throw new XunitException($"Journal table does not contain the required column {column}");
             }
+
             journalColumns.Should().BeEmpty("Journal table should not contain any superfluous columns");
-            
+
             // tag table
             var tagTable = schema.Tables.FirstOrDefault(t => t.TableName == "tags");
             tagTable.Should().NotBeNull();
@@ -110,6 +111,7 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
                 if (!tagColumns.Remove(column))
                     throw new XunitException($"Tag table does not contain the required column {column}");
             }
+
             tagColumns.Should().BeEmpty("Tag table should not contain any superfluous columns");
         }
 
@@ -124,6 +126,7 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
                 if (!metadataColumns.Remove(column))
                     throw new XunitException($"Journal metadata table does not contain the required column {column}");
             }
+
             metadataColumns.Should().BeEmpty("Journal metadata table should not contain any superfluous columns");
         }
 
@@ -133,7 +136,7 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
                 .WithFallback(SqlPersistence.DefaultJournalConfiguration);
             return new JournalConfig(config);
         }
-        
+
         private static DatabaseSchema GetSchema(JournalConfig journalConfig)
         {
             var connectionFactory = new AkkaPersistenceDataConnectionFactory(journalConfig);

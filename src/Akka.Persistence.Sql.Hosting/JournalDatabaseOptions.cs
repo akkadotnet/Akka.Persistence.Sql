@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="DatabaseOptions.cs" company="Akka.NET Project">
+//  <copyright file="JournalDatabaseOptions.cs" company="Akka.NET Project">
 //      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
@@ -12,11 +12,14 @@ namespace Akka.Persistence.Sql.Hosting
 {
     public sealed class JournalDatabaseOptions
     {
+        public JournalDatabaseOptions(DatabaseMapping mapping)
+            => Mapping = mapping;
+
         public static JournalDatabaseOptions Default => new(DatabaseMapping.Default)
         {
             JournalTable = JournalTableOptions.Default,
             MetadataTable = MetadataTableOptions.Default,
-            TagTable = TagTableOptions.Default
+            TagTable = TagTableOptions.Default,
         };
 
         public static JournalDatabaseOptions SqlServer => new(DatabaseMapping.SqlServer)
@@ -31,27 +34,22 @@ namespace Akka.Persistence.Sql.Hosting
             JournalTable = JournalTableOptions.Sqlite,
             MetadataTable = MetadataTableOptions.Sqlite,
         };
-        
+
         public static JournalDatabaseOptions PostgreSql => new(DatabaseMapping.PostgreSql)
         {
             SchemaName = "public",
             JournalTable = JournalTableOptions.PostgreSql,
             MetadataTable = MetadataTableOptions.PostgreSql,
         };
-        
+
         public static JournalDatabaseOptions MySql => new(DatabaseMapping.MySql)
         {
             JournalTable = JournalTableOptions.MySql,
             MetadataTable = MetadataTableOptions.MySql,
         };
 
-        public JournalDatabaseOptions(DatabaseMapping mapping)
-        {
-            Mapping = mapping;
-        }
-        
         public DatabaseMapping Mapping { get; }
-        
+
         /// <summary>
         ///     <para>
         ///         SQL schema name to table corresponding with persistent journal.
@@ -64,12 +62,12 @@ namespace Akka.Persistence.Sql.Hosting
         ///     Journal events table column name mapping
         /// </summary>
         public JournalTableOptions? JournalTable { get; set; }
-        
+
         /// <summary>
         ///     Journal metadata table column name mapping, if metadata table is being used
         /// </summary>
         public MetadataTableOptions? MetadataTable { get; set; }
-        
+
         /// <summary>
         ///     Event tag table column name mapping, if tag table is being used
         /// </summary>
@@ -80,7 +78,7 @@ namespace Akka.Persistence.Sql.Hosting
             var sb = new StringBuilder();
             if (SchemaName is { })
                 sb.AppendLine($"schema-name = {SchemaName.ToHocon()}");
-            
+
             JournalTable?.Build(sb);
             MetadataTable?.Build(sb);
             TagTable?.Build(sb);
