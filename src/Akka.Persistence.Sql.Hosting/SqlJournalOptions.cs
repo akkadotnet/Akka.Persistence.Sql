@@ -81,6 +81,16 @@ namespace Akka.Persistence.Sql.Hosting
         /// </summary>
         public TagMode? TagStorageMode { get; set; }
         
+        /// <summary>
+        ///     <para>
+        ///         If true, journal_metadata is created and used for deletes
+        ///         and max sequence number queries.
+        ///     </para>
+        ///     <b>NOTE</b>: This is used primarily for backward compatibility,
+        ///     you leave this empty for greenfield projects.
+        /// </summary>
+        public bool? DeleteCompatibilityMode { get; set; }
+        
         protected override Configuration.Config InternalDefaultConfig => Default;
 
         protected override StringBuilder Build(StringBuilder sb)
@@ -94,6 +104,9 @@ namespace Akka.Persistence.Sql.Hosting
             sb.AppendLine($"connection-string = {ConnectionString.ToHocon()}");
             sb.AppendLine($"provider-name = {ProviderName.ToHocon()}");
 
+            if (DeleteCompatibilityMode is { })
+                sb.AppendLine($"delete-compatibility-mode = {DeleteCompatibilityMode.ToHocon()}");
+                
             if (TagStorageMode is { })
                 sb.AppendLine($"tag-write-mode = {TagStorageMode.ToString().ToHocon()}");
             
