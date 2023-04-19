@@ -30,7 +30,7 @@ namespace Akka.Persistence.Sql.Hosting
                 _ => throw new Exception($"Unknown DatabaseMapping: {map}")
             };
 
-        public static JournalDatabaseOptions DatabaseOption(DatabaseMapping map)
+        public static JournalDatabaseOptions JournalOption(this DatabaseMapping map)
             => map switch
             {
                 DatabaseMapping.Default => JournalDatabaseOptions.Default,
@@ -38,6 +38,17 @@ namespace Akka.Persistence.Sql.Hosting
                 DatabaseMapping.Sqlite => JournalDatabaseOptions.Sqlite,
                 DatabaseMapping.PostgreSql => JournalDatabaseOptions.PostgreSql,
                 DatabaseMapping.MySql => JournalDatabaseOptions.MySql,
+                _ => throw new Exception($"Unknown DatabaseMapping: {map}") 
+            };
+
+        public static SnapshotDatabaseOptions SnapshotOption(this DatabaseMapping map)
+            => map switch
+            {
+                DatabaseMapping.Default => SnapshotDatabaseOptions.Default,
+                DatabaseMapping.SqlServer => SnapshotDatabaseOptions.SqlServer,
+                DatabaseMapping.Sqlite => SnapshotDatabaseOptions.Sqlite,
+                DatabaseMapping.PostgreSql => SnapshotDatabaseOptions.PostgreSql,
+                DatabaseMapping.MySql => SnapshotDatabaseOptions.MySql,
                 _ => throw new Exception($"Unknown DatabaseMapping: {map}") 
             };
     }
