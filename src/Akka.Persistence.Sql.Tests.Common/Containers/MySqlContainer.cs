@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Akka.Util;
 using Docker.DotNet.Models;
@@ -27,17 +26,15 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         private readonly DbConnectionStringBuilder _connectionStringBuilder;
 
         public MySqlContainer() : base("mysql", "8", $"mysql-{Guid.NewGuid():N}")
-        {
-            _connectionStringBuilder = new DbConnectionStringBuilder
+            => _connectionStringBuilder = new DbConnectionStringBuilder
             {
                 ["Server"] = "localhost",
                 ["Port"] = Port.ToString(),
                 ["User Id"] = User,
                 ["Password"] = Password,
                 ["allowPublicKeyRetrieval"] = "true",
-                ["Allow User Variables"] = "true"
+                ["Allow User Variables"] = "true",
             };
-        }
 
         public override string ConnectionString => _connectionStringBuilder.ToString();
 
@@ -58,15 +55,15 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         {
             parameters.ExposedPorts = new Dictionary<string, EmptyStruct>
             {
-                ["3306/tcp"] = new()
+                ["3306/tcp"] = new(),
             };
 
             parameters.HostConfig = new HostConfig
             {
                 PortBindings = new Dictionary<string, IList<PortBinding>>
                 {
-                    ["3306/tcp"] = new List<PortBinding> { new() { HostPort = $"{Port}" } }
-                }
+                    ["3306/tcp"] = new List<PortBinding> { new() { HostPort = $"{Port}" } },
+                },
             };
 
             parameters.Env = new[]
@@ -79,15 +76,15 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         {
             await using var connection = new MySqlConnection(ConnectionString);
             await connection.OpenAsync();
-            
+
             await using var command = new MySqlCommand
             {
                 CommandText = "SET GLOBAL max_connections = 999;",
-                Connection = connection
+                Connection = connection,
             };
             await command.ExecuteNonQueryAsync();
             await connection.CloseAsync();
-            
+
             await base.AfterContainerStartedAsync();
         }
 
@@ -105,7 +102,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
                     await using var dropCommand = new MySqlCommand
                     {
                         CommandText = @$"DROP DATABASE IF EXISTS `{DatabaseName}`;",
-                        Connection = connection
+                        Connection = connection,
                     };
                     await dropCommand.ExecuteNonQueryAsync();
                 }
@@ -114,13 +111,13 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
                     // no-op
                 }
             }
-            
+
             GenerateDatabaseName();
-            
+
             await using var command = new MySqlCommand
             {
                 CommandText = $"CREATE DATABASE `{DatabaseName}`;",
-                Connection = connection
+                Connection = connection,
             };
             await command.ExecuteNonQueryAsync();
             await connection.CloseAsync();

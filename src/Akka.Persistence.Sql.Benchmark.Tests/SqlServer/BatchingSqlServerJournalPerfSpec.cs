@@ -23,16 +23,15 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
                 nameof(BatchingSqlServerJournalPerfSpec),
                 output,
                 40,
-                TestConstants.DockerNumMessages)
-        {
-        }
+                TestConstants.DockerNumMessages) { }
 
         public static Configuration.Config Configure(SqlServerContainer fixture)
         {
             if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
                 throw new Exception("Failed to clean up database in 10 seconds");
-            
-            return ConfigurationFactory.ParseString(@$"
+
+            return ConfigurationFactory.ParseString(
+                    @$"
                 akka.persistence {{
                     publish-plugin-commands = on
                     journal {{

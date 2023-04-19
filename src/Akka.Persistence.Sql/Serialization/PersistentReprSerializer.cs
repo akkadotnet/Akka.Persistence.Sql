@@ -103,7 +103,7 @@ namespace Akka.Persistence.Sql.Serialization
             {
                 Tagged t => Serialize(persistentRepresentation.WithPayload(t.Payload), t.Tags, timeStamp),
 
-                _ => Serialize(persistentRepresentation, ImmutableHashSet<string>.Empty, timeStamp)
+                _ => Serialize(persistentRepresentation, ImmutableHashSet<string>.Empty, timeStamp),
             };
 
         protected abstract Try<T> Serialize(

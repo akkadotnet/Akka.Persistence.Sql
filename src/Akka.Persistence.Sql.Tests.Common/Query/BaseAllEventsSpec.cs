@@ -25,15 +25,13 @@ namespace Akka.Persistence.Sql.Tests.Common.Query
     {
         protected BaseAllEventsSpec(TagMode tagMode, ITestOutputHelper output, string name, T fixture)
             : base(Config(tagMode, fixture), name, output)
-        {
-            ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
-        }
+            => ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
 
         public async Task InitializeAsync()
         {
             // Force start read journal
             var journal = Persistence.Instance.Apply(Sys).JournalFor(null);
-            
+
             // Wait until journal is ready
             var _ = await journal.Ask<Initialized>(IsInitialized.Instance).ShouldCompleteWithin(3.Seconds());
         }
@@ -45,8 +43,9 @@ namespace Akka.Persistence.Sql.Tests.Common.Query
         {
             if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
                 throw new Exception("Failed to clean up database in 10 seconds");
-            
-            return ConfigurationFactory.ParseString($@"
+
+            return ConfigurationFactory.ParseString(
+                    $@"
 akka.loglevel = INFO
 akka.persistence.journal.plugin = ""akka.persistence.journal.sql""
 akka.persistence.journal.auto-start-journals = [ ""akka.persistence.journal.sql"" ]

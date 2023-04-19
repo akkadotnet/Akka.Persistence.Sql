@@ -22,7 +22,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         public DockerClient? Client { get; }
 
         public bool Initialized { get; }
-        
+
         public string ProviderName { get; }
 
         public event EventHandler<OutputReceivedArgs> OnStdOut;

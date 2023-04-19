@@ -27,8 +27,6 @@ namespace Akka.Persistence.Sql.Query
         private readonly TimeSpan _queryDelay;
         private readonly IReadJournalDao _readJournalDao;
 
-        public ITimerScheduler Timers { get; set; }
-
         public JournalSequenceActor(
             IReadJournalDao readJournalDao,
             JournalSequenceRetrievalConfig config)
@@ -44,6 +42,8 @@ namespace Akka.Persistence.Sql.Query
             _maxTries = config.MaxTries;
             _log = Context.GetLogger();
         }
+
+        public ITimerScheduler Timers { get; set; }
 
         private bool ReceiveHandler(object message)
             => ReceiveHandler(message, 0, ImmutableDictionary<int, MissingElements>.Empty, 0, _queryDelay);
@@ -67,13 +67,14 @@ namespace Akka.Persistence.Sql.Query
 
                 case AssumeMaxOrderingId a:
                     if (currentMaxOrdering < a.Max)
-                        Become(o =>
-                            ReceiveHandler(
-                                o,
-                                _maxTries,
-                                missingByCounter,
-                                moduloCounter,
-                                previousDelay));
+                        Become(
+                            o =>
+                                ReceiveHandler(
+                                    o,
+                                    _maxTries,
+                                    missingByCounter,
+                                    moduloCounter,
+                                    previousDelay));
 
                     return true;
 
@@ -106,13 +107,14 @@ namespace Akka.Persistence.Sql.Query
                         _log.Warning("Failed to query max Ordering ID Because of {0}, retrying in {1}", t, newDelay);
 
                     ScheduleQuery(newDelay);
-                    Context.Become(o =>
-                        ReceiveHandler(
-                            o,
-                            currentMaxOrdering,
-                            missingByCounter,
-                            moduloCounter,
-                            newDelay));
+                    Context.Become(
+                        o =>
+                            ReceiveHandler(
+                                o,
+                                currentMaxOrdering,
+                                missingByCounter,
+                                moduloCounter,
+                                newDelay));
 
                     return true;
 
@@ -159,24 +161,26 @@ namespace Akka.Persistence.Sql.Query
             if (noGapsFound && isFullBatch)
             {
                 Self.Tell(QueryOrderingIds.Instance);
-                Context.Become(o =>
-                    ReceiveHandler(
-                        o,
-                        nextMax,
-                        newMissingByCounter,
-                        moduloCounter,
-                        _queryDelay));
+                Context.Become(
+                    o =>
+                        ReceiveHandler(
+                            o,
+                            nextMax,
+                            newMissingByCounter,
+                            moduloCounter,
+                            _queryDelay));
             }
             else
             {
                 ScheduleQuery(_queryDelay);
-                Context.Become(o =>
-                    ReceiveHandler(
-                        o,
-                        nextMax,
-                        newMissingByCounter,
-                        (moduloCounter + 1) % _config.MaxTries,
-                        _queryDelay));
+                Context.Become(
+                    o =>
+                        ReceiveHandler(
+                            o,
+                            nextMax,
+                            newMissingByCounter,
+                            (moduloCounter + 1) % _config.MaxTries,
+                            _queryDelay));
             }
         }
 

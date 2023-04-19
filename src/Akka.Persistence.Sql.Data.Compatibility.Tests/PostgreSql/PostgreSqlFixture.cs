@@ -40,21 +40,21 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.PostgreSql
         {
             parameters.ExposedPorts = new Dictionary<string, EmptyStruct>
             {
-                { "5432/tcp", new() }
+                { "5432/tcp", new() },
             };
 
             parameters.HostConfig = new HostConfig
             {
                 PortBindings = new Dictionary<string, IList<PortBinding>>
                 {
-                    ["5432/tcp"] = new List<PortBinding> { new() { HostPort = $"{Port}" } }
-                }
+                    ["5432/tcp"] = new List<PortBinding> { new() { HostPort = $"{Port}" } },
+                },
             };
 
             parameters.Env = new[]
             {
                 $"POSTGRES_PASSWORD={Password}",
-                $"POSTGRES_USER={User}"
+                $"POSTGRES_USER={User}",
             };
         }
 
@@ -66,7 +66,7 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.PostgreSql
                 ["Port"] = Port,
                 ["Database"] = DatabaseName,
                 ["User Id"] = User,
-                ["Password"] = Password
+                ["Password"] = Password,
             };
 
             _connectionString = builder.ToString();

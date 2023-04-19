@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="PostgreSqlCommonJournalCompatibilitySpec.cs" company="Akka.NET Project">
+//  <copyright file="MySqlCommonJournalCompatibilitySpec.cs" company="Akka.NET Project">
 //      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
@@ -21,11 +21,9 @@ namespace Akka.Persistence.Sql.Tests.MySql.Compatibility
     public class MySqlCommonJournalCompatibilitySpec : SqlCommonJournalCompatibilitySpec<MySqlContainer>
     {
         public MySqlCommonJournalCompatibilitySpec(ITestOutputHelper output, MySqlContainer fixture)
-            : base(fixture, output)
-        {
-        }
+            : base(fixture, output) { }
 
-        protected override Func<MySqlContainer, Configuration.Config> Config => fixture 
+        protected override Func<MySqlContainer, Configuration.Config> Config => fixture
             => MySqlCompatibilitySpecConfig.InitJournalConfig(fixture, "event_journal", "metadata");
 
         protected override string OldJournal => "akka.persistence.journal.mysql";

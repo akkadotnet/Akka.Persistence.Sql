@@ -17,7 +17,6 @@ using Akka.Routing;
 using Akka.TestKit;
 using Akka.Util;
 using Akka.Util.Internal;
-using FluentAssertions.Extensions;
 using JetBrains.dotMemoryUnit;
 using JetBrains.dotMemoryUnit.Kernel;
 using Xunit;
@@ -64,9 +63,10 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
         internal (IActorRef aut, TestProbe probe) BenchActorNewProbeGroup(string pid, int numActors, int numMessages)
         {
             var tp = CreateTestProbe();
-            return (Sys.ActorOf(Props
-                .Create(() => new BenchActor(pid, tp, numMessages, false))
-                .WithRouter(new RoundRobinPool(numActors))), tp);
+            return (Sys.ActorOf(
+                Props
+                    .Create(() => new BenchActor(pid, tp, numMessages, false))
+                    .WithRouter(new RoundRobinPool(numActors))), tp);
         }
 
         internal void FeedAndExpectLastRouterSet(

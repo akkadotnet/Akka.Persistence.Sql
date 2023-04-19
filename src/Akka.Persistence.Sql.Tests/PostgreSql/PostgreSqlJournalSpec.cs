@@ -6,11 +6,9 @@
 
 using System;
 using Akka.Configuration;
-using Akka.Persistence.Sql.Journal;
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.TCK.Journal;
 using FluentAssertions.Extensions;
-using LinqToDB;
 using Xunit;
 using Xunit.Abstractions;
 #if !DEBUG
@@ -37,8 +35,9 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql
         {
             if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
                 throw new Exception("Failed to clean up database in 10 seconds");
-            
-            return ConfigurationFactory.ParseString(@$"
+
+            return ConfigurationFactory.ParseString(
+                    @$"
 akka.persistence {{
     publish-plugin-commands = on
     journal {{

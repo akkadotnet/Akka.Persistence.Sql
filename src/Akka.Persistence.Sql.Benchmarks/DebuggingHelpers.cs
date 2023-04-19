@@ -7,7 +7,6 @@
 using System.Diagnostics;
 using Akka.Event;
 using LinqToDB.Data;
-using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Benchmarks
 {

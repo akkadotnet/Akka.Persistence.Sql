@@ -21,11 +21,9 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
     public class PostgreSqlCommonJournalCompatibilitySpec : SqlCommonJournalCompatibilitySpec<PostgreSqlContainer>
     {
         public PostgreSqlCommonJournalCompatibilitySpec(ITestOutputHelper output, PostgreSqlContainer fixture)
-            : base(fixture, output)
-        {
-        }
+            : base(fixture, output) { }
 
-        protected override Func<PostgreSqlContainer, Configuration.Config> Config => fixture 
+        protected override Func<PostgreSqlContainer, Configuration.Config> Config => fixture
             => PostgreSqlCompatibilitySpecConfig.InitJournalConfig(fixture, "event_journal", "metadata");
 
         protected override string OldJournal => "akka.persistence.journal.postgresql";

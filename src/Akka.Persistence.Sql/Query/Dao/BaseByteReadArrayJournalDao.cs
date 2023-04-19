@@ -84,11 +84,12 @@ namespace Akka.Persistence.Sql.Query.Dao
 
                             return await connection
                                 .GetTable<JournalRow>()
-                                .Where(r =>
-                                    r.Tags.Contains(tagValue) &&
-                                    !r.Deleted &&
-                                    r.Ordering > input.offset &&
-                                    r.Ordering <= input.maxOffset)
+                                .Where(
+                                    r =>
+                                        r.Tags.Contains(tagValue) &&
+                                        !r.Deleted &&
+                                        r.Ordering > input.offset &&
+                                        r.Ordering <= input.maxOffset)
                                 .OrderBy(r => r.Ordering)
                                 .Take(input.maxTake)
                                 .ToListAsync();
@@ -119,7 +120,7 @@ namespace Akka.Persistence.Sql.Query.Dao
                         })
                     .Via(_deserializeFlow),
 
-                _ => throw new ArgumentOutOfRangeException()
+                _ => throw new ArgumentOutOfRangeException(),
             };
         }
 
@@ -136,11 +137,12 @@ namespace Akka.Persistence.Sql.Query.Dao
                     {
                         var query = connection
                             .GetTable<JournalRow>()
-                            .Where(r =>
-                                r.PersistenceId == state.persistenceId &&
-                                r.SequenceNumber >= state.fromSequenceNr &&
-                                r.SequenceNumber <= state.toSequenceNr &&
-                                r.Deleted == false)
+                            .Where(
+                                r =>
+                                    r.PersistenceId == state.persistenceId &&
+                                    r.SequenceNumber >= state.fromSequenceNr &&
+                                    r.SequenceNumber <= state.toSequenceNr &&
+                                    r.Deleted == false)
                             .OrderBy(r => r.SequenceNumber)
                             .Take(state.toTake);
 
@@ -214,10 +216,11 @@ namespace Akka.Persistence.Sql.Query.Dao
 
                     var query = connection
                         .GetTable<JournalRow>()
-                        .Where(r =>
-                            r.Ordering > input.offset &&
-                            r.Ordering <= input.maxOffset &&
-                            r.Deleted == false)
+                        .Where(
+                            r =>
+                                r.Ordering > input.offset &&
+                                r.Ordering <= input.maxOffset &&
+                                r.Deleted == false)
                         .OrderBy(r => r.Ordering)
                         .Take(input.maxTake);
 
@@ -230,7 +233,7 @@ namespace Akka.Persistence.Sql.Query.Dao
         {
             if (_readJournalConfig.PluginConfig.TagMode != TagMode.TagTable)
                 return await rowQuery.ToListAsync();
-            
+
             return await AddTagDataFromTagTable(rowQuery, connection);
         }
 
@@ -241,21 +244,23 @@ namespace Akka.Persistence.Sql.Query.Dao
                 from jr in rowQuery
                 select new
                 {
-                    row = jr, 
+                    row = jr,
                     tags = tagTable
-                    .Where(r => r.OrderingId == jr.Ordering)
-                    .StringAggregate(";", r => r.TagValue)
-                    .ToValue()
+                        .Where(r => r.OrderingId == jr.Ordering)
+                        .StringAggregate(";", r => r.TagValue)
+                        .ToValue(),
                 };
 
             var res = await q.ToListAsync();
 
             var result = new List<JournalRow>();
+
             foreach (var row in res)
             {
                 row.row.TagArr = row.tags?.Split(';') ?? Array.Empty<string>();
                 result.Add(row.row);
             }
+
             return result;
         }
     }

@@ -5,8 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Threading.Tasks;
-using Akka.Persistence.Sql.Tests.Common;
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using Xunit;
 using Xunit.Abstractions;
@@ -25,9 +23,7 @@ namespace Akka.Persistence.Sql.Tests.SqlServer.Compatibility
         public SqlServerSqlCommonSnapshotCompatibilitySpec(
             ITestOutputHelper output,
             SqlServerContainer fixture)
-            : base(fixture, output)
-        {
-        }
+            : base(fixture, output) { }
 
         protected override string OldSnapshot => "akka.persistence.snapshot-store.sql-server";
 

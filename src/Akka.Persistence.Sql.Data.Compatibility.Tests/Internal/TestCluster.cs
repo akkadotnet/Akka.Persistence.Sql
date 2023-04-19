@@ -125,7 +125,7 @@ akka.actor.ask-timeout = 3s",
                                         new ShardOptions
                                         {
                                             RememberEntities = false,
-                                            StateStoreMode = StateStoreMode.Persistence
+                                            StateStoreMode = StateStoreMode.Persistence,
                                         })
                                     .WithJournal(
                                         journalId,

@@ -5,8 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Threading.Tasks;
-using Akka.Persistence.Sql.Tests.Common;
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using Xunit;
 using Xunit.Abstractions;
@@ -23,9 +21,7 @@ namespace Akka.Persistence.Sql.Tests.SqlServer.Compatibility
     public class SqlServerSqlCommonJournalCompatibilitySpec : SqlCommonJournalCompatibilitySpec<SqlServerContainer>
     {
         public SqlServerSqlCommonJournalCompatibilitySpec(ITestOutputHelper outputHelper, SqlServerContainer fixture)
-            : base(fixture, outputHelper)
-        {
-        }
+            : base(fixture, outputHelper) { }
 
         protected override string OldJournal => "akka.persistence.journal.sql-server";
 

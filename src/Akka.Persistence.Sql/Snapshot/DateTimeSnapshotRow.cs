@@ -12,7 +12,8 @@ namespace Akka.Persistence.Sql.Snapshot
 {
     public class DateTimeSnapshotRow
     {
-        [PrimaryKey, NotNull]
+        [PrimaryKey]
+        [NotNull]
         public string PersistenceId { get; set; }
 
         [PrimaryKey]

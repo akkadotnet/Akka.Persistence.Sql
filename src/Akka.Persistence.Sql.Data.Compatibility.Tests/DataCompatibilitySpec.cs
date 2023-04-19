@@ -75,7 +75,7 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests
                             string str => int.Parse(str),
                             ShardedMessage msg => msg.Message,
                             CustomShardedMessage msg => msg.Message,
-                            _ => throw new Exception("Unknown type")
+                            _ => throw new Exception("Unknown type"),
                         }).ToList();
 
                 list.Count.Should().Be(24);
@@ -121,7 +121,7 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests
                             string str => int.Parse(str),
                             ShardedMessage msg => msg.Message,
                             CustomShardedMessage msg => msg.Message,
-                            _ => throw new Exception("Unknown type")
+                            _ => throw new Exception("Unknown type"),
                         }).ToList();
 
                 list.Count.Should().Be(12);

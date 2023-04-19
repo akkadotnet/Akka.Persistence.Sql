@@ -14,7 +14,6 @@ using Akka.Persistence.Sql.Streams;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Util;
-using LinqToDB.Data;
 
 namespace Akka.Persistence.Sql.Journal.Dao
 {
@@ -117,7 +116,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                                     refreshInterval.Value.Item2,
                                     () => RetrieveNextBatch(opt.seqNr)),
 
-                            _ => InvalidFlowThrowHelper(opt)
+                            _ => InvalidFlowThrowHelper(opt),
                         };
                     })
                 .SelectMany(r => r);

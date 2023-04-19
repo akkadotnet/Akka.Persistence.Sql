@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using Akka.Persistence.Sql.Config;
-using Akka.Persistence.Sql.Tests.Common;
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.Sql.Tests.Common.Query;
 using Akka.Persistence.Sql.Tests.PostgreSql;
