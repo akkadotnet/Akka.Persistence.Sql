@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using Akka.Persistence.Sql.Config;
-using Akka.Persistence.Sql.Tests.Common;
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.Sql.Tests.Common.Query;
 using Akka.Persistence.Sql.Tests.PostgreSql;
@@ -23,7 +22,7 @@ namespace Akka.Persistence.Sql.Tests.Query.PostgreSql.Csv
     [Collection(nameof(PostgreSqlPersistenceSpec))]
     public class PostgreSqlCurrentAllEventsSpec : BaseCurrentAllEventsSpec<PostgreSqlContainer>
     {
-        public PostgreSqlCurrentAllEventsSpec(ITestOutputHelper output, PostgreSqlContainer fixture) 
+        public PostgreSqlCurrentAllEventsSpec(ITestOutputHelper output, PostgreSqlContainer fixture)
             : base(TagMode.Csv, output, nameof(PostgreSqlAllEventsSpec), fixture) { }
     }
 }

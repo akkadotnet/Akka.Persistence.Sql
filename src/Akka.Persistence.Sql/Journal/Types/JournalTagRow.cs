@@ -6,14 +6,17 @@
 
 namespace Akka.Persistence.Sql.Journal.Types
 {
-    public sealed class JournalTagRow
+    public class TagRow
+    {
+        public long OrderingId { get; set; }
+
+        public string TagValue { get; set; }
+    }
+
+    public sealed class JournalTagRow : TagRow
     {
         public long SequenceNumber { get; set; }
 
         public string PersistenceId { get; set; }
-
-        public long OrderingId { get; set; }
-
-        public string TagValue { get; set; }
     }
 }

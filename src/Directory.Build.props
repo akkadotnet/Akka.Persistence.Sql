@@ -4,10 +4,11 @@
   <PropertyGroup>
     <Copyright>Copyright © 2013-2023 Akka.NET Team</Copyright>
     <Authors>Akka.NET Team</Authors>
-    <PackageIconUrl>http://getakka.net/images/akkalogo.png</PackageIconUrl>
+    <PackageIcon>akkalogo.png</PackageIcon>
     <PackageProjectUrl>https://github.com/akkadotnet/Akka.Persistence.Sql</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/akkadotnet/Akka.Persistence.Sql/blob/dev/LICENSE.md</PackageLicenseUrl>
-    <PackageTags>akka;actors;actor model;Akka;concurrency</PackageTags>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>akka;actors;actor model;Akka;concurrency;persistence;sql</PackageTags>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -20,10 +21,10 @@
     <NetCoreTestVersion>net7.0</NetCoreTestVersion>
 
     <AkkaVersion>1.5.2</AkkaVersion>
-    <AkkaHostingVersion>1.5.1.1</AkkaHostingVersion>
+    <AkkaHostingVersion>1.5.2</AkkaHostingVersion>
 
     <Linq2DbVersion>5.1.1</Linq2DbVersion>
-    <LanguageExtVersion>4.4.2</LanguageExtVersion>
+    <LanguageExtVersion>4.4.3</LanguageExtVersion>
     <FluentMigratorVersion>3.3.2</FluentMigratorVersion>
 
     <AkkaSqlServerVersion>1.5.2</AkkaSqlServerVersion>
@@ -32,7 +33,7 @@
 
     <AkkaSqliteVersion>1.5.2</AkkaSqliteVersion>
     <SqliteVersion>1.0.117</SqliteVersion>
-    <MicrosoftSqliteVersion>7.0.4</MicrosoftSqliteVersion>
+    <MicrosoftSqliteVersion>7.0.5</MicrosoftSqliteVersion>
 
     <AkkaPostgreSqlVersion>1.5.2</AkkaPostgreSqlVersion>
     <PostgreSqlVersion>7.0.2</PostgreSqlVersion>
@@ -44,7 +45,8 @@
     <MySqlVersion>8.0.32.1</MySqlVersion>
 
     <TestSdkVersion>17.5.0</TestSdkVersion>
-    <DockerDotNetVersion>3.125.13</DockerDotNetVersion>
+    <BenchmarkDotNetVersion>0.13.5</BenchmarkDotNetVersion>
+    <DockerDotNetVersion>3.125.14</DockerDotNetVersion>
     <FluentAssertionVersion>6.10.0</FluentAssertionVersion>
     <JetBrainsDotMemoryVersion>3.2.20220510</JetBrainsDotMemoryVersion>
     <XunitVersion>2.4.2</XunitVersion>
@@ -53,6 +55,11 @@
     <NBenchVersion>1.2.2</NBenchVersion>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)\..\docs\images\akkalogo.png" Pack="true" Visible="false" PackagePath="\" />
+    <None Include="$(MSBuildThisFileDirectory)\..\README.md" Pack="true" Visible="false" PackagePath="\" />
+  </ItemGroup>
+  
   <PropertyGroup>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>

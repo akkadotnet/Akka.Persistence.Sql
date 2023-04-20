@@ -1,31 +1,118 @@
-#### 1.4.28 Nov 18 2021 ####
+#### 1.5.2-beta3 April 19 2023 ###
 
-**Perf Enhancements and fixes to failure reporting**
+> **NOTE: Database schema changes**
+>
+> 1.5.2-beta2 package should be considered as deprecated. If you experimented with 1.5.2-beta1 and/or 1.5.2-beta2, you will need to drop existing persistence tables and recreate them using 1.5.2-beta3
 
-There was an issue found where persistence failures were being reported as rejections when they should not have. This has been fixed alongside some logic cleanup that should lead to more consistent performance.
+* [Fix SQL scripts for database table constraint and indices](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/220)
+* [Add official MySql support](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/221)
+* [Optimize sequence number and tag query](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/222)
+* [Optimize tag query by avoiding multiple DB queries](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/223)
+* [Add missing migration support to hosting extension method](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/225)
 
-#### 1.4.21 July 6 2021 ####
+This beta version introduces database schema optimization to:
+* Improve the tag table based query performance even more.
+* Improve inter-compatibility with other SQL persistence plugins.
 
-**First official Release for Akka.Persistence.Sql**
+**Tag Query Benchmark**
 
-Akka.Persistence.Sql is an Akka.Net Persistence plug-in that is designed for both high performance as well as easy cross-database compatibility.
+Benchmark is performed on a worst possible scenario:
+* Event journal table with 3 million row entries
+* Tagged events near the end of the table
+* Numbers are measured as the time required to complete one operation (complete retrieval of N tagged events).
 
-There is a compatibility mode also available for those who wish to migrate from the existing Sql.Common journals.
+| Tag Count |  TagMode |         Mean |      Error |     StdDev |
+|-----------|--------- |-------------:|-----------:|-----------:|
+| 10        |      Csv | 1,760.393 ms | 27.1970 ms | 25.4401 ms |
+| 100       |      Csv | 1,766.355 ms | 25.0182 ms | 23.4021 ms |
+| 1000      |      Csv | 1,755.960 ms | 33.8171 ms | 34.7276 ms |
+| 10000     |      Csv | 1,905.026 ms | 22.3564 ms | 20.9122 ms |
+| 10        | TagTable |     2.336 ms |  0.0389 ms |  0.0344 ms |
+| 100       | TagTable |     3.943 ms |  0.0705 ms |  0.0660 ms |
+| 1000      | TagTable |    18.597 ms |  0.3570 ms |  0.3506 ms |
+| 10000     | TagTable |   184.446 ms |  3.3447 ms |  2.9650 ms |
 
-This release contains fixes for Transactions around batched writes, a fix for Sequence Number reading on Aggressive PersistAsync Usage, improved serialization/deserialization pipelines for improved write speed, and easier snapshot compatibility with Akka.Persistence.Sql.Common.
+#### 1.5.2-beta2 April 14 2023 ###
 
-We are still looking for community help with adding tests/configurations for MySql and Oracle, as well as trying out the new plugin and [providing feedback](https://github.com/akkadotnet/Akka.Persistence.Sql/issues).
+> **NOTE: Database schema changes**
+> 
+> 1.5.2-beta1 package should be considered as deprecated. If you experimented with 1.5.2-beta1, you will need to drop existing persistence tables and recreate them using 1.5.2-beta2
 
-[Please refer to the project page](https://github.com/akkadotnet/Akka.Persistence.Sql/) for information on configuration.
+* [Fix event journal table and tag table constraints and indices](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/211)
+* [Fix snapshot table constraints and indices](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/216)
 
-#### 0.90.1 Feb 3 2021 ####
+This beta version introduces database schema optimization to:
+* Improve the tag table based query performance, without compromising overall persistence performance.
+* Improve inter-compatibility with other SQL persistence plugins. 
 
-**Preview Release for Akka.Persistence.Sql**
+**Tag Query Benchmark**
 
-Akka.Persistence.Sql is an Akka.Net Persistence plug-in that is designed for both high performance as well as easy cross-database compatibility.
+Benchmark is performed on a worst possible scenario:
+* Event journal table with 3 million row entries
+* Tagged events near the end of the table
 
-This is currently marked as a preview release, with tests passing for MS Sql Server, PostgreSQL, and SQLite. We are looking for community help with adding tests, as well as trying out the new plugin and [providing feedback](https://github.com/akkadotnet/Akka.Persistence.Sql/issues).
+|        Tag Count |  TagMode |         Mean |      Error |     StdDev |
+|-----------------:|--------- |-------------:|-----------:|-----------:|
+|               10 |      Csv | 1,746.621 ms | 27.8946 ms | 29.8469 ms |
+|              100 |      Csv | 1,724.465 ms | 25.4638 ms | 23.8189 ms |
+|             1000 |      Csv | 1,723.063 ms | 26.2311 ms | 24.5366 ms |
+|            10000 |      Csv | 1,873.467 ms | 26.1173 ms | 23.1523 ms |
+|               10 | TagTable |     3.201 ms |  0.0633 ms |  0.1479 ms |
+|              100 | TagTable |     5.163 ms |  0.1018 ms |  0.1358 ms |
+|             1000 | TagTable |    25.545 ms |  0.4952 ms |  0.4864 ms |
+|            10000 | TagTable |   441.877 ms |  3.5410 ms |  2.9569 ms |
 
-There is a compatibility mode also available for those who wish to migrate from the existing Sql.Common journals.
+#### 1.5.2-beta1 April 12 2023 ###
 
-[Please refer to the project page](https://github.com/akkadotnet/Akka.Persistence.Sql/) for information on configuration.
+> **NOTE: This beta release is intended for greenfield projects only.**
+>
+> Until backward compatibility is properly tested and documented, it is recommended to use this plugin only on new greenfield projects that does not rely on existing persisted data.
+
+Akka.Persistence.Sql is a successor of Akka.Persistence.Linq2Db. It is being retooled to provide a better inter-compatibility with other SQL based Akka.Persistence plugin family.
+
+Currently supported database family:
+* Microsoft SQL Server
+* MS SQLite
+* System.Data.SQLite
+* PostgreSQL using binary payload
+
+**Akka.Hosting Extension Setup**
+
+Assuming a MS SQL Server 2019 setup:
+```csharp
+var host = new HostBuilder()
+    .ConfigureServices((context, services) => {
+        services.AddAkka("my-system-name", (builder, provider) =>
+        {
+            builder.WithSqlPersistence(
+                connectionString: _myConnectionString,
+                providerName: ProviderName.SqlServer2019)
+        });
+    })
+```
+
+ProviderName is a string constant defining the database type to connect to, valid values are defined inside `LinqToDB.ProviderName` static class. Refer to the Members of [`LinqToDb.ProviderName`](https://linq2db.github.io/api/LinqToDB.ProviderName.html) for included providers.
+
+**HOCON Configuration Setup**
+
+```hocon
+akka.persistence {
+    journal {
+        plugin = "akka.persistence.journal.sql"
+        sql {
+            connection-string = "{database-connection-string}"
+            provider-name = "{provider-name}"
+        }
+    }
+    snapshot-store {
+        plugin = "akka.persistence.snapshot-store.sql"
+        sql {
+            connection-string = "{database-connection-string}"
+            provider-name = "{provider-name}"
+        }
+    }
+}
+```
+
+* **database-connection-string**: The proper connection string to your database of choice.
+* **provider-name**: A string constant defining the database type to connect to, valid values are defined inside `LinqToDB.ProviderName` static class. Refer to the Members of [`LinqToDb.ProviderName`](https://linq2db.github.io/api/LinqToDB.ProviderName.html) for included providers.

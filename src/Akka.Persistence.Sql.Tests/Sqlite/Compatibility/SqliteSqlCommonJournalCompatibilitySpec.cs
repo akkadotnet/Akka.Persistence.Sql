@@ -17,15 +17,16 @@ namespace Akka.Persistence.Sql.Tests.Sqlite.Compatibility
         public SqliteSqlCommonJournalCompatibilitySpec(
             ITestOutputHelper outputHelper,
             MsSqliteContainer fixture)
-            : base(fixture, outputHelper)
-        {
-        }
+            : base(fixture, outputHelper) { }
 
         protected override string OldJournal => "akka.persistence.journal.sqlite";
 
         protected override string NewJournal => "akka.persistence.journal.sql";
 
         protected override Func<MsSqliteContainer, Configuration.Config> Config => fixture
-            => SqliteCompatibilitySpecConfig.InitJournalConfig("journal_compat", "journal_metadata_compat", fixture.ConnectionString);
+            => SqliteCompatibilitySpecConfig.InitJournalConfig(
+                "journal_compat",
+                "journal_metadata_compat",
+                fixture.ConnectionString);
     }
 }

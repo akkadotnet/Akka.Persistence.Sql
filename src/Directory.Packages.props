@@ -10,6 +10,7 @@
       <PackageVersion Include="Akka.Cluster.Sharding" Version="$(AkkaVersion)" />
       <PackageVersion Include="Akka.Hosting" Version="$(AkkaHostingVersion)" />
       <PackageVersion Include="Akka.Persistence" Version="$(AkkaVersion)" />
+      <PackageVersion Include="Akka.Persistence.Hosting" Version="$(AkkaHostingVersion)" />
       <PackageVersion Include="Akka.Persistence.Sql.Compat.Common" Version="0.1.0" />
       <PackageVersion Include="Akka.Persistence.TCK" Version="$(AkkaVersion)" />
       <PackageVersion Include="Akka.Persistence.TestKit" Version="$(AkkaVersion)" />
@@ -67,6 +68,8 @@
 
     <!-- Test dependencies -->
     <ItemGroup>
+      <PackageVersion Include="Akka.Hosting.TestKit" Version="$(AkkaHostingVersion)" />
+      <PackageVersion Include="BenchmarkDotNet" Version="$(BenchmarkDotNetVersion)" />
       <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
       <PackageVersion Include="Docker.DotNet" Version="$(DockerDotNetVersion)" />
       <PackageVersion Include="FluentAssertions" Version="$(FluentAssertionVersion)" />

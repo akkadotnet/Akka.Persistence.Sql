@@ -10,6 +10,6 @@ namespace Akka.Persistence.Sql.Config
     {
         Csv,
         TagTable,
-        Both
+        Both,
     }
 }

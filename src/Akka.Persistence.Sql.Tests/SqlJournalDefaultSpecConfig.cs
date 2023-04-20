@@ -50,7 +50,8 @@ akka.persistence.journal.{customJournalName} {{
         public static Configuration.Config GetDefaultConfig(
             string providerName,
             string connectionString)
-            => ConfigurationFactory.ParseString($@"
+            => ConfigurationFactory.ParseString(
+                    $@"
 akka.persistence.journal {{
     plugin = akka.persistence.journal.sql
     sql {{

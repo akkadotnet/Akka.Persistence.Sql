@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using Akka.Persistence.Sql.Config;
-using Akka.Persistence.Sql.Tests.Common;
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.Sql.Tests.Common.Query;
 using Akka.Persistence.Sql.Tests.Sqlite;
@@ -17,7 +16,7 @@ namespace Akka.Persistence.Sql.Tests.Query.Sqlite.Csv
     [Collection(nameof(SqlitePersistenceSpec))]
     public class SqliteCurrentEventsByTagSpec : BaseCurrentEventsByTagSpec<SqliteContainer>
     {
-        public SqliteCurrentEventsByTagSpec(ITestOutputHelper output, SqliteContainer fixture) 
+        public SqliteCurrentEventsByTagSpec(ITestOutputHelper output, SqliteContainer fixture)
             : base(TagMode.Csv, output, nameof(SqliteCurrentEventsByTagSpec), fixture) { }
     }
 }

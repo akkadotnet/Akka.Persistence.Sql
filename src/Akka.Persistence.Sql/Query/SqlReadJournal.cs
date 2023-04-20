@@ -22,6 +22,7 @@ using Akka.Persistence.Sql.Query.InternalProtocol;
 using Akka.Persistence.Sql.Utility;
 using Akka.Streams;
 using Akka.Streams.Dsl;
+using Akka.Util;
 
 namespace Akka.Persistence.Sql.Query
 {
@@ -46,8 +47,6 @@ namespace Akka.Persistence.Sql.Query
         private readonly ReadJournalConfig _readJournalConfig;
         private readonly ByteArrayReadJournalDao _readJournalDao;
         private readonly ExtendedActorSystem _system;
-
-        public static string Identifier => "akka.persistence.query.journal.sql";
 
         public SqlReadJournal(
             ExtendedActorSystem system,
@@ -79,7 +78,7 @@ namespace Akka.Persistence.Sql.Query
                 serializer: new ByteArrayJournalSerializer(
                     journalConfig: _readJournalConfig,
                     serializer: system.Serialization,
-                    separator: _readJournalConfig.PluginConfig.TagSeparator, 
+                    separator: _readJournalConfig.PluginConfig.TagSeparator,
                     writerUuid: null));
 
             _journalSequenceActor = system.ActorOf(
@@ -91,6 +90,8 @@ namespace Akka.Persistence.Sql.Query
 
             _delaySource = Source.Tick(TimeSpan.FromSeconds(0), _readJournalConfig.RefreshInterval, 0L).Take(1);
         }
+
+        public static string Identifier => "akka.persistence.query.journal.sql";
 
         public Source<EventEnvelope, NotUsed> AllEvents(Offset offset)
             => Events(
@@ -104,12 +105,13 @@ namespace Akka.Persistence.Sql.Query
                 .FromEnumerable(
                     state: _readJournalDao,
                     func: async input => new[] { await input.MaxJournalSequenceAsync() })
-                .ConcatMany(maxInDb =>
-                    Events(
-                        offset is Sequence s
-                            ? s.Value
-                            : 0,
-                        maxInDb));
+                .ConcatMany(
+                    maxInDb =>
+                        Events(
+                            offset is Sequence s
+                                ? s.Value
+                                : 0,
+                            maxInDb));
 
         public Source<EventEnvelope, NotUsed> CurrentEventsByPersistenceId(
             string persistenceId,
@@ -119,7 +121,7 @@ namespace Akka.Persistence.Sql.Query
                 persistenceId: persistenceId,
                 fromSequenceNr: fromSequenceNr,
                 toSequenceNr: toSequenceNr,
-                refreshInterval: Util.Option<(TimeSpan, IScheduler)>.None);
+                refreshInterval: Option<(TimeSpan, IScheduler)>.None);
 
         public Source<EventEnvelope, NotUsed> CurrentEventsByTag(string tag, Offset offset)
             => CurrentEventsByTag(tag, (offset as Sequence)?.Value ?? 0);
@@ -135,7 +137,7 @@ namespace Akka.Persistence.Sql.Query
                 persistenceId: persistenceId,
                 fromSequenceNr: fromSequenceNr,
                 toSequenceNr: toSequenceNr,
-                refreshInterval: Util.Option<(TimeSpan, IScheduler)>.Create(
+                refreshInterval: Option<(TimeSpan, IScheduler)>.Create(
                     (_readJournalConfig.RefreshInterval, _system.Scheduler)));
 
         public Source<EventEnvelope, NotUsed> EventsByTag(string tag, Offset offset)
@@ -149,10 +151,11 @@ namespace Akka.Persistence.Sql.Query
         public Source<string, NotUsed> PersistenceIds()
             => Source
                 .Repeat(0L)
-                .ConcatMany(_ =>
-                    _delaySource
-                        .MapMaterializedValue(_ => NotUsed.Instance)
-                        .ConcatMany(_ => CurrentPersistenceIds()))
+                .ConcatMany(
+                    _ =>
+                        _delaySource
+                            .MapMaterializedValue(_ => NotUsed.Instance)
+                            .ConcatMany(_ => CurrentPersistenceIds()))
                 .StatefulSelectMany<string, string, NotUsed>(
                     () =>
                     {
@@ -181,18 +184,19 @@ namespace Akka.Persistence.Sql.Query
             string persistenceId,
             long fromSequenceNr,
             long toSequenceNr,
-            Util.Option<(TimeSpan, IScheduler)> refreshInterval)
+            Option<(TimeSpan, IScheduler)> refreshInterval)
             => _readJournalDao
                 .MessagesWithBatch(persistenceId, fromSequenceNr, toSequenceNr, _readJournalConfig.MaxBufferSize, refreshInterval)
                 .SelectAsync(1, representationAndOrdering => Task.FromResult(representationAndOrdering.Get()))
                 .SelectMany(r => AdaptEvents(r.Repr).Select(_ => new { representation = r.Repr, ordering = r.Ordering }))
-                .Select(r =>
-                    new EventEnvelope(
-                        offset: new Sequence(r.ordering),
-                        persistenceId: r.representation.PersistenceId,
-                        sequenceNr: r.representation.SequenceNr,
-                        @event: r.representation.Payload,
-                        timestamp: r.representation.Timestamp));
+                .Select(
+                    r =>
+                        new EventEnvelope(
+                            offset: new Sequence(r.ordering),
+                            persistenceId: r.representation.PersistenceId,
+                            sequenceNr: r.representation.SequenceNr,
+                            @event: r.representation.Payload,
+                            timestamp: r.representation.Timestamp));
 
         private Source<EventEnvelope, NotUsed> CurrentJournalEvents(long offset, long max, MaxOrderingId latestOrdering)
         {
@@ -202,18 +206,20 @@ namespace Akka.Persistence.Sql.Query
             return _readJournalDao
                 .Events(offset, latestOrdering.Max, max)
                 .SelectAsync(1, r => Task.FromResult(r.Get()))
-                .SelectMany(a =>
-                {
-                    var (representation, _, ordering) = a;
-                    return AdaptEvents(representation)
-                        .Select(r =>
-                            new EventEnvelope(
-                                offset: new Sequence(ordering),
-                                persistenceId: r.PersistenceId,
-                                sequenceNr: r.SequenceNr,
-                                @event: r.Payload,
-                                timestamp: r.Timestamp));
-                });
+                .SelectMany(
+                    a =>
+                    {
+                        var (representation, _, ordering) = a;
+                        return AdaptEvents(representation)
+                            .Select(
+                                r =>
+                                    new EventEnvelope(
+                                        offset: new Sequence(ordering),
+                                        persistenceId: r.PersistenceId,
+                                        sequenceNr: r.SequenceNr,
+                                        @event: r.Payload,
+                                        timestamp: r.Timestamp));
+                    });
         }
 
         private Source<EventEnvelope, NotUsed> CurrentJournalEventsByTag(
@@ -228,18 +234,20 @@ namespace Akka.Persistence.Sql.Query
             return _readJournalDao
                 .EventsByTag(tag, offset, latestOrdering.Max, max)
                 .SelectAsync(1, r => Task.FromResult(r.Get()))
-                .SelectMany(a =>
-                {
-                    var (representation, _, ordering) = a;
-                    return AdaptEvents(representation)
-                        .Select(r =>
-                            new EventEnvelope(
-                                offset: new Sequence(ordering),
-                                persistenceId: r.PersistenceId,
-                                sequenceNr: r.SequenceNr,
-                                @event: r.Payload,
-                                timestamp: r.Timestamp));
-                });
+                .SelectMany(
+                    a =>
+                    {
+                        var (representation, _, ordering) = a;
+                        return AdaptEvents(representation)
+                            .Select(
+                                r =>
+                                    new EventEnvelope(
+                                        offset: new Sequence(ordering),
+                                        persistenceId: r.PersistenceId,
+                                        sequenceNr: r.SequenceNr,
+                                        @event: r.Payload,
+                                        timestamp: r.Timestamp));
+                    });
         }
 
         private Source<EventEnvelope, NotUsed> EventsByTag(string tag, long offset, long? terminateAfterOffset)
@@ -252,7 +260,7 @@ namespace Akka.Persistence.Sql.Query
                     (offset, FlowControlEnum.Continue),
                     uf =>
                     {
-                        async Task<Util.Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>> RetrieveNextBatch()
+                        async Task<Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>> RetrieveNextBatch()
                         {
                             var queryUntil = await _journalSequenceActor
                                 .Ask<MaxOrderingId>(
@@ -287,7 +295,7 @@ namespace Akka.Persistence.Sql.Query
                                     .Where(r => r != null)
                                     .Max(t => t.Value);
 
-                            return Util.Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>.Create(
+                            return Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>.Create(
                                 ((nextStartingOffset, nextControl), xs));
                         }
 
@@ -295,7 +303,7 @@ namespace Akka.Persistence.Sql.Query
                         {
                             FlowControlEnum.Stop =>
                                 Task.FromResult(
-                                    Util.Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>.None),
+                                    Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>.None),
 
                             FlowControlEnum.Continue =>
                                 RetrieveNextBatch(),
@@ -307,7 +315,7 @@ namespace Akka.Persistence.Sql.Query
                                     value: RetrieveNextBatch),
 
                             _ => Task.FromResult(
-                                Util.Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>.None)
+                                Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>.None),
                         };
                     }).SelectMany(r => r);
         }
@@ -329,7 +337,7 @@ namespace Akka.Persistence.Sql.Query
                     (offset, FlowControlEnum.Continue),
                     uf =>
                     {
-                        async Task<Util.Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>> RetrieveNextBatch()
+                        async Task<Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>> RetrieveNextBatch()
                         {
                             var queryUntil = await _journalSequenceActor
                                 .Ask<MaxOrderingId>(
@@ -364,14 +372,14 @@ namespace Akka.Persistence.Sql.Query
                                     .Where(r => r != null)
                                     .Max(t => t.Value);
 
-                            return Util.Option<((long nextStartingOffset, FlowControlEnum nextControl), IImmutableList<EventEnvelope>xs)>.Create(
+                            return Option<((long nextStartingOffset, FlowControlEnum nextControl), IImmutableList<EventEnvelope>xs)>.Create(
                                 ((nextStartingOffset, nextControl), xs));
                         }
 
                         return uf.flowControl switch
                         {
                             FlowControlEnum.Stop =>
-                                Task.FromResult(Util.Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>.None),
+                                Task.FromResult(Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>.None),
 
                             FlowControlEnum.Continue =>
                                 RetrieveNextBatch(),
@@ -383,7 +391,7 @@ namespace Akka.Persistence.Sql.Query
                                     RetrieveNextBatch),
 
                             _ => Task.FromResult(
-                                Util.Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>.None)
+                                Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>.None),
                         };
                     }).SelectMany(r => r);
         }

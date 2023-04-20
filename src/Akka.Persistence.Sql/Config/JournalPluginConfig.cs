@@ -14,7 +14,7 @@ namespace Akka.Persistence.Sql.Config
         {
             TagSeparator = config.GetString("tag-separator", ";");
             Dao = config.GetString("dao", "Akka.Persistence.Sql.Journal.Dao.ByteArrayJournalDao, Akka.Persistence.Sql");
-            
+
             var tagWriteValue = config.GetString("tag-write-mode", "TagTable").ToLowerInvariant();
             if (!Enum.TryParse(tagWriteValue, true, out TagMode tagWriteMode))
                 tagWriteMode = TagMode.TagTable;
@@ -25,7 +25,7 @@ namespace Akka.Persistence.Sql.Config
         public string TagSeparator { get; }
 
         public string Dao { get; }
-        
+
         public TagMode TagMode { get; }
     }
 }

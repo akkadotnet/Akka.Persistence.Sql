@@ -4,11 +4,8 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using System;
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.TCK.Journal;
-using FluentAssertions.Extensions;
-using LinqToDB;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -18,9 +15,7 @@ namespace Akka.Persistence.Sql.Tests.Sqlite
     public class MsSqliteNativeConfigSpec : MsSqliteJournalSpec
     {
         public MsSqliteNativeConfigSpec(ITestOutputHelper output, MsSqliteContainer fixture)
-            : base(output, fixture, nameof(MsSqliteNativeConfigSpec), true)
-        {
-        }
+            : base(output, fixture, nameof(MsSqliteNativeConfigSpec), true) { }
     }
 
     [Collection(nameof(MsSqlitePersistenceSpec))]

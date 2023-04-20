@@ -25,21 +25,21 @@ namespace Akka.Persistence.Sql.TagTableMigration
                 aliases: new[] { "--connection-string", "-c" },
                 description: "Database connection string")
             {
-                IsRequired = true
+                IsRequired = true,
             };
 
             TableMapping = new Option<DatabaseType>(
                 aliases: new[] { "--database", "-d" },
                 description: "Target database being migrated")
             {
-                IsRequired = true
+                IsRequired = true,
             };
 
             Provider = new Option<ProviderType>(
                 aliases: new[] { "--provider", "-p" },
                 description: "Target database provider")
             {
-                IsRequired = true
+                IsRequired = true,
             };
 
             SchemaName = new Option<string>(
@@ -86,7 +86,7 @@ namespace Akka.Persistence.Sql.TagTableMigration
                         SchemaName = schema,
                         StartOffset = offset,
                         EndOffset = endOffset,
-                        BatchSize = batchSize
+                        BatchSize = batchSize,
                     };
 
                     var migrator = new TagTableMigrator(opt.ToHocon());

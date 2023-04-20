@@ -17,8 +17,9 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
         {
             if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
                 throw new Exception("Failed to clean up database in 10 seconds");
-            
-            return ConfigurationFactory.ParseString(@$"
+
+            return ConfigurationFactory.ParseString(
+                    @$"
 akka.persistence {{
     publish-plugin-commands = on
     journal {{
@@ -44,8 +45,9 @@ akka.persistence {{
         {
             if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
                 throw new Exception("Failed to clean up database in 10 seconds");
-            
-            return ConfigurationFactory.ParseString(@$"
+
+            return ConfigurationFactory.ParseString(
+                    @$"
 akka.persistence {{
     publish-plugin-commands = on
     snapshot-store {{

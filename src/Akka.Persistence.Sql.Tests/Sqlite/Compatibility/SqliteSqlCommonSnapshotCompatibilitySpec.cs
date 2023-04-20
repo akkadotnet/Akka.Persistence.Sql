@@ -15,9 +15,7 @@ namespace Akka.Persistence.Sql.Tests.Sqlite.Compatibility
     public class SqliteSqlCommonSnapshotCompatibilitySpec : SqlCommonSnapshotCompatibilitySpec<MsSqliteContainer>
     {
         public SqliteSqlCommonSnapshotCompatibilitySpec(ITestOutputHelper outputHelper, MsSqliteContainer fixture)
-            : base(fixture, outputHelper)
-        {
-        }
+            : base(fixture, outputHelper) { }
 
         protected override string OldSnapshot => "akka.persistence.snapshot-store.sqlite";
 

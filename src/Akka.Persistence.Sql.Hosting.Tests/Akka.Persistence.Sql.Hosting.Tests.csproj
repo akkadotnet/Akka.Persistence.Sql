@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>$(NetCoreTestVersion)</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="System.Data.Sqlite" />
+        <PackageReference Include="Akka.Hosting.TestKit" />
+        
+        <PackageReference Include="FluentAssertions" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="xunit" />
+        <PackageReference Include="xunit.runner.visualstudio" />
+        <PackageReference Include="coverlet.collector" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Akka.Persistence.Sql.Hosting\Akka.Persistence.Sql.Hosting.csproj" />
+      <ProjectReference Include="..\Akka.Persistence.Sql.Tests.Common\Akka.Persistence.Sql.Tests.Common.csproj" />
+    </ItemGroup>
+
+</Project>

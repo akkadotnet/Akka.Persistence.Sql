@@ -5,13 +5,9 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Threading.Tasks;
 using Akka.Configuration;
-using Akka.Persistence.Sql.Journal;
-using Akka.Persistence.Sql.Tests.Common;
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using FluentAssertions.Extensions;
-using LinqToDB;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -28,16 +24,15 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
                 nameof(PostgreSqlSqlJournalPerfSpec),
                 output,
                 40,
-                eventsCount: TestConstants.DockerNumMessages)
-        {
-        }
+                eventsCount: TestConstants.DockerNumMessages) { }
 
         private static Configuration.Config Configuration(PostgreSqlContainer fixture)
         {
             if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
                 throw new Exception("Failed to clean up database in 10 seconds");
-            
-            return ConfigurationFactory.ParseString(@$"
+
+            return ConfigurationFactory.ParseString(
+                    @$"
                 akka.persistence {{
                     publish-plugin-commands = on
                     journal {{

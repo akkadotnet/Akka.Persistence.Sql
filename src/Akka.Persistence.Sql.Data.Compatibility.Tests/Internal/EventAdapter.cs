@@ -19,7 +19,7 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
             {
                 int i => i,
                 string str => int.Parse(str),
-                _ => throw new Exception($"Unknown type: {evt.GetType()}")
+                _ => throw new Exception($"Unknown type: {evt.GetType()}"),
             };
 
             return evt.ToTagged(value);

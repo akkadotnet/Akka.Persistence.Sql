@@ -7,11 +7,10 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using Microsoft.Data.SqlClient;
 using Akka.Util;
 using Docker.DotNet.Models;
+using Microsoft.Data.SqlClient;
 
 namespace Akka.Persistence.Sql.Tests.Common.Containers
 {
@@ -27,15 +26,13 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         private readonly DbConnectionStringBuilder _connectionStringBuilder;
 
         public SqlServerContainer() : base("mcr.microsoft.com/mssql/server", "2019-latest", $"mssql-{Guid.NewGuid():N}")
-        {
-            _connectionStringBuilder = new DbConnectionStringBuilder
+            => _connectionStringBuilder = new DbConnectionStringBuilder
             {
                 ["Server"] = $"localhost,{Port}",
                 ["User Id"] = User,
                 ["Password"] = Password,
-                ["TrustServerCertificate"] = "true"
+                ["TrustServerCertificate"] = "true",
             };
-        }
 
         public override string ConnectionString => _connectionStringBuilder.ToString();
 
@@ -56,22 +53,22 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         {
             parameters.ExposedPorts = new Dictionary<string, EmptyStruct>
             {
-                ["1433/tcp"] = new()
+                ["1433/tcp"] = new(),
             };
 
             parameters.HostConfig = new HostConfig
             {
                 PortBindings = new Dictionary<string, IList<PortBinding>>
                 {
-                    ["1433/tcp"] = new List<PortBinding> { new() { HostPort = $"{Port}" } }
-                }
+                    ["1433/tcp"] = new List<PortBinding> { new() { HostPort = $"{Port}" } },
+                },
             };
 
             parameters.Env = new[]
             {
                 "ACCEPT_EULA=Y",
                 $"MSSQL_SA_PASSWORD={Password}",
-                "MSSQL_PID=Express"
+                "MSSQL_PID=Express",
             };
         }
 
@@ -87,7 +84,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
             await using var command = new SqlCommand
             {
                 CommandText = $"CREATE DATABASE {DatabaseName}",
-                Connection = connection
+                Connection = connection,
             };
 
             await command.ExecuteNonQueryAsync();

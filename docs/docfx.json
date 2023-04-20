@@ -1,0 +1,83 @@
+{
+    "metadata": [{
+        "src": [{
+            "files": ["**/*.csproj"],
+            "exclude": [
+                "**/obj/**",
+                "**/bin/**",
+                "_site/**",
+                "**/examples/**",
+                "**/benchmark/**",
+                "**/*Benchmarks.csproj",
+                "**/*TestRunner*.csproj",
+                "**/Akka.Docs.*.csproj",
+                "**/*Tests*.csproj",
+                "**/*Tests.*.csproj",
+                "**/*TagTableMigration.csproj",
+                "**/*IndexHelperApp.csproj",
+                "**/*HelperLib.csproj"
+            ],
+            "src": "../src"
+        }],
+        "dest": "api",
+        "filter": "filterConfig.yml"
+    }],
+    "build": {
+        "content": [{
+            "files": [
+                "api/**.yml",
+                "api/index.md"
+            ]
+        }, {
+            "files": [
+                "articles/**.md",
+                "articles/**/toc.yml",
+                "toc.yml",
+                "*.md"
+            ],
+            "exclude": [
+                "obj/**",
+                "_site/**"
+            ]
+        }],
+        "resource": [{
+            "files": [
+                "images/**",
+                "web.config",
+                "xrefmap.yml",
+                "articles/**.html"
+            ],
+            "exclude": [
+                "obj/**",
+                "_site/**"
+            ]
+        }],
+        "overwrite": [{
+            "files": [
+                "apidoc/**.md"
+            ],
+            "exclude": [
+                "obj/**",
+                "_site/**"
+            ]
+        }],
+        "xref": [
+            "../tools/msdn.4.5.2/content/msdn.4.5.2.zip"
+        ],
+        "globalMetadata": {
+            "_appTitle": "Akka.Persistence.Sql Documentation",
+            "_appLogoPath": "/images/akkalogo.png",
+            "_appFaviconPath": "/images/favicon.ico",
+            "_enableSearch": "true"
+        },
+        "dest": "_site",
+        "globalMetadataFiles": [],
+        "fileMetadataFiles": [],
+        "template": [
+            "default",
+            "template"
+        ],
+        "postProcessors": ["ExtractSearchIndex"],
+        "noLangKeyword": false
+    }
+}

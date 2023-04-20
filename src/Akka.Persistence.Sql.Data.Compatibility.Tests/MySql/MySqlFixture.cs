@@ -40,21 +40,21 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.MySql
         {
             parameters.ExposedPorts = new Dictionary<string, EmptyStruct>
             {
-                ["3306/tcp"] = new()
+                ["3306/tcp"] = new(),
             };
 
             parameters.HostConfig = new HostConfig
             {
                 PortBindings = new Dictionary<string, IList<PortBinding>>
                 {
-                    ["3306/tcp"] = new List<PortBinding> { new() { HostPort = $"{Port}" } }
-                }
+                    ["3306/tcp"] = new List<PortBinding> { new() { HostPort = $"{Port}" } },
+                },
             };
 
             parameters.Env = new[]
             {
                 $"MYSQL_ROOT_PASSWORD={Password}",
-                $"MYSQL_DATABASE={DatabaseName}"
+                $"MYSQL_DATABASE={DatabaseName}",
             };
         }
 
@@ -66,7 +66,7 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.MySql
                 ["Port"] = Port.ToString(),
                 ["Database"] = DatabaseName,
                 ["User Id"] = User,
-                ["Password"] = Password
+                ["Password"] = Password,
             };
 
             _connectionString = builder.ToString();

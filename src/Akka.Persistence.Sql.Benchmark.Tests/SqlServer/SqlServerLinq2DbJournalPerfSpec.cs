@@ -22,16 +22,15 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
                 nameof(SqlServerLinq2DbJournalPerfSpec),
                 output,
                 40,
-                eventsCount: TestConstants.DockerNumMessages)
-        {
-        }
+                eventsCount: TestConstants.DockerNumMessages) { }
 
         private static Configuration.Config Configure(SqlServerContainer fixture)
         {
             if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
                 throw new Exception("Failed to clean up database in 10 seconds");
 
-            return ConfigurationFactory.ParseString(@$"
+            return ConfigurationFactory.ParseString(
+                    @$"
                 akka.persistence {{
                     publish-plugin-commands = on
                     journal {{
@@ -49,7 +48,8 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
                         }}
                     }}
                 }}")
-                .WithFallback(SqlPersistence.DefaultConfiguration);        }
+                .WithFallback(SqlPersistence.DefaultConfiguration);
+        }
 
         [Fact]
         public void PersistenceActor_Must_measure_PersistGroup1000()

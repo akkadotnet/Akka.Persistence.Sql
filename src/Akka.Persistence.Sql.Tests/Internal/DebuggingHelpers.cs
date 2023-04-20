@@ -4,9 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using System;
 using System.Diagnostics;
-using System.Text;
 using LinqToDB.Data;
 using Xunit.Abstractions;
 

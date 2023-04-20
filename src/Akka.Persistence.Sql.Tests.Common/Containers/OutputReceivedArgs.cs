@@ -11,9 +11,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
     public class OutputReceivedArgs : EventArgs
     {
         public OutputReceivedArgs(string output)
-        {
-            Output = output;
-        }
+            => Output = output;
 
         public string Output { get; }
     }

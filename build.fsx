@@ -7,6 +7,7 @@ open System.Text
 
 open Fake
 open Fake.DotNetCli
+open Fake.NuGet.Install
 
 // Information about the project for Nuget and Assembly info files
 let configuration = "Release"
@@ -176,6 +177,71 @@ Target "PublishNuget" (fun _ ->
 )
 
 //--------------------------------------------------------------------------------
+// Documentation
+//--------------------------------------------------------------------------------
+Target "DocFx" (fun _ ->
+    // build the projects with samples
+    //let docsTestsProject = "./src/core/Akka.Docs.Tests/Akka.Docs.Tests.csproj"
+    //DotNetCli.Restore (fun p -> { p with Project = docsTestsProject })
+    //DotNetCli.Build (fun p -> { p with Project = docsTestsProject; Configuration = configuration })
+    //let docsTutorialsProject = "./src/core/Akka.Docs.Tutorials/Akka.Docs.Tutorials.csproj"
+    //DotNetCli.Restore (fun p -> { p with Project = docsTutorialsProject })
+    //DotNetCli.Build (fun p -> { p with Project = docsTutorialsProject; Configuration = configuration })
+
+    // install MSDN references
+    NugetInstall (fun p ->
+            { p with
+                ExcludeVersion = true
+                Version = "0.1.0-alpha-1611021200"
+                OutputDirectory = currentDirectory @@ "tools" }) "msdn.4.5.2"
+
+    let docsPath = FullName "./docs"
+    let docFxPath = FullName(findToolInSubPath "docfx.exe" "tools/docfx.console/tools")
+    
+    let args = StringBuilder()
+                |> append (docsPath @@ "docfx.json" )
+                |> append ("--warningsAsErrors")
+                |> toText
+    
+    let result = ExecProcess(fun info ->
+            info.FileName <- docFxPath
+            info.WorkingDirectory <- (Path.GetDirectoryName (FullName docFxPath))
+            info.Arguments <- args) (System.TimeSpan.FromMinutes 45.0) (* Reasonably long-running task. *)
+    if result <> 0 then failwithf "DocFX failed. %s %s" docFxPath args
+)
+
+//--------------------------------------------------------------------------------
+// JetBrain targets
+//--------------------------------------------------------------------------------
+Target "InspectCode" (fun _ ->
+    DotNetCli.RunCommand
+        (fun p ->
+            { p with
+                TimeOut = TimeSpan.FromMinutes 10. })
+        "tool restore"
+
+    DotNetCli.RunCommand
+        (fun p ->
+            { p with
+                TimeOut = TimeSpan.FromMinutes 10. })
+        "dotnet jb inspectcode Akka.Persistence.Sql.sln --build --swea --properties=\"Configuration=Release\" --telemetry-optout --format=\"Html;Xml;Text\" --output=\"TestResults/Akka.Persistence.Sql.jb\""
+)
+
+Target "CleanupCode" (fun _ ->
+    DotNetCli.RunCommand
+        (fun p ->
+            { p with
+                TimeOut = TimeSpan.FromMinutes 10. })
+        "tool restore"
+
+    DotNetCli.RunCommand
+        (fun p ->
+            { p with
+                TimeOut = TimeSpan.FromMinutes 10. })
+        "dotnet jb cleanupcode Akka.Persistence.Sql.sln --profile=\"Akka.NET\" --properties=\"Configuration=Release\" --telemetry-optout"
+)
+
+//--------------------------------------------------------------------------------
 // Cleanup
 //--------------------------------------------------------------------------------
 FinalTarget "KillCreatedProcesses" (fun _ ->
@@ -213,7 +279,7 @@ Target "All" DoNothing
 Target "Nuget" DoNothing
 
 // build dependencies
-"Clean" ==> "AssemblyInfo" ==> "Build" ==> "BuildRelease"
+"Clean" ==> "AssemblyInfo" ==> "Build" ==> "InspectCode" ==> "BuildRelease"
 
 // tests dependencies
 "Build" ==> "RunTests"
@@ -221,6 +287,10 @@ Target "Nuget" DoNothing
 // nuget dependencies
 "Clean" ==> "Build" ==> "CreateNuget"
 "CreateNuget" ==> "PublishNuget" ==> "Nuget"
+
+// jetbrain dependencies
+"InspectCode"
+"Build" ==> "CleanupCode"
 
 // all
 "BuildRelease" ==> "All"

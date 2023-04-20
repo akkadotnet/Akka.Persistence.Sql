@@ -35,9 +35,10 @@ namespace Akka.Persistence.Sql.IndexHelperApp
                     {
                         var config = ConfigurationFactory.ParseString(File.ReadAllText(opts.File));
 
-                        var journalConfig = new JournalConfig(config
-                            .GetConfig(opts.HoconPath)
-                            .WithFallback(SqlPersistence.DefaultConfiguration));
+                        var journalConfig = new JournalConfig(
+                            config
+                                .GetConfig(opts.HoconPath)
+                                .WithFallback(SqlPersistence.DefaultConfiguration));
 
                         var generator = GetGenerator(journalConfig.ProviderName);
                         var helper = new JournalIndexHelper();
@@ -59,7 +60,7 @@ namespace Akka.Persistence.Sql.IndexHelperApp
                     Index = helper.JournalOrdering(
                         journalConf.TableConfig.EventJournalTable.Name,
                         journalConf.TableConfig.EventJournalTable.ColumnNames.Ordering,
-                        journalConf.TableConfig.SchemaName)
+                        journalConf.TableConfig.SchemaName),
                 };
 
                 GenerateWithHeaderAndFooter(generator, orderingExpr, "Ordering");
@@ -70,7 +71,7 @@ namespace Akka.Persistence.Sql.IndexHelperApp
                         journalConf.TableConfig.EventJournalTable.Name,
                         journalConf.TableConfig.EventJournalTable.ColumnNames.PersistenceId,
                         journalConf.TableConfig.EventJournalTable.ColumnNames.SequenceNumber,
-                        journalConf.TableConfig.SchemaName)
+                        journalConf.TableConfig.SchemaName),
                 };
 
                 GenerateWithHeaderAndFooter(generator, indexExpr, "PidAndSequenceNo");
@@ -83,7 +84,7 @@ namespace Akka.Persistence.Sql.IndexHelperApp
                     Index = helper.JournalTimestamp(
                         journalConf.TableConfig.EventJournalTable.Name,
                         journalConf.TableConfig.EventJournalTable.ColumnNames.Created,
-                        journalConf.TableConfig.SchemaName)
+                        journalConf.TableConfig.SchemaName),
                 };
 
                 GenerateWithHeaderAndFooter(generator, timestampExpr, "Timestamp");
@@ -116,7 +117,7 @@ namespace Akka.Persistence.Sql.IndexHelperApp
                         new OptionsWrapper<GeneratorOptions>(new GeneratorOptions())),
                 _ when dbArg.Contains("mysql", comp) => new MySql5Generator(),
                 _ when dbArg.Contains("oracle", comp) => new OracleGenerator(),
-                _ => throw new Exception("IDK what to do with this!")
+                _ => throw new Exception("IDK what to do with this!"),
             };
         }
     }

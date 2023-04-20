@@ -16,9 +16,9 @@ namespace Akka.Persistence.Sql.Config
                 "Akka.Persistence.Sql.Snapshot.ByteArraySnapshotDao, Akka.Persistence.Sql");
 
         public string Dao { get; }
-        
+
         public string TagSeparator => throw new NotImplementedException();
-        
+
         public TagMode TagMode => throw new NotImplementedException();
     }
 }

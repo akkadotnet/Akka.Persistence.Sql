@@ -1,0 +1,14 @@
+- name: Home
+  href: index.md
+- name: Documentation
+  href: articles/
+  homepage: articles/gettingStarted.md
+- name: API Reference
+  href: api/
+  homepage: api/index.md
+- name: Project Chat
+  href: https://discord.gg/GSCfPwhbWP
+- name: Discussion Forum
+  href: https://github.com/akkadotnet/Akka.Persistence.Sql/discussions
+- name: Source Code
+  href: https://github.com/akkadotnet/Akka.Persistence.Sql

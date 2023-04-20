@@ -32,7 +32,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
         public ByteArrayJournalSerializer(
             IProviderConfig<JournalTableConfig> journalConfig,
             Akka.Serialization.Serialization serializer,
-            string separator, 
+            string separator,
             string writerUuid)
         {
             _journalConfig = journalConfig;
@@ -71,7 +71,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     Timestamp = representation.Timestamp == 0
                         ? timestamp
                         : representation.Timestamp,
-                    WriterUuid = uuid
+                    WriterUuid = uuid,
                 },
 
                 TagMode.TagTable => new JournalRow
@@ -81,7 +81,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     Timestamp = representation.Timestamp == 0
                         ? timestamp
                         : representation.Timestamp,
-                    WriterUuid = uuid
+                    WriterUuid = uuid,
                 },
 
                 TagMode.Both => new JournalRow
@@ -91,10 +91,10 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     Timestamp = representation.Timestamp == 0
                         ? timestamp
                         : representation.Timestamp,
-                    WriterUuid = uuid
+                    WriterUuid = uuid,
                 },
 
-                _ => throw new Exception($"Invalid Tag Write Mode! Was: {tagWriteMode}")
+                _ => throw new Exception($"Invalid Tag Write Mode! Was: {tagWriteMode}"),
             };
 
         protected override Try<JournalRow> Serialize(
@@ -123,7 +123,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                             {
                                 SerializerWithStringManifest stringManifest => stringManifest.Manifest(representation.Payload),
                                 { IncludeManifest: true } => representation.Payload.GetType().TypeQualifiedName(),
-                                _ => string.Empty
+                                _ => string.Empty,
                             };
 
                             row.Message = serializer.ToBinary(representation.Payload);
@@ -149,9 +149,33 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 if (identifierMaybe.HasValue)
                 {
                     // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
-                    return new Try<(IPersistentRepresentation, IImmutableSet<string>, long)>((
+                    return new Try<(IPersistentRepresentation, IImmutableSet<string>, long)>(
+                        (
+                            new Persistent(
+                                payload: _serializer.Deserialize(t.Message, identifierMaybe.Value, t.Manifest),
+                                sequenceNr: t.SequenceNumber,
+                                persistenceId: t.PersistenceId,
+                                manifest: t.EventManifest ?? t.Manifest,
+                                isDeleted: t.Deleted,
+                                sender: ActorRefs.NoSender,
+                                writerGuid: t.WriterUuid,
+                                timestamp: t.Timestamp),
+                            t.Tags?
+                                .Split(_separatorArray, StringSplitOptions.RemoveEmptyEntries)
+                                .ToImmutableHashSet() ?? t.TagArr?.ToImmutableHashSet() ?? ImmutableHashSet<string>.Empty,
+                            t.Ordering));
+                }
+
+                var type = Type.GetType(t.Manifest, true);
+
+                // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
+                return new Try<(IPersistentRepresentation, IImmutableSet<string>, long)>(
+                    (
                         new Persistent(
-                            payload: _serializer.Deserialize(t.Message, identifierMaybe.Value, t.Manifest),
+                            payload: Akka.Serialization.Serialization.WithTransport(
+                                system: _serializer.System,
+                                state: (_serializer.FindSerializerForType(type, _journalConfig.DefaultSerializer), message: t.Message, type),
+                                action: state => state.Item1.FromBinary(state.message, state.type)),
                             sequenceNr: t.SequenceNumber,
                             persistenceId: t.PersistenceId,
                             manifest: t.EventManifest ?? t.Manifest,
@@ -163,29 +187,6 @@ namespace Akka.Persistence.Sql.Journal.Dao
                             .Split(_separatorArray, StringSplitOptions.RemoveEmptyEntries)
                             .ToImmutableHashSet() ?? t.TagArr?.ToImmutableHashSet() ?? ImmutableHashSet<string>.Empty,
                         t.Ordering));
-                }
-
-                var type = Type.GetType(t.Manifest, true);
-
-                // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
-                return new Try<(IPersistentRepresentation, IImmutableSet<string>, long)>((
-                    new Persistent(
-                        payload: Akka.Serialization.Serialization.WithTransport(
-                            system: _serializer.System,
-                            state: (_serializer.FindSerializerForType(type, _journalConfig.DefaultSerializer), message: t.Message, type),
-                            action: state => state.Item1.FromBinary(state.message, state.type)),
-                        sequenceNr: t.SequenceNumber,
-                        persistenceId: t.PersistenceId,
-                        manifest: t.EventManifest ?? t.Manifest,
-                        isDeleted: t.Deleted,
-                        sender: ActorRefs.NoSender,
-                        writerGuid: t.WriterUuid,
-                        timestamp: t.Timestamp),
-                    t.Tags?
-                        .Split(_separatorArray, StringSplitOptions.RemoveEmptyEntries)
-                        .ToImmutableHashSet() ?? t.TagArr?.ToImmutableHashSet() ?? ImmutableHashSet<string>.Empty,
-                    t.Ordering));
-
             }
             catch (Exception e)
             {

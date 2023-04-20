@@ -8,7 +8,6 @@ using System;
 using Akka.Configuration;
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using FluentAssertions.Extensions;
-using LinqToDB;
 
 namespace Akka.Persistence.Sql.Tests.Sqlite
 {
@@ -18,8 +17,9 @@ namespace Akka.Persistence.Sql.Tests.Sqlite
         {
             if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
                 throw new Exception("Failed to clean up database in 10 seconds");
-            
-            return ConfigurationFactory.ParseString(@$"
+
+            return ConfigurationFactory.ParseString(
+                    @$"
                 akka.persistence {{
                     publish-plugin-commands = on
                     snapshot-store {{
@@ -42,8 +42,9 @@ namespace Akka.Persistence.Sql.Tests.Sqlite
         {
             if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
                 throw new Exception("Failed to clean up database in 10 seconds");
-            
-            return ConfigurationFactory.ParseString(@$"
+
+            return ConfigurationFactory.ParseString(
+                    @$"
                 akka.persistence {{
                     publish-plugin-commands = on
                     journal {{
