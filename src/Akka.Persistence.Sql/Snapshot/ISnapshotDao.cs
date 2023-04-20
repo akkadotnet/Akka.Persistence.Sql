@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Akka.Util;
 
@@ -12,44 +13,54 @@ namespace Akka.Persistence.Sql.Snapshot
 {
     public interface ISnapshotDao
     {
-        Task DeleteAllSnapshots(
-            string persistenceId);
-
-        Task DeleteUpToMaxSequenceNr(
+        Task DeleteAllSnapshotsAsync(
             string persistenceId,
-            long maxSequenceNr);
+            CancellationToken cancellationToken = default);
 
-        Task DeleteUpToMaxTimestamp(
-            string persistenceId,
-            DateTime maxTimestamp);
-
-        Task DeleteUpToMaxSequenceNrAndMaxTimestamp(
+        Task DeleteUpToMaxSequenceNrAsync(
             string persistenceId,
             long maxSequenceNr,
-            DateTime maxTimestamp);
+            CancellationToken cancellationToken = default);
 
-        Task<Option<SelectedSnapshot>> LatestSnapshot(
-            string persistenceId);
-
-        Task<Option<SelectedSnapshot>> SnapshotForMaxTimestamp(
+        Task DeleteUpToMaxTimestampAsync(
             string persistenceId,
-            DateTime timestamp);
+            DateTime maxTimestamp,
+            CancellationToken cancellationToken = default);
 
-        Task<Option<SelectedSnapshot>> SnapshotForMaxSequenceNr(
+        Task DeleteUpToMaxSequenceNrAndMaxTimestampAsync(
             string persistenceId,
-            long sequenceNr);
+            long maxSequenceNr,
+            DateTime maxTimestamp,
+            CancellationToken cancellationToken = default);
 
-        Task<Option<SelectedSnapshot>> SnapshotForMaxSequenceNrAndMaxTimestamp(
+        Task<Option<SelectedSnapshot>> LatestSnapshotAsync(
+            string persistenceId,
+            CancellationToken cancellationToken = default);
+
+        Task<Option<SelectedSnapshot>> SnapshotForMaxTimestampAsync(
+            string persistenceId,
+            DateTime timestamp,
+            CancellationToken cancellationToken = default);
+
+        Task<Option<SelectedSnapshot>> SnapshotForMaxSequenceNrAsync(
             string persistenceId,
             long sequenceNr,
-            DateTime timestamp);
+            CancellationToken cancellationToken = default);
 
-        Task Delete(
+        Task<Option<SelectedSnapshot>> SnapshotForMaxSequenceNrAndMaxTimestampAsync(
             string persistenceId,
-            long sequenceNr);
+            long sequenceNr,
+            DateTime timestamp,
+            CancellationToken cancellationToken = default);
 
-        Task Save(
+        Task DeleteAsync(
+            string persistenceId,
+            long sequenceNr,
+            CancellationToken cancellationToken = default);
+
+        Task SaveAsync(
             SnapshotMetadata snapshotMetadata,
-            object snapshot);
+            object snapshot,
+            CancellationToken cancellationToken = default);
     }
 }

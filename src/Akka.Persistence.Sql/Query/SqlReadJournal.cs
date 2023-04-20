@@ -79,7 +79,9 @@ namespace Akka.Persistence.Sql.Query
                     journalConfig: _readJournalConfig,
                     serializer: system.Serialization,
                     separator: _readJournalConfig.PluginConfig.TagSeparator,
-                    writerUuid: null));
+                    writerUuid: null),
+                // TODO: figure out a way to signal shutdown to the query executor here
+                default);
 
             _journalSequenceActor = system.ActorOf(
                 props: Props.Create(

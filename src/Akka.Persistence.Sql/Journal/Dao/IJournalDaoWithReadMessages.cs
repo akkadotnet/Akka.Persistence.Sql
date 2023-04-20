@@ -5,8 +5,8 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Threading.Tasks;
 using Akka.Actor;
-using Akka.Persistence.Sql.Db;
 using Akka.Persistence.Sql.Journal.Types;
 using Akka.Streams.Dsl;
 using Akka.Util;
@@ -15,8 +15,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
 {
     public interface IJournalDaoWithReadMessages
     {
-        Source<Try<ReplayCompletion>, NotUsed> Messages(
-            AkkaDataConnection connection,
+        Task<Source<Try<ReplayCompletion>, NotUsed>> Messages(
             string persistenceId,
             long fromSequenceNr,
             long toSequenceNr,
@@ -27,6 +26,6 @@ namespace Akka.Persistence.Sql.Journal.Dao
             long fromSequenceNr,
             long toSequenceNr,
             int batchSize,
-            Option<(TimeSpan, IScheduler)> refreshInterval);
+            Option<(TimeSpan duration, IScheduler scheduler)> refreshInterval);
     }
 }

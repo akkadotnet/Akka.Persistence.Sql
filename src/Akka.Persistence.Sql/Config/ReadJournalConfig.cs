@@ -5,6 +5,8 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Data;
+using Akka.Persistence.Sql.Extensions;
 
 namespace Akka.Persistence.Sql.Config
 {
@@ -23,6 +25,10 @@ namespace Akka.Persistence.Sql.Config
             MaxBufferSize = config.GetInt("max-buffer-size", 500);
             AddShutdownHook = config.GetBoolean("add-shutdown-hook", true);
             DefaultSerializer = config.GetString("serializer");
+            ReadIsolationLevel = config.GetIsolationLevel("read-isolation-level");
+            
+            // We don't do any writes in a read journal
+            WriteIsolationLevel = IsolationLevel.Unspecified;
         }
 
         public BaseByteArrayJournalDaoConfig DaoConfig { get; }
@@ -48,5 +54,9 @@ namespace Akka.Persistence.Sql.Config
         public bool UseCloneConnection { get; }
 
         public string DefaultSerializer { get; }
+        
+        public IsolationLevel WriteIsolationLevel { get; }
+
+        public IsolationLevel ReadIsolationLevel { get; }
     }
 }

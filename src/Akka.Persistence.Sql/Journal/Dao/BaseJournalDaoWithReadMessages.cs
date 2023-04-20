@@ -5,9 +5,12 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Data;
+using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Pattern;
+using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Db;
 using Akka.Persistence.Sql.Journal.Types;
 using Akka.Persistence.Sql.Streams;
@@ -25,18 +28,28 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
         protected readonly IAdvancedScheduler Scheduler;
 
+        protected readonly IsolationLevel WriteIsolationLevel;
+        
+        protected readonly IsolationLevel ReadIsolationLevel;
+        
+        protected readonly CancellationToken ShutdownToken;
+
         protected BaseJournalDaoWithReadMessages(
             IAdvancedScheduler scheduler,
             IMaterializer materializer,
-            AkkaPersistenceDataConnectionFactory connectionFactory)
+            AkkaPersistenceDataConnectionFactory connectionFactory,
+            IProviderConfig config,
+            CancellationToken shutdownToken)
         {
             Scheduler = scheduler;
             Materializer = materializer;
             ConnectionFactory = connectionFactory;
+            ReadIsolationLevel = config.ReadIsolationLevel;
+            WriteIsolationLevel = config.WriteIsolationLevel;
+            ShutdownToken = shutdownToken;
         }
 
-        public abstract Source<Try<ReplayCompletion>, NotUsed> Messages(
-            AkkaDataConnection connection,
+        public abstract Task<Source<Try<ReplayCompletion>, NotUsed>> Messages(
             string persistenceId,
             long fromSequenceNr,
             long toSequenceNr,
@@ -47,7 +60,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
             long fromSequenceNr,
             long toSequenceNr,
             int batchSize,
-            Option<(TimeSpan, IScheduler)> refreshInterval)
+            Option<(TimeSpan duration, IScheduler scheduler)> refreshInterval)
             => Source
                 .UnfoldAsync<(long seqNr, FlowControlEnum flowControl), LanguageExt.Seq<Try<ReplayCompletion>>>(
                     (Math.Max(1, fromSequenceNr), FlowControlEnum.Continue),
@@ -59,9 +72,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                             int i,
                             long fromSeqNo)
                         {
-                            await using var connection = ConnectionFactory.GetConnection();
-
-                            return await Messages(connection, s, fromSeqNo, l, i)
+                            return await (await Messages(s, fromSeqNo, l, i))
                                 .RunWith(ExtSeq.Seq<Try<ReplayCompletion>>(), Materializer);
                         }
 
@@ -112,17 +123,14 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
                             FlowControlEnum.ContinueDelayed when refreshInterval.HasValue =>
                                 await FutureTimeoutSupport.After(
-                                    refreshInterval.Value.Item1,
-                                    refreshInterval.Value.Item2,
+                                    refreshInterval.Value.duration,
+                                    refreshInterval.Value.scheduler,
                                     () => RetrieveNextBatch(opt.seqNr)),
 
                             _ => InvalidFlowThrowHelper(opt),
                         };
                     })
                 .SelectMany(r => r);
-
-        private static Option<long> MessagesWithBatchThrowHelper(Try<ReplayCompletion> lastMsg)
-            => throw lastMsg.Failure.Value;
 
         private static Option<((long, FlowControlEnum), LanguageExt.Seq<Try<ReplayCompletion>>)> InvalidFlowThrowHelper(
             (long, FlowControlEnum) opt)

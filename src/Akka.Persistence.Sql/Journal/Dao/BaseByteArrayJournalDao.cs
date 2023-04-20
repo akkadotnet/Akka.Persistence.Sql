@@ -7,9 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Data;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,15 +28,6 @@ namespace Akka.Persistence.Sql.Journal.Dao
 {
     public abstract class BaseByteArrayJournalDao : BaseJournalDaoWithReadMessages, IJournalDaoWithUpdates
     {
-        protected static readonly Expression<Func<JournalMetaData, PersistenceIdAndSequenceNumber>> MetaDataSelector =
-            md => new PersistenceIdAndSequenceNumber(md.SequenceNumber, md.PersistenceId);
-
-        protected static readonly Expression<Func<JournalRow, PersistenceIdAndSequenceNumber>> RowDataSelector =
-            md => new PersistenceIdAndSequenceNumber(md.SequenceNumber, md.PersistenceId);
-
-        private static readonly Expression<Func<PersistenceIdAndSequenceNumber, long>> SequenceNumberSelector =
-            r => r.SequenceNumber;
-
         private readonly Flow<JournalRow, Util.Try<ReplayCompletion>, NotUsed> _deserializeFlowMapped;
         private readonly TagMode _tagWriteMode;
         protected readonly JournalConfig JournalConfig;
@@ -46,9 +35,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
         protected readonly ILoggingAdapter Logger;
         protected readonly FlowPersistentReprSerializer<JournalRow> Serializer;
 
-        protected readonly CancellationToken ShutdownToken;
-
-        public readonly ISourceQueueWithComplete<WriteQueueEntry> WriteQueue;
+        protected readonly ISourceQueueWithComplete<WriteQueueEntry> WriteQueue;
 
         protected BaseByteArrayJournalDao(
             IAdvancedScheduler scheduler,
@@ -59,14 +46,13 @@ namespace Akka.Persistence.Sql.Journal.Dao
             ILoggingAdapter logger,
             string selfUuid,
             CancellationToken shutdownToken)
-            : base(scheduler, materializer, connectionFactory)
+            : base(scheduler, materializer, connectionFactory, config, shutdownToken)
         {
             Logger = logger;
             JournalConfig = config;
             Serializer = new ByteArrayJournalSerializer(config, serializer, config.PluginConfig.TagSeparator, selfUuid);
             _deserializeFlowMapped = Serializer.DeserializeFlow().Select(MessageWithBatchMapper());
             _tagWriteMode = JournalConfig.PluginConfig.TagMode;
-            ShutdownToken = shutdownToken;
 
             // Due to C# rules we have to initialize WriteQueue here
             // Keeping it here vs init function prevents accidental moving of init
@@ -123,162 +109,153 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
         public async Task Delete(string persistenceId, long maxSequenceNr)
         {
-            await using var connection = ConnectionFactory.GetConnection();
-
-            var transaction = await connection.BeginTransactionAsync(ShutdownToken);
-
-            try
-            {
-                await connection
-                    .GetTable<JournalRow>()
-                    .Where(
-                        r =>
-                            r.PersistenceId == persistenceId &&
-                            r.SequenceNumber <= maxSequenceNr)
-                    .Set(r => r.Deleted, true)
-                    .UpdateAsync(ShutdownToken);
-
-                var maxMarkedDeletion =
-                    await MaxMarkedForDeletionMaxPersistenceIdQuery(connection, persistenceId).FirstOrDefaultAsync(ShutdownToken);
-
-                if (JournalConfig.DaoConfig.SqlCommonCompatibilityMode)
+            await ConnectionFactory.ExecuteWithTransactionAsync(
+                WriteIsolationLevel,
+                ShutdownToken,
+                async (connection, token) =>
                 {
                     await connection
-                        .GetTable<JournalMetaData>()
-                        .InsertOrUpdateAsync(
-                            insertSetter: () => new JournalMetaData
-                            {
-                                PersistenceId = persistenceId,
-                                SequenceNumber = maxMarkedDeletion,
-                            },
-                            onDuplicateKeyUpdateSetter: jmd => new JournalMetaData(),
-                            keySelector: () => new JournalMetaData
-                            {
-                                PersistenceId = persistenceId,
-                                SequenceNumber = maxMarkedDeletion,
-                            },
-                            token: ShutdownToken);
-                }
-
-                await connection
-                    .GetTable<JournalRow>()
-                    .Where(
-                        r =>
-                            r.PersistenceId == persistenceId &&
-                            r.SequenceNumber <= maxSequenceNr &&
-                            r.SequenceNumber < maxMarkedDeletion)
-                    .DeleteAsync(token: ShutdownToken);
-
-                if (JournalConfig.DaoConfig.SqlCommonCompatibilityMode)
-                {
-                    await connection
-                        .GetTable<JournalMetaData>()
+                        .GetTable<JournalRow>()
                         .Where(
                             r =>
                                 r.PersistenceId == persistenceId &&
-                                r.SequenceNumber < maxMarkedDeletion)
-                        .DeleteAsync(token: ShutdownToken);
-                }
+                                r.SequenceNumber <= maxSequenceNr)
+                        .Set(r => r.Deleted, true)
+                        .UpdateAsync(token);
 
-                if (JournalConfig.PluginConfig.TagMode != TagMode.Csv)
-                {
+                    var maxMarkedDeletion =
+                        await MaxMarkedForDeletionMaxPersistenceIdQuery(connection, persistenceId).FirstOrDefaultAsync(token);
+
+                    if (JournalConfig.DaoConfig.SqlCommonCompatibilityMode)
+                    {
+                        await connection
+                            .GetTable<JournalMetaData>()
+                            .InsertOrUpdateAsync(
+                                insertSetter: () => new JournalMetaData
+                                {
+                                    PersistenceId = persistenceId,
+                                    SequenceNumber = maxMarkedDeletion,
+                                },
+                                onDuplicateKeyUpdateSetter: jmd => new JournalMetaData(),
+                                keySelector: () => new JournalMetaData
+                                {
+                                    PersistenceId = persistenceId,
+                                    SequenceNumber = maxMarkedDeletion,
+                                },
+                                token: token);
+                    }
+
                     await connection
-                        .GetTable<JournalTagRow>()
+                        .GetTable<JournalRow>()
                         .Where(
                             r =>
+                                r.PersistenceId == persistenceId &&
                                 r.SequenceNumber <= maxSequenceNr &&
-                                r.PersistenceId == persistenceId)
-                        .DeleteAsync(token: ShutdownToken);
-                }
+                                r.SequenceNumber < maxMarkedDeletion)
+                        .DeleteAsync(token);
 
-                await transaction.CommitAsync(ShutdownToken);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error on delete!");
+                    if (JournalConfig.DaoConfig.SqlCommonCompatibilityMode)
+                    {
+                        await connection
+                            .GetTable<JournalMetaData>()
+                            .Where(
+                                r =>
+                                    r.PersistenceId == persistenceId &&
+                                    r.SequenceNumber < maxMarkedDeletion)
+                            .DeleteAsync(token);
+                    }
 
-                try
-                {
-                    await transaction.RollbackAsync(ShutdownToken);
-                }
-                catch (Exception exception)
-                {
-                    throw new AggregateException(exception, ex);
-                }
-
-                throw;
-            }
+                    if (JournalConfig.PluginConfig.TagMode != TagMode.Csv)
+                    {
+                        await connection
+                            .GetTable<JournalTagRow>()
+                            .Where(
+                                r =>
+                                    r.SequenceNumber <= maxSequenceNr &&
+                                    r.PersistenceId == persistenceId)
+                            .DeleteAsync(token);
+                    }
+                });
         }
 
         public async Task<Done> Update(string persistenceId, long sequenceNr, object payload)
         {
             var write = new Persistent(payload, sequenceNr, persistenceId);
-
             var serialize = Serializer.Serialize(write);
 
-            if (serialize.IsSuccess)
+            if (!serialize.IsSuccess)
             {
                 throw new ArgumentException(
                     $"Failed to serialize {write.GetType()} for update of {persistenceId}] @ {sequenceNr}",
                     serialize.Failure.Value);
             }
 
-            await using var connection = ConnectionFactory.GetConnection();
-
-            await connection
-                .GetTable<JournalRow>()
-                .Where(
-                    r =>
-                        r.PersistenceId == persistenceId &&
-                        r.SequenceNumber == write.SequenceNr)
-                .Set(r => r.Message, serialize.Get().Message)
-                .UpdateAsync(token: ShutdownToken);
+            await ConnectionFactory.ExecuteWithTransactionAsync(
+                WriteIsolationLevel,
+                ShutdownToken,
+                async (connection, token) =>
+                {
+                    await connection
+                        .GetTable<JournalRow>()
+                        .Where(
+                            r =>
+                                r.PersistenceId == persistenceId &&
+                                r.SequenceNumber == write.SequenceNr)
+                        .Set(r => r.Message, serialize.Get().Message)
+                        .UpdateAsync(token);
+                });
 
             return Done.Instance;
         }
 
         public async Task<long> HighestSequenceNr(string persistenceId, long fromSequenceNr)
         {
-            await using var connection = ConnectionFactory.GetConnection();
-
-            return (await MaxSeqNumberForPersistenceIdQuery(connection, persistenceId, fromSequenceNr).MaxAsync(token: ShutdownToken))
-                .GetValueOrDefault(0);
+            return await ConnectionFactory.ExecuteWithTransactionAsync(
+                ReadIsolationLevel,
+                ShutdownToken,
+                async (connection, token) => (await MaxSeqNumberForPersistenceIdQuery(connection, persistenceId, fromSequenceNr).MaxAsync(token))
+                    .GetValueOrDefault(0));
         }
 
         /// <summary>
         ///     This override is greedy since it is always called
         ///     from within <see cref="BaseJournalDaoWithReadMessages.MessagesWithBatch" />
         /// </summary>
-        /// <param name="connection"></param>
         /// <param name="persistenceId"></param>
         /// <param name="fromSequenceNr"></param>
         /// <param name="toSequenceNr"></param>
         /// <param name="max"></param>
         /// <returns></returns>
-        public override Source<Util.Try<ReplayCompletion>, NotUsed> Messages(
-            AkkaDataConnection connection,
+        public override async Task<Source<Util.Try<ReplayCompletion>, NotUsed>> Messages(
             string persistenceId,
             long fromSequenceNr,
             long toSequenceNr,
             long max)
         {
-            IQueryable<JournalRow> query = connection
-                .GetTable<JournalRow>()
-                .Where(
-                    r =>
-                        r.PersistenceId == persistenceId &&
-                        r.SequenceNumber >= fromSequenceNr &&
-                        r.SequenceNumber <= toSequenceNr &&
-                        r.Deleted == false)
-                .OrderBy(r => r.SequenceNumber);
+            return await ConnectionFactory.ExecuteWithTransactionAsync(
+                ReadIsolationLevel,
+                ShutdownToken,
+                async (connection, token) =>
+                {
+                    IQueryable<JournalRow> query = connection
+                        .GetTable<JournalRow>()
+                        .Where(
+                            r =>
+                                r.PersistenceId == persistenceId &&
+                                r.SequenceNumber >= fromSequenceNr &&
+                                r.SequenceNumber <= toSequenceNr &&
+                                r.Deleted == false)
+                        .OrderBy(r => r.SequenceNumber);
 
-            if (max <= int.MaxValue)
-                query = query.Take((int)max);
+                    if (max <= int.MaxValue)
+                        query = query.Take((int)max);
 
-            return Source
-                .FromTask(query.ToListAsync(token: ShutdownToken))
-                .SelectMany(r => r)
-                .Via(_deserializeFlowMapped);
+                    var source = await query.ToListAsync(token);
+                    
+                    return Source
+                        .From(source)
+                        .Via(_deserializeFlowMapped);
+                });
         }
 
         private async Task QueueWriteJournalRows(Seq<JournalRow> xs)
@@ -323,13 +300,16 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
                 // hot path:
                 // If we only have one row, penalty for BulkCopy
-                // Isn't worth it due to insert caching/transaction/etc.
+                // Isn't worth it due to insert caching/etc.
                 case 1 when _tagWriteMode == TagMode.Csv || xs.Head().TagArr.Length == 0:
                 {
-                    // If we are writing a single row,
-                    // we don't need to worry about transactions.
-                    await using var connection = ConnectionFactory.GetConnection();
-                    await connection.InsertAsync(xs.Head, ShutdownToken);
+                    await ConnectionFactory.ExecuteWithTransactionAsync(
+                        WriteIsolationLevel,
+                        ShutdownToken,
+                        async (connection, token) =>
+                        {
+                            await connection.InsertAsync(xs.Head, token);
+                        });
                     break;
                 }
 
@@ -341,47 +321,31 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
         private async Task InsertMultiple(Seq<JournalRow> xs)
         {
-            await using var connection = ConnectionFactory.GetConnection();
-
-            await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.Serializable, ShutdownToken);
-
-            try
-            {
-                if (_tagWriteMode == TagMode.Csv)
+            await ConnectionFactory.ExecuteWithTransactionAsync(
+                WriteIsolationLevel,
+                ShutdownToken,
+                async (connection, token) =>
                 {
-                    await BulkInsertNoTagTableTags(connection, xs, JournalConfig.DaoConfig, ShutdownToken);
-                }
-                else
-                {
-                    var config = JournalConfig.DaoConfig;
-                    var tail = xs;
-                    while (tail.Count > 0)
+                    if (_tagWriteMode == TagMode.Csv)
                     {
-                        (var noTags, tail) = tail.Span(r => r.TagArr.Length == 0);
-                        if (noTags.Count > 0)
-                            await BulkInsertNoTagTableTags(connection, noTags, config, ShutdownToken);
-
-                        (var hasTags, tail) = tail.Span(r => r.TagArr.Length > 0);
-                        if (hasTags.Count > 0)
-                            await InsertWithOrderingAndBulkInsertTags(connection, hasTags, config, ShutdownToken);
+                        await BulkInsertNoTagTableTags(connection, xs, JournalConfig.DaoConfig, token);
                     }
-                }
+                    else
+                    {
+                        var config = JournalConfig.DaoConfig;
+                        var tail = xs;
+                        while (tail.Count > 0)
+                        {
+                            (var noTags, tail) = tail.Span(r => r.TagArr.Length == 0);
+                            if (noTags.Count > 0)
+                                await BulkInsertNoTagTableTags(connection, noTags, config, token);
 
-                await connection.CommitTransactionAsync(ShutdownToken);
-            }
-            catch (Exception e1)
-            {
-                try
-                {
-                    await connection.RollbackTransactionAsync(ShutdownToken);
-                }
-                catch (Exception e2)
-                {
-                    throw new AggregateException(e2, e1);
-                }
-
-                throw;
-            }
+                            (var hasTags, tail) = tail.Span(r => r.TagArr.Length > 0);
+                            if (hasTags.Count > 0)
+                                await InsertWithOrderingAndBulkInsertTags(connection, hasTags, config, token);
+                        }
+                    }
+                });
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -419,7 +383,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                         .WithUseParameters(config.PreferParametersOnMultiRowInsert)
                         .WithMaxBatchSize(config.DbRoundTripTagBatchSize),
                     tagsToInsert,
-                    cancellationToken: token);
+                    token);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -439,7 +403,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                         .WithUseParameters(config.PreferParametersOnMultiRowInsert)
                         .WithMaxBatchSize(config.DbRoundTripBatchSize),
                     xs,
-                    cancellationToken: token);
+                    token);
 
         // By using a custom flatten here, we avoid an Enumerable/LINQ allocation
         // And are able to have a little more control over default capacity of array.
@@ -560,17 +524,5 @@ namespace Akka.Persistence.Sql.Journal.Dao
             => x => x.IsSuccess
                 ? new Util.Try<ReplayCompletion>(new ReplayCompletion(x.Success.Value))
                 : new Util.Try<ReplayCompletion>(x.Failure.Value);
-    }
-
-    public sealed class PersistenceIdAndSequenceNumber
-    {
-        public PersistenceIdAndSequenceNumber(long sequenceNumber, string persistenceId)
-        {
-            SequenceNumber = sequenceNumber;
-            PersistenceId = persistenceId;
-        }
-
-        public long SequenceNumber { get; }
-        public string PersistenceId { get; }
     }
 }
