@@ -5,8 +5,10 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Data;
 using Akka.Configuration;
 using Akka.Persistence.Sql.Config;
+using Akka.Persistence.Sql.Extensions;
 using Akka.Persistence.Sql.Snapshot;
 using FluentAssertions;
 using Xunit;
@@ -41,6 +43,8 @@ namespace Akka.Persistence.Sql.Tests.Settings
             snapshot.GetString("dao", "invalid").Should().Be("Akka.Persistence.Sql.Snapshot.ByteArraySnapshotDao, Akka.Persistence.Sql");
             snapshot.GetBoolean("auto-initialize").Should().BeTrue();
             snapshot.GetBoolean("warn-on-auto-init-fail").Should().BeTrue();
+            snapshot.GetIsolationLevel("read-isolation-level").Should().Be(IsolationLevel.Unspecified);
+            snapshot.GetIsolationLevel("write-isolation-level").Should().Be(IsolationLevel.Unspecified);
 
             var snapshotConfig = snapshot.GetConfig("default");
             snapshotConfig.Should().NotBeNull();
@@ -200,6 +204,8 @@ namespace Akka.Persistence.Sql.Tests.Settings
             snapshot.UseCloneConnection.Should().BeTrue();
             snapshot.DefaultSerializer.Should().BeNullOrEmpty();
             snapshot.UseSharedDb.Should().BeNullOrEmpty();
+            snapshot.ReadIsolationLevel.Should().Be(IsolationLevel.Unspecified);
+            snapshot.WriteIsolationLevel.Should().Be(IsolationLevel.Unspecified);
 
             var pluginConfig = snapshot.PluginConfig;
             var daoType = Type.GetType(pluginConfig.Dao);

@@ -5,8 +5,10 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Data;
 using Akka.Configuration;
 using Akka.Persistence.Sql.Config;
+using Akka.Persistence.Sql.Extensions;
 using Akka.Persistence.Sql.Journal.Dao;
 using Akka.Persistence.Sql.Query;
 using FluentAssertions;
@@ -47,6 +49,7 @@ namespace Akka.Persistence.Sql.Tests.Settings
             query.GetInt("max-row-by-row-size").Should().Be(100);
             query.GetBoolean("use-clone-connection").Should().BeTrue();
             query.GetString("tag-separator", "invalid").Should().Be(";");
+            query.GetIsolationLevel("read-isolation-level").Should().Be(IsolationLevel.Unspecified);
             query.GetString("dao", "invalid").Should().Be("Akka.Persistence.Sql.Journal.Dao.ByteArrayJournalDao, Akka.Persistence.Sql");
 
             var retrieval = query.GetConfig("journal-sequence-retrieval");
@@ -275,6 +278,8 @@ namespace Akka.Persistence.Sql.Tests.Settings
             journal.RefreshInterval.Should().Be(1.Seconds());
             journal.MaxBufferSize.Should().Be(500);
             journal.AddShutdownHook.Should().BeTrue();
+            journal.ReadIsolationLevel.Should().Be(IsolationLevel.Unspecified);
+            journal.WriteIsolationLevel.Should().Be(IsolationLevel.Unspecified);
 
             var pluginConfig = journal.PluginConfig;
             pluginConfig.TagSeparator.Should().Be(";");

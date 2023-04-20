@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Data;
 using System.Text;
 using Akka.Hosting;
 using Akka.Persistence.Hosting;
@@ -55,6 +56,32 @@ namespace Akka.Persistence.Sql.Hosting
         /// </summary>
         public SnapshotDatabaseOptions? DatabaseOptions { get; set; }
 
+        /// <summary>
+        ///     <para>
+        ///         The isolation level of all database read query.
+        ///     </para>
+        ///     <para>
+        ///         Isolation level documentation can be read
+        ///         <a href="https://learn.microsoft.com/en-us/dotnet/api/system.data.isolationlevel?#fields">here</a> 
+        ///     </para>
+        ///     <b>NOTE</b>: This is used primarily for backward compatibility,
+        ///     you leave this empty for greenfield projects.
+        /// </summary>
+        public IsolationLevel? ReadIsolationLevel { get; set; }
+        
+        /// <summary>
+        ///     <para>
+        ///         The isolation level of all database write query.
+        ///     </para>
+        ///     <para>
+        ///         Isolation level documentation can be read
+        ///         <a href="https://learn.microsoft.com/en-us/dotnet/api/system.data.isolationlevel?#fields">here</a> 
+        ///     </para>
+        ///     <b>NOTE</b>: This is used primarily for backward compatibility,
+        ///     you leave this empty for greenfield projects.
+        /// </summary>
+        public IsolationLevel? WriteIsolationLevel { get; set; }
+
         protected override Configuration.Config InternalDefaultConfig => Default;
 
         protected override StringBuilder Build(StringBuilder sb)
@@ -70,6 +97,12 @@ namespace Akka.Persistence.Sql.Hosting
 
             if (DatabaseOptions is { })
                 sb.AppendLine($"table-mapping = {DatabaseOptions.Mapping.Name().ToHocon()}");
+
+            if (ReadIsolationLevel is { })
+                sb.AppendLine($"read-isolation-level = {ReadIsolationLevel.ToHocon()}");
+
+            if (WriteIsolationLevel is { })
+                sb.AppendLine($"write-isolation-level = {WriteIsolationLevel.ToHocon()}");
 
             DatabaseOptions?.Build(sb);
 

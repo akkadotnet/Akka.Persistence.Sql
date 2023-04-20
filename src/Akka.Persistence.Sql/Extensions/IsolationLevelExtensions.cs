@@ -31,8 +31,7 @@ namespace Akka.Persistence.Sql.Extensions
                 "snapshot" => IsolationLevel.Snapshot,
                 "unspecified" => IsolationLevel.Unspecified,
                 _ => throw new ConfigurationException(
-                    "Unknown isolation-level value. Should be one of: read-committed | read-uncommitted | repeatable-read | serializable | snapshot | unspecified")
+                    "Unknown isolation-level value. Should be one of: read-committed | read-uncommitted | repeatable-read | serializable | snapshot | unspecified"),
             };
-        
     }
 }

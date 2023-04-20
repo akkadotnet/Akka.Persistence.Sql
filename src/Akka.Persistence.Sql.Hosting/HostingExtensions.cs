@@ -9,7 +9,6 @@ using Akka.Actor;
 using Akka.Hosting;
 using Akka.Persistence.Hosting;
 using Akka.Persistence.Sql.Config;
-using Akka.Persistence.Sql.Hosting;
 
 namespace Akka.Persistence.Sql.Hosting
 {
@@ -67,16 +66,9 @@ namespace Akka.Persistence.Sql.Hosting
         ///     </para>
         ///     <b>Default</b>: <c>true</c>
         /// </param>
-        /// <param name="journalDatabaseMapping">
-        ///     <para>
-        ///         The database options to modify database table column mapping for this journal.
-        ///     </para>
-        ///     <b>NOTE</b>: This is used primarily for backward compatibility,
-        ///     you leave this empty for greenfield projects.
-        /// </param>
         /// <param name="databaseMapping">
         ///     <para>
-        ///         The database options to modify database table column mapping for this journal.
+        ///         The <see cref="DatabaseMapping"/> to modify database table column mapping for this journal.
         ///     </para>
         ///     <b>NOTE</b>: This is used primarily for backward compatibility,
         ///     you leave this empty for greenfield projects.
