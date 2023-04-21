@@ -31,7 +31,7 @@
     <SqlClientVersion>5.1.1</SqlClientVersion>
     <SqlManagementObjectsVersion>170.13.0</SqlManagementObjectsVersion>
 
-    <AkkaSqliteVersion>1.5.2</AkkaSqliteVersion>
+    <AkkaSqliteVersion>1.5.3</AkkaSqliteVersion>
     <SqliteVersion>1.0.117</SqliteVersion>
     <MicrosoftSqliteVersion>7.0.5</MicrosoftSqliteVersion>
 
