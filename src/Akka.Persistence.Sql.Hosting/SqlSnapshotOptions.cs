@@ -64,8 +64,6 @@ namespace Akka.Persistence.Sql.Hosting
         ///         Isolation level documentation can be read
         ///         <a href="https://learn.microsoft.com/en-us/dotnet/api/system.data.isolationlevel?#fields">here</a> 
         ///     </para>
-        ///     <b>NOTE</b>: This is used primarily for backward compatibility,
-        ///     you leave this empty for greenfield projects.
         /// </summary>
         public IsolationLevel? ReadIsolationLevel { get; set; }
         
@@ -77,8 +75,6 @@ namespace Akka.Persistence.Sql.Hosting
         ///         Isolation level documentation can be read
         ///         <a href="https://learn.microsoft.com/en-us/dotnet/api/system.data.isolationlevel?#fields">here</a> 
         ///     </para>
-        ///     <b>NOTE</b>: This is used primarily for backward compatibility,
-        ///     you leave this empty for greenfield projects.
         /// </summary>
         public IsolationLevel? WriteIsolationLevel { get; set; }
 
