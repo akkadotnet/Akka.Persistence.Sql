@@ -41,8 +41,8 @@
     <AkkaRedisVersion>1.5.0</AkkaRedisVersion>
     <RedisInsideVersion>3.3.0</RedisInsideVersion>
 
-    <MySqlVersion>8.0.32.1</MySqlVersion>
     <AkkaMySqlVersion>1.5.3</AkkaMySqlVersion>
+    <MySqlVersion>8.0.33</MySqlVersion>
 
     <TestSdkVersion>17.5.0</TestSdkVersion>
     <BenchmarkDotNetVersion>0.13.5</BenchmarkDotNetVersion>
