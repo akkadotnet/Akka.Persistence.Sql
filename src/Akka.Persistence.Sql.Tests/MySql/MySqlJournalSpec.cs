@@ -45,6 +45,8 @@ akka.persistence {{
         sql {{
             connection-string = ""{fixture.ConnectionString}""
             provider-name = ""{fixture.ProviderName}""
+            read-isolation-level = read-committed
+            write-isolation-level = read-committed
         }}
     }}
     snapshot-store {{
@@ -52,6 +54,8 @@ akka.persistence {{
         sql {{
             connection-string = ""{fixture.ConnectionString}""
             provider-name = ""{fixture.ProviderName}""
+            read-isolation-level = read-committed
+            write-isolation-level = read-committed
         }}
     }}
 }}")
