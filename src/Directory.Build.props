@@ -27,7 +27,7 @@
     <LanguageExtVersion>4.4.3</LanguageExtVersion>
     <FluentMigratorVersion>3.3.2</FluentMigratorVersion>
 
-    <AkkaSqlServerVersion>1.5.2</AkkaSqlServerVersion>
+    <AkkaSqlServerVersion>1.5.3</AkkaSqlServerVersion>
     <SqlClientVersion>5.1.1</SqlClientVersion>
     <SqlManagementObjectsVersion>170.13.0</SqlManagementObjectsVersion>
 
