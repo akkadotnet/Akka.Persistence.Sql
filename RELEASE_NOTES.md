@@ -1,3 +1,27 @@
+#### 1.5.4-beta1 April 25 2023 ###
+
+* [Update Akka.NET from 1.5.2 to 1.5.4](https://github.com/akkadotnet/akka.net/releases/tag/1.5.4)
+* [Add per SQL transaction isolation level support](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/207)
+
+Added transaction for every SQL queries with adjustable isolation level for read and write operations. You can go to the [official Microsoft documentation](https://learn.microsoft.com/en-us/dotnet/api/system.data.isolationlevel?#fields) to read more about these transaction isolation level settings.
+
+Four new HOCON settings are introduced:
+* `akka.persistence.journal.sql.read-isolation-level`
+* `akka.persistence.journal.sql.write-isolation-level`
+* `akka.persistence.snapshot-store.sql.read-isolation-level`
+* `akka.persistence.snapshot-store.sql.write-isolation-level`
+
+In Akka.Persistence.Sql.Hosting, These settings can be set programmatically through these new properties:
+
+* `SqlJournalOptions.ReadIsolationLevel`
+* `SqlJournalOptions.WriteIsolationLevel`
+* `SqlSnapshotOptions.ReadIsolationLevel`
+* `SqlSnapshotOptions.WriteIsolationLevel`
+
+> **NOTE**
+> 
+> Currently, there is a bug with Linq2Db and MySql implementation that can cause the SQL generator to throw an exception if you use the default `IsolationLevel.Unspecified` setting. Please use `IsolationLevel.ReadCommitted` if this happens to you.
+
 #### 1.5.2-beta3 April 19 2023 ###
 
 > **NOTE: Database schema changes**
