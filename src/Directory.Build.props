@@ -20,28 +20,25 @@
     <NetStandardLibVersion>netstandard2.0</NetStandardLibVersion>
     <NetCoreTestVersion>net7.0</NetCoreTestVersion>
 
-    <AkkaVersion>1.5.3</AkkaVersion>
-    <AkkaHostingVersion>1.5.2</AkkaHostingVersion>
+    <AkkaVersion>1.5.4</AkkaVersion>
+    <AkkaHostingVersion>1.5.4</AkkaHostingVersion>
 
     <Linq2DbVersion>5.1.1</Linq2DbVersion>
     <LanguageExtVersion>4.4.3</LanguageExtVersion>
     <FluentMigratorVersion>3.3.2</FluentMigratorVersion>
 
-    <AkkaSqlServerVersion>1.5.3</AkkaSqlServerVersion>
+    <AkkaSqlServerVersion>1.5.4</AkkaSqlServerVersion>
     <SqlClientVersion>5.1.1</SqlClientVersion>
     <SqlManagementObjectsVersion>170.13.0</SqlManagementObjectsVersion>
 
-    <AkkaSqliteVersion>1.5.3</AkkaSqliteVersion>
+    <AkkaSqliteVersion>1.5.4</AkkaSqliteVersion>
     <SqliteVersion>1.0.117</SqliteVersion>
     <MicrosoftSqliteVersion>7.0.5</MicrosoftSqliteVersion>
 
-    <AkkaPostgreSqlVersion>1.5.3</AkkaPostgreSqlVersion>
+    <AkkaPostgreSqlVersion>1.5.4</AkkaPostgreSqlVersion>
     <PostgreSqlVersion>7.0.2</PostgreSqlVersion>
 
-    <AkkaRedisVersion>1.5.0</AkkaRedisVersion>
-    <RedisInsideVersion>3.3.0</RedisInsideVersion>
-
-    <AkkaMySqlVersion>1.5.3</AkkaMySqlVersion>
+    <AkkaMySqlVersion>1.5.4.1</AkkaMySqlVersion>
     <MySqlVersion>8.0.33</MySqlVersion>
 
     <TestSdkVersion>17.5.0</TestSdkVersion>
