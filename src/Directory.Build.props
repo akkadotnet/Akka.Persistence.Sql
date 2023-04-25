@@ -44,7 +44,7 @@
     <TestSdkVersion>17.5.0</TestSdkVersion>
     <BenchmarkDotNetVersion>0.13.5</BenchmarkDotNetVersion>
     <DockerDotNetVersion>3.125.14</DockerDotNetVersion>
-    <FluentAssertionVersion>6.10.0</FluentAssertionVersion>
+    <FluentAssertionVersion>6.11.0</FluentAssertionVersion>
     <JetBrainsDotMemoryVersion>3.2.20220510</JetBrainsDotMemoryVersion>
     <XunitVersion>2.4.2</XunitVersion>
     <XunitRunnerVersion>2.4.5</XunitRunnerVersion>
