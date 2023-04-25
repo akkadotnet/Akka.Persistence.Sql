@@ -4,8 +4,10 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System.Data;
 using Akka.Configuration;
 using Akka.Persistence.Sql.Config;
+using Akka.Persistence.Sql.Extensions;
 using FluentAssertions;
 using LanguageExt.UnitsOfMeasure;
 using Xunit;
@@ -41,6 +43,8 @@ akka.persistence.journal.sql {
             actualConfig.GetString("table-mapping").Should().Be(defaultConfig.GetString("table-mapping"));
             actualConfig.GetString("serializer").Should().Be(defaultConfig.GetString("serializer"));
             actualConfig.GetBoolean("auto-initialize").Should().Be(defaultConfig.GetBoolean("auto-initialize"));
+            actualConfig.GetIsolationLevel("read-isolation-level").Should().Be(defaultConfig.GetIsolationLevel("read-isolation-level"));
+            actualConfig.GetIsolationLevel("write-isolation-level").Should().Be(defaultConfig.GetIsolationLevel("write-isolation-level"));
             actualConfig.GetString("default.schema-name").Should().Be(defaultConfig.GetString("default.schema-name"));
 
             var defaultJournalConfig = defaultConfig.GetConfig("default.journal");
@@ -86,6 +90,8 @@ akka.persistence.journal.sql {
                 ProviderName = "b",
                 QueryRefreshInterval = 5.Seconds(),
                 Serializer = "hyperion",
+                ReadIsolationLevel = IsolationLevel.Snapshot,
+                WriteIsolationLevel = IsolationLevel.Snapshot,
                 DatabaseOptions = new JournalDatabaseOptions(DatabaseMapping.SqlServer)
                 {
                     SchemaName = "schema",
@@ -133,6 +139,8 @@ akka.persistence.journal.sql {
             config.ConnectionString.Should().Be("a");
             config.ProviderName.Should().Be("b");
             config.DefaultSerializer.Should().Be("hyperion");
+            config.ReadIsolationLevel.Should().Be(IsolationLevel.Snapshot);
+            config.WriteIsolationLevel.Should().Be(IsolationLevel.Snapshot);
 
             config.TableConfig.SchemaName.Should().Be("schema");
 

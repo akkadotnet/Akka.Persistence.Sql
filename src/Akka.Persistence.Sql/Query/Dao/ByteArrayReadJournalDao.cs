@@ -4,6 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System.Threading;
 using Akka.Actor;
 using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Db;
@@ -20,7 +21,8 @@ namespace Akka.Persistence.Sql.Query.Dao
             IMaterializer materializer,
             AkkaPersistenceDataConnectionFactory connectionFactory,
             ReadJournalConfig readJournalConfig,
-            FlowPersistentReprSerializer<JournalRow> serializer)
-            : base(scheduler, materializer, connectionFactory, readJournalConfig, serializer) { }
+            FlowPersistentReprSerializer<JournalRow> serializer,
+            CancellationToken token)
+            : base(scheduler, materializer, connectionFactory, readJournalConfig, serializer, token) { }
     }
 }

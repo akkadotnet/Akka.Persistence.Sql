@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Persistence.Sql.Config;
@@ -35,8 +36,9 @@ namespace Akka.Persistence.Sql.Query.Dao
             IMaterializer materializer,
             AkkaPersistenceDataConnectionFactory connectionFactory,
             ReadJournalConfig readJournalConfig,
-            FlowPersistentReprSerializer<JournalRow> serializer)
-            : base(scheduler, materializer, connectionFactory)
+            FlowPersistentReprSerializer<JournalRow> serializer,
+            CancellationToken shutdownToken)
+            : base(scheduler, materializer, connectionFactory, readJournalConfig, shutdownToken)
         {
             _readJournalConfig = readJournalConfig;
             _deserializeFlow = serializer.DeserializeFlow();
@@ -50,15 +52,19 @@ namespace Akka.Persistence.Sql.Query.Dao
                 new { _connectionFactory = ConnectionFactory, maxTake },
                 async input =>
                 {
-                    await using var connection = input._connectionFactory.GetConnection();
-
-                    return await connection
-                        .GetTable<JournalRow>()
-                        .Where(r => r.Deleted == false)
-                        .Select(r => r.PersistenceId)
-                        .Distinct()
-                        .Take(input.maxTake)
-                        .ToListAsync();
+                    return await input._connectionFactory.ExecuteWithTransactionAsync(
+                        ReadIsolationLevel,
+                        ShutdownToken,
+                        async (connection, token) =>
+                        {
+                            return await connection
+                                .GetTable<JournalRow>()
+                                .Where(r => r.Deleted == false)
+                                .Select(r => r.PersistenceId)
+                                .Distinct()
+                                .Take(input.maxTake)
+                                .ToListAsync(token);
+                        });
                 });
         }
 
@@ -75,78 +81,90 @@ namespace Akka.Persistence.Sql.Query.Dao
             {
                 TagMode.Csv => AsyncSource<JournalRow>
                     .FromEnumerable(
-                        new { separator, tag, offset, maxOffset, maxTake, ConnectionFactory },
+                        new { separator, tag, offset, maxOffset, maxTake, _connectionFactory = ConnectionFactory },
                         async input =>
                         {
-                            await using var connection = input.ConnectionFactory.GetConnection();
-
                             var tagValue = $"{separator}{input.tag}{separator}";
-
-                            return await connection
-                                .GetTable<JournalRow>()
-                                .Where(
-                                    r =>
-                                        r.Tags.Contains(tagValue) &&
-                                        !r.Deleted &&
-                                        r.Ordering > input.offset &&
-                                        r.Ordering <= input.maxOffset)
-                                .OrderBy(r => r.Ordering)
-                                .Take(input.maxTake)
-                                .ToListAsync();
+                            return await input._connectionFactory.ExecuteWithTransactionAsync(
+                                ReadIsolationLevel,
+                                ShutdownToken,
+                                async (connection, token) =>
+                                {
+                                    return await connection
+                                        .GetTable<JournalRow>()
+                                        .Where(
+                                            r =>
+                                                r.Tags.Contains(tagValue) &&
+                                                !r.Deleted &&
+                                                r.Ordering > input.offset &&
+                                                r.Ordering <= input.maxOffset)
+                                        .OrderBy(r => r.Ordering)
+                                        .Take(input.maxTake)
+                                        .ToListAsync(token);
+                                });
                         })
                     .Via(_deserializeFlow),
 
                 TagMode.TagTable => AsyncSource<JournalRow>
                     .FromEnumerable(
-                        new { separator, tag, offset, maxOffset, maxTake, ConnectionFactory },
+                        new { separator, tag, offset, maxOffset, maxTake, _connectionFactory = ConnectionFactory },
                         async input =>
                         {
-                            await using var connection = input.ConnectionFactory.GetConnection();
+                            return await input._connectionFactory.ExecuteWithTransactionAsync(
+                                ReadIsolationLevel,
+                                ShutdownToken,
+                                async (connection, token) =>
+                                {
+                                    var journalTable = connection.GetTable<JournalRow>();
+                                    var tagTable = connection.GetTable<JournalTagRow>();
 
-                            var journalTable = connection.GetTable<JournalRow>();
-                            var tagTable = connection.GetTable<JournalTagRow>();
+                                    var query =
+                                        from r in journalTable
+                                        from lp in tagTable.Where(jtr => jtr.OrderingId == r.Ordering).DefaultIfEmpty()
+                                        where lp.OrderingId > input.offset &&
+                                              lp.OrderingId <= input.maxOffset &&
+                                              !r.Deleted &&
+                                              lp.TagValue == input.tag
+                                        orderby r.Ordering
+                                        select r;
 
-                            var query =
-                                from r in journalTable
-                                from lp in tagTable.Where(jtr => jtr.OrderingId == r.Ordering).DefaultIfEmpty()
-                                where lp.OrderingId > input.offset &&
-                                      lp.OrderingId <= input.maxOffset &&
-                                      !r.Deleted &&
-                                      lp.TagValue == input.tag
-                                orderby r.Ordering
-                                select r;
-
-                            return await AddTagDataFromTagTable(query, connection);
+                                    return await AddTagDataFromTagTableAsync(query, connection, token);
+                                });
                         })
                     .Via(_deserializeFlow),
 
-                _ => throw new ArgumentOutOfRangeException(),
+                _ => throw new ArgumentOutOfRangeException($"TagMode {_readJournalConfig.PluginConfig.TagMode} is not supported for read journals"),
             };
         }
 
-        public override Source<Try<ReplayCompletion>, NotUsed> Messages(
-            AkkaDataConnection connection,
+        public override Task<Source<Try<ReplayCompletion>, NotUsed>> Messages(
             string persistenceId,
             long fromSequenceNr,
             long toSequenceNr,
             long max)
-            => AsyncSource<JournalRow>
+            => Task.FromResult(AsyncSource<JournalRow>
                 .FromEnumerable(
-                    new { connection, persistenceId, fromSequenceNr, toSequenceNr, toTake = MaxTake(max) },
+                    new { _connectionFactory = ConnectionFactory, persistenceId, fromSequenceNr, toSequenceNr, toTake = MaxTake(max) },
                     async state =>
                     {
-                        var query = connection
-                            .GetTable<JournalRow>()
-                            .Where(
-                                r =>
-                                    r.PersistenceId == state.persistenceId &&
-                                    r.SequenceNumber >= state.fromSequenceNr &&
-                                    r.SequenceNumber <= state.toSequenceNr &&
-                                    r.Deleted == false)
-                            .OrderBy(r => r.SequenceNumber)
-                            .Take(state.toTake);
+                        return await state._connectionFactory.ExecuteWithTransactionAsync(
+                            ReadIsolationLevel,
+                            ShutdownToken,
+                            async (connection, token) =>
+                            {
+                                var query = connection
+                                    .GetTable<JournalRow>()
+                                    .Where(
+                                        r =>
+                                            r.PersistenceId == state.persistenceId &&
+                                            r.SequenceNumber >= state.fromSequenceNr &&
+                                            r.SequenceNumber <= state.toSequenceNr &&
+                                            r.Deleted == false)
+                                    .OrderBy(r => r.SequenceNumber)
+                                    .Take(state.toTake);
 
-                        return await AddTagDataIfNeeded(query, connection);
+                                return await AddTagDataIfNeededAsync(query, connection, token);
+                            });
                     })
                 .Via(_deserializeFlow)
                 .Select(
@@ -161,7 +179,7 @@ namespace Akka.Persistence.Sql.Query.Dao
                         {
                             return new Try<ReplayCompletion>(e);
                         }
-                    });
+                    }));
 
         public Source<long, NotUsed> JournalSequence(long offset, long limit)
         {
@@ -171,28 +189,37 @@ namespace Akka.Persistence.Sql.Query.Dao
                 new { maxTake, offset, _connectionFactory = ConnectionFactory },
                 async input =>
                 {
-                    await using var connection = input._connectionFactory.GetConnection();
-
-                    // persistence-jdbc does not filter deleted here.
-                    return await connection
-                        .GetTable<JournalRow>()
-                        .Where(r => r.Ordering > input.offset)
-                        .Select(r => r.Ordering)
-                        .OrderBy(r => r)
-                        .Take(input.maxTake)
-                        .ToListAsync();
+                    return await input._connectionFactory.ExecuteWithTransactionAsync(
+                        ReadIsolationLevel,
+                        ShutdownToken,
+                        async (connection, token) =>
+                        {
+                            // persistence-jdbc does not filter deleted here.
+                            return await connection
+                                .GetTable<JournalRow>()
+                                .Where(r => r.Ordering > input.offset)
+                                .Select(r => r.Ordering)
+                                .OrderBy(r => r)
+                                .Take(input.maxTake)
+                                .ToListAsync(token);
+                        }
+                    );
                 });
         }
 
         public async Task<long> MaxJournalSequenceAsync()
         {
-            await using var connection = ConnectionFactory.GetConnection();
-
-            // persistence-jdbc does not filter deleted here.
-            var result = await connection
-                .GetTable<JournalRow>()
-                .MaxAsync<JournalRow, long?>(r => r.Ordering);
-            return result ?? 0;
+            return await ConnectionFactory.ExecuteWithTransactionAsync(
+                ReadIsolationLevel,
+                ShutdownToken,
+                async (connection, token) =>
+                {
+                    // persistence-jdbc does not filter deleted here.
+                    var result = await connection
+                        .GetTable<JournalRow>()
+                        .MaxAsync<JournalRow, long?>(r => r.Ordering, token);
+                    return result ?? 0;
+                });
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -212,32 +239,36 @@ namespace Akka.Persistence.Sql.Query.Dao
                 new { _connectionFactory = ConnectionFactory, maxTake, maxOffset, offset },
                 async input =>
                 {
-                    await using var connection = input._connectionFactory.GetConnection();
+                    return await input._connectionFactory.ExecuteWithTransactionAsync(
+                        ReadIsolationLevel,
+                        ShutdownToken,
+                        async (connection, token) =>
+                        {
+                            var query = connection
+                                .GetTable<JournalRow>()
+                                .Where(
+                                    r =>
+                                        r.Ordering > input.offset &&
+                                        r.Ordering <= input.maxOffset &&
+                                        r.Deleted == false)
+                                .OrderBy(r => r.Ordering)
+                                .Take(input.maxTake);
 
-                    var query = connection
-                        .GetTable<JournalRow>()
-                        .Where(
-                            r =>
-                                r.Ordering > input.offset &&
-                                r.Ordering <= input.maxOffset &&
-                                r.Deleted == false)
-                        .OrderBy(r => r.Ordering)
-                        .Take(input.maxTake);
-
-                    return await AddTagDataIfNeeded(query, connection);
+                            return await AddTagDataIfNeededAsync(query, connection, token);
+                        });
                 }
             ).Via(_deserializeFlow);
         }
 
-        private async Task<List<JournalRow>> AddTagDataIfNeeded(IQueryable<JournalRow> rowQuery, AkkaDataConnection connection)
+        private async Task<List<JournalRow>> AddTagDataIfNeededAsync(IQueryable<JournalRow> rowQuery, AkkaDataConnection connection, CancellationToken token)
         {
             if (_readJournalConfig.PluginConfig.TagMode != TagMode.TagTable)
-                return await rowQuery.ToListAsync();
+                return await rowQuery.ToListAsync(token);
 
-            return await AddTagDataFromTagTable(rowQuery, connection);
+            return await AddTagDataFromTagTableAsync(rowQuery, connection, token);
         }
 
-        private static async Task<List<JournalRow>> AddTagDataFromTagTable(IQueryable<JournalRow> rowQuery, AkkaDataConnection connection)
+        private static async Task<List<JournalRow>> AddTagDataFromTagTableAsync(IQueryable<JournalRow> rowQuery, AkkaDataConnection connection, CancellationToken token)
         {
             var tagTable = connection.GetTable<JournalTagRow>();
             var q =
@@ -251,10 +282,8 @@ namespace Akka.Persistence.Sql.Query.Dao
                         .ToValue(),
                 };
 
-            var res = await q.ToListAsync();
-
+            var res = await q.ToListAsync(token);
             var result = new List<JournalRow>();
-
             foreach (var row in res)
             {
                 row.row.TagArr = row.tags?.Split(';') ?? Array.Empty<string>();

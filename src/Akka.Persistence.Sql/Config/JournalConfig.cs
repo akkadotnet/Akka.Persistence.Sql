@@ -4,6 +4,9 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System.Data;
+using Akka.Persistence.Sql.Extensions;
+
 namespace Akka.Persistence.Sql.Config
 {
     public class JournalConfig : IProviderConfig<JournalTableConfig>
@@ -26,6 +29,9 @@ namespace Akka.Persistence.Sql.Config
             DefaultSerializer = config.GetString("serializer");
             AutoInitialize = config.GetBoolean("auto-initialize");
             WarnOnAutoInitializeFail = config.GetBoolean("warn-on-auto-init-fail");
+            
+            ReadIsolationLevel = config.GetIsolationLevel("read-isolation-level");
+            WriteIsolationLevel = config.GetIsolationLevel("write-isolation-level");
         }
 
         public string MaterializerDispatcher { get; }
@@ -54,9 +60,20 @@ namespace Akka.Persistence.Sql.Config
         public string ConnectionString { get; }
 
         public bool UseCloneConnection { get; }
+        
+        public IsolationLevel WriteIsolationLevel { get; }
+
+        public IsolationLevel ReadIsolationLevel { get; }
     }
 
-    public interface IProviderConfig<TTable>
+    public interface IProviderConfig
+    {
+        IsolationLevel WriteIsolationLevel { get; }
+
+        IsolationLevel ReadIsolationLevel { get; }
+    }
+    
+    public interface IProviderConfig<TTable> : IProviderConfig
     {
         string ProviderName { get; }
 

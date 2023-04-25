@@ -5,8 +5,10 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Data;
 using Akka.Configuration;
 using Akka.Persistence.Sql.Config;
+using Akka.Persistence.Sql.Extensions;
 using Akka.Persistence.Sql.Journal;
 using Akka.Persistence.Sql.Journal.Dao;
 using FluentAssertions;
@@ -52,6 +54,8 @@ namespace Akka.Persistence.Sql.Tests.Settings
             journal.GetString("dao", "invalid").Should().Be("Akka.Persistence.Sql.Journal.Dao.ByteArrayJournalDao, Akka.Persistence.Sql");
             journal.GetBoolean("auto-initialize").Should().BeTrue();
             journal.GetBoolean("warn-on-auto-init-fail").Should().BeTrue();
+            journal.GetIsolationLevel("read-isolation-level").Should().Be(IsolationLevel.Unspecified);
+            journal.GetIsolationLevel("write-isolation-level").Should().Be(IsolationLevel.Unspecified);
 
             var journalTables = journal.GetConfig("default");
             journalTables.Should().NotBeNull();
@@ -284,6 +288,8 @@ namespace Akka.Persistence.Sql.Tests.Settings
             journal.DefaultSerializer.Should().BeNullOrEmpty();
             journal.AutoInitialize.Should().BeTrue();
             journal.WarnOnAutoInitializeFail.Should().BeTrue();
+            journal.ReadIsolationLevel.Should().Be(IsolationLevel.Unspecified);
+            journal.WriteIsolationLevel.Should().Be(IsolationLevel.Unspecified);
 
             var pluginConfig = journal.PluginConfig;
             pluginConfig.TagSeparator.Should().Be(";");

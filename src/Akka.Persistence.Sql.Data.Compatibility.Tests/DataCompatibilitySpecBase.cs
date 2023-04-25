@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -32,6 +33,9 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests
         public abstract string TableMapping { get; }
 
         public virtual string? SchemaName { get; } = null;
+
+        public virtual IsolationLevel ReadIsolationLevel => IsolationLevel.Unspecified;
+        public virtual IsolationLevel WriteIsolationLevel => IsolationLevel.Unspecified;
     }
 
     public abstract class DataCompatibilitySpecBase<T> : IAsyncLifetime where T : ITestContainer, new()
@@ -81,6 +85,9 @@ akka.persistence {{
             tag-write-mode = Csv
             delete-compatibility-mode = true
 
+            read-isolation-level = {Settings.ReadIsolationLevel.ToHocon()}
+            write-isolation-level = {Settings.WriteIsolationLevel.ToHocon()}
+
             # Testing for https://github.com/akkadotnet/Akka.Persistence.Sql/pull/117#discussion_r1027345449
             batch-size = 3
             db-round-trip-max-batch-size = 6
@@ -100,6 +107,9 @@ akka.persistence {{
 		table-mapping = {Settings.TableMapping}
         tag-read-mode = Csv
 
+        read-isolation-level = {Settings.ReadIsolationLevel.ToHocon()}
+        write-isolation-level = {Settings.WriteIsolationLevel.ToHocon()}
+
         # Testing for https://github.com/akkadotnet/Akka.Persistence.Sql/pull/117#discussion_r1027345449
         batch-size = 3
         replay-batch-size = 6
@@ -114,6 +124,9 @@ akka.persistence {{
             # Compatibility settings
 			table-mapping = {Settings.TableMapping}
             auto-initialize = off
+
+            read-isolation-level = {Settings.ReadIsolationLevel.ToHocon()}
+            write-isolation-level = {Settings.WriteIsolationLevel.ToHocon()}
 
 {(Settings.SchemaName is { } ? @$"
             {Settings.TableMapping} {{

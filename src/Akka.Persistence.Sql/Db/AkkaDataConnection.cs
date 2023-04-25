@@ -71,10 +71,6 @@ namespace Akka.Persistence.Sql.Db
             => _connection.GetTable<T>();
 
         public async Task<DataConnectionTransaction> BeginTransactionAsync(
-            CancellationToken cancellationToken = default)
-            => await _connection.BeginTransactionAsync(cancellationToken);
-
-        public async Task<DataConnectionTransaction> BeginTransactionAsync(
             IsolationLevel isolationLevel,
             CancellationToken cancellationToken = default)
             => await _connection.BeginTransactionAsync(isolationLevel, cancellationToken);

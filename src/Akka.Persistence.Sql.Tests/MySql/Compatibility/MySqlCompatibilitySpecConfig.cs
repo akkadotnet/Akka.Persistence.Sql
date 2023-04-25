@@ -38,7 +38,9 @@ namespace Akka.Persistence.Sql.Tests.MySql.Compatibility
                             provider-name = {fixture.ProviderName}
                             table-mapping = mysql
                             auto-initialize = true
-                            postgresql {{
+                            read-isolation-level = read-committed
+                            write-isolation-level = read-committed
+                            mysql {{
                                 snapshot {{
                                     table-name = ""{tableName}""
                                 }}
@@ -75,7 +77,9 @@ namespace Akka.Persistence.Sql.Tests.MySql.Compatibility
                             auto-initialize = true
                             tag-write-mode = Csv
                             delete-compatibility-mode = true
-                            postgresql {{
+                            read-isolation-level = read-committed
+                            write-isolation-level = read-committed
+                            mysql {{
                                 journal {{
                                     table-name = ""{tableName}""
                                 }}
