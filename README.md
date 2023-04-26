@@ -464,7 +464,7 @@ akka.persistence {
       # As well as limit memory usage on journal retrieval in CLR
       replay-batch-size = 1000
 
-      # Number of Concurrennt writers.
+      # Number of Concurrent writers.
       # On larger servers with more cores you can increase this number
       # But in most cases 2-4 is a safe bet.
       parallelism = 3
@@ -755,7 +755,7 @@ akka.persistence {
         # As well as limit memory usage on journal retrieval in CLR
         replay-batch-size = 1000
 
-        # Number of Concurrennt writers.
+        # Number of Concurrent writers.
         # On larger servers with more cores you can increase this number
         # But in most cases 2-4 is a safe bet.
         parallelism = 3
