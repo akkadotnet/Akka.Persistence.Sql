@@ -716,7 +716,7 @@ akka.persistence {
         #     table to improve tag related query speed.
         tag-read-mode = TagTable
 
-        journal-sequence-retrieval{
+        journal-sequence-retrieval {
           batch-size = 10000
           max-tries = 10
           query-delay = 1s
