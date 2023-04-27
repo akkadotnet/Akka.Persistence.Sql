@@ -19,7 +19,7 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.MySql
         public override string TableMapping => "mysql";
 
         public override IsolationLevel ReadIsolationLevel => IsolationLevel.ReadCommitted;
-        
+
         public override IsolationLevel WriteIsolationLevel => IsolationLevel.ReadCommitted;
     }
 }

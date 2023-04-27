@@ -16,7 +16,7 @@ namespace Akka.Persistence.Sql.Hosting
         {
             if (level is null)
                 throw new ArgumentNullException(nameof(level));
-            
+
             return level switch
             {
                 IsolationLevel.Unspecified => "unspecified".ToHocon(),
@@ -29,6 +29,5 @@ namespace Akka.Persistence.Sql.Hosting
                 _ => throw new IndexOutOfRangeException($"Unknown IsolationLevel value: {level}"),
             };
         }
-
     }
 }

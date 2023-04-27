@@ -26,13 +26,13 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
         protected readonly IMaterializer Materializer;
 
+        protected readonly IsolationLevel ReadIsolationLevel;
+
         protected readonly IAdvancedScheduler Scheduler;
 
-        protected readonly IsolationLevel WriteIsolationLevel;
-        
-        protected readonly IsolationLevel ReadIsolationLevel;
-        
         protected readonly CancellationToken ShutdownToken;
+
+        protected readonly IsolationLevel WriteIsolationLevel;
 
         protected BaseJournalDaoWithReadMessages(
             IAdvancedScheduler scheduler,
@@ -71,10 +71,8 @@ namespace Akka.Persistence.Sql.Journal.Dao
                             long l,
                             int i,
                             long fromSeqNo)
-                        {
-                            return await (await Messages(s, fromSeqNo, l, i))
+                            => await (await Messages(s, fromSeqNo, l, i))
                                 .RunWith(ExtSeq.Seq<Try<ReplayCompletion>>(), Materializer);
-                        }
 
                         async Task<Option<((long, FlowControlEnum), LanguageExt.Seq<Try<ReplayCompletion>>)>>
                             RetrieveNextBatch(long fromSeq)

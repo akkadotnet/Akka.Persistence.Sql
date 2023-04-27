@@ -68,7 +68,7 @@ namespace Akka.Persistence.Sql.Hosting
         /// </param>
         /// <param name="databaseMapping">
         ///     <para>
-        ///         The <see cref="DatabaseMapping"/> to modify database table column mapping for this journal.
+        ///         The <see cref="DatabaseMapping" /> to modify database table column mapping for this journal.
         ///     </para>
         ///     <b>NOTE</b>: This is used primarily for backward compatibility,
         ///     you leave this empty for greenfield projects.
@@ -76,10 +76,10 @@ namespace Akka.Persistence.Sql.Hosting
         /// <param name="tagStorageMode">
         ///     <para>
         ///         Describe how tags are being stored inside the database. Setting this to
-        ///         <see cref="TagMode.Csv"/> will store the tags as a comma delimited value
+        ///         <see cref="TagMode.Csv" /> will store the tags as a comma delimited value
         ///         in a column named <c>tags</c> inside the event journal. Setting this to
-        ///         <see cref="TagMode.TagTable"/> will store the tags inside a separate
-        ///         tag table instead. 
+        ///         <see cref="TagMode.TagTable" /> will store the tags inside a separate
+        ///         tag table instead.
         ///     </para>
         ///     <b>NOTE</b>: This is used primarily for backward compatibility,
         ///     you leave this empty for greenfield projects.
@@ -122,8 +122,8 @@ namespace Akka.Persistence.Sql.Hosting
         ///     The same <see cref="AkkaConfigurationBuilder" /> instance originally passed in.
         /// </returns>
         /// <exception cref="ArgumentOutOfRangeException">
-        ///     Thrown when <paramref name="journalBuilder"/> is set and <paramref name="mode"/> is set to
-        ///     <see cref="PersistenceMode.SnapshotStore"/>
+        ///     Thrown when <paramref name="journalBuilder" /> is set and <paramref name="mode" /> is set to
+        ///     <see cref="PersistenceMode.SnapshotStore" />
         /// </exception>
         public static AkkaConfigurationBuilder WithSqlPersistence(
             this AkkaConfigurationBuilder builder,
@@ -187,7 +187,7 @@ namespace Akka.Persistence.Sql.Hosting
 
             if (databaseMapping is { })
                 snapshotOpt.DatabaseOptions = databaseMapping.Value.SnapshotOption();
-            
+
             if (schemaName is { })
             {
                 snapshotOpt.DatabaseOptions ??= new SnapshotDatabaseOptions(DatabaseMapping.Default);
