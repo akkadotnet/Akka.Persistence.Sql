@@ -79,7 +79,7 @@ namespace Akka.Persistence.Sql.Hosting
         ///     you leave this empty for greenfield projects.
         /// </summary>
         public TagMode? TagStorageMode { get; set; }
-        
+
         /// <summary>
         ///     <para>
         ///         If true, journal_metadata is created and used for deletes
@@ -89,25 +89,25 @@ namespace Akka.Persistence.Sql.Hosting
         ///     you leave this empty for greenfield projects.
         /// </summary>
         public bool? DeleteCompatibilityMode { get; set; }
-        
+
         /// <summary>
         ///     <para>
         ///         The isolation level of all database read query.
         ///     </para>
         ///     <para>
         ///         Isolation level documentation can be read
-        ///         <a href="https://learn.microsoft.com/en-us/dotnet/api/system.data.isolationlevel?#fields">here</a> 
+        ///         <a href="https://learn.microsoft.com/en-us/dotnet/api/system.data.isolationlevel?#fields">here</a>
         ///     </para>
         /// </summary>
         public IsolationLevel? ReadIsolationLevel { get; set; }
-        
+
         /// <summary>
         ///     <para>
         ///         The isolation level of all database write query.
         ///     </para>
         ///     <para>
         ///         Isolation level documentation can be read
-        ///         <a href="https://learn.microsoft.com/en-us/dotnet/api/system.data.isolationlevel?#fields">here</a> 
+        ///         <a href="https://learn.microsoft.com/en-us/dotnet/api/system.data.isolationlevel?#fields">here</a>
         ///     </para>
         /// </summary>
         public IsolationLevel? WriteIsolationLevel { get; set; }
@@ -127,7 +127,7 @@ namespace Akka.Persistence.Sql.Hosting
 
             if (DeleteCompatibilityMode is { })
                 sb.AppendLine($"delete-compatibility-mode = {DeleteCompatibilityMode.ToHocon()}");
-                
+
             if (TagStorageMode is { })
                 sb.AppendLine($"tag-write-mode = {TagStorageMode.ToString().ToHocon()}");
 
@@ -155,7 +155,7 @@ namespace Akka.Persistence.Sql.Hosting
 
                 if (ReadIsolationLevel is { })
                     sb.AppendLine($"read-isolation-level = {ReadIsolationLevel.ToHocon()}");
-                
+
                 sb.AppendLine("}");
             }
 

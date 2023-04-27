@@ -251,7 +251,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                         query = query.Take((int)max);
 
                     var source = await query.ToListAsync(token);
-                    
+
                     return Source
                         .From(source)
                         .Via(_deserializeFlowMapped);
@@ -306,10 +306,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     await ConnectionFactory.ExecuteWithTransactionAsync(
                         WriteIsolationLevel,
                         ShutdownToken,
-                        async (connection, token) =>
-                        {
-                            await connection.InsertAsync(xs.Head, token);
-                        });
+                        async (connection, token) => await connection.InsertAsync(xs.Head, token));
                     break;
                 }
 

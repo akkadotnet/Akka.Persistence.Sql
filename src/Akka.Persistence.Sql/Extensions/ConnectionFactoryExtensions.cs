@@ -36,10 +36,11 @@ namespace Akka.Persistence.Sql.Db
                 {
                     throw new AggregateException("Exception thrown when rolling back database transaction", ex2, ex1);
                 }
+
                 throw;
             }
         }
-        
+
         public static async Task<T> ExecuteWithTransactionAsync<T>(
             this AkkaPersistenceDataConnectionFactory factory,
             IsolationLevel level,
@@ -64,6 +65,7 @@ namespace Akka.Persistence.Sql.Db
                 {
                     throw new AggregateException("Exception thrown when rolling back database transaction", ex2, ex1);
                 }
+
                 throw;
             }
         }

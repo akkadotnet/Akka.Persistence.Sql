@@ -62,18 +62,18 @@ namespace Akka.Persistence.Sql.Hosting
         ///     </para>
         ///     <para>
         ///         Isolation level documentation can be read
-        ///         <a href="https://learn.microsoft.com/en-us/dotnet/api/system.data.isolationlevel?#fields">here</a> 
+        ///         <a href="https://learn.microsoft.com/en-us/dotnet/api/system.data.isolationlevel?#fields">here</a>
         ///     </para>
         /// </summary>
         public IsolationLevel? ReadIsolationLevel { get; set; }
-        
+
         /// <summary>
         ///     <para>
         ///         The isolation level of all database write query.
         ///     </para>
         ///     <para>
         ///         Isolation level documentation can be read
-        ///         <a href="https://learn.microsoft.com/en-us/dotnet/api/system.data.isolationlevel?#fields">here</a> 
+        ///         <a href="https://learn.microsoft.com/en-us/dotnet/api/system.data.isolationlevel?#fields">here</a>
         ///     </para>
         /// </summary>
         public IsolationLevel? WriteIsolationLevel { get; set; }

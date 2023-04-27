@@ -29,7 +29,7 @@ namespace Akka.Persistence.Sql.Config
             DefaultSerializer = config.GetString("serializer");
             AutoInitialize = config.GetBoolean("auto-initialize");
             WarnOnAutoInitializeFail = config.GetBoolean("warn-on-auto-init-fail");
-            
+
             ReadIsolationLevel = config.GetIsolationLevel("read-isolation-level");
             WriteIsolationLevel = config.GetIsolationLevel("write-isolation-level");
         }
@@ -60,7 +60,7 @@ namespace Akka.Persistence.Sql.Config
         public string ConnectionString { get; }
 
         public bool UseCloneConnection { get; }
-        
+
         public IsolationLevel WriteIsolationLevel { get; }
 
         public IsolationLevel ReadIsolationLevel { get; }
@@ -72,7 +72,7 @@ namespace Akka.Persistence.Sql.Config
 
         IsolationLevel ReadIsolationLevel { get; }
     }
-    
+
     public interface IProviderConfig<TTable> : IProviderConfig
     {
         string ProviderName { get; }

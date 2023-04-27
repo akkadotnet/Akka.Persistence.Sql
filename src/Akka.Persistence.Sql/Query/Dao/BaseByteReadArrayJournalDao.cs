@@ -142,44 +142,45 @@ namespace Akka.Persistence.Sql.Query.Dao
             long fromSequenceNr,
             long toSequenceNr,
             long max)
-            => Task.FromResult(AsyncSource<JournalRow>
-                .FromEnumerable(
-                    new { _connectionFactory = ConnectionFactory, persistenceId, fromSequenceNr, toSequenceNr, toTake = MaxTake(max) },
-                    async state =>
-                    {
-                        return await state._connectionFactory.ExecuteWithTransactionAsync(
-                            ReadIsolationLevel,
-                            ShutdownToken,
-                            async (connection, token) =>
-                            {
-                                var query = connection
-                                    .GetTable<JournalRow>()
-                                    .Where(
-                                        r =>
-                                            r.PersistenceId == state.persistenceId &&
-                                            r.SequenceNumber >= state.fromSequenceNr &&
-                                            r.SequenceNumber <= state.toSequenceNr &&
-                                            r.Deleted == false)
-                                    .OrderBy(r => r.SequenceNumber)
-                                    .Take(state.toTake);
+            => Task.FromResult(
+                AsyncSource<JournalRow>
+                    .FromEnumerable(
+                        new { _connectionFactory = ConnectionFactory, persistenceId, fromSequenceNr, toSequenceNr, toTake = MaxTake(max) },
+                        async state =>
+                        {
+                            return await state._connectionFactory.ExecuteWithTransactionAsync(
+                                ReadIsolationLevel,
+                                ShutdownToken,
+                                async (connection, token) =>
+                                {
+                                    var query = connection
+                                        .GetTable<JournalRow>()
+                                        .Where(
+                                            r =>
+                                                r.PersistenceId == state.persistenceId &&
+                                                r.SequenceNumber >= state.fromSequenceNr &&
+                                                r.SequenceNumber <= state.toSequenceNr &&
+                                                r.Deleted == false)
+                                        .OrderBy(r => r.SequenceNumber)
+                                        .Take(state.toTake);
 
-                                return await AddTagDataIfNeededAsync(query, connection, token);
-                            });
-                    })
-                .Via(_deserializeFlow)
-                .Select(
-                    t =>
-                    {
-                        try
+                                    return await AddTagDataIfNeededAsync(query, connection, token);
+                                });
+                        })
+                    .Via(_deserializeFlow)
+                    .Select(
+                        t =>
                         {
-                            var (representation, _, ordering) = t.Get();
-                            return new Try<ReplayCompletion>(new ReplayCompletion(representation, ordering));
-                        }
-                        catch (Exception e)
-                        {
-                            return new Try<ReplayCompletion>(e);
-                        }
-                    }));
+                            try
+                            {
+                                var (representation, _, ordering) = t.Get();
+                                return new Try<ReplayCompletion>(new ReplayCompletion(representation, ordering));
+                            }
+                            catch (Exception e)
+                            {
+                                return new Try<ReplayCompletion>(e);
+                            }
+                        }));
 
         public Source<long, NotUsed> JournalSequence(long offset, long limit)
         {

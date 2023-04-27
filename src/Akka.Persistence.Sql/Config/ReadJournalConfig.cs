@@ -26,7 +26,7 @@ namespace Akka.Persistence.Sql.Config
             AddShutdownHook = config.GetBoolean("add-shutdown-hook", true);
             DefaultSerializer = config.GetString("serializer");
             ReadIsolationLevel = config.GetIsolationLevel("read-isolation-level");
-            
+
             // We don't do any writes in a read journal
             WriteIsolationLevel = IsolationLevel.Unspecified;
         }
@@ -54,7 +54,7 @@ namespace Akka.Persistence.Sql.Config
         public bool UseCloneConnection { get; }
 
         public string DefaultSerializer { get; }
-        
+
         public IsolationLevel WriteIsolationLevel { get; }
 
         public IsolationLevel ReadIsolationLevel { get; }

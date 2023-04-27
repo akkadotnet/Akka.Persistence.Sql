@@ -63,7 +63,7 @@ namespace Akka.Persistence.Sql.Config
         public bool UseCloneConnection { get; }
 
         public string DefaultSerializer { get; }
-        
+
         public IsolationLevel WriteIsolationLevel { get; }
 
         public IsolationLevel ReadIsolationLevel { get; }

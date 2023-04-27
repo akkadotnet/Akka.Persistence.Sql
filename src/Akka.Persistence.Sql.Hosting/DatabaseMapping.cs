@@ -49,7 +49,7 @@ namespace Akka.Persistence.Sql.Hosting
                 DatabaseMapping.Sqlite => SnapshotDatabaseOptions.Sqlite,
                 DatabaseMapping.PostgreSql => SnapshotDatabaseOptions.PostgreSql,
                 DatabaseMapping.MySql => SnapshotDatabaseOptions.MySql,
-                _ => throw new Exception($"Unknown DatabaseMapping: {map}") 
+                _ => throw new Exception($"Unknown DatabaseMapping: {map}"),
             };
     }
 }

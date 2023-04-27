@@ -24,13 +24,11 @@ namespace Akka.Persistence.Sql.Snapshot
         private readonly ByteArrayDateTimeSnapshotSerializer _dateTimeSerializer;
         private readonly ILoggingAdapter _logger;
         private readonly ByteArrayLongSnapshotSerializer _longSerializer;
-        private readonly SnapshotConfig _snapshotConfig;
-
-        private readonly IsolationLevel _writeIsolationLevel;
         private readonly IsolationLevel _readIsolationLevel;
-
         private readonly CancellationTokenSource _shutdownCts;
-        
+        private readonly SnapshotConfig _snapshotConfig;
+        private readonly IsolationLevel _writeIsolationLevel;
+
         public ByteArraySnapshotDao(
             AkkaPersistenceDataConnectionFactory connectionFactory,
             SnapshotConfig snapshotConfig,
@@ -109,7 +107,7 @@ namespace Akka.Persistence.Sql.Snapshot
                                     r.SequenceNumber <= maxSequenceNr)
                             .DeleteAsync(token);
                     }
-                });         
+                });
         }
 
         public async Task DeleteUpToMaxTimestampAsync(
