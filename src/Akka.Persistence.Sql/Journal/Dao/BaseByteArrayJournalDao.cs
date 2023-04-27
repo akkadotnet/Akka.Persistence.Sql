@@ -251,7 +251,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                         query = query.Take((int)max);
 
                     var source = await query.ToListAsync(token);
-                    
+
                     return Source
                         .From(source)
                         .Via(_deserializeFlowMapped);

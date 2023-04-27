@@ -101,12 +101,12 @@ namespace Akka.Persistence.Sql.Db
             var tableConfig = config.TableConfig;
             var journalConfig = tableConfig.EventJournalTable;
             var columnNames = journalConfig.ColumnNames;
-            var journalRowBuilder = fmb.Entity<JournalRow>();
+            var rowBuilder = fmb.Entity<JournalRow>();
 
-            if (tableConfig.SchemaName is { })
-                journalRowBuilder.HasSchemaName(tableConfig.SchemaName);
+            if (tableConfig.SchemaName is not null)
+                rowBuilder.HasSchemaName(tableConfig.SchemaName);
 
-            journalRowBuilder
+            rowBuilder
                 .HasTableName(journalConfig.Name)
 
                 .Member(r => r.Ordering)
@@ -144,21 +144,21 @@ namespace Akka.Persistence.Sql.Db
 
             if (config.ProviderName.StartsWith(ProviderName.MySql))
             {
-                journalRowBuilder
+                rowBuilder
                     .Member(r => r.Message)
                     .HasDbType("LONGBLOB");
             }
 
             if (config.ProviderName.ToLower().Contains("sqlite"))
             {
-                journalRowBuilder
+                rowBuilder
                     .Member(r => r.Ordering)
                     .HasDbType("INTEGER");
             }
 
             if (journalConfig.UseWriterUuidColumn)
             {
-                journalRowBuilder
+                rowBuilder
                     .Member(r => r.WriterUuid)
                     .HasColumnName(columnNames.WriterUuid)
                     .HasLength(128);
@@ -166,7 +166,7 @@ namespace Akka.Persistence.Sql.Db
             else
             {
                 // non-default legacy tables does not have WriterUuid column defined.
-                journalRowBuilder
+                rowBuilder
                     .Member(r => r.WriterUuid)
                     .IsNotColumn();
             }
@@ -174,13 +174,13 @@ namespace Akka.Persistence.Sql.Db
             // We can skip writing tags the old way by ignoring the column in mapping.
             if (config.PluginConfig.TagMode == TagMode.TagTable)
             {
-                journalRowBuilder
+                rowBuilder
                     .Member(r => r.Tags)
                     .IsNotColumn();
             }
             else
             {
-                journalRowBuilder
+                rowBuilder
                     .Member(r => r.Tags)
                     .HasColumnName(columnNames.Tags)
                     .HasLength(100);
@@ -189,14 +189,14 @@ namespace Akka.Persistence.Sql.Db
             // TODO: UseEventManifestColumn is always false
             if (config.TableConfig.UseEventManifestColumn)
             {
-                journalRowBuilder
+                rowBuilder
                     .Member(r => r.EventManifest)
                     .IsColumn()
                     .HasLength(64);
             }
             else
             {
-                journalRowBuilder
+                rowBuilder
                     .Member(r => r.EventManifest)
                     .IsNotColumn();
             }
@@ -213,7 +213,8 @@ namespace Akka.Persistence.Sql.Db
             // That we are in delete compatibility mode.
             var tableConfig = config.TableConfig;
             var rowBuilder = fmb.Entity<JournalMetaData>();
-            if (tableConfig.SchemaName is { })
+
+            if (tableConfig.SchemaName is not null)
                 rowBuilder.HasSchemaName(tableConfig.SchemaName);
 
             rowBuilder
@@ -238,33 +239,33 @@ namespace Akka.Persistence.Sql.Db
 
             var tableConfig = config.TableConfig;
             var tagConfig = tableConfig.TagTable;
-            var tagColumns = tagConfig.ColumnNames;
-
+            var columnNames = tagConfig.ColumnNames;
             var rowBuilder = fmb.Entity<JournalTagRow>();
-            if (tableConfig.SchemaName is { })
+
+            if (tableConfig.SchemaName is not null)
                 rowBuilder.HasSchemaName(tableConfig.SchemaName);
 
             rowBuilder
                 .HasTableName(tagConfig.Name)
 
                 .Member(r => r.OrderingId)
-                .HasColumnName(tagColumns.OrderingId)
+                .HasColumnName(columnNames.OrderingId)
                 .IsNullable(false)
                 .IsPrimaryKey()
 
                 .Member(r => r.TagValue)
-                .HasColumnName(tagColumns.Tag)
+                .HasColumnName(columnNames.Tag)
                 .IsNullable(false)
                 .HasLength(64)
                 .IsPrimaryKey()
 
                 .Member(r => r.PersistenceId)
-                .HasColumnName(tagColumns.PersistenceId)
+                .HasColumnName(columnNames.PersistenceId)
                 .HasLength(255)
                 .IsNullable(false)
 
                 .Member(r => r.SequenceNumber)
-                .HasColumnName(tagColumns.SequenceNumber)
+                .HasColumnName(columnNames.SequenceNumber)
                 .IsNullable(false);
 
             if (config.ProviderName.ToLower().Contains("sqlite"))
@@ -284,12 +285,12 @@ namespace Akka.Persistence.Sql.Db
         {
             var tableConfig = config.TableConfig;
             var snapshotConfig = tableConfig.SnapshotTable;
-            var builder = fmb.Entity<DateTimeSnapshotRow>();
+            var rowBuilder = fmb.Entity<DateTimeSnapshotRow>();
 
-            if (tableConfig.SchemaName is { })
-                builder.HasSchemaName(tableConfig.SchemaName);
+            if (tableConfig.SchemaName is not null)
+                rowBuilder.HasSchemaName(tableConfig.SchemaName);
 
-            builder
+            rowBuilder
                 .HasTableName(snapshotConfig.Name)
 
                 .Member(r => r.PersistenceId)
@@ -316,7 +317,7 @@ namespace Akka.Persistence.Sql.Db
 
             if (config.ProviderName.StartsWith(ProviderName.MySql))
             {
-                builder
+                rowBuilder
                     .Member(r => r.Payload)
                     .HasDbType("LONGBLOB");
             }
@@ -335,12 +336,12 @@ namespace Akka.Persistence.Sql.Db
         {
             var tableConfig = config.TableConfig;
             var snapshotConfig = tableConfig.SnapshotTable;
-            var builder = fmb.Entity<LongSnapshotRow>();
+            var rowBuilder = fmb.Entity<LongSnapshotRow>();
 
             if (tableConfig.SchemaName is { })
-                builder.HasSchemaName(tableConfig.SchemaName);
+                rowBuilder.HasSchemaName(tableConfig.SchemaName);
 
-            builder
+            rowBuilder
                 .HasTableName(snapshotConfig.Name)
 
                 .Member(r => r.PersistenceId)
@@ -367,7 +368,7 @@ namespace Akka.Persistence.Sql.Db
 
             if (config.ProviderName.StartsWith(ProviderName.MySql))
             {
-                builder
+                rowBuilder
                     .Member(r => r.Payload)
                     .HasDbType("LONGBLOB");
             }
