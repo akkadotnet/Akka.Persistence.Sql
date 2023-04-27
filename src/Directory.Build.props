@@ -41,6 +41,9 @@
     <AkkaMySqlVersion>1.5.4.1</AkkaMySqlVersion>
     <MySqlVersion>8.0.33</MySqlVersion>
 
+    <AkkaRedisVersion>1.5.0</AkkaRedisVersion>
+    <RedisInsideVersion>3.3.0</RedisInsideVersion>
+
     <TestSdkVersion>17.5.0</TestSdkVersion>
     <BenchmarkDotNetVersion>0.13.5</BenchmarkDotNetVersion>
     <DockerDotNetVersion>3.125.14</DockerDotNetVersion>
@@ -56,7 +59,7 @@
     <None Include="$(MSBuildThisFileDirectory)\..\docs\images\akkalogo.png" Pack="true" Visible="false" PackagePath="\" />
     <None Include="$(MSBuildThisFileDirectory)\..\README.md" Pack="true" Visible="false" PackagePath="\" />
   </ItemGroup>
-  
+
   <PropertyGroup>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
