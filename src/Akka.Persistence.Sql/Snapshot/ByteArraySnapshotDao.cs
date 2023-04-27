@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Akka.Event;
 using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Db;
+using Akka.Persistence.Sql.Extensions;
 using Akka.Streams;
 using Akka.Util;
 using LinqToDB;

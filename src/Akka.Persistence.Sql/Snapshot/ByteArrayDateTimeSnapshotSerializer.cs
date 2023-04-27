@@ -54,7 +54,10 @@ namespace Akka.Persistence.Sql.Snapshot
                 // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
                 return Akka.Serialization.Serialization.WithTransport(
                     system: _serialization.System,
-                    state: (serializer: _serialization.FindSerializerForType(type, _config.DefaultSerializer), binary, type),
+                    state: (
+                        serializer: _serialization.FindSerializerForType(type, _config.DefaultSerializer),
+                        binary,
+                        type),
                     action: state => state.serializer.FromBinary(state.binary, state.type));
             }
 

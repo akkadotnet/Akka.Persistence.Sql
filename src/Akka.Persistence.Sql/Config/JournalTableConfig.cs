@@ -23,10 +23,8 @@ namespace Akka.Persistence.Sql.Config
             if (compatibility != null)
                 mappingPath = compatibility;
 
-            var mappingConfig = config.GetConfig(mappingPath);
-            if (mappingConfig is null)
-                throw new ConfigurationException(
-                    $"The configuration path akka.persistence.journal.sql.{mappingPath} does not exist");
+            var mappingConfig = config.GetConfig(mappingPath) ?? throw new ConfigurationException(
+                $"The configuration path akka.persistence.journal.sql.{mappingPath} does not exist");
 
             if (mappingPath != "default")
                 mappingConfig = mappingConfig.WithFallback(SqlPersistence.DefaultJournalMappingConfiguration);
@@ -47,6 +45,7 @@ namespace Akka.Persistence.Sql.Config
 
         public MetadataTableConfig MetadataTable { get; }
 
+        // ReSharper disable once InconsistentNaming
         public TagTableConfig TagTable { get; }
 
         public bool Equals(JournalTableConfig other)

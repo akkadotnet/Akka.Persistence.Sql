@@ -8,6 +8,7 @@ using System;
 
 namespace Akka.Persistence.Sql.Config
 {
+    // ReSharper disable once InconsistentNaming
     public class TagTableConfig : IEquatable<TagTableConfig>
     {
         public TagTableConfig(Configuration.Config config)

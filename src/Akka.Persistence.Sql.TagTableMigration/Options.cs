@@ -91,7 +91,7 @@ akka.persistence {{
             warn-on-auto-init-fail = true
             tag-write-mode = Both
 
-{(opt.SchemaName is { } ? @$"
+{(opt.SchemaName is not null ? @$"
             {opt.TableMapping.ToHocon()} {{
                 schema-name = {opt.SchemaName}
             }}" : string.Empty)}

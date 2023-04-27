@@ -91,13 +91,13 @@ namespace Akka.Persistence.Sql.Hosting
             sb.AppendLine($"connection-string = {ConnectionString.ToHocon()}");
             sb.AppendLine($"provider-name = {ProviderName.ToHocon()}");
 
-            if (DatabaseOptions is { })
+            if (DatabaseOptions is not null)
                 sb.AppendLine($"table-mapping = {DatabaseOptions.Mapping.Name().ToHocon()}");
 
-            if (ReadIsolationLevel is { })
+            if (ReadIsolationLevel is not null)
                 sb.AppendLine($"read-isolation-level = {ReadIsolationLevel.ToHocon()}");
 
-            if (WriteIsolationLevel is { })
+            if (WriteIsolationLevel is not null)
                 sb.AppendLine($"write-isolation-level = {WriteIsolationLevel.ToHocon()}");
 
             DatabaseOptions?.Build(sb);

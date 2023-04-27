@@ -8,8 +8,9 @@ using System;
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
+using Akka.Persistence.Sql.Db;
 
-namespace Akka.Persistence.Sql.Db
+namespace Akka.Persistence.Sql.Extensions
 {
     public static class ConnectionFactoryExtensions
     {
@@ -21,6 +22,7 @@ namespace Akka.Persistence.Sql.Db
         {
             await using var connection = factory.GetConnection();
             await using var tx = await connection.BeginTransactionAsync(level, token);
+
             try
             {
                 await handler(connection, token);
@@ -49,6 +51,7 @@ namespace Akka.Persistence.Sql.Db
         {
             await using var connection = factory.GetConnection();
             await using var tx = await connection.BeginTransactionAsync(level, token);
+
             try
             {
                 var result = await handler(connection, token);

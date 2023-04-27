@@ -26,7 +26,8 @@ namespace Akka.Persistence.Sql.Journal.Types
 
         public int? Identifier { get; set; }
 
-        public string[] TagArr { get; set; }
+        // ReSharper disable once InconsistentNaming
+        public string[] TagArray { get; set; }
 
         public string WriterUuid { get; set; }
 

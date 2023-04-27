@@ -115,7 +115,7 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
             _readDockerTask = ReadDockerStreamAsync();
 
             // Wait until container is completely ready
-            if (ReadyMarker is { })
+            if (ReadyMarker is not null)
             {
                 await AwaitUntilReadyAsync(ReadyMarker, ReadyTimeout);
             }
@@ -211,10 +211,10 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
             _logsCts.Cancel();
             _logsCts.Dispose();
 
-            if (_readDockerTask is { })
+            if (_readDockerTask is not null)
                 await _readDockerTask;
 
-            if (_stream is { })
+            if (_stream is not null)
                 await _stream.DisposeAsync();
 
             try

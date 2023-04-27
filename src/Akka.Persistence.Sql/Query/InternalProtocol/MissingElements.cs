@@ -15,7 +15,7 @@ namespace Akka.Persistence.Sql.Query.InternalProtocol
         public MissingElements(Seq<NumericRangeEntry> elements)
             => Elements = elements;
 
-        public bool Isempty
+        public bool IsEmpty
             => Elements.IsEmpty;
 
         public Seq<NumericRangeEntry> Elements { get; }

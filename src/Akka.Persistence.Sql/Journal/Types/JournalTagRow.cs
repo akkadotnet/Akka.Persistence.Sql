@@ -6,10 +6,12 @@
 
 namespace Akka.Persistence.Sql.Journal.Types
 {
+    // ReSharper disable once InconsistentNaming
     public class TagRow
     {
         public long OrderingId { get; set; }
 
+        // ReSharper disable once InconsistentNaming
         public string TagValue { get; set; }
     }
 

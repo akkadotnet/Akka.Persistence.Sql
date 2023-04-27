@@ -33,8 +33,9 @@ akka.persistence.query.journal.sql.tag-read-mode = TagTable";
             }
             catch
             {
-                if (TestCluster is { })
+                if (TestCluster is not null)
                     await TestCluster.DisposeAsync();
+
                 await Fixture.DisposeAsync();
                 throw;
             }

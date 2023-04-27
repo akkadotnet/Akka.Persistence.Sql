@@ -73,7 +73,7 @@ akka.persistence.query.journal.sql {{
         [GlobalCleanup]
         public async Task Cleanup()
         {
-            if (_sys is { })
+            if (_sys is not null)
                 await _sys.Terminate();
         }
 

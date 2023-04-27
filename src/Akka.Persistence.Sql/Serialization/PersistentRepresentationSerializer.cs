@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="PersistentReprSerializer.cs" company="Akka.NET Project">
+//  <copyright file="PersistentRepresentationSerializer.cs" company="Akka.NET Project">
 //      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
@@ -13,8 +13,7 @@ using Akka.Util;
 
 namespace Akka.Persistence.Sql.Serialization
 {
-    // TODO: Can we rename this to PersistentRepresentationSerializer?
-    public abstract class PersistentReprSerializer<T>
+    public abstract class PersistentRepresentationSerializer<T>
     {
         public List<Try<T[]>> Serialize(IEnumerable<AtomicWrite> messages, long timeStamp = 0)
             => messages.Select(
@@ -55,18 +54,19 @@ namespace Akka.Persistence.Sql.Serialization
                     return new Try<T[]>(retList);
                 }).ToList();
 
-        private List<Try<T[]>> HandleSerializeList(long timeStamp, AtomicWrite[] msgArr)
+        private List<Try<T[]>> HandleSerializeList(long timeStamp, AtomicWrite[] messages)
         {
-            var fullSet = new List<Try<T[]>>(msgArr.Length);
-            for (var i = 0; i < msgArr.Length; i++)
+            var fullSet = new List<Try<T[]>>(messages.Length);
+
+            foreach (var message in messages)
             {
-                if (msgArr[i].Payload is not IImmutableList<IPersistentRepresentation> payloads)
+                if (message.Payload is not IImmutableList<IPersistentRepresentation> payloads)
                 {
                     fullSet.Add(
                         new Try<T[]>(
                             new ArgumentNullException(
-                                $"{msgArr[i].PersistenceId} received empty payload for sequenceNr range " +
-                                $"{msgArr[i].LowestSequenceNr} - {msgArr[i].HighestSequenceNr}")));
+                                $"{message.PersistenceId} received empty payload for sequenceNr range " +
+                                $"{message.LowestSequenceNr} - {message.HighestSequenceNr}")));
                 }
                 else
                 {

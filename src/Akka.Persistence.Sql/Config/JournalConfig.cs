@@ -92,10 +92,12 @@ namespace Akka.Persistence.Sql.Config
 
     public interface IPluginConfig
     {
+        // ReSharper disable once InconsistentNaming
         string TagSeparator { get; }
 
         string Dao { get; }
 
+        // ReSharper disable once InconsistentNaming
         TagMode TagMode { get; }
     }
 

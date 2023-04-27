@@ -190,7 +190,7 @@ namespace Akka.Persistence.Sql.Query
             => _readJournalDao
                 .MessagesWithBatch(persistenceId, fromSequenceNr, toSequenceNr, _readJournalConfig.MaxBufferSize, refreshInterval)
                 .SelectAsync(1, representationAndOrdering => Task.FromResult(representationAndOrdering.Get()))
-                .SelectMany(r => AdaptEvents(r.Repr).Select(_ => new { representation = r.Repr, ordering = r.Ordering }))
+                .SelectMany(r => AdaptEvents(r.Representation).Select(_ => new { representation = r.Representation, ordering = r.Ordering }))
                 .Select(
                     r =>
                         new EventEnvelope(

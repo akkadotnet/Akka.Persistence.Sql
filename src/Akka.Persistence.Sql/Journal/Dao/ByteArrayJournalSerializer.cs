@@ -20,7 +20,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
     /// <summary>
     ///     Serializes <see cref="IPersistentRepresentation" />
     /// </summary>
-    public sealed class ByteArrayJournalSerializer : FlowPersistentReprSerializer<JournalRow>
+    public sealed class ByteArrayJournalSerializer : FlowPersistentRepresentationSerializer<JournalRow>
     {
         private readonly IProviderConfig<JournalTableConfig> _journalConfig;
         private readonly string _separator;
@@ -50,7 +50,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
         /// <param name="separator"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static string StringSep(IImmutableSet<string> tags, string separator)
+        private static string StringSeparator(IImmutableSet<string> tags, string separator)
             => tags.Count == 0
                 ? string.Empty
                 : $"{separator}{string.Join(separator, tags)}{separator}";
@@ -67,7 +67,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
             {
                 TagMode.Csv => new JournalRow
                 {
-                    Tags = StringSep(tags, separator),
+                    Tags = StringSeparator(tags, separator),
                     Timestamp = representation.Timestamp == 0
                         ? timestamp
                         : representation.Timestamp,
@@ -77,7 +77,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 TagMode.TagTable => new JournalRow
                 {
                     Tags = string.Empty,
-                    TagArr = tags.ToArray(),
+                    TagArray = tags.ToArray(),
                     Timestamp = representation.Timestamp == 0
                         ? timestamp
                         : representation.Timestamp,
@@ -86,8 +86,8 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
                 TagMode.Both => new JournalRow
                 {
-                    Tags = StringSep(tags, separator),
-                    TagArr = tags.ToArray(),
+                    Tags = StringSeparator(tags, separator),
+                    TagArray = tags.ToArray(),
                     Timestamp = representation.Timestamp == 0
                         ? timestamp
                         : representation.Timestamp,
@@ -109,12 +109,9 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     .WithTransport(
                         system: _serializer.System,
                         state: (
-                            persistentRepr: persistentRepresentation,
-                            _serializer.FindSerializerForType(
-                                persistentRepresentation.Payload.GetType(),
-                                _journalConfig.DefaultSerializer),
-                            CreateJournalRow(tTags, persistentRepresentation, timeStamp, _tagWriteMode, _separator, _writerUuid)
-                        ),
+                            persistentRepresentation,
+                            _serializer.FindSerializerForType(persistentRepresentation.Payload.GetType(), _journalConfig.DefaultSerializer),
+                            CreateJournalRow(tTags, persistentRepresentation, timeStamp, _tagWriteMode, _separator, _writerUuid)),
                         action: state =>
                         {
                             var (representation, serializer, row) = state;
@@ -162,7 +159,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                                 timestamp: t.Timestamp),
                             t.Tags?
                                 .Split(_separatorArray, StringSplitOptions.RemoveEmptyEntries)
-                                .ToImmutableHashSet() ?? t.TagArr?.ToImmutableHashSet() ?? ImmutableHashSet<string>.Empty,
+                                .ToImmutableHashSet() ?? t.TagArray?.ToImmutableHashSet() ?? ImmutableHashSet<string>.Empty,
                             t.Ordering));
                 }
 
@@ -185,7 +182,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                             timestamp: t.Timestamp),
                         t.Tags?
                             .Split(_separatorArray, StringSplitOptions.RemoveEmptyEntries)
-                            .ToImmutableHashSet() ?? t.TagArr?.ToImmutableHashSet() ?? ImmutableHashSet<string>.Empty,
+                            .ToImmutableHashSet() ?? t.TagArray?.ToImmutableHashSet() ?? ImmutableHashSet<string>.Empty,
                         t.Ordering));
             }
             catch (Exception e)

@@ -139,7 +139,7 @@ namespace Akka.Persistence.Sql.Db
                 .Member(r => r.Timestamp)
                 .HasColumnName(columnNames.Created)
 
-                .Member(r => r.TagArr)
+                .Member(r => r.TagArray)
                 .IsNotColumn();
 
             if (config.ProviderName.StartsWith(ProviderName.MySql))
@@ -338,7 +338,7 @@ namespace Akka.Persistence.Sql.Db
             var snapshotConfig = tableConfig.SnapshotTable;
             var rowBuilder = fmb.Entity<LongSnapshotRow>();
 
-            if (tableConfig.SchemaName is { })
+            if (tableConfig.SchemaName is not null)
                 rowBuilder.HasSchemaName(tableConfig.SchemaName);
 
             rowBuilder

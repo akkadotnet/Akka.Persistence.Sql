@@ -18,6 +18,7 @@ namespace Akka.Persistence.Sql.Snapshot
 {
     public class SqlSnapshotStore : SnapshotStore, IWithUnboundedStash
     {
+        // ReSharper disable once UnusedMember.Global
         [Obsolete(message: "Use SqlPersistence.Get(ActorSystem).DefaultConfig instead")]
         public static readonly Configuration.Config DefaultConfiguration =
             ConfigurationFactory.FromResource<SqlSnapshotStore>("Akka.Persistence.Sql.snapshot.conf");
@@ -58,10 +59,12 @@ namespace Akka.Persistence.Sql.Snapshot
                     UnbecomeStacked();
                     Stash.UnstashAll();
                     return true;
+
                 case Status.Failure msg:
                     _log.Error(msg.Cause, "Error during {0} initialization", Self);
                     Context.Stop(Self);
                     return true;
+
                 default:
                     Stash.Stash();
                     return true;

@@ -78,26 +78,26 @@ namespace Akka.Persistence.Sql.Hosting
         internal void Build(StringBuilder psb)
         {
             var sb = new StringBuilder();
-            if (TableName is { })
+            if (TableName is not null)
                 sb.AppendLine($"table-name = {TableName.ToHocon()}");
 
             var columnSb = new StringBuilder();
-            if (PersistenceIdColumnName is { })
+            if (PersistenceIdColumnName is not null)
                 columnSb.AppendLine($"persistence-id = {PersistenceIdColumnName.ToHocon()}");
 
-            if (SequenceNumberColumnName is { })
+            if (SequenceNumberColumnName is not null)
                 columnSb.AppendLine($"sequence-number = {SequenceNumberColumnName.ToHocon()}");
 
-            if (CreatedColumnName is { })
+            if (CreatedColumnName is not null)
                 columnSb.AppendLine($"created = {CreatedColumnName.ToHocon()}");
 
-            if (SnapshotColumnName is { })
+            if (SnapshotColumnName is not null)
                 columnSb.AppendLine($"snapshot = {SnapshotColumnName.ToHocon()}");
 
-            if (ManifestColumnName is { })
+            if (ManifestColumnName is not null)
                 columnSb.AppendLine($"manifest = {ManifestColumnName.ToHocon()}");
 
-            if (SerializerIdColumnName is { })
+            if (SerializerIdColumnName is not null)
                 columnSb.AppendLine($"serializerId = {SerializerIdColumnName.ToHocon()}");
 
             if (columnSb.Length > 0)

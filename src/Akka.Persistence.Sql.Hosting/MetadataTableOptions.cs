@@ -55,14 +55,14 @@ namespace Akka.Persistence.Sql.Hosting
         internal void Build(StringBuilder psb)
         {
             var sb = new StringBuilder();
-            if (TableName is { })
+            if (TableName is not null)
                 sb.AppendLine($"table-name = {TableName.ToHocon()}");
 
             var columnSb = new StringBuilder();
-            if (PersistenceIdColumnName is { })
+            if (PersistenceIdColumnName is not null)
                 columnSb.AppendLine($"persistence-id = {PersistenceIdColumnName.ToHocon()}");
 
-            if (SequenceNumberColumnName is { })
+            if (SequenceNumberColumnName is not null)
                 columnSb.AppendLine($"sequence-number = {SequenceNumberColumnName.ToHocon()}");
 
             if (columnSb.Length > 0)

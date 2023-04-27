@@ -8,6 +8,7 @@ using System;
 
 namespace Akka.Persistence.Sql.Config
 {
+    // ReSharper disable once InconsistentNaming
     public class TagTableColumnNames : IEquatable<TagTableColumnNames>
     {
         public TagTableColumnNames(Configuration.Config config)

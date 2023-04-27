@@ -15,6 +15,7 @@ using Akka.Actor;
 using Akka.Event;
 using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Db;
+using Akka.Persistence.Sql.Extensions;
 using Akka.Persistence.Sql.Journal.Types;
 using Akka.Persistence.Sql.Serialization;
 using Akka.Streams;
@@ -33,7 +34,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
         protected readonly JournalConfig JournalConfig;
 
         protected readonly ILoggingAdapter Logger;
-        protected readonly FlowPersistentReprSerializer<JournalRow> Serializer;
+        protected readonly FlowPersistentRepresentationSerializer<JournalRow> Serializer;
 
         protected readonly ISourceQueueWithComplete<WriteQueueEntry> WriteQueue;
 
@@ -301,7 +302,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 // hot path:
                 // If we only have one row, penalty for BulkCopy
                 // Isn't worth it due to insert caching/etc.
-                case 1 when _tagWriteMode == TagMode.Csv || xs.Head().TagArr.Length == 0:
+                case 1 when _tagWriteMode == TagMode.Csv || xs.Head().TagArray.Length == 0:
                 {
                     await ConnectionFactory.ExecuteWithTransactionAsync(
                         WriteIsolationLevel,
@@ -333,11 +334,11 @@ namespace Akka.Persistence.Sql.Journal.Dao
                         var tail = xs;
                         while (tail.Count > 0)
                         {
-                            (var noTags, tail) = tail.Span(r => r.TagArr.Length == 0);
+                            (var noTags, tail) = tail.Span(r => r.TagArray.Length == 0);
                             if (noTags.Count > 0)
                                 await BulkInsertNoTagTableTags(connection, noTags, config, token);
 
-                            (var hasTags, tail) = tail.Span(r => r.TagArr.Length > 0);
+                            (var hasTags, tail) = tail.Span(r => r.TagArray.Length > 0);
                             if (hasTags.Count > 0)
                                 await InsertWithOrderingAndBulkInsertTags(connection, hasTags, config, token);
                         }
@@ -362,7 +363,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 var dbId = await connection.InsertWithInt64IdentityAsync(journalRow, token);
 
                 tagsToInsert.AddRange(
-                    journalRow.TagArr.Select(
+                    journalRow.TagArray.Select(
                         s1 => new JournalTagRow
                         {
                             OrderingId = dbId,
@@ -414,7 +415,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
             foreach (var t in source)
             {
                 var item = t.Success.Value;
-                if (item is { })
+                if (item is not null)
                     rows.AddRange(item);
             }
 

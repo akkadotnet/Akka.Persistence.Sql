@@ -22,28 +22,30 @@ namespace Akka.Persistence.Sql.Hosting
 
         public string? TableName { get; set; }
 
-        public string? OrderingColumnName { get; set; }
+        // ReSharper disable once InconsistentNaming
         public string? TagColumnName { get; set; }
+
+        public string? OrderingColumnName { get; set; }
         public string? PersistenceIdColumnName { get; set; }
         public string? SequenceNumberColumnName { get; set; }
 
         internal void Build(StringBuilder psb)
         {
             var sb = new StringBuilder();
-            if (TableName is { })
+            if (TableName is not null)
                 sb.AppendLine($"table-name = {TableName.ToHocon()}");
 
             var columnSb = new StringBuilder();
-            if (OrderingColumnName is { })
+            if (OrderingColumnName is not null)
                 columnSb.AppendLine($"ordering-id = {OrderingColumnName.ToHocon()}");
 
-            if (TagColumnName is { })
+            if (TagColumnName is not null)
                 columnSb.AppendLine($"tag-value = {TagColumnName.ToHocon()}");
 
-            if (PersistenceIdColumnName is { })
+            if (PersistenceIdColumnName is not null)
                 columnSb.AppendLine($"persistence-id = {PersistenceIdColumnName.ToHocon()}");
 
-            if (SequenceNumberColumnName is { })
+            if (SequenceNumberColumnName is not null)
                 columnSb.AppendLine($"sequence-nr = {SequenceNumberColumnName.ToHocon()}");
 
             if (columnSb.Length > 0)

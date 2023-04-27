@@ -46,7 +46,7 @@ namespace Akka.Persistence.Sql.Config
         public string WriterUuid { get; }
 
         public bool Equals(JournalTableColumnNames other)
-            => other is { } &&
+            => other is not null &&
                Ordering == other.Ordering &&
                Deleted == other.Deleted &&
                PersistenceId == other.PersistenceId &&
