@@ -12,17 +12,17 @@ namespace Akka.Persistence.Sql.Journal.Types
     {
         public readonly long Ordering;
 
-        public readonly IPersistentRepresentation Repr;
+        public readonly IPersistentRepresentation Representation;
 
         public ReplayCompletion(
             IPersistentRepresentation representation,
             long ordering)
         {
-            Repr = representation;
+            Representation = representation;
             Ordering = ordering;
         }
 
         public ReplayCompletion((IPersistentRepresentation, IImmutableSet<string>, long) success)
-            => (Repr, _, Ordering) = success;
+            => (Representation, _, Ordering) = success;
     }
 }

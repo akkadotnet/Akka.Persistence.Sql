@@ -131,10 +131,12 @@ namespace Akka.Persistence.Sql.Journal
                     UnbecomeStacked();
                     Stash.UnstashAll();
                     return true;
+
                 case Status.Failure fail:
                     _log.Error(fail.Cause, "Failure during {0} initialization.", Self);
                     Context.Stop(Self);
                     return true;
+
                 default:
                     Stash.Stash();
                     return true;
@@ -188,7 +190,7 @@ namespace Akka.Persistence.Sql.Journal
                     asyncMapper: t => t.IsSuccess
                         ? Task.FromResult(t.Success.Value)
                         : Task.FromException<ReplayCompletion>(t.Failure.Value))
-                .RunForeach(r => recoveryCallback(r.Repr), _mat);
+                .RunForeach(r => recoveryCallback(r.Representation), _mat);
 
         public override async Task<long> ReadHighestSequenceNrAsync(string persistenceId, long fromSequenceNr)
         {

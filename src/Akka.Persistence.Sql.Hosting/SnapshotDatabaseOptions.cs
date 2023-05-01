@@ -58,7 +58,7 @@ namespace Akka.Persistence.Sql.Hosting
         internal void Build(StringBuilder psb)
         {
             var sb = new StringBuilder();
-            if (SchemaName is { })
+            if (SchemaName is not null)
                 sb.AppendLine($"schema-name = {SchemaName.ToHocon()}");
 
             SnapshotTable?.Build(sb);

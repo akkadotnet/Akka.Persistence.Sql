@@ -15,12 +15,12 @@ namespace Akka.Persistence.Sql.Query.InternalProtocol
             ImmutableHashSet<string> tags,
             long sequenceNr)
         {
-            Repr = representation;
+            Representation = representation;
             Tags = tags;
             SequenceNr = sequenceNr;
         }
 
-        public IPersistentRepresentation Repr { get; }
+        public IPersistentRepresentation Representation { get; }
 
         public ImmutableHashSet<string> Tags { get; }
 

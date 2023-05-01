@@ -137,41 +137,41 @@ namespace Akka.Persistence.Sql.Hosting
         {
             var sb = new StringBuilder();
 
-            if (UseWriterUuidColumn is { })
+            if (UseWriterUuidColumn is not null)
                 sb.AppendLine($"use-writer-uuid-column = {UseWriterUuidColumn.ToHocon()}");
 
-            if (TableName is { })
+            if (TableName is not null)
                 sb.AppendLine($"table-name = {TableName.ToHocon()}");
 
             var columnSb = new StringBuilder();
-            if (OrderingColumnName is { })
+            if (OrderingColumnName is not null)
                 columnSb.AppendLine($"ordering = {OrderingColumnName.ToHocon()}");
 
-            if (DeletedColumnName is { })
+            if (DeletedColumnName is not null)
                 columnSb.AppendLine($"deleted = {DeletedColumnName.ToHocon()}");
 
-            if (PersistenceIdColumnName is { })
+            if (PersistenceIdColumnName is not null)
                 columnSb.AppendLine($"persistence-id = {PersistenceIdColumnName.ToHocon()}");
 
-            if (SequenceNumberColumnName is { })
+            if (SequenceNumberColumnName is not null)
                 columnSb.AppendLine($"sequence-number = {SequenceNumberColumnName.ToHocon()}");
 
-            if (CreatedColumnName is { })
+            if (CreatedColumnName is not null)
                 columnSb.AppendLine($"created = {CreatedColumnName.ToHocon()}");
 
-            if (TagsColumnName is { })
+            if (TagsColumnName is not null)
                 columnSb.AppendLine($"tags = {TagsColumnName.ToHocon()}");
 
-            if (MessageColumnName is { })
+            if (MessageColumnName is not null)
                 columnSb.AppendLine($"message = {MessageColumnName.ToHocon()}");
 
-            if (IdentifierColumnName is { })
+            if (IdentifierColumnName is not null)
                 columnSb.AppendLine($"identifier = {IdentifierColumnName.ToHocon()}");
 
-            if (ManifestColumnName is { })
+            if (ManifestColumnName is not null)
                 columnSb.AppendLine($"manifest = {ManifestColumnName.ToHocon()}");
 
-            if (WriterUuidColumnName is { })
+            if (WriterUuidColumnName is not null)
                 columnSb.AppendLine($"writer-uuid = {WriterUuidColumnName.ToHocon()}");
 
             if (columnSb.Length > 0)

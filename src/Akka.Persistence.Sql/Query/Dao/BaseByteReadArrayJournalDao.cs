@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Db;
+using Akka.Persistence.Sql.Extensions;
 using Akka.Persistence.Sql.Journal.Dao;
 using Akka.Persistence.Sql.Journal.Types;
 using Akka.Persistence.Sql.Serialization;
@@ -36,7 +37,7 @@ namespace Akka.Persistence.Sql.Query.Dao
             IMaterializer materializer,
             AkkaPersistenceDataConnectionFactory connectionFactory,
             ReadJournalConfig readJournalConfig,
-            FlowPersistentReprSerializer<JournalRow> serializer,
+            FlowPersistentRepresentationSerializer<JournalRow> serializer,
             CancellationToken shutdownToken)
             : base(scheduler, materializer, connectionFactory, readJournalConfig, shutdownToken)
         {
@@ -219,6 +220,7 @@ namespace Akka.Persistence.Sql.Query.Dao
                     var result = await connection
                         .GetTable<JournalRow>()
                         .MaxAsync<JournalRow, long?>(r => r.Ordering, token);
+
                     return result ?? 0;
                 });
         }
@@ -272,23 +274,24 @@ namespace Akka.Persistence.Sql.Query.Dao
         private static async Task<List<JournalRow>> AddTagDataFromTagTableAsync(IQueryable<JournalRow> rowQuery, AkkaDataConnection connection, CancellationToken token)
         {
             var tagTable = connection.GetTable<JournalTagRow>();
-            var q =
-                from jr in rowQuery
-                select new
-                {
-                    row = jr,
-                    tags = tagTable
-                        .Where(r => r.OrderingId == jr.Ordering)
-                        .StringAggregate(";", r => r.TagValue)
-                        .ToValue(),
-                };
 
-            var res = await q.ToListAsync(token);
+            var rowsAndTags = await rowQuery
+                .Select(
+                    x => new
+                    {
+                        row = x,
+                        tags = tagTable
+                            .Where(r => r.OrderingId == x.Ordering)
+                            .StringAggregate(";", r => r.TagValue)
+                            .ToValue(),
+                    })
+                .ToListAsync(token);
+
             var result = new List<JournalRow>();
-            foreach (var row in res)
+            foreach (var rowAndTags in rowsAndTags)
             {
-                row.row.TagArr = row.tags?.Split(';') ?? Array.Empty<string>();
-                result.Add(row.row);
+                rowAndTags.row.TagArray = rowAndTags.tags?.Split(';') ?? Array.Empty<string>();
+                result.Add(rowAndTags.row);
             }
 
             return result;

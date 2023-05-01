@@ -137,7 +137,8 @@ namespace Akka.Persistence.Sql.Query
                 (currentMax: currentMaxOrdering, previousElement: currentMaxOrdering, missing: MissingElements.Empty),
                 (agg, currentElement) =>
                 {
-                    var newMax = new NumericRangeEntry(agg.currentMax + 1, currentElement).ToEnumerable()
+                    var newMax = new NumericRangeEntry(agg.currentMax + 1, currentElement)
+                        .ToEnumerable()
                         .ForAll(p => givenUp.Contains(p))
                         ? currentElement
                         : agg.currentMax;
@@ -156,7 +157,7 @@ namespace Akka.Persistence.Sql.Query
                 });
 
             var newMissingByCounter = missingByCounter.SetItem(moduloCounter, missingElems);
-            var noGapsFound = missingElems.Isempty;
+            var noGapsFound = missingElems.IsEmpty;
             var isFullBatch = elements.Count == _config.BatchSize;
             if (noGapsFound && isFullBatch)
             {

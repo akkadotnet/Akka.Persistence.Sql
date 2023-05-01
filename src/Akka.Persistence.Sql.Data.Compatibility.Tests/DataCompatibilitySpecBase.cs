@@ -64,7 +64,7 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests
 
         public async Task DisposeAsync()
         {
-            if (TestCluster is { })
+            if (TestCluster is not null)
                 await TestCluster.DisposeAsync();
 
             await Fixture.DisposeAsync();
@@ -92,7 +92,7 @@ akka.persistence {{
             batch-size = 3
             db-round-trip-max-batch-size = 6
             replay-batch-size = 6
-{(Settings.SchemaName is { } ? @$"
+{(Settings.SchemaName is not null ? @$"
             {Settings.TableMapping} {{
                 schema-name = {Settings.SchemaName}
             }}" : string.Empty)}
@@ -128,7 +128,7 @@ akka.persistence {{
             read-isolation-level = {Settings.ReadIsolationLevel.ToHocon()}
             write-isolation-level = {Settings.WriteIsolationLevel.ToHocon()}
 
-{(Settings.SchemaName is { } ? @$"
+{(Settings.SchemaName is not null ? @$"
             {Settings.TableMapping} {{
                 schema-name = {Settings.SchemaName}
             }}" : string.Empty)}
@@ -159,7 +159,7 @@ akka.persistence {{
             foreach (var id in Enumerable.Range(0, 100))
             {
                 var (_, lastSnapshot) = await region.Ask<(string, StateSnapshot?)>(new Truncate(id), cts.Token);
-                if (lastSnapshot is { })
+                if (lastSnapshot is not null)
                 {
                     Output.WriteLine(
                         $"{id} data truncated. " +

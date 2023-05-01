@@ -18,10 +18,8 @@ namespace Akka.Persistence.Sql.Config
                 throw new ConfigurationException(
                     "The configuration property akka.persistence.journal.sql.table-mapping is null or empty");
 
-            var mappingConfig = config.GetConfig(mappingPath);
-            if (mappingConfig is null)
-                throw new ConfigurationException(
-                    $"The configuration path akka.persistence.journal.sql.{mappingPath} does not exist");
+            var mappingConfig = config.GetConfig(mappingPath) ?? throw new ConfigurationException(
+                $"The configuration path akka.persistence.journal.sql.{mappingPath} does not exist");
 
             if (mappingPath != "default")
                 mappingConfig.WithFallback(SqlPersistence.DefaultSnapshotMappingConfiguration);

@@ -140,7 +140,7 @@ namespace Akka.Persistence.Sql.Hosting
             bool? deleteCompatibilityMode = null,
             bool? useWriterUuidColumn = null)
         {
-            if (mode == PersistenceMode.SnapshotStore && journalBuilder is { })
+            if (mode == PersistenceMode.SnapshotStore && journalBuilder is not null)
                 throw new Exception($"{nameof(journalBuilder)} can only be set when {nameof(mode)} is set to either {PersistenceMode.Both} or {PersistenceMode.Journal}");
 
             if (string.IsNullOrWhiteSpace(connectionString))
@@ -158,16 +158,16 @@ namespace Akka.Persistence.Sql.Hosting
                 DeleteCompatibilityMode = deleteCompatibilityMode,
             };
 
-            if (databaseMapping is { })
+            if (databaseMapping is not null)
                 journalOpt.DatabaseOptions = databaseMapping.Value.JournalOption();
 
-            if (schemaName is { })
+            if (schemaName is not null)
             {
                 journalOpt.DatabaseOptions ??= JournalDatabaseOptions.Default;
                 journalOpt.DatabaseOptions.SchemaName = schemaName;
             }
 
-            if (useWriterUuidColumn is { })
+            if (useWriterUuidColumn is not null)
             {
                 journalOpt.DatabaseOptions ??= JournalDatabaseOptions.Default;
                 journalOpt.DatabaseOptions.JournalTable ??= JournalTableOptions.Default;
@@ -185,10 +185,10 @@ namespace Akka.Persistence.Sql.Hosting
                 AutoInitialize = autoInitialize,
             };
 
-            if (databaseMapping is { })
+            if (databaseMapping is not null)
                 snapshotOpt.DatabaseOptions = databaseMapping.Value.SnapshotOption();
 
-            if (schemaName is { })
+            if (schemaName is not null)
             {
                 snapshotOpt.DatabaseOptions ??= new SnapshotDatabaseOptions(DatabaseMapping.Default);
                 snapshotOpt.DatabaseOptions.SchemaName = schemaName;
@@ -247,14 +247,14 @@ namespace Akka.Persistence.Sql.Hosting
                 throw new ArgumentException($"{nameof(journalOptionConfigurator)} and {nameof(snapshotOptionConfigurator)} could not both be null");
 
             SqlJournalOptions? journalOptions = null;
-            if (journalOptionConfigurator is { })
+            if (journalOptionConfigurator is not null)
             {
                 journalOptions = new SqlJournalOptions(isDefaultPlugin);
                 journalOptionConfigurator(journalOptions);
             }
 
             SqlSnapshotOptions? snapshotOptions = null;
-            if (snapshotOptionConfigurator is { })
+            if (snapshotOptionConfigurator is not null)
             {
                 snapshotOptions = new SqlSnapshotOptions(isDefaultPlugin);
                 snapshotOptionConfigurator(snapshotOptions);

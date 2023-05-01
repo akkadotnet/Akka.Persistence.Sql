@@ -29,7 +29,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
 
         public DockerClient? Client => null;
 
-        public bool Initialized => _heldConnection is { };
+        public bool Initialized => _heldConnection is not null;
 
         public string ProviderName => LinqToDB.ProviderName.SQLiteMS;
 

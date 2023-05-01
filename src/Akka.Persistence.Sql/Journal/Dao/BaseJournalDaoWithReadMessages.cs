@@ -83,7 +83,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
                             var lastSeq = Option<long>.None;
                             if (msg.IsEmpty == false)
-                                lastSeq = msg.Last.Get().Repr.SequenceNr;
+                                lastSeq = msg.Last.Get().Representation.SequenceNr;
 
                             FlowControlEnum nextControl;
                             if ((lastSeq.HasValue && lastSeq.Value >= toSequenceNr) || opt.seqNr > toSequenceNr)

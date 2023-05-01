@@ -125,19 +125,19 @@ namespace Akka.Persistence.Sql.Hosting
             sb.AppendLine($"connection-string = {ConnectionString.ToHocon()}");
             sb.AppendLine($"provider-name = {ProviderName.ToHocon()}");
 
-            if (DeleteCompatibilityMode is { })
+            if (DeleteCompatibilityMode is not null)
                 sb.AppendLine($"delete-compatibility-mode = {DeleteCompatibilityMode.ToHocon()}");
 
-            if (TagStorageMode is { })
+            if (TagStorageMode is not null)
                 sb.AppendLine($"tag-write-mode = {TagStorageMode.ToString().ToHocon()}");
 
-            if (DatabaseOptions is { })
+            if (DatabaseOptions is not null)
                 sb.AppendLine($"table-mapping = {DatabaseOptions.Mapping.Name().ToHocon()}");
 
-            if (ReadIsolationLevel is { })
+            if (ReadIsolationLevel is not null)
                 sb.AppendLine($"read-isolation-level = {ReadIsolationLevel.ToHocon()}");
 
-            if (WriteIsolationLevel is { })
+            if (WriteIsolationLevel is not null)
                 sb.AppendLine($"write-isolation-level = {WriteIsolationLevel.ToHocon()}");
 
             DatabaseOptions?.Build(sb);
@@ -150,16 +150,16 @@ namespace Akka.Persistence.Sql.Hosting
                 sb.AppendLine($"connection-string = {ConnectionString.ToHocon()}");
                 sb.AppendLine($"provider-name = {ProviderName.ToHocon()}");
 
-                if (TagStorageMode is { })
+                if (TagStorageMode is not null)
                     sb.AppendLine($"tag-read-mode = {TagStorageMode.ToString().ToHocon()}");
 
-                if (ReadIsolationLevel is { })
+                if (ReadIsolationLevel is not null)
                     sb.AppendLine($"read-isolation-level = {ReadIsolationLevel.ToHocon()}");
 
                 sb.AppendLine("}");
             }
 
-            if (QueryRefreshInterval is { })
+            if (QueryRefreshInterval is not null)
                 sb.AppendLine($"akka.persistence.query.journal.sql.refresh-interval = {QueryRefreshInterval.ToHocon()}");
 
             return sb;
