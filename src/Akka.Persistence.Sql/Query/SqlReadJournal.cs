@@ -38,7 +38,7 @@ namespace Akka.Persistence.Sql.Query
     {
         // ReSharper disable once UnusedMember.Global
         [Obsolete(message: "Use SqlPersistence.Get(ActorSystem).DefaultConfig instead")]
-        public static readonly Configuration.Config DefaultConfiguration = SqlWriteJournal.DefaultConfiguration;
+        public static Configuration.Config DefaultConfiguration() => SqlWriteJournal.DefaultConfiguration;
 
         private readonly Source<long, ICancelable> _delaySource;
         private readonly EventAdapters _eventAdapters;
