@@ -33,7 +33,7 @@
 
     <AkkaSqliteVersion>1.5.4</AkkaSqliteVersion>
     <SqliteVersion>1.0.117</SqliteVersion>
-    <MicrosoftSqliteVersion>7.0.5</MicrosoftSqliteVersion>
+    <MicrosoftSqliteVersion>7.0.8</MicrosoftSqliteVersion>
 
     <AkkaPostgreSqlVersion>1.5.4.1</AkkaPostgreSqlVersion>
     <PostgreSqlVersion>7.0.4</PostgreSqlVersion>
