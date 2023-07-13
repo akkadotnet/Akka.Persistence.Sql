@@ -44,7 +44,7 @@
     <AkkaRedisVersion>1.5.0</AkkaRedisVersion>
     <RedisInsideVersion>3.3.0</RedisInsideVersion>
 
-    <TestSdkVersion>17.6.0</TestSdkVersion>
+    <TestSdkVersion>17.6.3</TestSdkVersion>
     <BenchmarkDotNetVersion>0.13.5</BenchmarkDotNetVersion>
     <DockerDotNetVersion>3.125.15</DockerDotNetVersion>
     <FluentAssertionVersion>6.11.0</FluentAssertionVersion>
