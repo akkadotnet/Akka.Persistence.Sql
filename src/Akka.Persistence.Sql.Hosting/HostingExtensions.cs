@@ -301,7 +301,8 @@ namespace Akka.Persistence.Sql.Hosting
                 (_, null) =>
                     builder
                         .AddHocon(journalOptions.ToConfig(), HoconAddMode.Prepend)
-                        .AddHocon(journalOptions.DefaultConfig, HoconAddMode.Append),
+                        .AddHocon(journalOptions.DefaultConfig, HoconAddMode.Append)
+                        .AddHocon(SqlPersistence.DefaultConfiguration, HoconAddMode.Append),
 
                 (null, _) =>
                     builder
@@ -313,7 +314,8 @@ namespace Akka.Persistence.Sql.Hosting
                         .AddHocon(journalOptions.ToConfig(), HoconAddMode.Prepend)
                         .AddHocon(snapshotOptions.ToConfig(), HoconAddMode.Prepend)
                         .AddHocon(journalOptions.DefaultConfig, HoconAddMode.Append)
-                        .AddHocon(snapshotOptions.DefaultConfig, HoconAddMode.Append),
+                        .AddHocon(snapshotOptions.DefaultConfig, HoconAddMode.Append)
+                        .AddHocon(SqlPersistence.DefaultConfiguration, HoconAddMode.Append),
             };
         }
     }
