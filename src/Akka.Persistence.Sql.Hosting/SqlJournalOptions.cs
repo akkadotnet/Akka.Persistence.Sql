@@ -16,6 +16,7 @@ namespace Akka.Persistence.Sql.Hosting
     public sealed class SqlJournalOptions : JournalOptions
     {
         private static readonly Configuration.Config Default = SqlPersistence.DefaultJournalConfiguration;
+        private static readonly Configuration.Config DefaultQuery = SqlPersistence.DefaultQueryConfiguration;
 
         public SqlJournalOptions() : this(true) { }
 
@@ -79,6 +80,8 @@ namespace Akka.Persistence.Sql.Hosting
         ///     you leave this empty for greenfield projects.
         /// </summary>
         public TagMode? TagStorageMode { get; set; }
+        
+        public string? TagSeparator { get; set; }
 
         /// <summary>
         ///     <para>
@@ -114,6 +117,10 @@ namespace Akka.Persistence.Sql.Hosting
 
         protected override Configuration.Config InternalDefaultConfig => Default;
 
+        public Configuration.Config DefaultQueryConfig => DefaultQuery.MoveTo(QueryPluginId);
+
+        public string QueryPluginId => $"akka.persistence.query.journal.{Identifier}";
+        
         protected override StringBuilder Build(StringBuilder sb)
         {
             if (string.IsNullOrWhiteSpace(ConnectionString))
@@ -131,6 +138,9 @@ namespace Akka.Persistence.Sql.Hosting
             if (TagStorageMode is not null)
                 sb.AppendLine($"tag-write-mode = {TagStorageMode.ToString().ToHocon()}");
 
+            if (TagSeparator is not null)
+                sb.AppendLine($"tag-separator = {TagSeparator.ToHocon()}");
+            
             if (DatabaseOptions is not null)
                 sb.AppendLine($"table-mapping = {DatabaseOptions.Mapping.Name().ToHocon()}");
 
@@ -149,13 +159,21 @@ namespace Akka.Persistence.Sql.Hosting
                 sb.AppendLine("akka.persistence.query.journal.sql {");
                 sb.AppendLine($"connection-string = {ConnectionString.ToHocon()}");
                 sb.AppendLine($"provider-name = {ProviderName.ToHocon()}");
+                
+                if (DatabaseOptions is not null)
+                    sb.AppendLine($"table-mapping = {DatabaseOptions.Mapping.Name().ToHocon()}");
 
                 if (TagStorageMode is not null)
                     sb.AppendLine($"tag-read-mode = {TagStorageMode.ToString().ToHocon()}");
 
+                if (TagSeparator is not null)
+                    sb.AppendLine($"tag-separator = {TagSeparator.ToHocon()}");
+            
                 if (ReadIsolationLevel is not null)
                     sb.AppendLine($"read-isolation-level = {ReadIsolationLevel.ToHocon()}");
 
+                DatabaseOptions?.Build(sb);
+                
                 sb.AppendLine("}");
             }
 
