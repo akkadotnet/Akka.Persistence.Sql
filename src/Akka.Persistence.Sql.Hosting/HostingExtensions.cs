@@ -15,7 +15,7 @@ namespace Akka.Persistence.Sql.Hosting
     public static class HostingExtensions
     {
         /// <summary>
-        ///     Adds Akka.Persistence.SqlServer support to this <see cref="ActorSystem" />.
+        ///     Adds Akka.Persistence.Sql support to this <see cref="ActorSystem" />.
         /// </summary>
         /// <param name="builder">
         ///     The builder instance being configured.
@@ -204,7 +204,7 @@ namespace Akka.Persistence.Sql.Hosting
         }
 
         /// <summary>
-        ///     Adds Akka.Persistence.SqlServer support to this <see cref="ActorSystem" />. At least one of the
+        ///     Adds Akka.Persistence.Sql support to this <see cref="ActorSystem" />. At least one of the
         ///     configurator delegate needs to be populated else this method will throw an exception.
         /// </summary>
         /// <param name="builder">
@@ -264,7 +264,7 @@ namespace Akka.Persistence.Sql.Hosting
         }
 
         /// <summary>
-        ///     Adds Akka.Persistence.SqlServer support to this <see cref="ActorSystem" />. At least one of the options
+        ///     Adds Akka.Persistence.Sql support to this <see cref="ActorSystem" />. At least one of the options
         ///     have to be populated else this method will throw an exception.
         /// </summary>
         /// <param name="builder">
@@ -302,7 +302,7 @@ namespace Akka.Persistence.Sql.Hosting
                     builder
                         .AddHocon(journalOptions.ToConfig(), HoconAddMode.Prepend)
                         .AddHocon(journalOptions.DefaultConfig, HoconAddMode.Append)
-                        .AddHocon(SqlPersistence.DefaultConfiguration, HoconAddMode.Append),
+                        .AddHocon(journalOptions.DefaultQueryConfig, HoconAddMode.Append),
 
                 (null, _) =>
                     builder
@@ -315,7 +315,7 @@ namespace Akka.Persistence.Sql.Hosting
                         .AddHocon(snapshotOptions.ToConfig(), HoconAddMode.Prepend)
                         .AddHocon(journalOptions.DefaultConfig, HoconAddMode.Append)
                         .AddHocon(snapshotOptions.DefaultConfig, HoconAddMode.Append)
-                        .AddHocon(SqlPersistence.DefaultConfiguration, HoconAddMode.Append),
+                        .AddHocon(journalOptions.DefaultQueryConfig, HoconAddMode.Append),
             };
         }
     }
