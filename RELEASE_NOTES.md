@@ -1,3 +1,9 @@
+#### 1.5.9-beta1 July 20 2023 ###
+
+* [Update Akka.NET to 1.5.9](https://github.com/akkadotnet/akka.net/releases/tag/1.5.9)
+* [Bump Akka.Hosting to 1.5.8.1](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/276)
+* [Persistence.Query: Fix invalid generated HOCON config](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/283)
+
 #### 1.5.4-beta1 April 25 2023 ###
 
 * [Update Akka.NET from 1.5.2 to 1.5.4](https://github.com/akkadotnet/akka.net/releases/tag/1.5.4)
