@@ -5,19 +5,21 @@ title: Configuration
 
 # Configuration
 
+# Journal
+
 Please note that you -must- provide a Connection String (`connection-string`) and Provider name (`provider-name`).
 
 ## `parallelism`
 
 Controls the number of Akka.Streams Queues used to write to the DB. Default in JVM is `8`. We use `3`
 
-  - For SQL Server, Based on testing `3` is a fairly optimal number in .NET and and thus chosen as default. You may wish to adjust up if you are dealing with a large number of actors.
+- For SQL Server, Based on testing `3` is a fairly optimal number in .NET and and thus chosen as default. You may wish to adjust up if you are dealing with a large number of actors.
 
-    Testing indicates that `2` will provide performance on par or better than both batching and non-batching journal.
+  Testing indicates that `2` will provide performance on par or better than both batching and non-batching journal.
 
-  - For SQLite, you may want to just put `1` here, because SQLite allows at most a single writer at a time even in WAL mode.
+- For SQLite, you may want to just put `1` here, because SQLite allows at most a single writer at a time even in WAL mode.
    
-    Keep in mind there may be some latency/throughput trade-offs if your write-set gets large.
+  Keep in mind there may be some latency/throughput trade-offs if your write-set gets large.
        
 Note that unless `materializer-dispatcher` is changed, by default these run on the thread pool, not on dedicated threads. Setting this number too high may steal work from other actors. 
 
@@ -31,12 +33,7 @@ You can define a different dispatcher here if worried about stealing from the th
 
 ## `delete-compatibility-mode` 
 
-specifies to perform deletes in a way that is compatible with Akka.Persistence.Sql.Common. This will use a journal metadata table
-
-## `use-clone-connection` 
-is a bit of a hack. Currently Linq2Db has a performance penalty for custom mapping schemas. Cloning the connection is faster but may not work for all scenarios.
-    
-tl;dr - If a password or similar is in the connection string, leave `use-clone-connection` set to `false`. If you don't have a password or similar, run some tests with it set to `true`. You'll see improved write and read performance.
+specifies to perform deletes in a way that is compatible with `Akka.Persistence.Sql.Common`. This will use a journal metadata table
 
 # Batching options
 
@@ -66,7 +63,7 @@ Note that Tables/Columns will be created with the casing provided, and selected 
 
 ## Journal And Query
 
-> [!NOTE]
+> ### NOTE
 > Please note that you -must- provide a Connection String and Provider name.
 
 ```hocon
@@ -75,16 +72,11 @@ akka.persistence {
     sql {
       class = "Akka.Persistence.Sql.Journal.SqlWriteJournal, Akka.Persistence.Sql"
       plugin-dispatcher = "akka.persistence.dispatchers.default-plugin-dispatcher"
-      
-      # Connection String is Required!
-      connection-string = ""
+      connection-string = "" # Connection String is Required!
 
-      # Provider name is required!
-      # Refer to LinqToDb.ProviderName for values
-      # Always use a specific version if possible
-      # To avoid provider detection performance penalty
-      # Don't worry if your DB is newer than what is listed;
-      # Just pick the newest one (if yours is still newer)
+      # Provider name is required, refer to LinqToDb.ProviderName for values
+      # Always use a specific version if possible to avoid provider detection performance penalty
+      # Don't worry if your DB is newer than what is listed; just pick the newest one (if yours is still newer)
       provider-name = ""
 
       # If true, journal_metadata is created and used for deletes
@@ -115,7 +107,7 @@ akka.persistence {
       # This batch size controls the maximum number of rows that will be sent
       # In a single round trip to the DB. This is different than the -actual- batch size,
       # And intentionally set larger than batch-size,
-      # to help atomic writes be faster
+      # to help atomicwrites be faster
       # Note that Linq2Db may use a lower number per round-trip in some cases.
       db-round-trip-max-batch-size = 1000
 
@@ -157,8 +149,8 @@ akka.persistence {
 
       # This setting dictates how journal event tags are being stored inside the database.
       # Valid values:
-      #   * Csv 
-      #     This value will make the plugin stores event tags in a CSV format in the 
+      #   * Csv
+      #     This value will make the plugin stores event tags in a CSV format in the
       #     `tags` column inside the journal table. This is the backward compatible
       #     way of storing event tag information.
       #   * TagTable
@@ -188,6 +180,18 @@ akka.persistence {
       # If set to null, the default `System.Object` serializer is used.
       serializer = null
 
+      # The isolation level of all database read queries.
+      # Isolation level documentation can be read here:
+      #   https://learn.microsoft.com/en-us/dotnet/api/system.data.isolationlevel?#fields
+      # Valid values: "read-committed", "read-uncommitted", "repeatable-read", "serializable", "snapshot", or "unspecified"
+      read-isolation-level = unspecified
+
+      # The isolation level of all database write queries.
+      # Isolation level documentation can be read here:
+      #   https://learn.microsoft.com/en-us/dotnet/api/system.data.isolationlevel?#fields
+      # Valid values: "read-committed", "read-uncommitted", "repeatable-read", "serializable", "snapshot", or "unspecified"
+      write-isolation-level = unspecified
+
       # Default table name and column name mapping
       # Use this if you're not migrating from old Akka.Persistence plugins
       default {
@@ -195,20 +199,16 @@ akka.persistence {
         schema-name = null
 
         journal {
-          # A flag to indicate if the writer_uuid column should 
-          # be generated and be populated in run-time.
-          # Notes: 
-          #   1. The column will only be generated if auto-initialize is 
-          #      set to true.
-          #   2. This feature is Akka.Persistence.Sql specific, setting 
-          #      this to true will break backward compatibility with 
-          #      databases generated by other Akka.Persistence plugins.
-          #   3. To make this feature work with legacy plugins, 
-          #      you will have to alter the old journal table:
+          # A flag to indicate if the writer_uuid column should be generated and be populated in run-time.
+          # Notes:
+          #   1. The column will only be generated if auto-initialize is set to true.
+          #   2. This feature is Akka.Persistence.Sql specific, setting this to true will break
+          #      backward compatibility with databases generated by other Akka.Persistence plugins.
+          #   3. To make this feature work with legacy plugins, you will have to alter the old
+          #      journal table:
           #        ALTER TABLE [journal_table_name] ADD [writer_uuid_column_name] VARCHAR(128);
-          #   4. If set to true, the code will not check for backward 
-          #      compatibility. It will expect  that the `writer-uuid` 
-          #      column to be present inside the journal table.
+          #   4. If set to true, the code will not check for backward compatibility. It will expect
+          #      that the `writer-uuid` column to be present inside the journal table.
           use-writer-uuid-column = true
 
           table-name = "journal"
@@ -377,8 +377,8 @@ akka.persistence {
 
         # This setting dictates how journal event tags are being read from the database.
         # Valid values:
-        #   * Csv 
-        #     This value will make the plugin read event tags from a CSV formatted string 
+        #   * Csv
+        #     This value will make the plugin read event tags from a CSV formatted string
         #     `tags` column inside the journal table. This is the backward compatible
         #     way of reading event tag information.
         #   * TagTable
@@ -445,6 +445,12 @@ akka.persistence {
 
         tag-separator = ";"
 
+        # The isolation level of all database read query.
+        # Isolation level documentation can be read here:
+        #   https://learn.microsoft.com/en-us/dotnet/api/system.data.isolationlevel?#fields
+        # Valid values: "read-committed", "read-uncommitted", "repeatable-read", "serializable", "snapshot", or "unspecified"
+        read-isolation-level = unspecified
+
         dao = "Akka.Persistence.Sql.Journal.Dao.ByteArrayJournalDao, Akka.Persistence.Sql"
 
         default = ${akka.persistence.journal.sql.default}
@@ -456,12 +462,11 @@ akka.persistence {
     }
   }
 }
-
 ```
 
 ## Snapshot Store
 
-> [!NOTE]
+> ### NOTE
 > Please note that you -must- provide a Connection String and Provider name.
 
 ```hocon
@@ -487,7 +492,7 @@ akka.persistence {
       # The database schema, table names, and column names configuration mapping.
       # The details are described in their respective configuration block below.
       # If set to "sqlite", "sql-server", "mysql", or "postgresql",
-      # column names will be compatible with Akka.Persistence.Sql
+      # column names will be compatible with legacy Akka.NET persistence sql plugins
       table-mapping = default
 
       # Default serializer used as manifest serializer when applicable and payload serializer when
@@ -500,11 +505,22 @@ akka.persistence {
       # if true, tables will attempt to be created.
       auto-initialize = true
 
-      # if true, a warning will be logged
-      # if auto-init of tables fails.
+      # if true, a warning will be logged if auto-init of tables fails.
       # set to false if you don't want this warning logged
       # perhaps if running CI tests or similar.
       warn-on-auto-init-fail = true
+
+      # The isolation level of all database read query.
+      # Isolation level documentation can be read here:
+      #   https://learn.microsoft.com/en-us/dotnet/api/system.data.isolationlevel?#fields
+      # Valid values: "read-committed", "read-uncommitted", "repeatable-read", "serializable", "snapshot", or "unspecified"
+      read-isolation-level = unspecified
+
+      # The isolation level of all database read query.
+      # Isolation level documentation can be read here:
+      #   https://learn.microsoft.com/en-us/dotnet/api/system.data.isolationlevel?#fields
+      # Valid values: "read-committed", "read-uncommitted", "repeatable-read", "serializable", "snapshot", or "unspecified"
+      write-isolation-level = unspecified
 
       default {
         schema-name = null
