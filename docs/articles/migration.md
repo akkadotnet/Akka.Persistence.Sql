@@ -139,7 +139,7 @@ akka.persistence {
 }
 ```
 
-## Tag Table Based Tag Query Migration (Optional)
+## Upgrading to Tag Table (Optional)
 
 This feature is an `Akka.Persistence.Sql` specific feature that leverages a separate table for event tags to speed up any tag based CQRS queries against the persistence backend.
 
@@ -147,7 +147,7 @@ This feature **is not** required for legacy `Akka.Persistence.Sql.Common` compat
 
 > ### WARNING
 > 
-> This migration WILL change the database schema of your persistent database.
+> This migration **WILL** change the database schema of your persistent database.
 >
 > Always do a database backup before attempting to do any of these migration steps.
 > 
@@ -181,13 +181,13 @@ To migrate your database to use the new tag table based tag query feature, follo
    akka.persistence.query.journal.sql.tag-read-mode = TagTable # change this line
    ```
 
-# Enable WriterUuid Anti-Corruption Layer Feature (Optional)
+# Enable WriterUuid Anti-Corruption Layer Feature (Recommended)
 
 The WriterUuid is an anti-corruption feature added to SQL plugins. It **is not** required for legacy `Akka.Persistence.Sql.Common` compatibility mode, but it is highly recommended.
 
 > ### WARNING
 >
-> This guide WILL change the database schema of your persistent database.
+> This guide **WILL** change the database schema of your persistent database.
 >
 > Always do a database backup before attempting to do any of these migration steps.
 
