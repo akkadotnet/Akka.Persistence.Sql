@@ -7,7 +7,7 @@ title: Getting Started
 
 ## The Easy `Akka.Hosting` Way
 
-> [!NOTE]
+> #### NOTE
 > `connectionString` and `providerName` parameters are mandatory
 
 Assuming a Microsoft SQL Server 2019 setup:
@@ -23,12 +23,12 @@ var host = new HostBuilder()
     })
 ```
 
-> [!NOTE]
+> #### NOTE
 > For best performance, one should use the most specific provider name possible. i.e. `LinqToDB.ProviderName.SqlServer2019` instead of `LinqToDB.ProviderName.SqlServer`. Otherwise certain provider detections have to run more frequently which may impair performance slightly.
 
 ## The Classic HOCON Way
 
-> [!NOTE]
+> #### NOTE
 > `connection-string` and `provider-name` properties are mandatory
 
 These are the minimum HOCON configuration you need to start using Akka.Persistence.Sql:

@@ -14,7 +14,7 @@ title: Features/Architecture
 
 - Linq2Db usage for easier swapping of backend DBs.
     - `provider-name` is a [`LinqToDb.ProviderName`](https://linq2db.github.io/api/LinqToDB.ProviderName.html)
-        - This handles DB Type mapping and Dialect-specific query building
+    - This handles DB Type mapping and Dialect-specific query building
 
 - language-ext is used in place of Systems.Collections.Immutable where appropriate
     - Lower memory allocations, improve performance
@@ -45,15 +45,13 @@ title: Features/Architecture
 ## Currently Implemented
 
 - Journal
-    - With `JournalSpec` and `JournalPerfSpec` passing for MS SQL Server, Microsoft.Data.SQLite, and PostgreSQL
+    - With `JournalSpec` and `JournalPerfSpec` passing for MS SQL Server, Microsoft.Data.SQLite, PostgreSQL, and MySql.
 - Snapshot Store
-    - With `SnapshotStoreSpec` passing for MS SQL Server, Microsoft.Data.SQLite, PostgreSQL
+    - With `SnapshotStoreSpec` passing for MS SQL Server, Microsoft.Data.SQLite, PostgreSQL, and MySql.
 - Configuration
-    - Only Functional tests at this time.
     - Custom provider configurations are supported.
 - Compatibility with existing Akka.Persistence plugins is implemented via `table-mapping` setting.
 
 ## Incomplete
 
 - Tests for Schema Usage
-- Cleanup of Configuration classes/fallbacks.
