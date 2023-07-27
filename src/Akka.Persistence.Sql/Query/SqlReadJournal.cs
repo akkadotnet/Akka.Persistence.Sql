@@ -42,7 +42,7 @@ namespace Akka.Persistence.Sql.Query
 
         private readonly Source<long, ICancelable> _delaySource;
         private readonly EventAdapters _eventAdapters;
-        private readonly IActorRef _journalSequenceActor;
+        private readonly Lazy<IActorRef> _journalSequenceActor;
         private readonly ActorMaterializer _mat;
         private readonly ReadJournalConfig _readJournalConfig;
         private readonly ByteArrayReadJournalDao _readJournalDao;
@@ -83,12 +83,14 @@ namespace Akka.Persistence.Sql.Query
                 // TODO: figure out a way to signal shutdown to the query executor here
                 default);
 
-            _journalSequenceActor = system.ActorOf(
-                props: Props.Create(
-                    () => new JournalSequenceActor(
-                        _readJournalDao,
-                        _readJournalConfig.JournalSequenceRetrievalConfiguration)),
-                name: $"{_readJournalConfig.TableConfig.EventJournalTable.Name}akka-persistence-sql-sequence-actor");
+            var sequenceActorName = $"{configPath}.akka-persistence-sql-journal-sequence-actor";
+            _journalSequenceActor = new Lazy<IActorRef>(
+                () => system.SystemActorOf(
+                    props: Props.Create(
+                        () => new JournalSequenceActor(
+                            _readJournalDao,
+                            _readJournalConfig.JournalSequenceRetrievalConfiguration)),
+                    name: sequenceActorName)); 
 
             _delaySource = Source.Tick(TimeSpan.FromSeconds(0), _readJournalConfig.RefreshInterval, 0L).Take(1);
         }
@@ -264,7 +266,7 @@ namespace Akka.Persistence.Sql.Query
                     {
                         async Task<Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>> RetrieveNextBatch()
                         {
-                            var queryUntil = await _journalSequenceActor
+                            var queryUntil = await _journalSequenceActor.Value
                                 .Ask<MaxOrderingId>(
                                     GetMaxOrderingId.Instance,
                                     askTimeout);
@@ -341,7 +343,7 @@ namespace Akka.Persistence.Sql.Query
                     {
                         async Task<Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>> RetrieveNextBatch()
                         {
-                            var queryUntil = await _journalSequenceActor
+                            var queryUntil = await _journalSequenceActor.Value
                                 .Ask<MaxOrderingId>(
                                     GetMaxOrderingId.Instance,
                                     askTimeout);
