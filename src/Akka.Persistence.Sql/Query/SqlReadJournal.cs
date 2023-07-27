@@ -83,14 +83,13 @@ namespace Akka.Persistence.Sql.Query
                 // TODO: figure out a way to signal shutdown to the query executor here
                 default);
 
-            var sequenceActorName = $"{configPath}.akka-persistence-sql-journal-sequence-actor";
             _journalSequenceActor = new Lazy<IActorRef>(
                 () => system.SystemActorOf(
                     props: Props.Create(
                         () => new JournalSequenceActor(
                             _readJournalDao,
                             _readJournalConfig.JournalSequenceRetrievalConfiguration)),
-                    name: sequenceActorName)); 
+                    name: $"{configPath}.akka-persistence-sql-journal-sequence-actor")); 
 
             _delaySource = Source.Tick(TimeSpan.FromSeconds(0), _readJournalConfig.RefreshInterval, 0L).Take(1);
         }
