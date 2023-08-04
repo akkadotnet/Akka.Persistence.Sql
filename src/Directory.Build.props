@@ -20,8 +20,8 @@
     <NetStandardLibVersion>netstandard2.0</NetStandardLibVersion>
     <NetCoreTestVersion>net7.0</NetCoreTestVersion>
 
-    <AkkaVersion>1.5.11</AkkaVersion>
-    <AkkaHostingVersion>1.5.8.1</AkkaHostingVersion>
+    <AkkaVersion>1.5.12</AkkaVersion>
+    <AkkaHostingVersion>1.5.12</AkkaHostingVersion>
 
     <Linq2DbVersion>5.1.1</Linq2DbVersion>
     <LanguageExtVersion>4.4.3</LanguageExtVersion>
@@ -31,7 +31,7 @@
     <SqlClientVersion>5.1.1</SqlClientVersion>
     <SqlManagementObjectsVersion>170.13.0</SqlManagementObjectsVersion>
 
-    <AkkaSqliteVersion>1.5.9</AkkaSqliteVersion>
+    <AkkaSqliteVersion>1.5.12</AkkaSqliteVersion>
     <SqliteVersion>1.0.117</SqliteVersion>
     <MicrosoftSqliteVersion>7.0.9</MicrosoftSqliteVersion>
 
@@ -47,7 +47,7 @@
     <TestSdkVersion>17.6.3</TestSdkVersion>
     <BenchmarkDotNetVersion>0.13.6</BenchmarkDotNetVersion>
     <DockerDotNetVersion>3.125.15</DockerDotNetVersion>
-    <FluentAssertionVersion>6.11.0</FluentAssertionVersion>
+    <FluentAssertionVersion>5.10.3</FluentAssertionVersion>
     <JetBrainsDotMemoryVersion>3.2.20220510</JetBrainsDotMemoryVersion>
     <XunitVersion>2.5.0</XunitVersion>
     <XunitRunnerVersion>2.5.0</XunitRunnerVersion>
