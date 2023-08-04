@@ -1,3 +1,7 @@
+#### 1.5.12-beta1 August 4 2023 ###
+
+* [Update Akka.NET to 1.5.12](https://github.com/akkadotnet/akka.net/releases/tag/1.5.12)
+
 #### 1.5.9-beta1 July 20 2023 ###
 
 * [Update Akka.NET to 1.5.9](https://github.com/akkadotnet/akka.net/releases/tag/1.5.9)
