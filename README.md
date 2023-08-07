@@ -29,6 +29,7 @@ Please read the documentation carefully. Some features may be specific to use ca
     + [HOCON Migration](./docs/articles/migration.md#hocon-migration)
   * [Tag Table Based Tag Query Migration (Optional)](./docs/articles/migration.md#tag-table-based-tag-query-migration-optional)
   * [Enable WriterUuid Anti-Corruption Layer Feature (Optional)](./docs/articles/migration.md#enable-writeruuid-anti-corruption-layer-feature-optional)
+- [Migration Tutorial](./docs/articles/migration-walkthrough.md)
 - [Features/Architecture](./docs/articles/features.md)
   * [Currently Implemented](./docs/articles/features.md#currently-implemented)
   * [Incomplete](./docs/articles/features.md#incomplete)
