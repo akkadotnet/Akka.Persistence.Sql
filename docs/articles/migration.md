@@ -156,7 +156,7 @@ This feature **is not** required for legacy `Akka.Persistence.Sql.Common` compat
 To migrate your database to use the new tag table based tag query feature, follow these steps:
 
 1. Make sure that your system is [running as intended in compatibility mode](#migrating-using-compatibility-mode)
-2. Download the migration SQL scripts for your particular database type from the ["Sql Scrips" folder](https://github.com/akkadotnet/Akka.Persistence.Sql/tree/dev/scripts) in `Akka.Persistence.Sql` repository.
+2. Download the migration SQL scripts for your particular database type from the ["Sql Scripts" folder](https://github.com/akkadotnet/Akka.Persistence.Sql/tree/dev/scripts) in `Akka.Persistence.Sql` repository.
 
    These SQL scripts are designed to be idempotent and can be run on the same database multiple times without creating any side effects.
 3. Down your cluster.
