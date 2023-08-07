@@ -6,3 +6,7 @@
   href: configuration.md
 - name: Performance Benchmarks
   href: benchmarks.md
+- name: Migration Documentation
+  href: migration.md
+- name: Migration Tutorial
+  href: migration-walkthrough.md

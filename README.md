@@ -16,7 +16,7 @@ Please read the documentation carefully. Some features may be specific to use ca
 
 # Table Of Content
 - [Akka.Persistence.Sql](#akkapersistencesql)
-- [Getting Started](#setup)
+- [Getting Started](#getting-started)
   * [The Easy Way, Using `Akka.Hosting`](#the-easy-way-using-akkahosting)
   * [The Classic Way, Using HOCON](#the-classic-way-using-hocon)
   * [Supported Database Providers](#supported-database-providers)
@@ -27,8 +27,9 @@ Please read the documentation carefully. Some features may be specific to use ca
   * [Migrating Using Compatibility Mode](./docs/articles/migration.md#migrating-using-compatibility-mode)
     + [Akka.Hosting Migration](./docs/articles/migration.md#akkahosting-migration)
     + [HOCON Migration](./docs/articles/migration.md#hocon-migration)
-  * [Tag Table Based Tag Query Migration (Optional)](./docs/articles/migration.md#tag-table-based-tag-query-migration-optional)
-  * [Enable WriterUuid Anti-Corruption Layer Feature (Optional)](./docs/articles/migration.md#enable-writeruuid-anti-corruption-layer-feature-optional)
+  * [Upgrading to Tag Table (Optional)](./docs/articles/migration.md#upgrading-to-tag-table-optional)
+  * [Enable WriterUuid Anti-Corruption Layer Feature (Recommended)](./docs/articles/migration.md#enable-writeruuid-anti-corruption-layer-feature-recommended)
+- [Migration Tutorial](./docs/articles/migration-walkthrough.md)
 - [Features/Architecture](./docs/articles/features.md)
   * [Currently Implemented](./docs/articles/features.md#currently-implemented)
   * [Incomplete](./docs/articles/features.md#incomplete)
