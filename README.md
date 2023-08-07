@@ -6,14 +6,6 @@ This is a port of the amazing [akka-persistence-jdbc](https://github.com/akka/ak
 
 Please read the documentation carefully. Some features may be specific to use case and have trade-offs (namely, compatibility modes)
 
-> ### This Is Still a Beta
->
-> Please note this is still considered 'work in progress' and only used if one understands the risks. While the TCK Specs pass you should still test in a 'safe' non-production environment carefully before deciding to fully deploy.
-
-> ### Suitable For Greenfield Projects Only
->
->Until backward compatibility is properly tested and documented, it is recommended to use this plugin only on new greenfield projects that does not rely on existing persisted data.
-
 # Table Of Content
 - [Akka.Persistence.Sql](#akkapersistencesql)
 - [Getting Started](#getting-started)
