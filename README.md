@@ -4,7 +4,9 @@ A Cross-SQL-DB Engine Akka.Persistence plugin with broad database compatibility 
 
 This is a port of the amazing [akka-persistence-jdbc](https://github.com/akka/akka-persistence-jdbc) package from Scala, with a few improvements based on C# as well as our choice of data library.
 
-Please read the documentation carefully. Some features may be specific to use case and have trade-offs (namely, compatibility modes)
+Please read the documentation carefully. Some features may have specific use case and have trade-offs (namely, compatibility modes).
+
+If you're migrating from legacy `Akka.Persistence.Sql.Common` based plugins, you can read the [migration guide documentation](https://github.com/akkadotnet/Akka.Persistence.Sql/blob/dev/docs/articles/migration.md), the [migration tutorial](https://github.com/akkadotnet/Akka.Persistence.Sql/blob/dev/docs/articles/migration-walkthrough.md), and watch the [migration tutorial video](https://youtu.be/gSmqUrVHPq8).
 
 # Table Of Content
 - [Akka.Persistence.Sql](#akkapersistencesql)
