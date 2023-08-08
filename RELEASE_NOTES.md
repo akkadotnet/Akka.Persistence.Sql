@@ -1,3 +1,7 @@
+#### 1.5.12 August 8 2023 ###
+
+Akka.Persistence.Sql is now out of beta and ready for general use.
+
 #### 1.5.12-beta1 August 4 2023 ###
 
 * [Update Akka.NET to 1.5.12](https://github.com/akkadotnet/akka.net/releases/tag/1.5.12)
