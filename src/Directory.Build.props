@@ -45,7 +45,7 @@
     <RedisInsideVersion>3.3.0</RedisInsideVersion>
 
     <TestSdkVersion>17.7.0</TestSdkVersion>
-    <BenchmarkDotNetVersion>0.13.6</BenchmarkDotNetVersion>
+    <BenchmarkDotNetVersion>0.13.7</BenchmarkDotNetVersion>
     <DockerDotNetVersion>3.125.15</DockerDotNetVersion>
     <FluentAssertionVersion>5.10.3</FluentAssertionVersion>
     <JetBrainsDotMemoryVersion>3.2.20220510</JetBrainsDotMemoryVersion>
