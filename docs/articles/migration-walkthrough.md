@@ -1,5 +1,9 @@
 # Migration Walkthrough
 
+> ### Video
+>
+> See the accompanying Youtube video [here](https://youtu.be/gSmqUrVHPq8)
+
 In this walkthrough, we will be migrating an existing simulated Akka.NET cluster from using `Akka.Persistence.SqlServer` persistence plugin to `Akka.Persistence.Sql`.
 
 For this demo, we will be using one of the code samples provided in the [Petabridge Akka.NET code sample repository](https://github.com/petabridge/akkadotnet-code-samples/), specifically the [sharding-sqlserver](https://github.com/petabridge/akkadotnet-code-samples/tree/master/src/clustering/sharding-sqlserver) sample code.
