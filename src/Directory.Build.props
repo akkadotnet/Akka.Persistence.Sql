@@ -39,7 +39,7 @@
     <PostgreSqlVersion>7.0.4</PostgreSqlVersion>
 
     <AkkaMySqlVersion>1.5.4.1</AkkaMySqlVersion>
-    <MySqlVersion>8.0.33</MySqlVersion>
+    <MySqlVersion>8.1.0</MySqlVersion>
 
     <AkkaRedisVersion>1.5.0</AkkaRedisVersion>
     <RedisInsideVersion>3.3.0</RedisInsideVersion>
