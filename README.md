@@ -60,17 +60,20 @@ akka.persistence {
     journal {
         plugin = "akka.persistence.journal.sql"
         sql {
+            class = "Akka.Persistence.Sql.Journal.SqlWriteJournal, Akka.Persistence.Sql"
             connection-string = "{database-connection-string}"
             provider-name = "{provider-name}"
         }
     }
     query.journal.sql {
+        class = "Akka.Persistence.Sql.Query.SqlReadJournalProvider, Akka.Persistence.Sql"
         connection-string = "{database-connection-string}"
         provider-name = "{provider-name}"
     }
     snapshot-store {
         plugin = "akka.persistence.snapshot-store.sql"
         sql {
+            class = "Akka.Persistence.Sql.Snapshot.SqlSnapshotStore, Akka.Persistence.Sql"
             connection-string = "{database-connection-string}"
             provider-name = "{provider-name}"
         }
