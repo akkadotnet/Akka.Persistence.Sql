@@ -50,8 +50,7 @@ namespace Akka.Persistence.Sql.Query
 
         public SqlReadJournal(
             ExtendedActorSystem system,
-            Configuration.Config config,
-            string configPath)
+            Configuration.Config config)
         {
             var writePluginId = config.GetString("write-plugin");
 
@@ -68,7 +67,7 @@ namespace Akka.Persistence.Sql.Query
             _mat = Materializer.CreateSystemMaterializer(
                 context: system,
                 settings: ActorMaterializerSettings.Create(system),
-                namePrefix: $"l2db-query-mat{configPath}");
+                namePrefix: $"l2db-query-mat-{Guid.NewGuid():N}");
 
             _readJournalDao = new ByteArrayReadJournalDao(
                 scheduler: system.Scheduler.Advanced,

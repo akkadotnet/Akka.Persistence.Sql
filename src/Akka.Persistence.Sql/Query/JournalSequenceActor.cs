@@ -205,7 +205,7 @@ namespace Akka.Persistence.Sql.Query
                         {
                             if (t.IsFaulted)
                             {
-                                _log.Info(t.Exception, "Failed to recover fast, using event-by-event recovery instead");
+                                _log.Debug($"Failed to recover fast, using event-by-event recovery instead. Message: [{t.Exception?.Message ?? "nothing"}]");
                             }
                             else if (t.IsCompleted)
                             {
