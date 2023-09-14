@@ -89,8 +89,10 @@ Target "RunTests" (fun _ ->
         | true -> !! "./src/**/*.Tests.csproj"
                   -- "./src/**/*.Benchmark.*.csproj"
                   -- "./src/**/*.Data.Compatibility.Tests.csproj" // All of the data docker images are Linux only
+                  -- "./src/Examples/**/*.csproj" // skip example projects
         | _ -> !! "./src/**/*.Tests.csproj"
                -- "./src/**/*.Benchmark.*.csproj"
+               -- "./src/Examples/**/*.csproj" // skip example projects
                ++  "./src/**/*.DockerTests.csproj" // if you need to filter specs for Linux vs. Windows, do it here
 
     let runSingleProject project =
@@ -144,6 +146,7 @@ Target "CreateNuget" (fun _ ->
                    -- "src/**/*Tests.csproj" // Don't publish unit tests
                    -- "src/**/*Tests*.csproj"
                    -- "src/**/*.Benchmark.*.csproj"
+                   -- "./src/Examples/**/*.csproj" // skip example projects
 
     let runSingleProject project =
         DotNetCli.Pack
