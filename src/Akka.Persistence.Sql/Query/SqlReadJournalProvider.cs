@@ -12,7 +12,6 @@ namespace Akka.Persistence.Sql.Query
     public class SqlReadJournalProvider : IReadJournalProvider
     {
         private readonly Configuration.Config _config;
-        private readonly string _configPath;
         private readonly ExtendedActorSystem _system;
 
         public SqlReadJournalProvider(
@@ -20,21 +19,10 @@ namespace Akka.Persistence.Sql.Query
             Configuration.Config config)
         {
             _system = system;
-            _config = config;
-            _configPath = "sql";
-        }
-
-        public SqlReadJournalProvider(
-            ExtendedActorSystem system,
-            Configuration.Config config,
-            string configPath)
-        {
-            _system = system;
-            _config = config;
-            _configPath = configPath;
+            _config = config.WithFallback(SqlPersistence.DefaultQueryConfiguration);
         }
 
         public IReadJournal GetReadJournal()
-            => new SqlReadJournal(_system, _config, _configPath);
+            => new SqlReadJournal(_system, _config);
     }
 }
