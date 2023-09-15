@@ -24,7 +24,7 @@
     <AkkaHostingVersion>1.5.12.1</AkkaHostingVersion>
 
     <Linq2DbVersion>5.1.1</Linq2DbVersion>
-    <LanguageExtVersion>4.4.3</LanguageExtVersion>
+    <LanguageExtVersion>4.4.4</LanguageExtVersion>
     <FluentMigratorVersion>3.3.2</FluentMigratorVersion>
 
     <AkkaSqlServerVersion>1.5.4</AkkaSqlServerVersion>
@@ -36,7 +36,7 @@
     <MicrosoftSqliteVersion>7.0.11</MicrosoftSqliteVersion>
 
     <AkkaPostgreSqlVersion>1.5.4.1</AkkaPostgreSqlVersion>
-    <PostgreSqlVersion>7.0.4</PostgreSqlVersion>
+    <PostgreSqlVersion>7.0.6</PostgreSqlVersion>
 
     <AkkaMySqlVersion>1.5.4.1</AkkaMySqlVersion>
     <MySqlVersion>8.1.0</MySqlVersion>
