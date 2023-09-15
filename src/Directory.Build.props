@@ -36,7 +36,7 @@
     <MicrosoftSqliteVersion>7.0.11</MicrosoftSqliteVersion>
 
     <AkkaPostgreSqlVersion>1.5.4.1</AkkaPostgreSqlVersion>
-    <PostgreSqlVersion>7.0.4</PostgreSqlVersion>
+    <PostgreSqlVersion>7.0.6</PostgreSqlVersion>
 
     <AkkaMySqlVersion>1.5.4.1</AkkaMySqlVersion>
     <MySqlVersion>8.1.0</MySqlVersion>
