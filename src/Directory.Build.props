@@ -24,7 +24,7 @@
     <AkkaHostingVersion>1.5.12.1</AkkaHostingVersion>
 
     <Linq2DbVersion>5.1.1</Linq2DbVersion>
-    <LanguageExtVersion>4.4.3</LanguageExtVersion>
+    <LanguageExtVersion>4.4.4</LanguageExtVersion>
     <FluentMigratorVersion>3.3.2</FluentMigratorVersion>
 
     <AkkaSqlServerVersion>1.5.4</AkkaSqlServerVersion>
