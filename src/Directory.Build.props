@@ -50,7 +50,7 @@
     <FluentAssertionVersion>5.10.3</FluentAssertionVersion>
     <JetBrainsDotMemoryVersion>3.2.20220510</JetBrainsDotMemoryVersion>
     <XunitVersion>2.5.0</XunitVersion>
-    <XunitRunnerVersion>2.5.0</XunitRunnerVersion>
+    <XunitRunnerVersion>2.5.1</XunitRunnerVersion>
     <CoverletVersion>3.2.0</CoverletVersion>
     <NBenchVersion>1.2.2</NBenchVersion>
   </PropertyGroup>
