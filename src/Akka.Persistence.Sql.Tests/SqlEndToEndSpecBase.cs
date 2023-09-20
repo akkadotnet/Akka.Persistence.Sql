@@ -22,7 +22,7 @@ using Xunit.Abstractions;
 #nullable enable
 namespace Akka.Persistence.Sql.Tests
 {
-    public class SqlEndToEndSpecBase<TContainer> : 
+    public abstract class SqlEndToEndSpecBase<TContainer> : 
         TestKitBase,
         IClassFixture<TContainer>,
         IAsyncLifetime 
