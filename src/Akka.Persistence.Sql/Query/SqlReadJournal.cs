@@ -53,11 +53,7 @@ namespace Akka.Persistence.Sql.Query
             Configuration.Config config)
         {
             var writePluginId = config.GetString("write-plugin");
-
-            // IDK Why we need this, but we do.
-            system.RegisterExtension(Persistence.Instance);
-            var persist = Persistence.Instance.Get(system);
-            _eventAdapters = persist.AdaptersFor(writePluginId);
+            _eventAdapters = Persistence.Instance.Apply(system).AdaptersFor(writePluginId);
 
             _readJournalConfig = new ReadJournalConfig(config);
             _system = system;

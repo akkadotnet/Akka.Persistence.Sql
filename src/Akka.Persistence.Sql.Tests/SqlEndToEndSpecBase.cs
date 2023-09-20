@@ -10,7 +10,11 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Actor.Setup;
 using Akka.Event;
+using Akka.Persistence.Query;
+using Akka.Persistence.Sql.Query;
 using Akka.Persistence.Sql.Tests.Common.Containers;
+using Akka.Streams;
+using Akka.Streams.TestKit;
 using Akka.TestKit;
 using Akka.TestKit.Xunit2;
 using Akka.TestKit.Xunit2.Internals;
@@ -57,6 +61,7 @@ akka.persistence {
 
         private const string GetAll = "getAll";
         private const string Ack = "ACK";
+        private const string SnapshotAck = "SnapACK";
         private const string PId = "ac1";
 
         private readonly ITestOutputHelper? _output;
@@ -77,7 +82,7 @@ akka.persistence {
             base.InitializeTest(null, setup, "SqlEndToEndSpec", null);
             InitializeLogger(Sys);
             
-            _persistenceActor = Sys.ActorOf(Props.Create(() => new MyPersistenceActor(PId)));
+            _persistenceActor = Sys.ActorOf(Props.Create(() => new MyPersistenceActor(PId)), "persistence-actor-1");
         }
 
         public Task DisposeAsync()
@@ -109,8 +114,11 @@ akka.persistence {
             var timeout = 3.Seconds();
 
             // act
-            (await _persistenceActor.Ask<string>(1, timeout)).Should().Be(Ack);
-            (await _persistenceActor.Ask<string>(2, timeout)).Should().Be(Ack);
+            _persistenceActor.Tell(1);
+            ExpectMsg<string>(Ack);
+            _persistenceActor.Tell(2);
+            ExpectMsg<string>(Ack);
+            ExpectMsg<string>(SnapshotAck);
             var snapshot = await _persistenceActor.Ask<int[]>(GetAll, timeout);
 
             // assert
@@ -118,7 +126,7 @@ akka.persistence {
 
             // kill + recreate actor with same PersistentId
             await _persistenceActor.GracefulStop(timeout);
-            var myPersistentActor2 = Sys.ActorOf(Props.Create(() => new MyPersistenceActor(PId)));
+            var myPersistentActor2 = Sys.ActorOf(Props.Create(() => new MyPersistenceActor(PId)), "persistence-actor-2");
 
             var snapshot2 = await myPersistentActor2.Ask<int[]>(GetAll, timeout);
             snapshot2.Should().BeEquivalentTo(new[] { 1, 2 });
@@ -127,11 +135,21 @@ akka.persistence {
             var config = Sys.Settings.Config;
             config.GetString("akka.persistence.journal.plugin").Should().Be("akka.persistence.journal.sql");
             config.GetString("akka.persistence.snapshot-store.plugin").Should().Be("akka.persistence.snapshot-store.sql");
+
+            // validate that query is working
+            var readJournal = Sys.ReadJournalFor<SqlReadJournal>("akka.persistence.query.journal.sql");
+            var source = readJournal.AllEvents(Offset.NoOffset());
+            var probe = source.RunWith(this.SinkProbe<EventEnvelope>(), Sys.Materializer());
+            probe.Request(2);
+            probe.ExpectNext<EventEnvelope>(p => p.PersistenceId == PId && p.SequenceNr == 1L && p.Event.Equals(1));
+            probe.ExpectNext<EventEnvelope>(p => p.PersistenceId == PId && p.SequenceNr == 2L && p.Event.Equals(2));
+            await probe.CancelAsync();
         }
 
         private sealed class MyPersistenceActor : ReceivePersistentActor
         {
             private List<int> _values = new();
+            private IActorRef? _sender;
 
             public MyPersistenceActor(string persistenceId)
             {
@@ -146,23 +164,23 @@ akka.persistence {
 
                 Recover<int>(_values.Add);
 
-                Command<int>(
-                    i =>
-                    {
-                        Persist(
-                            i,
-                            _ =>
-                            {
-                                _values.Add(i);
-                                if (LastSequenceNr % 2 == 0)
-                                    SaveSnapshot(_values);
-                                Sender.Tell(Ack);
-                            });
-                    });
+                Command<int>( i =>
+                {
+                    _sender = Sender;
+                    Persist(
+                        i,
+                        _ =>
+                        {
+                            _values.Add(i);
+                            if (LastSequenceNr % 2 == 0)
+                                SaveSnapshot(_values);
+                            _sender.Tell(Ack);
+                        });
+                });
 
                 Command<string>(str => str.Equals(GetAll), _ => Sender.Tell(_values.ToArray()));
 
-                Command<SaveSnapshotSuccess>(_ => { });
+                Command<SaveSnapshotSuccess>(_ => _sender.Tell(SnapshotAck));
             }
 
             public override string PersistenceId { get; }
