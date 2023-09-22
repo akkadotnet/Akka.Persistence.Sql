@@ -19,6 +19,7 @@ using Akka.Util;
 using Akka.Util.Internal;
 using JetBrains.dotMemoryUnit;
 using JetBrains.dotMemoryUnit.Kernel;
+using LanguageExt.UnitsOfMeasure;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -36,7 +37,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
         private readonly TestProbe _testProbe;
 
         protected SqlJournalPerfSpec(
-            Configuration.Config config,
+            Configuration.Config? config,
             string actorSystem,
             ITestOutputHelper output,
             int timeoutDurationSeconds = 30,
@@ -69,7 +70,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
                     .WithRouter(new RoundRobinPool(numActors))), tp);
         }
 
-        internal void FeedAndExpectLastRouterSet(
+        internal async Task FeedAndExpectLastRouterSetAsync(
             (IActorRef actor, TestProbe probe) autSet,
             string mode,
             IReadOnlyList<int> commands,
@@ -78,16 +79,16 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             commands.ForEach(c => autSet.actor.Tell(new Broadcast(new Cmd(mode, c))));
 
             for (var i = 0; i < numExpect; i++)
-                autSet.probe.ExpectMsg(commands[^1], _expectDuration);
+                await autSet.probe.ExpectMsgAsync(commands[^1], _expectDuration);
         }
 
-        internal void FeedAndExpectLast(IActorRef actor, string mode, IReadOnlyList<int> commands)
+        internal async Task FeedAndExpectLastAsync(IActorRef actor, string mode, IReadOnlyList<int> commands)
         {
             commands.ForEach(c => actor.Tell(new Cmd(mode, c)));
-            _testProbe.ExpectMsg(commands[^1], _expectDuration);
+            await _testProbe.ExpectMsgAsync(commands[^1], _expectDuration);
         }
 
-        internal void FeedAndExpectLastGroup(
+        internal async Task FeedAndExpectLastGroupAsync(
             (IActorRef actor, TestProbe probe)[] autSet,
             string mode,
             IReadOnlyList<int> commands)
@@ -96,30 +97,30 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
                 commands.ForEach(c => actor.Tell(new Cmd(mode, c)));
 
             foreach (var (_, probe) in autSet)
-                probe.ExpectMsg(commands[^1], _expectDuration);
+                await probe.ExpectMsgAsync(commands[^1], _expectDuration);
         }
 
-        internal void FeedAndExpectLastSpecific(
+        internal async Task FeedAndExpectLastSpecificAsync(
             (IActorRef actor, TestProbe probe) aut,
             string mode,
             IReadOnlyList<int> commands)
         {
             commands.ForEach(c => aut.actor.Tell(new Cmd(mode, c)));
 
-            aut.probe.ExpectMsg(commands[^1], _expectDuration);
+            await aut.probe.ExpectMsgAsync(commands[^1], _expectDuration);
         }
 
-        internal void Measure(Func<TimeSpan, string> msg, Action block)
+        internal async Task MeasureAsync(Func<TimeSpan, string> msg, Func<Task> block)
         {
             var measurements = new List<TimeSpan>(MeasurementIterations);
 
-            block(); // warm-up
+            await block(); // warm-up
 
             var i = 0;
             while (i < MeasurementIterations)
             {
                 var sw = Stopwatch.StartNew();
-                block();
+                await block();
                 sw.Stop();
                 measurements.Add(sw.Elapsed);
                 Output.WriteLine(msg(sw.Elapsed));
@@ -132,18 +133,18 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             Output.WriteLine($"Average time: {avgTime} ms, {msgPerSec} msg/sec");
         }
 
-        internal void MeasureGroup(Func<TimeSpan, string> msg, Action block, int numMsg, int numGroup)
+        internal async Task MeasureGroupAsync(Func<TimeSpan, string> msg, Func<Task> block, int numMsg, int numGroup)
         {
             var measurements = new List<TimeSpan>(MeasurementIterations);
 
-            block();
-            block(); // warm-up
+            await block();
+            await block(); // warm-up
 
             var i = 0;
             while (i < MeasurementIterations)
             {
                 var sw = Stopwatch.StartNew();
-                block();
+                await block();
                 sw.Stop();
                 measurements.Add(sw.Elapsed);
                 Output.WriteLine(msg(sw.Elapsed));
@@ -169,26 +170,30 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             dotMemory.Check(
                 _ =>
                 {
-                    Measure(
+#pragma warning disable xUnit1031
+                    MeasureAsync(
                         d => $"Persist()-ing {_eventsCount} took {d.TotalMilliseconds} ms",
-                        () =>
+                        async () =>
                         {
-                            FeedAndExpectLast(p1, "p", Commands);
+                            await FeedAndExpectLastAsync(p1, "p", Commands);
                             p1.Tell(ResetCounter.Instance);
-                        });
+                        }).GetAwaiter().GetResult();
+#pragma warning restore xUnit1031
                 }
             );
 
             dotMemory.Check(
                 _ =>
                 {
-                    Measure(
+#pragma warning disable xUnit1031
+                    MeasureAsync(
                         d => $"Persist()-ing {_eventsCount} took {d.TotalMilliseconds} ms",
-                        () =>
+                        async () =>
                         {
-                            FeedAndExpectLast(p1, "p", Commands);
+                            await FeedAndExpectLastAsync(p1, "p", Commands);
                             p1.Tell(ResetCounter.Instance);
-                        });
+                        }).GetAwaiter().GetResult();
+#pragma warning restore xUnit1031
                 }
             );
 
@@ -205,29 +210,39 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             var numCommands = Math.Min(_eventsCount / 100, 500);
 
             dotMemory.Check(
-                _ => { RunGroupBenchmark(numGroup, numCommands); }
+                _ =>
+                {
+#pragma warning disable xUnit1031
+                    RunGroupBenchmarkAsync(numGroup, numCommands).GetAwaiter().GetResult();
+#pragma warning restore xUnit1031
+                }
             );
 
             dotMemory.Check(
-                _ => { RunGroupBenchmark(numGroup, numCommands); }
+                _ =>
+                {
+#pragma warning disable xUnit1031
+                    RunGroupBenchmarkAsync(numGroup, numCommands).GetAwaiter().GetResult();
+#pragma warning restore xUnit1031
+                }
             );
 
             dotMemoryApi.SaveCollectedData(@"c:\temp\dotmemory");
         }
 
         [Fact]
-        public void PersistenceActor_performance_must_measure_Persist()
+        public async Task PersistenceActor_performance_must_measure_Persist()
         {
             var p1 = BenchActor("PersistPid", _eventsCount);
 
             //dotMemory.Check((mem) =>
             //{
-            Measure(
+            await MeasureAsync(
                 d =>
                     $"Persist()-ing {_eventsCount} took {d.TotalMilliseconds} ms",
-                () =>
+                async () =>
                 {
-                    FeedAndExpectLast(p1, "p", Commands);
+                    await FeedAndExpectLastAsync(p1, "p", Commands);
                     p1.Tell(ResetCounter.Instance);
                 });
             //}
@@ -296,61 +311,61 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
         */
 
         [Fact]
-        public void PersistenceActor_performance_must_measure_PersistGroup10()
+        public async Task PersistenceActor_performance_must_measure_PersistGroup10()
         {
             const int numGroup = 10;
             var numCommands = Math.Min(_eventsCount / 10, 1000);
-            RunGroupBenchmark(numGroup, numCommands);
+            await RunGroupBenchmarkAsync(numGroup, numCommands);
         }
 
         [Fact]
-        public void PersistenceActor_performance_must_measure_PersistGroup25()
+        public async Task PersistenceActor_performance_must_measure_PersistGroup25()
         {
             const int numGroup = 25;
             var numCommands = Math.Min(_eventsCount / 25, 1000);
-            RunGroupBenchmark(numGroup, numCommands);
+            await RunGroupBenchmarkAsync(numGroup, numCommands);
         }
 
         [Fact]
-        public void PersistenceActor_performance_must_measure_PersistGroup50()
+        public async Task PersistenceActor_performance_must_measure_PersistGroup50()
         {
             const int numGroup = 50;
             var numCommands = Math.Min(_eventsCount / 50, 1000);
-            RunGroupBenchmark(numGroup, numCommands);
+            await RunGroupBenchmarkAsync(numGroup, numCommands);
         }
 
         [Fact]
-        public void PersistenceActor_performance_must_measure_PersistGroup100()
+        public async Task PersistenceActor_performance_must_measure_PersistGroup100()
         {
             const int numGroup = 100;
             var numCommands = Math.Min(_eventsCount / 100, 1000);
-            RunGroupBenchmark(numGroup, numCommands);
+            await RunGroupBenchmarkAsync(numGroup, numCommands);
         }
 
         [Fact]
-        public void PersistenceActor_performance_must_measure_PersistGroup200()
+        public async Task PersistenceActor_performance_must_measure_PersistGroup200()
         {
             const int numGroup = 200;
             var numCommands = Math.Min(_eventsCount / 100, 500);
-            RunGroupBenchmark(numGroup, numCommands);
+            await RunGroupBenchmarkAsync(numGroup, numCommands);
         }
 
         [Fact]
-        public void PersistenceActor_performance_must_measure_PersistGroup400()
+        public async Task PersistenceActor_performance_must_measure_PersistGroup400()
         {
             const int numGroup = 400;
             var numCommands = Math.Min(_eventsCount / 100, 500);
-            RunGroupBenchmark(numGroup, numCommands);
+            await RunGroupBenchmarkAsync(numGroup, numCommands);
         }
 
-        protected void RunGroupBenchmark(int numGroup, int numCommands)
+        protected async Task RunGroupBenchmarkAsync(int numGroup, int numCommands)
         {
             var p1 = BenchActorNewProbeGroup("GroupPersistPid" + numGroup, numGroup, numCommands);
-            MeasureGroup(
+            await MeasureGroupAsync(
                 d => $"Persist()-ing {numCommands} * {numGroup} took {d.TotalMilliseconds} ms",
-                () =>
+                async () =>
                 {
-                    FeedAndExpectLastRouterSet(
+                    await FeedAndExpectLastRouterSetAsync(
                         p1,
                         "p",
                         Commands.Take(numCommands).ToImmutableList(),
@@ -428,142 +443,140 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
         */
 
         [Fact]
-        public void PersistenceActor_performance_must_measure_PersistAll()
+        public async Task PersistenceActor_performance_must_measure_PersistAll()
         {
             var p1 = BenchActor("PersistAllPid", _eventsCount);
-            Measure(
+            await MeasureAsync(
                 d => $"PersistAll()-ing {_eventsCount} took {d.TotalMilliseconds} ms",
-                () =>
+                async () =>
                 {
-                    FeedAndExpectLast(p1, "pb", Commands);
+                    await FeedAndExpectLastAsync(p1, "pb", Commands);
                     p1.Tell(ResetCounter.Instance);
                 });
         }
 
         [Fact]
-        public void PersistenceActor_performance_must_measure_PersistAsync()
+        public async Task PersistenceActor_performance_must_measure_PersistAsync()
         {
             var p1 = BenchActor("PersistAsyncPid", _eventsCount);
-            Measure(
+            await MeasureAsync(
                 d => $"PersistAsync()-ing {_eventsCount} took {d.TotalMilliseconds} ms",
-                () =>
+                async () =>
                 {
-                    FeedAndExpectLast(p1, "pa", Commands);
+                    await FeedAndExpectLastAsync(p1, "pa", Commands);
                     p1.Tell(ResetCounter.Instance);
                 });
         }
 
         [Fact]
-        public void PersistenceActor_performance_must_measure_PersistAllAsync()
+        public async Task PersistenceActor_performance_must_measure_PersistAllAsync()
         {
             var p1 = BenchActor("PersistAllAsyncPid", _eventsCount);
-            Measure(
+            await MeasureAsync(
                 d => $"PersistAllAsync()-ing {_eventsCount} took {d.TotalMilliseconds} ms",
-                () =>
+                async () =>
                 {
-                    FeedAndExpectLast(p1, "pba", Commands);
+                    await FeedAndExpectLastAsync(p1, "pba", Commands);
                     p1.Tell(ResetCounter.Instance);
                 });
         }
 
         [Fact]
-        public void PersistenceActor_performance_must_measure_Recovering()
+        public async Task PersistenceActor_performance_must_measure_Recovering()
         {
             var p1 = BenchActor("PersistRecoverPid", _eventsCount);
 
-            FeedAndExpectLast(p1, "p", Commands);
+            await FeedAndExpectLastAsync(p1, "p", Commands);
 
-            Measure(
+            await MeasureAsync(
                 d => $"Recovering {_eventsCount} took {d.TotalMilliseconds} ms",
-                () =>
+                async () =>
                 {
                     BenchActor("PersistRecoverPid", _eventsCount);
-                    _testProbe.ExpectMsg(Commands[^1], _expectDuration);
+                    await _testProbe.ExpectMsgAsync(Commands[^1], _expectDuration);
                 });
         }
 
         [Fact]
-        public void PersistenceActor_performance_must_measure_RecoveringTwo()
+        public async Task PersistenceActor_performance_must_measure_RecoveringTwo()
         {
             var p1 = BenchActorNewProbe("DoublePersistRecoverPid1", _eventsCount);
             var p2 = BenchActorNewProbe("DoublePersistRecoverPid2", _eventsCount);
 
-            FeedAndExpectLastSpecific(p1, "p", Commands);
-            FeedAndExpectLastSpecific(p2, "p", Commands);
+            await FeedAndExpectLastSpecificAsync(p1, "p", Commands);
+            await FeedAndExpectLastSpecificAsync(p2, "p", Commands);
 
-            MeasureGroup(
+            await MeasureGroupAsync(
                 d => $"Recovering {_eventsCount} took {d.TotalMilliseconds} ms",
-                () =>
+                async () =>
                 {
-                    var task1 = Task.Run(
-                        () =>
-                        {
-                            var (_, probe) = BenchActorNewProbe("DoublePersistRecoverPid1", _eventsCount);
-                            probe.ExpectMsg(Commands[^1], _expectDuration);
-                        });
-                    var task2 = Task.Run(
-                        () =>
-                        {
-                            var (_, probe) = BenchActorNewProbe("DoublePersistRecoverPid2", _eventsCount);
-                            probe.ExpectMsg(Commands[^1], _expectDuration);
-                        });
+                    async Task Task1()
+                    {
+                        var (_, probe) = BenchActorNewProbe("DoublePersistRecoverPid1", _eventsCount);
+                        await probe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                    }
 
-                    Task.WaitAll(task1, task2);
+                    async Task Task2()
+                    {
+                        var (_, probe) = BenchActorNewProbe("DoublePersistRecoverPid2", _eventsCount);
+                        await probe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                    }
+
+                    await Task.WhenAll(Task1(), Task2());
                 },
                 _eventsCount,
                 2);
         }
 
         [Fact]
-        public void PersistenceActor_performance_must_measure_RecoveringFour()
+        public async Task PersistenceActor_performance_must_measure_RecoveringFour()
         {
             var p1 = BenchActorNewProbe("QuadPersistRecoverPid1", _eventsCount);
             var p2 = BenchActorNewProbe("QuadPersistRecoverPid2", _eventsCount);
             var p3 = BenchActorNewProbe("QuadPersistRecoverPid3", _eventsCount);
             var p4 = BenchActorNewProbe("QuadPersistRecoverPid4", _eventsCount);
 
-            FeedAndExpectLastSpecific(p1, "p", Commands);
-            FeedAndExpectLastSpecific(p2, "p", Commands);
-            FeedAndExpectLastSpecific(p3, "p", Commands);
-            FeedAndExpectLastSpecific(p4, "p", Commands);
+            await FeedAndExpectLastSpecificAsync(p1, "p", Commands);
+            await FeedAndExpectLastSpecificAsync(p2, "p", Commands);
+            await FeedAndExpectLastSpecificAsync(p3, "p", Commands);
+            await FeedAndExpectLastSpecificAsync(p4, "p", Commands);
 
-            MeasureGroup(
+            await MeasureGroupAsync(
                 d => $"Recovering {_eventsCount} took {d.TotalMilliseconds} ms",
-                () =>
+                async () =>
                 {
-                    var task1 = Task.Run(
-                        () =>
-                        {
-                            var (_, probe) = BenchActorNewProbe("QuadPersistRecoverPid1", _eventsCount);
-                            probe.ExpectMsg(Commands[^1], _expectDuration);
-                        });
-                    var task2 = Task.Run(
-                        () =>
-                        {
-                            var (_, probe) = BenchActorNewProbe("QuadPersistRecoverPid2", _eventsCount);
-                            probe.ExpectMsg(Commands[^1], _expectDuration);
-                        });
-                    var task3 = Task.Run(
-                        () =>
-                        {
-                            var (_, probe) = BenchActorNewProbe("QuadPersistRecoverPid3", _eventsCount);
-                            probe.ExpectMsg(Commands[^1], _expectDuration);
-                        });
-                    var task4 = Task.Run(
-                        () =>
-                        {
-                            var (_, probe) = BenchActorNewProbe("QuadPersistRecoverPid4", _eventsCount);
-                            probe.ExpectMsg(Commands[^1], _expectDuration);
-                        });
+                    async Task Task1()
+                    {
+                        var (_, probe) = BenchActorNewProbe("QuadPersistRecoverPid1", _eventsCount);
+                        await probe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                    }
 
-                    Task.WaitAll(task1, task2, task3, task4);
+                    async Task Task2()
+                    {
+                        var (_, probe) = BenchActorNewProbe("QuadPersistRecoverPid2", _eventsCount);
+                        await probe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                    }
+
+                    async Task Task3()
+                    {
+                        var (_, probe) = BenchActorNewProbe("QuadPersistRecoverPid3", _eventsCount);
+                        await probe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                    }
+
+                    async Task Task4()
+                    {
+                        var (_, probe) = BenchActorNewProbe("QuadPersistRecoverPid4", _eventsCount);
+                        await probe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                    }
+
+                    await Task.WhenAll(Task1(), Task2(), Task3(), Task4());
                 },
                 _eventsCount,
                 4);
         }
 
         [Fact]
-        public void PersistenceActor_performance_must_measure_Recovering8()
+        public async Task PersistenceActor_performance_must_measure_Recovering8()
         {
             var p1 = BenchActorNewProbe("OctPersistRecoverPid1", _eventsCount);
             var p2 = BenchActorNewProbe("OctPersistRecoverPid2", _eventsCount);
@@ -574,69 +587,68 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             var p7 = BenchActorNewProbe("OctPersistRecoverPid7", _eventsCount);
             var p8 = BenchActorNewProbe("OctPersistRecoverPid8", _eventsCount);
 
-            FeedAndExpectLastSpecific(p1, "p", Commands);
-            FeedAndExpectLastSpecific(p2, "p", Commands);
-            FeedAndExpectLastSpecific(p3, "p", Commands);
-            FeedAndExpectLastSpecific(p4, "p", Commands);
-            FeedAndExpectLastSpecific(p5, "p", Commands);
-            FeedAndExpectLastSpecific(p6, "p", Commands);
-            FeedAndExpectLastSpecific(p7, "p", Commands);
-            FeedAndExpectLastSpecific(p8, "p", Commands);
+            await FeedAndExpectLastSpecificAsync(p1, "p", Commands);
+            await FeedAndExpectLastSpecificAsync(p2, "p", Commands);
+            await FeedAndExpectLastSpecificAsync(p3, "p", Commands);
+            await FeedAndExpectLastSpecificAsync(p4, "p", Commands);
+            await FeedAndExpectLastSpecificAsync(p5, "p", Commands);
+            await FeedAndExpectLastSpecificAsync(p6, "p", Commands);
+            await FeedAndExpectLastSpecificAsync(p7, "p", Commands);
+            await FeedAndExpectLastSpecificAsync(p8, "p", Commands);
 
-            MeasureGroup(
+            await MeasureGroupAsync(
                 d => $"Recovering {_eventsCount} took {d.TotalMilliseconds} ms , {_eventsCount * 8 / d.TotalMilliseconds * 1000} total msg/sec",
-                () =>
+                async () =>
                 {
-                    var task1 = Task.Run(
-                        () =>
-                        {
-                            var (_, probe) = BenchActorNewProbe("OctPersistRecoverPid1", _eventsCount);
-                            probe.ExpectMsg(Commands[^1], _expectDuration);
-                        });
-                    var task2 = Task.Run(
-                        () =>
-                        {
-                            var (_, probe) = BenchActorNewProbe("OctPersistRecoverPid2", _eventsCount);
-                            probe.ExpectMsg(Commands[^1], _expectDuration);
-                        });
-                    var task3 = Task.Run(
-                        () =>
-                        {
-                            var (_, probe) = BenchActorNewProbe("OctPersistRecoverPid3", _eventsCount);
-                            probe.ExpectMsg(Commands[^1], _expectDuration);
-                        });
-                    var task4 = Task.Run(
-                        () =>
-                        {
-                            var (_, probe) = BenchActorNewProbe("OctPersistRecoverPid4", _eventsCount);
-                            probe.ExpectMsg(Commands[^1], _expectDuration);
-                        });
-                    var task5 = Task.Run(
-                        () =>
-                        {
-                            var (_, probe) = BenchActorNewProbe("OctPersistRecoverPid5", _eventsCount);
-                            probe.ExpectMsg(Commands[^1], _expectDuration);
-                        });
-                    var task6 = Task.Run(
-                        () =>
-                        {
-                            var (_, probe) = BenchActorNewProbe("OctPersistRecoverPid6", _eventsCount);
-                            probe.ExpectMsg(Commands[^1], _expectDuration);
-                        });
-                    var task7 = Task.Run(
-                        () =>
-                        {
-                            var (_, probe) = BenchActorNewProbe("OctPersistRecoverPid7", _eventsCount);
-                            probe.ExpectMsg(Commands[^1], _expectDuration);
-                        });
-                    var task8 = Task.Run(
-                        () =>
-                        {
-                            var (_, probe) = BenchActorNewProbe("OctPersistRecoverPid8", _eventsCount);
-                            probe.ExpectMsg(Commands[^1], _expectDuration);
-                        });
+                    async Task Task1()
+                    {
+                        var (_, probe) = BenchActorNewProbe("OctPersistRecoverPid1", _eventsCount);
+                        await probe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                    }
 
-                    Task.WaitAll(task1, task2, task3, task4, task5, task6, task7, task8);
+                    async Task Task2()
+                    {
+                        var (_, probe) = BenchActorNewProbe("OctPersistRecoverPid2", _eventsCount);
+                        await probe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                    }
+
+                    async Task Task3()
+                    {
+                        var (_, probe) = BenchActorNewProbe("OctPersistRecoverPid3", _eventsCount);
+                        await probe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                    }
+
+                    async Task Task4()
+                    {
+                        var (_, probe) = BenchActorNewProbe("OctPersistRecoverPid4", _eventsCount);
+                        await probe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                    }
+
+                    async Task Task5()
+                    {
+                        var (_, probe) = BenchActorNewProbe("OctPersistRecoverPid5", _eventsCount);
+                        await probe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                    }
+
+                    async Task Task6()
+                    {
+                        var (_, probe) = BenchActorNewProbe("OctPersistRecoverPid6", _eventsCount);
+                        await probe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                    }
+
+                    async Task Task7()
+                    {
+                        var (_, probe) = BenchActorNewProbe("OctPersistRecoverPid7", _eventsCount);
+                        await probe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                    }
+
+                    async Task Task8()
+                    {
+                        var (_, probe) = BenchActorNewProbe("OctPersistRecoverPid8", _eventsCount);
+                        await probe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                    }
+
+                    await Task.WhenAll(Task1(), Task2(), Task3(), Task4(), Task5(), Task6(), Task7(), Task8());
                 },
                 _eventsCount,
                 8);

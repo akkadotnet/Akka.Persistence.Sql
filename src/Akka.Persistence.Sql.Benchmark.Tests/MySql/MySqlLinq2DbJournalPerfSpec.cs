@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="BatchingSqlServerJournalPerfSpec.cs" company="Akka.NET Project">
+//  <copyright file="SqlServerLinq2DbJournalPerfSpec.cs" company="Akka.NET Project">
 //      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
@@ -8,25 +8,24 @@ using System;
 using System.Threading.Tasks;
 using Akka.Configuration;
 using Akka.Persistence.Sql.Tests.Common.Containers;
-using Akka.Persistence.SqlServer;
 using FluentAssertions.Extensions;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
+namespace Akka.Persistence.Sql.Benchmark.Tests.MySql
 {
-    [Collection(nameof(SqlServerPersistenceBenchmark))]
-    public class BatchingSqlServerJournalPerfSpec : SqlJournalPerfSpec<SqlServerContainer>
+    [Collection(nameof(MySqlPersistenceBenchmark))]
+    public class MySqlLinq2DbJournalPerfSpec : SqlJournalPerfSpec<MySqlContainer>
     {
-        public BatchingSqlServerJournalPerfSpec(ITestOutputHelper output, SqlServerContainer fixture)
+        public MySqlLinq2DbJournalPerfSpec(ITestOutputHelper output, MySqlContainer fixture)
             : base(
                 Configure(fixture),
-                nameof(BatchingSqlServerJournalPerfSpec),
+                nameof(MySqlLinq2DbJournalPerfSpec),
                 output,
                 40,
-                TestConstants.DockerNumMessages) { }
+                eventsCount: TestConstants.DockerNumMessages) { }
 
-        public static Configuration.Config Configure(SqlServerContainer fixture)
+        private static Configuration.Config Configure(MySqlContainer fixture)
         {
             if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
                 throw new Exception("Failed to clean up database in 10 seconds");
@@ -36,19 +35,22 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
                 akka.persistence {{
                     publish-plugin-commands = on
                     journal {{
-                        plugin = ""akka.persistence.journal.sql-server""
-                        sql-server {{
-                            class = ""Akka.Persistence.SqlServer.Journal.BatchingSqlServerJournal, Akka.Persistence.SqlServer""
-                            plugin-dispatcher = ""akka.persistence.dispatchers.default-plugin-dispatcher""
-                            table-name = EventJournal
-                            schema-name = dbo
-                            auto-initialize = on
+                        plugin = ""akka.persistence.journal.sql""
+                        sql {{
                             connection-string = ""{fixture.ConnectionString}""
+                            provider-name = ""{fixture.ProviderName}""
+                            use-clone-connection = true
+                            auto-initialize = true
+                            default {{
+                                journal {{
+                                    table-name = testPerfTable
+                                }}
+                            }}
                         }}
                     }}
                 }}")
                 .WithFallback(Persistence.DefaultConfig())
-                .WithFallback(SqlServerPersistence.DefaultConfiguration());
+                .WithFallback(SqlPersistence.DefaultConfiguration);
         }
 
         [Fact]

@@ -42,8 +42,8 @@ akka.persistence {{
     }}
     snapshot-store.plugin = akka.persistence.snapshot-store.inmem
 }}")
-                .WithFallback(SqlitePersistence.DefaultConfiguration())
-                .WithFallback(Persistence.DefaultConfig());
+                .WithFallback(Persistence.DefaultConfig())
+                .WithFallback(SqlitePersistence.DefaultConfiguration());
         }
     }
 }
