@@ -4,62 +4,30 @@
   <PropertyGroup>
     <Copyright>Copyright © 2013-2023 Akka.NET Team</Copyright>
     <Authors>Akka.NET Team</Authors>
-    <PackageIcon>akkalogo.png</PackageIcon>
-    <PackageProjectUrl>https://github.com/akkadotnet/Akka.Persistence.Sql</PackageProjectUrl>
-    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageTags>akka;actors;actor model;Akka;concurrency;persistence;sql</PackageTags>
   </PropertyGroup>
 
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>
     <NetStandardLibVersion>netstandard2.0</NetStandardLibVersion>
     <NetCoreTestVersion>net7.0</NetCoreTestVersion>
-
-    <AkkaVersion>1.5.13</AkkaVersion>
-    <AkkaHostingVersion>1.5.12.1</AkkaHostingVersion>
-
-    <Linq2DbVersion>5.1.1</Linq2DbVersion>
-    <LanguageExtVersion>4.4.4</LanguageExtVersion>
-    <FluentMigratorVersion>3.3.2</FluentMigratorVersion>
-
-    <AkkaSqlServerVersion>1.5.4</AkkaSqlServerVersion>
-    <SqlClientVersion>5.1.1</SqlClientVersion>
-    <SqlManagementObjectsVersion>170.13.0</SqlManagementObjectsVersion>
-
-    <AkkaSqliteVersion>1.5.13</AkkaSqliteVersion>
-    <SqliteVersion>1.0.117</SqliteVersion>
-    <MicrosoftSqliteVersion>7.0.11</MicrosoftSqliteVersion>
-
-    <AkkaPostgreSqlVersion>1.5.4.1</AkkaPostgreSqlVersion>
-    <PostgreSqlVersion>7.0.6</PostgreSqlVersion>
-
-    <AkkaMySqlVersion>1.5.4.1</AkkaMySqlVersion>
-    <MySqlVersion>8.1.0</MySqlVersion>
-
-    <AkkaRedisVersion>1.5.0</AkkaRedisVersion>
-    <RedisInsideVersion>3.3.0</RedisInsideVersion>
-
-    <TestSdkVersion>17.7.2</TestSdkVersion>
-    <BenchmarkDotNetVersion>0.13.8</BenchmarkDotNetVersion>
-    <DockerDotNetVersion>3.125.15</DockerDotNetVersion>
-    <FluentAssertionVersion>5.10.3</FluentAssertionVersion>
-    <JetBrainsDotMemoryVersion>3.2.20220510</JetBrainsDotMemoryVersion>
-    <XunitVersion>2.5.0</XunitVersion>
-    <XunitRunnerVersion>2.5.1</XunitRunnerVersion>
-    <CoverletVersion>3.2.0</CoverletVersion>
-    <NBenchVersion>1.2.2</NBenchVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)\..\docs\images\akkalogo.png" Pack="true" Visible="false" PackagePath="\" />
+    <None Include="$(MSBuildThisFileDirectory)\..\docs\images\icon.png" Pack="true" Visible="false" PackagePath="\" />
     <None Include="$(MSBuildThisFileDirectory)\..\README.md" Pack="true" Visible="false" PackagePath="\" />
   </ItemGroup>
 
+  <!-- GitHub SourceLink -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
+  </ItemGroup>
+  
+  <!-- NuGet package properties -->
   <PropertyGroup>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
@@ -69,5 +37,11 @@
 
     <!-- Optional: Build symbol package (.snupkg) to distribute the PDB containing Source Link -->
     <IncludeSymbols>true</IncludeSymbols>
+    
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageProjectUrl>https://github.com/akkadotnet/Akka.Persistence.Sql</PackageProjectUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>akka;actors;actor model;Akka;concurrency;persistence;sql</PackageTags>
   </PropertyGroup>
 </Project>
