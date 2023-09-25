@@ -53,6 +53,11 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
 
         protected override void ConfigureContainer(CreateContainerParameters parameters)
         {
+            parameters.Cmd = new List<string>()
+            {
+                "-N 1000",
+            };
+            
             parameters.ExposedPorts = new Dictionary<string, EmptyStruct>
             {
                 ["5432/tcp"] = new(),

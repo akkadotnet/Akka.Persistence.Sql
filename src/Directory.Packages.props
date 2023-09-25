@@ -67,14 +67,8 @@
     <PackageVersion Include="FluentAssertions" Version="$(FluentAssertionVersion)" />
     <PackageVersion Include="JetBrains.dotMemoryUnit" Version="$(JetBrainsDotMemoryVersion)" />
     <PackageVersion Include="xunit" Version="$(XunitVersion)" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="$(XunitRunnerVersion)">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageVersion>
-    <PackageVersion Include="coverlet.collector" Version="$(CoverletVersion)">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageVersion>
+    <PackageVersion Include="xunit.runner.visualstudio" Version="$(XunitRunnerVersion)" />
+    <PackageVersion Include="coverlet.collector" Version="$(CoverletVersion)" />
   </ItemGroup>
   <!-- SourceLink support for all Akka.NET projects -->
   <ItemGroup>

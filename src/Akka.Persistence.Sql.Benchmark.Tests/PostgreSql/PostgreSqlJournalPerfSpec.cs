@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Threading.Tasks;
 using Akka.Configuration;
 using Akka.Persistence.PostgreSql;
 using Akka.Persistence.Sql.Tests.Common.Containers;
@@ -44,11 +45,12 @@ akka.persistence {{
         }}
     }}
 }}")
+                .WithFallback(Persistence.DefaultConfig())
                 .WithFallback(PostgreSqlPersistence.DefaultConfiguration());
         }
 
         [Fact]
-        public void PersistenceActor_Must_measure_PersistGroup1000()
-            => RunGroupBenchmark(1000, 10);
+        public async Task PersistenceActor_Must_measure_PersistGroup1000()
+            => await RunGroupBenchmarkAsync(1000, 10);
     }
 }

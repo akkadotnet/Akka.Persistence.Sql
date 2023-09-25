@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Threading.Tasks;
 using Akka.Configuration;
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using FluentAssertions.Extensions;
@@ -42,11 +43,6 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
                             provider-name = ""{fixture.ProviderName}""
                             use-clone-connection = true
                             auto-initialize = true
-                            default {{
-                                journal {{
-                                    table-name = testPerfTable
-                                }}
-                            }}
                         }}
                     }}
                 }}")
@@ -54,7 +50,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
         }
 
         [Fact]
-        public void PersistenceActor_Must_measure_PersistGroup1000()
-            => RunGroupBenchmark(1000, 10);
+        public async Task PersistenceActor_Must_measure_PersistGroup1000()
+            => await RunGroupBenchmarkAsync(1000, 10);
     }
 }
