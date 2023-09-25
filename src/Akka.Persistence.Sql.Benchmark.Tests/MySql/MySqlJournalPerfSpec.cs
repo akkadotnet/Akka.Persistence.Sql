@@ -6,44 +6,46 @@
 
 using System;
 using Akka.Configuration;
+using Akka.Persistence.MySql;
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.SqlServer;
 using FluentAssertions.Extensions;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
+namespace Akka.Persistence.Sql.Benchmark.Tests.MySql
 {
-    [Collection(nameof(SqlServerPersistenceBenchmark))]
-    public class SqlServerJournalPerfSpec : SqlJournalPerfSpec<SqlServerContainer>
+    [Collection(nameof(MySqlPersistenceBenchmark))]
+    public class MySqlJournalPerfSpec : SqlJournalPerfSpec<MySqlContainer>
     {
-        public SqlServerJournalPerfSpec(ITestOutputHelper output, SqlServerContainer fixture)
+        public MySqlJournalPerfSpec(ITestOutputHelper output, MySqlContainer fixture)
             : base(
                 Configuration(fixture),
-                nameof(SqlServerJournalPerfSpec),
+                nameof(MySqlJournalPerfSpec),
                 output,
                 40,
                 eventsCount: TestConstants.DockerNumMessages) { }
 
-        private static Configuration.Config Configuration(SqlServerContainer fixture)
+        private static Configuration.Config Configuration(MySqlContainer fixture)
         {
             if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
                 throw new Exception("Failed to clean up database in 10 seconds");
 
             return ConfigurationFactory.ParseString(
-                    @$"
-                akka.persistence {{
-                    publish-plugin-commands = on
-                    journal {{
-                        plugin = ""akka.persistence.journal.sql-server""
-                        sql-server {{
-                            auto-initialize = on
-                            connection-string = ""{fixture.ConnectionString}""
-                        }}
-                    }}
-                }}")
+$$"""
+akka.persistence {
+    publish-plugin-commands = on
+    journal {
+        plugin = "akka.persistence.journal.mysql"
+        mysql {
+            auto-initialize = on
+            connection-string = "{{fixture.ConnectionString}}"
+        }
+    }
+}
+""")
                 .WithFallback(Persistence.DefaultConfig())
-                .WithFallback(SqlServerPersistence.DefaultConfiguration());
+                .WithFallback(MySqlPersistence.DefaultConfiguration());
         }
     }
 }
