@@ -72,7 +72,7 @@
     <PackageVersion Include="FluentAssertions" Version="5.10.3" />
     <PackageVersion Include="JetBrains.dotMemoryUnit" Version="3.2.20220510" />
     <PackageVersion Include="xunit" Version="2.5.1" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="2.4.5" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.5.1" />
     <PackageVersion Include="coverlet.collector" Version="3.2.0" />
   </ItemGroup>
   <!-- SourceLink support for all Akka.NET projects -->
