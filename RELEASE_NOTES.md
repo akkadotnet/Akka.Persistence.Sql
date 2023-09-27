@@ -1,3 +1,12 @@
+#### 1.5.13 August 8 2023 ###
+
+* [Update Akka.NET to 1.5.13](https://github.com/akkadotnet/akka.net/releases/tag/1.5.13)
+* [Fix missing Persistence.Query configuration in legacy HOCON configuration mode](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/317)
+* [Bump Akka.Hosting version to 1.5.12.1](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/312)
+* [Bump Language.Ext.Core version to 4.4.4](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/315)
+* [Bump System.Reactive.Linq version to 6.0.0](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/260)
+* [Bump linq2db version to 5.2.2](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/266)
+
 #### 1.5.12 August 8 2023 ###
 
 Akka.Persistence.Sql is now out of beta and ready for general use.
