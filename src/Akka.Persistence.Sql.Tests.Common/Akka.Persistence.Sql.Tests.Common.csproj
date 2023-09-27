@@ -14,7 +14,6 @@
 
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Docker.DotNet" />
-    <PackageReference Include="FluentAssertions" />
     <PackageReference Include="LanguageExt.Core" />
 
     <PackageReference Include="Microsoft.Data.Sqlite.Core" />
