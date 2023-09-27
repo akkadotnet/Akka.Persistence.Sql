@@ -1,4 +1,4 @@
-#### 1.5.13 August 8 2023 ###
+#### 1.5.13 September 28 2023 ###
 
 * [Update Akka.NET to 1.5.13](https://github.com/akkadotnet/akka.net/releases/tag/1.5.13)
 * [Fix missing Persistence.Query configuration in legacy HOCON configuration mode](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/317)
