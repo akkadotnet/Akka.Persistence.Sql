@@ -36,7 +36,7 @@
   </ItemGroup>
   <!-- SQL Server dependencies -->
   <ItemGroup>
-    <PackageVersion Include="Akka.Persistence.SqlServer" Version="1.5.4" />
+    <PackageVersion Include="Akka.Persistence.SqlServer" Version="1.5.13" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="5.1.1" />
     <PackageVersion Include="Microsoft.SqlServer.SqlManagementObjects" Version="170.18.0" />
   </ItemGroup>
