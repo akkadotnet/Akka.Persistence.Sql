@@ -13,8 +13,8 @@ namespace Akka.Persistence.Sql.Query.Dao
         public readonly long Offset;
         public readonly long MaxOffset;
         public readonly int Max;
+        public readonly TagMode Mode;
         public readonly string Tag;
-        public readonly TagMode TagMode;
             
         public QueryArgs(long offset, long maxOffset, int max, string tag, TagMode tagMode)
         {
@@ -22,7 +22,7 @@ namespace Akka.Persistence.Sql.Query.Dao
             MaxOffset = maxOffset;
             Max = max;
             Tag = tag;
-            TagMode= tagMode;
+            Mode= tagMode;
         }
 
         public QueryArgs(long offset, long maxOffset, int max, TagMode tagMode) : this(offset, maxOffset, max, null!,tagMode)

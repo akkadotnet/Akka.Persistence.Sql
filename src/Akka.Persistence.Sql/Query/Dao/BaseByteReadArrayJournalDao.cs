@@ -152,10 +152,10 @@ namespace Akka.Persistence.Sql.Query.Dao
             => Task.FromResult(
                 AsyncSource<JournalRow>
                     .FromEnumerable(
-                        new { _connectionFactory = ConnectionFactory, persistenceId, fromSequenceNr, toSequenceNr, toTake = MaxTake(max) },
+                        new {  persistenceId, fromSequenceNr, toSequenceNr, toTake = MaxTake(max) },
                         async state =>
                         {
-                            return await state._connectionFactory.ExecuteWithTransactionAsync(
+                            return await ConnectionFactory.ExecuteWithTransactionAsync(
                                 state,
                                 ReadIsolationLevel,
                                 ShutdownToken,
@@ -246,12 +246,10 @@ namespace Akka.Persistence.Sql.Query.Dao
             var maxTake = MaxTake(max);
 
             return AsyncSource<JournalRow>.FromEnumerable(
-                new { _connectionFactory = ConnectionFactory, args=new QueryArgs(offset,maxOffset,maxTake,_tagMode) },
+                new { args=new QueryArgs(offset,maxOffset,maxTake,_tagMode) },
                 async input =>
                 {
-                    var cf = input._connectionFactory;
-                    var a = input.args;
-                    return await ExecuteEventQuery(a);
+                    return await ExecuteEventQuery(input.args);
                 }
             ).Via(_deserializeFlow);
         }
@@ -275,7 +273,7 @@ namespace Akka.Persistence.Sql.Query.Dao
                         .OrderBy(r => r.Ordering)
                         .Take(a.Max);
 
-                    if (a.TagMode != TagMode.TagTable)
+                    if (a.Mode != TagMode.TagTable)
                     {
                         return await query.ToListAsync(token);        
                     }
@@ -283,7 +281,6 @@ namespace Akka.Persistence.Sql.Query.Dao
                     {
                         return await AddTagDataFromTagTableAsync(query, connection, token);
                     }
-                    //return await AddTagDataIfNeededAsync(query, connection, token);
                 });
         }
 
