@@ -72,5 +72,36 @@ namespace Akka.Persistence.Sql.Extensions
                 throw;
             }
         }
+        
+        public static async Task<T> ExecuteWithTransactionAsync<TState,T>(
+            this AkkaPersistenceDataConnectionFactory factory,
+            TState state,
+            IsolationLevel level,
+            CancellationToken token,
+            Func<AkkaDataConnection, CancellationToken, TState, Task<T>> handler)
+        {
+            await using var connection = factory.GetConnection();
+            await using var tx = await connection.BeginTransactionAsync(level, token);
+
+            try
+            {
+                var result = await handler(connection, token, state);
+                await tx.CommitAsync(token);
+                return result;
+            }
+            catch (Exception ex1)
+            {
+                try
+                {
+                    await tx.RollbackAsync(token);
+                }
+                catch (Exception ex2)
+                {
+                    throw new AggregateException("Exception thrown when rolling back database transaction", ex2, ex1);
+                }
+
+                throw;
+            }
+        }
     }
 }
