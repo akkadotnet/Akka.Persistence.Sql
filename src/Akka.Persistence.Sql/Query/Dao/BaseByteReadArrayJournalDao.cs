@@ -84,7 +84,9 @@ namespace Akka.Persistence.Sql.Query.Dao
             {
                 TagMode.Csv => AsyncSource<JournalRow>
                     .FromEnumerable(
-                        new { args= new QueryArgs(offset,maxOffset,maxTake,tag,TagMode.Csv), _connectionFactory = ConnectionFactory },
+                        new { args= new QueryArgs(offset,maxOffset,maxTake,
+                            $"{separator}{tag}{separator}"
+                            ,TagMode.Csv), _connectionFactory = ConnectionFactory },
                         async input =>
                         {
                             //var tagValue = input.tag;
