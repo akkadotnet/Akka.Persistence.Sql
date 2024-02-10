@@ -123,21 +123,17 @@ namespace Akka.Persistence.Sql.Query.Dao
                                 inst.ShutdownToken,
                                 static async (connection, token,txInput) =>
                                 {
-                                    var query = connection.GetTable<JournalRow>()
-                                        .Where(r => r.Deleted == false)
-                                        .Join(
-                                            connection.GetTable<JournalTagRow>()
-                                                .Where(
-                                                    jtr =>
-                                                        jtr.OrderingId > txInput.Offset
-                                                        && jtr.OrderingId <= txInput.MaxOffset
-                                                        && jtr.TagValue == txInput.Tag),
-                                            SqlJoinType.Left,
-                                            (jr, jtr) => (jr.Ordering == jtr.OrderingId),
-                                            (jr, jtr) => jr)
-                                        .OrderBy(r => r.Ordering)
-                                        .Take(txInput.Max);
-                                    return await AddTagDataFromTagTableAsync(query, connection, token);
+                                    var query =
+                                        from r in connection.GetTable<JournalRow>()
+                                        from lp in connection.GetTable<JournalTagRow>()
+                                            .Where(jtr => jtr.OrderingId == r.Ordering).DefaultIfEmpty()
+                                        where lp.OrderingId > txInput.Offset &&
+                                              lp.OrderingId <= txInput.MaxOffset &&
+                                              !r.Deleted &&
+                                              lp.TagValue == txInput.Tag
+                                        orderby r.Ordering
+                                        select r;
+                                    return await AddTagDataFromTagTableAsync(query.Take(txInput.Max), connection, token);
                                 });
                         })
                     .Via(_deserializeFlow),
