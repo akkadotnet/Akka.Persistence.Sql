@@ -31,7 +31,7 @@ namespace Akka.Persistence.Sql.Query.Dao
         private readonly Flow<JournalRow, Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, NotUsed> _deserializeFlow;
 
         private readonly ReadJournalConfig _readJournalConfig;
-        private readonly TagMode _tagMode;
+        private readonly DbStateHolder _dbStateHolder;
 
         protected BaseByteReadArrayJournalDao(
             IAdvancedScheduler scheduler,
@@ -43,7 +43,7 @@ namespace Akka.Persistence.Sql.Query.Dao
             : base(scheduler, materializer, connectionFactory, readJournalConfig, shutdownToken)
         {
             _readJournalConfig = readJournalConfig;
-            _tagMode = _readJournalConfig.PluginConfig.TagMode;
+            _dbStateHolder = new DbStateHolder(connectionFactory, ReadIsolationLevel, ShutdownToken, _readJournalConfig.PluginConfig.TagMode);
             _deserializeFlow = serializer.DeserializeFlow();
         }
 
@@ -52,12 +52,11 @@ namespace Akka.Persistence.Sql.Query.Dao
             var maxTake = MaxTake(max);
 
             return AsyncSource<string>.FromEnumerable(
-                new { _connectionFactory = ConnectionFactory, maxTake },
-                async input =>
+                new { _dbStateHolder, maxTake },
+                static async input =>
                 {
-                    return await input._connectionFactory.ExecuteWithTransactionAsync(input.maxTake,
-                        ReadIsolationLevel,
-                        ShutdownToken,
+                    return await input._dbStateHolder.ExecuteWithTransactionAsync(
+                        input.maxTake,
                         async (connection, token,take) =>
                         {
                             return await connection
@@ -85,15 +84,12 @@ namespace Akka.Persistence.Sql.Query.Dao
                 TagMode.Csv => AsyncSource<JournalRow>
                     .FromEnumerable(
                         new { args= new QueryArgs(offset,maxOffset,maxTake,
-                            $"{separator}{tag}{separator}"
-                            ,TagMode.Csv), _connectionFactory = ConnectionFactory },
-                        async input =>
+                            $"{separator}{tag}{separator}"), _dbStateHolder },
+                        static async input =>
                         {
                             //var tagValue = input.tag;
-                            return await input._connectionFactory.ExecuteWithTransactionAsync(
+                            return await input._dbStateHolder.ExecuteWithTransactionAsync(
                                 input.args,
-                                ReadIsolationLevel,
-                                ShutdownToken,
                                 static async (connection, token, inVals) =>
                                 {
                                     return await connection
@@ -113,14 +109,11 @@ namespace Akka.Persistence.Sql.Query.Dao
 
                 TagMode.TagTable => AsyncSource<JournalRow>
                     .FromEnumerable(
-                        new { inst=this, args= new QueryArgs(offset,maxOffset,maxTake,tag,TagMode.TagTable)},
+                        new { _dbStateHolder, args= new QueryArgs(offset,maxOffset,maxTake,tag)},
                         static async input =>
                         {
-                            var inst = input.inst;
-                            return await inst.ConnectionFactory.ExecuteWithTransactionAsync(
+                            return await input._dbStateHolder.ExecuteWithTransactionAsync(
                                 input.args,
-                                inst.ReadIsolationLevel,
-                                inst.ShutdownToken,
                                 static async (connection, token,txInput) =>
                                 {
                                     var query =
@@ -150,13 +143,11 @@ namespace Akka.Persistence.Sql.Query.Dao
             => Task.FromResult(
                 AsyncSource<JournalRow>
                     .FromEnumerable(
-                        new {  persistenceId, fromSequenceNr, toSequenceNr, toTake = MaxTake(max) },
-                        async state =>
+                        new {  persistenceId, fromSequenceNr, toSequenceNr, toTake = MaxTake(max), _dbStateHolder },
+                        static async state =>
                         {
-                            return await ConnectionFactory.ExecuteWithTransactionAsync(
+                            return await state._dbStateHolder.ExecuteWithTransactionAsync(
                                 state,
-                                ReadIsolationLevel,
-                                ShutdownToken,
                                 async (connection, token, txState) =>
                                 {
                                     var query = connection
@@ -170,7 +161,7 @@ namespace Akka.Persistence.Sql.Query.Dao
                                         .OrderBy(r => r.SequenceNumber)
                                         .Take(txState.toTake);
 
-                                    return await AddTagDataIfNeededAsync(query, connection, token);
+                                    return await AddTagDataIfNeededAsync(txState._dbStateHolder.Mode, query, connection, token);
                                 });
                         })
                     .Via(_deserializeFlow)
@@ -191,14 +182,12 @@ namespace Akka.Persistence.Sql.Query.Dao
         public Source<long, NotUsed> JournalSequence(long offset, long limit)
         {
             return AsyncSource<long>.FromEnumerable(
-                new { maxTake = MaxTake(limit), offset, _connectionFactory = ConnectionFactory },
+                new { maxTake = MaxTake(limit), offset, _dbStateHolder },
                 async input =>
                 {
-                    return await input._connectionFactory.ExecuteWithTransactionAsync(
+                    return await input._dbStateHolder.ExecuteWithTransactionAsync(
                         new QueryArgs(input.offset,default,input.maxTake, default),
-                        ReadIsolationLevel,
-                        ShutdownToken,
-                        async (connection, token, args) =>
+                        static async (connection, token, args) =>
                         {
                             // persistence-jdbc does not filter deleted here.
                             return await connection
@@ -244,47 +233,58 @@ namespace Akka.Persistence.Sql.Query.Dao
             var maxTake = MaxTake(max);
 
             return AsyncSource<JournalRow>.FromEnumerable(
-                new { args=new QueryArgs(offset,maxOffset,maxTake,_tagMode) },
-                async input =>
+                new {_dbStateHolder , args=new QueryArgs(offset,maxOffset,maxTake) },
+                static async input =>
                 {
-                    return await ExecuteEventQuery(input.args);
+                    return await ExecuteEventQuery(input._dbStateHolder, input._dbStateHolder.Mode, input.args);
                 }
             ).Via(_deserializeFlow);
         }
         
         
-        internal async Task<List<JournalRow>> ExecuteEventQuery(QueryArgs queryArgs)
+        internal static async Task<List<JournalRow>> ExecuteEventQuery(DbStateHolder stateHolder, TagMode tagMode, QueryArgs queryArgs)
         {
-            return await ConnectionFactory.ExecuteWithTransactionAsync(
-                queryArgs,
-                ReadIsolationLevel,
-                ShutdownToken,
-                static async (connection, token,a) =>
-                {
-                    var query = connection
-                        .GetTable<JournalRow>()
-                        .Where(
-                            r =>
-                                r.Ordering > a.Offset &&
-                                r.Ordering <= a.MaxOffset &&
-                                r.Deleted == false)
-                        .OrderBy(r => r.Ordering)
-                        .Take(a.Max);
-
-                    if (a.Mode != TagMode.TagTable)
+            return tagMode != TagMode.TagTable
+                ? await stateHolder.ExecuteWithTransactionAsync(
+                    queryArgs,
+                    static async (connection, token, a) =>
                     {
-                        return await query.ToListAsync(token);        
-                    }
-                    else
+                        return await connection
+                            .GetTable<JournalRow>()
+                            .Where(
+                                r =>
+                                    r.Ordering > a.Offset &&
+                                    r.Ordering <= a.MaxOffset &&
+                                    r.Deleted == false)
+                            .OrderBy(r => r.Ordering)
+                            .Take(a.Max)
+                            .ToListAsync(token);
+                    })
+                : await stateHolder.ExecuteWithTransactionAsync(
+                    queryArgs,
+                    static async (connection, token, a) =>
                     {
+                        var query = connection
+                            .GetTable<JournalRow>()
+                            .Where(
+                                r =>
+                                    r.Ordering > a.Offset &&
+                                    r.Ordering <= a.MaxOffset &&
+                                    r.Deleted == false)
+                            .OrderBy(r => r.Ordering)
+                            .Take(a.Max);
                         return await AddTagDataFromTagTableAsync(query, connection, token);
-                    }
-                });
+                    });
         }
 
-        private async Task<List<JournalRow>> AddTagDataIfNeededAsync(IQueryable<JournalRow> rowQuery, AkkaDataConnection connection, CancellationToken token)
+        private static async Task<List<JournalRow>> AddTagDataIfNeededAsync(
+            TagMode mode, 
+            IQueryable<JournalRow> rowQuery,
+            AkkaDataConnection connection, 
+            CancellationToken token
+            )
         {
-            if (_readJournalConfig.PluginConfig.TagMode != TagMode.TagTable)
+            if (mode != TagMode.TagTable)
                 return await rowQuery.ToListAsync(token);
             return await AddTagDataFromTagTableAsync(rowQuery, connection, token);
         }

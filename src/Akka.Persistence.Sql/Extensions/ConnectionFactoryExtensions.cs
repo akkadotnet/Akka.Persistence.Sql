@@ -9,6 +9,7 @@ using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Persistence.Sql.Db;
+using Akka.Persistence.Sql.Query.Dao;
 
 namespace Akka.Persistence.Sql.Extensions
 {
@@ -71,6 +72,14 @@ namespace Akka.Persistence.Sql.Extensions
 
                 throw;
             }
+        }
+        
+        internal static Task<T> ExecuteWithTransactionAsync<TState,T>(
+            this DbStateHolder factory,
+            TState state,
+            Func<AkkaDataConnection, CancellationToken, TState, Task<T>> handler)
+        {
+            return factory.ConnectionFactory.ExecuteWithTransactionAsync(state, factory.IsolationLevel, factory.ShutdownToken, handler);
         }
         
         public static async Task<T> ExecuteWithTransactionAsync<TState,T>(
