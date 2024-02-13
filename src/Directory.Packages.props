@@ -55,7 +55,7 @@
   </ItemGroup>
   <!-- Redis dependencies -->
   <ItemGroup>
-    <PackageVersion Include="Akka.Persistence.Redis" Version="1.5.0" />
+    <PackageVersion Include="Akka.Persistence.Redis" Version="1.5.13" />
     <PackageVersion Include="redis-inside" Version="3.3.0" />
   </ItemGroup>
   <!-- MySql dependencies -->
