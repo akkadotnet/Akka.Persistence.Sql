@@ -14,7 +14,7 @@ namespace Akka.Persistence.Sql.Query.Dao
     /// <summary>
     /// Used to help improve capture usage and ease composition via extension methods.
     /// </summary>
-    internal class DbStateHolder
+    internal sealed class DbStateHolder
     {
         public readonly AkkaPersistenceDataConnectionFactory ConnectionFactory;
         public readonly IsolationLevel IsolationLevel;

@@ -245,36 +245,46 @@ namespace Akka.Persistence.Sql.Query.Dao
         internal static async Task<List<JournalRow>> ExecuteEventQuery(DbStateHolder stateHolder, TagMode tagMode, QueryArgs queryArgs)
         {
             return tagMode != TagMode.TagTable
-                ? await stateHolder.ExecuteWithTransactionAsync(
-                    queryArgs,
-                    static async (connection, token, a) =>
-                    {
-                        return await connection
-                            .GetTable<JournalRow>()
-                            .Where(
-                                r =>
-                                    r.Ordering > a.Offset &&
-                                    r.Ordering <= a.MaxOffset &&
-                                    r.Deleted == false)
-                            .OrderBy(r => r.Ordering)
-                            .Take(a.Max)
-                            .ToListAsync(token);
-                    })
-                : await stateHolder.ExecuteWithTransactionAsync(
-                    queryArgs,
-                    static async (connection, token, a) =>
-                    {
-                        var query = connection
-                            .GetTable<JournalRow>()
-                            .Where(
-                                r =>
-                                    r.Ordering > a.Offset &&
-                                    r.Ordering <= a.MaxOffset &&
-                                    r.Deleted == false)
-                            .OrderBy(r => r.Ordering)
-                            .Take(a.Max);
-                        return await AddTagDataFromTagTableAsync(query, connection, token);
-                    });
+                ? await ExecuteEventQueryNonTagTable(stateHolder, queryArgs)
+                : await ExecuteEventQueryTagTable(stateHolder, queryArgs);
+        }
+
+        private static async Task<List<JournalRow>> ExecuteEventQueryTagTable(DbStateHolder stateHolder, QueryArgs queryArgs)
+        {
+            return await stateHolder.ExecuteWithTransactionAsync(
+                queryArgs,
+                static async (connection, token, a) =>
+                {
+                    var query = connection
+                        .GetTable<JournalRow>()
+                        .Where(
+                            r =>
+                                r.Ordering > a.Offset &&
+                                r.Ordering <= a.MaxOffset &&
+                                r.Deleted == false)
+                        .OrderBy(r => r.Ordering)
+                        .Take(a.Max);
+                    return await AddTagDataFromTagTableAsync(query, connection, token);
+                });
+        }
+
+        private static async Task<List<JournalRow>> ExecuteEventQueryNonTagTable(DbStateHolder stateHolder, QueryArgs queryArgs)
+        {
+            return await stateHolder.ExecuteWithTransactionAsync(
+                queryArgs,
+                static async (connection, token, a) =>
+                {
+                    return await connection
+                        .GetTable<JournalRow>()
+                        .Where(
+                            r =>
+                                r.Ordering > a.Offset &&
+                                r.Ordering <= a.MaxOffset &&
+                                r.Deleted == false)
+                        .OrderBy(r => r.Ordering)
+                        .Take(a.Max)
+                        .ToListAsync(token);
+                });
         }
 
         private static async Task<List<JournalRow>> AddTagDataIfNeededAsync(
