@@ -3,7 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <AkkaVersion>1.5.13</AkkaVersion>
     <AkkaHostingVersion>1.5.12.1</AkkaHostingVersion>
-    <FluentMigratorVersion>3.3.2</FluentMigratorVersion>
+    <FluentMigratorVersion>5.0.0</FluentMigratorVersion>
     <SqliteVersion>1.0.118</SqliteVersion>
     <MicrosoftSqliteVersion>7.0.11</MicrosoftSqliteVersion>
   </PropertyGroup>
@@ -37,7 +37,7 @@
   <!-- SQL Server dependencies -->
   <ItemGroup>
     <PackageVersion Include="Akka.Persistence.SqlServer" Version="1.5.4" />
-    <PackageVersion Include="Microsoft.Data.SqlClient" Version="5.1.1" />
+    <PackageVersion Include="Microsoft.Data.SqlClient" Version="5.1.2" />
     <PackageVersion Include="Microsoft.SqlServer.SqlManagementObjects" Version="170.18.0" />
   </ItemGroup>
   <!-- Sqlite dependencies -->
