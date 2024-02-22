@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <AkkaVersion>1.5.13</AkkaVersion>
+    <AkkaVersion>1.5.15</AkkaVersion>
     <AkkaHostingVersion>1.5.12.1</AkkaHostingVersion>
     <FluentMigratorVersion>3.3.2</FluentMigratorVersion>
     <SqliteVersion>1.0.118</SqliteVersion>
@@ -50,7 +50,7 @@
   </ItemGroup>
   <!-- PostgreSql dependencies -->
   <ItemGroup>
-    <PackageVersion Include="Akka.Persistence.PostgreSql" Version="1.5.4.1" />
+    <PackageVersion Include="Akka.Persistence.PostgreSql" Version="1.5.15.1" />
     <PackageVersion Include="Npgsql" Version="7.0.6" />
   </ItemGroup>
   <!-- Redis dependencies -->
