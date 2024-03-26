@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <AkkaVersion>1.5.13</AkkaVersion>
+    <AkkaVersion>1.5.15</AkkaVersion>
     <AkkaHostingVersion>1.5.12.1</AkkaHostingVersion>
     <FluentMigratorVersion>3.3.2</FluentMigratorVersion>
     <SqliteVersion>1.0.118</SqliteVersion>
@@ -36,8 +36,8 @@
   </ItemGroup>
   <!-- SQL Server dependencies -->
   <ItemGroup>
-    <PackageVersion Include="Akka.Persistence.SqlServer" Version="1.5.4" />
-    <PackageVersion Include="Microsoft.Data.SqlClient" Version="5.1.1" />
+    <PackageVersion Include="Akka.Persistence.SqlServer" Version="1.5.15" />
+    <PackageVersion Include="Microsoft.Data.SqlClient" Version="5.1.4" />
     <PackageVersion Include="Microsoft.SqlServer.SqlManagementObjects" Version="170.18.0" />
   </ItemGroup>
   <!-- Sqlite dependencies -->
