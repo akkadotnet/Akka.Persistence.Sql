@@ -171,7 +171,7 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
                 if (task == tcs.Task)
                     return;
 
-                throw new Exception($"Docker image failed to run within {timeout}.");
+                throw new Exception($"Docker image {ImageName}:{Tag} failed to run within {timeout}.");
             }
             finally
             {

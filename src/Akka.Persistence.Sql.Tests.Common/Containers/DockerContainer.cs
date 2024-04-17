@@ -193,7 +193,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
                 if (task == tcs.Task)
                     return;
 
-                throw new Exception($"Docker image failed to run within {timeout}.");
+                throw new Exception($"Docker image {ImageName}:{Tag} failed to run within {timeout}.");
             }
             finally
             {
