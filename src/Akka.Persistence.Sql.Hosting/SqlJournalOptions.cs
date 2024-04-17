@@ -156,7 +156,7 @@ namespace Akka.Persistence.Sql.Hosting
 
             if (IsDefaultPlugin)
             {
-                sb.AppendLine("akka.persistence.query.journal.sql {");
+                sb.AppendLine($"akka.persistence.query.journal.{Identifier} {{");
                 sb.AppendLine($"connection-string = {ConnectionString.ToHocon()}");
                 sb.AppendLine($"provider-name = {ProviderName.ToHocon()}");
                 
@@ -178,7 +178,7 @@ namespace Akka.Persistence.Sql.Hosting
             }
 
             if (QueryRefreshInterval is not null)
-                sb.AppendLine($"akka.persistence.query.journal.sql.refresh-interval = {QueryRefreshInterval.ToHocon()}");
+                sb.AppendLine($"akka.persistence.query.journal.{Identifier}.refresh-interval = {QueryRefreshInterval.ToHocon()}");
 
             return sb;
         }

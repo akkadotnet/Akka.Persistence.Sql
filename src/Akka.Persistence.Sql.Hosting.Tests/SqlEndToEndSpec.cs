@@ -40,7 +40,8 @@ namespace Akka.Persistence.Sql.Hosting.Tests
         {
             builder.WithSqlPersistence(
                     connectionString: _fixture.ConnectionString,
-                    providerName: _fixture.ProviderName)
+                    providerName: _fixture.ProviderName,
+                    pluginIdentifier : _fixture.PluginIdentifier)
                 .StartActors(
                     (system, registry) =>
                     {
@@ -77,11 +78,11 @@ namespace Akka.Persistence.Sql.Hosting.Tests
 
             // validate configs
             var config = Sys.Settings.Config;
-            config.GetString("akka.persistence.journal.plugin").Should().Be("akka.persistence.journal.sql");
-            config.GetString("akka.persistence.snapshot-store.plugin").Should().Be("akka.persistence.snapshot-store.sql");
+            config.GetString("akka.persistence.journal.plugin").Should().Be($"akka.persistence.journal.{ _fixture.PluginIdentifier}");
+            config.GetString("akka.persistence.snapshot-store.plugin").Should().Be($"akka.persistence.snapshot-store.{_fixture.PluginIdentifier}");
 
             // validate that query is working
-            var readJournal = Sys.ReadJournalFor<SqlReadJournal>("akka.persistence.query.journal.sql");
+            var readJournal = Sys.ReadJournalFor<SqlReadJournal>($"akka.persistence.query.journal.{ _fixture.PluginIdentifier}");
             var source = readJournal.AllEvents(Offset.NoOffset());
             var probe = source.RunWith(this.SinkProbe<EventEnvelope>(), Sys.Materializer());
             probe.Request(2);

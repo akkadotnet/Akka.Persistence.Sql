@@ -26,6 +26,8 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         public string ContainerName => string.Empty;
 
         public string ProviderName => LinqToDB.ProviderName.SQLiteClassic;
+        
+        public string PluginIdentifier => "sqlite";
 
         public event EventHandler<OutputReceivedArgs>? OnStdOut;
 

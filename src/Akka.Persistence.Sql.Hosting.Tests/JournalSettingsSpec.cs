@@ -128,12 +128,13 @@ akka.persistence.journal.sql {
             };
 
             var fullConfig = opt.ToConfig();
+            
             var journalConfig = fullConfig
                 .GetConfig("akka.persistence.journal.custom")
                 .WithFallback(SqlPersistence.DefaultJournalConfiguration);
             var config = new JournalConfig(journalConfig);
 
-            fullConfig.GetTimeSpan("akka.persistence.query.journal.sql.refresh-interval").Should().Be(5.Seconds());
+            fullConfig.GetTimeSpan("akka.persistence.query.journal.custom.refresh-interval").Should().Be(5.Seconds());
 
             config.AutoInitialize.Should().BeFalse();
             config.ConnectionString.Should().Be("a");
