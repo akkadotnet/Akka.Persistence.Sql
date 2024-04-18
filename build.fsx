@@ -126,10 +126,6 @@ let runTests _ =
     projects |> Seq.iter (Trace.log)
     projects |> Seq.iter (runSingleProject)
 
-let benchmarkProjects =
-        match Environment.isWindows with
-        | true -> !! "./src/**/*.Benchmarks.csproj"
-        | _ -> !! "./src/**/*.Benchmarks.csproj" // if you need to filter specs for Linux vs. Windows, do it here
 
 let runBenchmarks args _ =
     let runSingleProject project =
@@ -139,8 +135,12 @@ let runBenchmarks args _ =
                             WorkingDirectory = (Directory.GetParent project).FullName
                             }) "run" $"-c Release --project %s{project} -- %s{args}" 
         |> ResultHandling.checkExitCode "benchmark failed"
-
-    benchmarkProjects |> Seq.iter runSingleProject
+    in
+    match Environment.isWindows with
+    | true -> printfn "Windows not supported for benchmarks on CI, look at the README.md to run manually"
+    | _ -> 
+    !! "./src/**/*.Benchmarks.csproj" 
+    |> Seq.iter runSingleProject
 
 //--------------------------------------------------------------------------------
 // Nuget targets
