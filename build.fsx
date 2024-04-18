@@ -131,7 +131,7 @@ let runBenchmarks args _ =
     let runSingleProject project =
         DotNet.exec(fun info ->
                         { info with
-                            Timeout = Some (TimeSpan.FromMinutes 30.0)
+                            Timeout = Some (TimeSpan.FromMinutes 45.0)
                             WorkingDirectory = (Directory.GetParent project).FullName
                             }) "run" $"-c Release --project %s{project} -- %s{args}" 
         |> ResultHandling.checkExitCode "benchmark failed"
