@@ -126,27 +126,21 @@ let runTests _ =
     projects |> Seq.iter (Trace.log)
     projects |> Seq.iter (runSingleProject)
 
-let nbench _ =
-    
-    let projects =
+let benchmarkProjects =
         match Environment.isWindows with
-        | true -> !! "./src/**/*.Tests.Performance.csproj"
-        | _ -> !! "./src/**/*.Tests.Performance.csproj" // if you need to filter specs for Linux vs. Windows, do it here
+        | true -> !! "./src/**/*.Benchmarks.csproj"
+        | _ -> !! "./src/**/*.Benchmarks.csproj" // if you need to filter specs for Linux vs. Windows, do it here
 
-
+let runBenchmarks args _ =
     let runSingleProject project =
-        match (hasTeamCity) with
-            | true -> (sprintf "--nobuild --teamcity --concurrent true --trace true --output %s" (outputPerfTests))
-            | false -> (sprintf "--nobuild --concurrent true --trace true --output %s" (outputPerfTests))
-        |> DotNet.exec(fun info ->
+        DotNet.exec(fun info ->
                         { info with
                             Timeout = Some (TimeSpan.FromMinutes 30.0)
                             WorkingDirectory = (Directory.GetParent project).FullName
-                            }) "nbench"
-        |> _.ExitCode
-        |> ResultHandling.failBuildIfXUnitReportedError TestRunnerErrorLevel.Error
+                            }) "run" $"-c Release --project %s{project} -- %s{args}" 
+        |> ResultHandling.checkExitCode "benchmark failed"
 
-    projects |> Seq.iter runSingleProject
+    benchmarkProjects |> Seq.iter runSingleProject
 
 //--------------------------------------------------------------------------------
 // Nuget targets
@@ -306,6 +300,7 @@ let help _ =
       " * Build         Builds"
       " * Nuget         Create and optionally publish nugets packages"
       " * RunTests      Runs tests"
+      " * NBench        Runs benchmarks"
       " * All           Builds, run tests, creates and optionally publish nuget packages"
       ""
       " Other Targets"
@@ -323,7 +318,8 @@ let initTargets () =
     Target.create "AssemblyInfo" assemblyInfo
     Target.create "Build" build
     Target.create "RunTests" runTests
-    Target.create "NBench" nbench
+    Target.create "GenerateBench" (runBenchmarks "generate")
+    Target.create "NBench" (runBenchmarks $"--filter=\"*\" --artifacts=\"%s{outputPerfTests}\"")
     Target.create "PublishNuget" publishNuget
     Target.create "CreateNuget" createNuget
     Target.create "RestoreTools" restoreTools
@@ -347,6 +343,9 @@ let initTargets () =
     "RestoreTools" ==> "InspectCode" |> ignore
     "RestoreTools" ==> "Build" ==> "CleanupCode" |> ignore
 
+    //benchmarks
+    "GenerateBench" ==> "NBench" |> ignore 
+    
     // all
     "BuildRelease" ==> "All" |> ignore
     "RunTests" ==> "All" |> ignore
