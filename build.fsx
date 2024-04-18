@@ -344,17 +344,18 @@ let initTargets () =
     "RestoreTools" ==> "Build" ==> "CleanupCode" |> ignore
 
     //benchmarks
-    "GenerateBench" ==> "NBench" |> ignore 
+    "RunTests" ==> "GenerateBench" ==> "NBench" |> ignore 
+    
+    //docs
+    "Build" ==> "DocFx" |> ignore
+    "DocFx" ==> "ServeDocFx" |> ignore
     
     // all
     "BuildRelease" ==> "All" |> ignore
     "RunTests" ==> "All" |> ignore
-    "NBench" ==> "All" |> ignore
     "Nuget" ==> "All" |> ignore
-    
-    //docs
-    "RestoreTools"  ==> "DocFx" |> ignore
-    "DocFx" ==> "ServeDocFx" |> ignore
+    "NBench" ==> "All" |> ignore
+    "DocFx" ==> "All" |> ignore
     
     //workaround for https://github.com/fsprojects/FAKE/issues/2744
     Microsoft.Build.Logging.StructuredLogger.Strings.Initialize()
