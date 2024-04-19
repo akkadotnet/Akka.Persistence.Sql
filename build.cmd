@@ -1,1 +1,1 @@
-PowerShell.exe -file "build.ps1" %* 
+dotnet fsi build.fsx -- -t %*

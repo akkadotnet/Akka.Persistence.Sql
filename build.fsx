@@ -1,71 +1,88 @@
-#I @"tools/FAKE/tools"
-#r "FakeLib.dll"
+#r "nuget: Fake.Core.ReleaseNotes"
+#r "nuget: Fake.Core.Target"
+#r "nuget: Fake.Dotnet.Nuget"
+#r "nuget: Fake.Dotnet.Cli"
+#r "nuget: Fake.DotNet.Testing.XUnit2"
+#r "nuget: MSBuild.StructuredLogger"
 
 open System
 open System.IO
 open System.Text
+open Fake.Core
+open Fake.DotNet
+open Fake.IO
+open Fake.IO.FileSystemOperators
+open Fake.IO.Globbing.Operators
+open Fake.Core.TargetOperators
+open Fake.DotNet.NuGet.Install
+open Fake.Testing.Common
 
-open Fake
-open Fake.DotNetCli
-open Fake.NuGet.Install
-
-// Information about the project for Nuget and Assembly info files
-let configuration = "Release"
+//Information about the project for Nuget and Assembly info files
+let configuration = DotNet.BuildConfiguration.Release
 
 // Read release notes and version
-let solutionFile = FindFirstMatchingFile "*.sln" __SOURCE_DIRECTORY__  // dynamically look up the solution
-let buildNumber = environVarOrDefault "BUILD_NUMBER" "0"
+let root = __SOURCE_DIRECTORY__ 
+let solutionFile = Directory.findFirstMatchingFile "*.sln" root  // dynamically look up the solution
+let buildNumber = Environment.environVarOrDefault "BUILD_NUMBER" "0"
 let hasTeamCity = (not (buildNumber = "0")) // check if we have the TeamCity environment variable for build # set
 let preReleaseVersionSuffix = "beta" + (if (not (buildNumber = "0")) then (buildNumber) else DateTime.UtcNow.Ticks.ToString())
 
 let releaseNotes =
-    File.ReadLines (__SOURCE_DIRECTORY__ @@ "RELEASE_NOTES.md")
-    |> ReleaseNotesHelper.parseReleaseNotes
+    File.ReadLines (root @@ "RELEASE_NOTES.md")
+    |> ReleaseNotes.parse
 
 let versionFromReleaseNotes =
     match releaseNotes.SemVer.PreRelease with
-    | Some r -> r.Origin
-    | None -> ""
+    | Some r -> Some r.Origin
+    | None -> None
 
 let versionSuffix =
-    match (getBuildParam "nugetprerelease") with
-    | "dev" -> preReleaseVersionSuffix
-    | "" -> versionFromReleaseNotes
-    | str -> str
+    match Environment.environVarOrNone "nugetprerelease" with
+    | Some "dev" -> Some preReleaseVersionSuffix
+    | Some str -> Some str
+    | None  -> versionFromReleaseNotes
+    
 
 // Directories
-let toolsDir = __SOURCE_DIRECTORY__ @@ "tools"
-let output = __SOURCE_DIRECTORY__  @@ "bin"
-let outputTests = __SOURCE_DIRECTORY__ @@ "TestResults"
-let outputPerfTests = __SOURCE_DIRECTORY__ @@ "PerfResults"
+let toolsDir = root @@ "tools"
+let output = root  @@ "bin"
+let outputTests = root @@ "TestResults"
+let outputPerfTests = root @@ "PerfResults"
 let outputNuGet = output @@ "nuget"
 
-Target "Clean" (fun _ ->
-    ActivateFinalTarget "KillCreatedProcesses"
+let clean _ =
+    Target.activateFinal "KillCreatedProcesses"
 
-    CleanDir output
-    CleanDir outputTests
-    CleanDir outputPerfTests
-    CleanDir outputNuGet
-)
+    Shell.cleanDir output
+    Shell.cleanDir outputTests
+    Shell.cleanDir outputPerfTests
+    Shell.cleanDir outputNuGet
 
-Target "AssemblyInfo" (fun _ ->
-    XmlPokeInnerText "./src/Directory.Generated.props" "//Project/PropertyGroup/VersionPrefix" releaseNotes.AssemblyVersion
-    XmlPokeInnerText "./src/Directory.Generated.props" "//Project/PropertyGroup/PackageReleaseNotes" (releaseNotes.Notes |> String.concat "\n")
-)
 
-Target "Build" (fun _ ->
-    DotNetCli.Build
+let assemblyInfo _ =
+    Xml.pokeInnerText "./src/Directory.Generated.props" "//Project/PropertyGroup/VersionPrefix" releaseNotes.AssemblyVersion
+    Xml.pokeInnerText "./src/Directory.Generated.props" "//Project/PropertyGroup/PackageReleaseNotes" (releaseNotes.Notes |> String.concat "\n")
+
+
+
+let build _ =
+    solutionFile
+    |> DotNet.build
         (fun p ->
-            { p with
-                Project = solutionFile
-                Configuration = configuration }) // "Rebuild"
-)
+            { p with 
+                Configuration = configuration
+                }) 
+
 
 //--------------------------------------------------------------------------------
 // Tests targets
 //--------------------------------------------------------------------------------
 module internal ResultHandling =
+    let checkExitCode msg : ProcessResult -> _ =
+        _.ExitCode 
+        >> function
+            | 0 -> ()
+            | _ -> failwith msg
     let (|OK|Failure|) = function
         | 0 -> OK
         | x -> Failure x
@@ -76,16 +93,16 @@ module internal ResultHandling =
             Some (sprintf "xUnit2 reported an error (Error Code %d)" errorCode)
 
     let failBuildWithMessage = function
-        | DontFailBuild -> traceError
+        | DontFailBuild -> Trace.traceError
         | _ -> (fun m -> raise(FailedTestsException m))
 
     let failBuildIfXUnitReportedError errorLevel =
         buildErrorMessage
         >> Option.iter (failBuildWithMessage errorLevel)
 
-Target "RunTests" (fun _ ->
+let runTests _ =
     let projects =
-        match (isWindows) with
+        match (Environment.isWindows) with
         | true -> !! "./src/**/*.Tests.csproj"
                   -- "./src/**/*.Benchmark.*.csproj"
                   -- "./src/**/*.Data.Compatibility.Tests.csproj" // All of the data docker images are Linux only
@@ -94,45 +111,36 @@ Target "RunTests" (fun _ ->
                -- "./src/**/*.Benchmark.*.csproj"
                -- "./src/Examples/**/*.csproj" // skip example projects
                ++  "./src/**/*.DockerTests.csproj" // if you need to filter specs for Linux vs. Windows, do it here
-
     let runSingleProject project =
-        let arguments =
+        let args =
             match (hasTeamCity) with
-            | true -> (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --results-directory %s -- -parallel none -teamcity" (outputTests))
-            | false -> (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --results-directory %s -- -parallel none" (outputTests))
-
-        let result = ExecProcess(fun info ->
-            info.FileName <- "dotnet"
-            info.WorkingDirectory <- (Directory.GetParent project).FullName
-            info.Arguments <- arguments) (TimeSpan.FromMinutes 30.0)
-
-        ResultHandling.failBuildIfXUnitReportedError TestRunnerErrorLevel.Error result
-
-    projects |> Seq.iter (log)
+            | true -> (sprintf "-c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --results-directory %s -- -parallel none -teamcity" (outputTests))
+            | false -> (sprintf "-c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --results-directory %s -- -parallel none" (outputTests))
+        //We use exec instead of DotNet.test as it doesn't allow for multiple loggers and runsettingsargs are not working https://github.com/fsprojects/FAKE/pull/2771
+        in DotNet.exec (fun o ->
+                    { o with
+                        WorkingDirectory =  (Directory.GetParent project).FullName
+                        Timeout =  Some(TimeSpan.FromMinutes 30.0)
+                        }) "test" args
+        |> ResultHandling.checkExitCode  "Test run failed" 
+    projects |> Seq.iter (Trace.log)
     projects |> Seq.iter (runSingleProject)
-)
-
-Target "NBench" <| fun _ ->
-    let projects =
-        match (isWindows) with
-        | true -> !! "./src/**/*.Tests.Performance.csproj"
-        | _ -> !! "./src/**/*.Tests.Performance.csproj" // if you need to filter specs for Linux vs. Windows, do it here
 
 
+let runBenchmarks args _ =
     let runSingleProject project =
-        let arguments =
-            match (hasTeamCity) with
-            | true -> (sprintf "nbench --nobuild --teamcity --concurrent true --trace true --output %s" (outputPerfTests))
-            | false -> (sprintf "nbench --nobuild --concurrent true --trace true --output %s" (outputPerfTests))
-
-        let result = ExecProcess(fun info ->
-            info.FileName <- "dotnet"
-            info.WorkingDirectory <- (Directory.GetParent project).FullName
-            info.Arguments <- arguments) (TimeSpan.FromMinutes 30.0)
-
-        ResultHandling.failBuildIfXUnitReportedError TestRunnerErrorLevel.Error result
-
-    projects |> Seq.iter runSingleProject
+        DotNet.exec(fun info ->
+                        { info with
+                            Timeout = Some (TimeSpan.FromMinutes 45.0)
+                            WorkingDirectory = (Directory.GetParent project).FullName
+                            }) "run" $"-c Release --project %s{project} -- %s{args}" 
+        |> ResultHandling.checkExitCode "benchmark failed"
+    in
+    match Environment.isWindows with
+    | true -> printfn "Windows not supported for benchmarks on CI, look at the README.md to run manually"
+    | _ -> 
+    !! "./src/**/*.Benchmarks.csproj" 
+    |> Seq.iter runSingleProject
 
 //--------------------------------------------------------------------------------
 // Nuget targets
@@ -141,144 +149,158 @@ let overrideVersionSuffix (project:string) =
     match project with
     | _ -> versionSuffix // add additional matches to publish different versions for different projects in solution
 
-Target "CreateNuget" (fun _ ->
+let createNuget _ =
     let projects = !! "src/**/*.csproj"
                    -- "src/**/*Tests.csproj" // Don't publish unit tests
                    -- "src/**/*Tests*.csproj"
                    -- "src/**/*.Benchmark.*.csproj"
                    -- "./src/Examples/**/*.csproj" // skip example projects
-
+    
     let runSingleProject project =
-        DotNetCli.Pack
+        DotNet.pack
             (fun p ->
                 { p with
-                    Project = project
                     Configuration = configuration
-                    AdditionalArgs = ["--include-symbols --no-build"]
-                    VersionSuffix = overrideVersionSuffix project
-                    OutputPath = outputNuGet })
+                    NoBuild = true
+                    IncludeSymbols = true
+                    
+                    VersionSuffix = (overrideVersionSuffix project)
+                    OutputPath = Some outputNuGet }) project
 
-    projects |> Seq.iter (runSingleProject)
-)
+    projects
+    |> Seq.iter (runSingleProject)
 
-Target "PublishNuget" (fun _ ->
-    let shouldPushNugetPackages = hasBuildParam "nugetkey"
-    if not shouldPushNugetPackages then ()
-    else
-        let apiKey = getBuildParam "nugetkey"
-        let sourceUrl = getBuildParamOrDefault "nugetpublishurl" "https://api.nuget.org/v3/index.json"
+
+let publishNuget _ =
+    match Environment.environVarOrNone "nugetkey" with
+    | None -> printfn "Skip nuget publish as no key were provided"
+    | Some  apiKey -> 
+        let sourceUrl = Environment.environVarOrDefault "nugetpublishurl" "https://api.nuget.org/v3/index.json"
         
         let rec publishPackage retryLeft packageFile =
-            tracefn "Pushing %s Attempts left: %d" (FullName packageFile) retryLeft
-            let tracing = ProcessHelper.enableProcessTracing
+            Trace.tracefn "Pushing %s Attempts left: %d" (Path.getFullName packageFile) retryLeft
+            let before = Process.shouldEnableProcessTracing()
             try
                 try
-                    ProcessHelper.enableProcessTracing <- false
-                    DotNetCli.RunCommand
+                    Process.setEnableProcessTracing false
+                    DotNet.nugetPush
                         (fun p ->
                             { p with
-                                TimeOut = TimeSpan.FromMinutes 10. })
-                        (sprintf "nuget push %s --api-key %s --source %s --no-service-endpoint" packageFile apiKey sourceUrl)
+                                Common = { p.Common with Timeout = Some (TimeSpan.FromMinutes 10.) }
+                                PushParams = { p.PushParams with
+                                                    ApiKey = Some apiKey
+                                                    Source = Some sourceUrl
+                                                    NoServiceEndpoint = true  } })
+                        packageFile
+                   
                 with exn ->
+                    printfn "Nuget push failed: %A" <| exn
                     if (retryLeft > 0) then (publishPackage (retryLeft-1) packageFile)
             finally
-                ProcessHelper.enableProcessTracing <- tracing
+                Process.setEnableProcessTracing before
                 
         printfn "Pushing nuget packages"
         let normalPackages = !! (outputNuGet @@ "*.nupkg") |> Seq.sortBy(fun x -> x.ToLower())
         for package in normalPackages do
             publishPackage 3 package
-)
+
+
+
+//--------------------------------------------------------------------------------
+// Restore dotnet tools
+//--------------------------------------------------------------------------------
+let restoreTools _ = 
+    let restoreOne = 
+        sprintf "restore --tool-manifest %s --verbosity d " 
+        >> DotNet.exec
+            (fun p ->
+                { p with
+                    Timeout = Some(TimeSpan.FromMinutes 10.)
+                    PrintRedirectedOutput = true 
+                     })
+            "tool"
+        >> ResultHandling.checkExitCode "dotnet tool restore failed"
+    in
+    !! "./.config/*.json" |> Seq.iter restoreOne
+    
 
 //--------------------------------------------------------------------------------
 // Documentation
 //--------------------------------------------------------------------------------
-Target "DocFx" (fun _ ->
-    // build the projects with samples
-    //let docsTestsProject = "./src/core/Akka.Docs.Tests/Akka.Docs.Tests.csproj"
-    //DotNetCli.Restore (fun p -> { p with Project = docsTestsProject })
-    //DotNetCli.Build (fun p -> { p with Project = docsTestsProject; Configuration = configuration })
-    //let docsTutorialsProject = "./src/core/Akka.Docs.Tutorials/Akka.Docs.Tutorials.csproj"
-    //DotNetCli.Restore (fun p -> { p with Project = docsTutorialsProject })
-    //DotNetCli.Build (fun p -> { p with Project = docsTutorialsProject; Configuration = configuration })
 
-    // install MSDN references
-    NugetInstall (fun p ->
-            { p with
-                ExcludeVersion = true
-                Version = "0.1.0-alpha-1611021200"
-                OutputDirectory = currentDirectory @@ "tools" }) "msdn.4.5.2"
+let buildDocfx _ = 
+    let args =
+        StringBuilder()
+        |> StringBuilder.append (Path.getFullName "./docs" @@ "docfx.json" )
+        // this fails if there are warnings in library projects
+        //|> StringBuilder.append ("--warningsAsErrors")
+        |> StringBuilder.toText in 
+    DotNet.exec(fun info ->
+            { info with
+                Timeout = Some (System.TimeSpan.FromMinutes 45.0) (* Reasonably long-running task. *)})         
+            "docfx" args 
+    |> ResultHandling.checkExitCode "docfx failed"
 
-    let docsPath = FullName "./docs"
-    let docFxPath = FullName(findToolInSubPath "docfx.exe" "tools/docfx.console/tools")
+
+let serveDocfx _ =
+    let port =
+        Environment.GetCommandLineArgs()
+        |> Seq.tryLast
+        |> Option.bind (fun arg -> try Some (int arg) with _ -> None) 
+        |> Option.defaultValue 8100 in 
+    let args = sprintf "serve %s --port %d" (Path.getFullName "./docs" @@ "_site" ) port in 
+    DotNet.exec(fun info ->
+            { info with
+                Timeout = Some (System.TimeSpan.FromMinutes 45.0) (* Reasonably long-running task. *)})         
+            "docfx" args 
+    |> ResultHandling.checkExitCode "docfx serve failed"
     
-    let args = StringBuilder()
-                |> append (docsPath @@ "docfx.json" )
-                |> append ("--warningsAsErrors")
-                |> toText
-    
-    let result = ExecProcess(fun info ->
-            info.FileName <- docFxPath
-            info.WorkingDirectory <- (Path.GetDirectoryName (FullName docFxPath))
-            info.Arguments <- args) (System.TimeSpan.FromMinutes 45.0) (* Reasonably long-running task. *)
-    if result <> 0 then failwithf "DocFX failed. %s %s" docFxPath args
-)
-
 //--------------------------------------------------------------------------------
 // JetBrain targets
 //--------------------------------------------------------------------------------
-Target "InspectCode" (fun _ ->
-    DotNetCli.RunCommand
-        (fun p ->
-            { p with
-                TimeOut = TimeSpan.FromMinutes 10. })
-        "tool restore"
 
-    DotNetCli.RunCommand
+let inspectCode _ =
+    DotNet.exec
         (fun p ->
             { p with
-                TimeOut = TimeSpan.FromMinutes 10. })
-        "dotnet jb inspectcode Akka.Persistence.Sql.sln --build --swea --properties=\"Configuration=Release\" --telemetry-optout --format=\"Html;Xml;Text\" --output=\"TestResults/Akka.Persistence.Sql.jb\""
-)
+                Timeout = Some(TimeSpan.FromMinutes 10.) })
+        "jb" "inspectcode Akka.Persistence.Sql.sln --build --swea --properties=\"Configuration=Release\" --telemetry-optout --format=\"Html;Xml;Text\" --output=\"TestResults/Akka.Persistence.Sql.jb\""
+    |> ignore 
 
-Target "CleanupCode" (fun _ ->
-    DotNetCli.RunCommand
-        (fun p ->
-            { p with
-                TimeOut = TimeSpan.FromMinutes 10. })
-        "tool restore"
 
-    DotNetCli.RunCommand
+let cleanupCode _ =
+    DotNet.exec
         (fun p ->
             { p with
-                TimeOut = TimeSpan.FromMinutes 10. })
-        "dotnet jb cleanupcode Akka.Persistence.Sql.sln --profile=\"Akka.NET\" --properties=\"Configuration=Release\" --telemetry-optout"
-)
+                Timeout = Some(TimeSpan.FromMinutes 10.) })
+        "jb"  "cleanupcode Akka.Persistence.Sql.sln --profile=\"Akka.NET\" --properties=\"Configuration=Release\" --telemetry-optout"
+        |> ignore 
 
 //--------------------------------------------------------------------------------
 // Cleanup
 //--------------------------------------------------------------------------------
-FinalTarget "KillCreatedProcesses" (fun _ ->
-    log "Shutting down dotnet build-server"
-    let result = ExecProcess(fun info ->
-            info.FileName <- "dotnet"
-            info.WorkingDirectory <- __SOURCE_DIRECTORY__
-            info.Arguments <- "build-server shutdown") (System.TimeSpan.FromMinutes 2.0)
-    if result <> 0 then failwithf "dotnet build-server shutdown failed"
-)
+let killCreatedProcesses _ =
+    Trace.log "Shutting down dotnet build-server"
+    DotNet.exec (fun p ->
+                    { p with
+                        WorkingDirectory = root
+                        Timeout = Some(TimeSpan.FromMinutes 2.) })
+            "build-server" "shutdown"
+    |> ResultHandling.checkExitCode "dotnet build-server shutdown failed"
 
 //--------------------------------------------------------------------------------
 // Help
 //--------------------------------------------------------------------------------
-Target "Help" <| fun _ ->
+let help _ =
     List.iter printfn [
       "usage:"
-      "./build.ps1 [target]"
+      "./build.[sh|cmd] [target]"
       ""
       " Targets for building:"
       " * Build         Builds"
       " * Nuget         Create and optionally publish nugets packages"
       " * RunTests      Runs tests"
+      " * NBench        Runs benchmarks"
       " * All           Builds, run tests, creates and optionally publish nuget packages"
       ""
       " Other Targets"
@@ -288,28 +310,69 @@ Target "Help" <| fun _ ->
 //--------------------------------------------------------------------------------
 //  Target dependencies
 //--------------------------------------------------------------------------------
-Target "BuildRelease" DoNothing
-Target "All" DoNothing
-Target "Nuget" DoNothing
+let initTargets () =
+    Target.create "BuildRelease" ignore
+    Target.create "All" ignore
+    Target.create "Nuget" ignore
+    Target.create "Clean" clean
+    Target.create "AssemblyInfo" assemblyInfo
+    Target.create "Build" build
+    Target.create "RunTests" runTests
+    Target.create "GenerateBench" (runBenchmarks "generate")
+    Target.create "NBench" (runBenchmarks $"--filter=\"*\" --artifacts=\"%s{outputPerfTests}\"")
+    Target.create "PublishNuget" publishNuget
+    Target.create "CreateNuget" createNuget
+    Target.create "RestoreTools" restoreTools
+    Target.create "DocFx" buildDocfx
+    Target.create "ServeDocFx" serveDocfx
+    Target.create "InspectCode" inspectCode
+    Target.create "CleanupCode" cleanupCode
+    Target.createFinal "KillCreatedProcesses" killCreatedProcesses
+    Target.create "Help" help
+    // build dependencies
+    "Clean" ==> "AssemblyInfo" ==> "Build" ==> "InspectCode" ==> "BuildRelease" |> ignore
 
-// build dependencies
-"Clean" ==> "AssemblyInfo" ==> "Build" ==> "InspectCode" ==> "BuildRelease"
+    // tests dependencies
+    "Build" ==> "RunTests" |> ignore
 
-// tests dependencies
-"Build" ==> "RunTests"
+    // nuget dependencies
+    "Clean" ==> "Build" ==> "CreateNuget" |> ignore
+    "CreateNuget" ==> "PublishNuget" ==> "Nuget" |> ignore
+    
+    // jetbrain dependencies
+    "RestoreTools" ==> "InspectCode" |> ignore
+    "RestoreTools" ==> "Build" ==> "CleanupCode" |> ignore
 
-// nuget dependencies
-"Clean" ==> "Build" ==> "CreateNuget"
-"CreateNuget" ==> "PublishNuget" ==> "Nuget"
+    //benchmarks
+    "RunTests" ==> "GenerateBench" ==> "NBench" |> ignore 
+    
+    //docs
+    "Build" ==> "DocFx" |> ignore
+    "DocFx" ==> "ServeDocFx" |> ignore
+    
+    // all
+    "BuildRelease" ==> "All" |> ignore
+    "RunTests" ==> "All" |> ignore
+    "Nuget" ==> "All" |> ignore
+    "NBench" ==> "All" |> ignore
+    "DocFx" ==> "All" |> ignore
+    
+    //workaround for https://github.com/fsprojects/FAKE/issues/2744
+    Microsoft.Build.Logging.StructuredLogger.Strings.Initialize()
+    
+    "Help" // <- default target
 
-// jetbrain dependencies
-"InspectCode"
-"Build" ==> "CleanupCode"
+//-----------------------------------------------------------------------------
+// Target Start
+//-----------------------------------------------------------------------------
 
-// all
-"BuildRelease" ==> "All"
-"RunTests" ==> "All"
-"NBench" ==> "All"
-"Nuget" ==> "All"
+System.Environment.GetCommandLineArgs()
+|> Array.skip 2
+|> Array.toList
+|> Context.FakeExecutionContext.Create false "build.fsx"
+|> Context.RuntimeContext.Fake
+|> Context.setExecutionContext
+|> initTargets 
+|> Target.runOrDefaultWithArguments
 
-RunTargetOrDefault "Help"
+0
