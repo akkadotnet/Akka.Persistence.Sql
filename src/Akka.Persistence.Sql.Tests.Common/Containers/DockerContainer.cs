@@ -23,7 +23,6 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         private bool _disposing;
         private bool _initializing;
         private Task? _readDockerTask;
-        private Stream? _stream;
 
         protected DockerContainer(string imageName, string tag, string containerName)
         {
@@ -32,7 +31,10 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
             ContainerName = containerName;
             Client = new DockerClientConfiguration().CreateClient();
 
-            OnStdOut += (_, _) => { };
+            OnStdOut += (_, e) =>
+            {
+                    Console.WriteLine($"[{ImageName}:{Tag}][stdout][{e.Output}");
+            };
         }
 
         private string ImageName { get; }
@@ -109,10 +111,27 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
             await Client.Containers.CreateContainerAsync(options);
 
             // start the container
-            await Client.Containers.StartContainerAsync(ContainerName, new ContainerStartParameters());
+            var containerStarted = false;
+            var retry = 3;
+            do
+            {
+                try
+                {
+                    containerStarted = await Client.Containers.StartContainerAsync(ContainerName, new ContainerStartParameters());
+                }
+                catch (DockerApiException ex)
+                {
+                    Console.WriteLine($"Failed to start container {ContainerName}: {ex.StatusCode} {ex.ResponseBody}" );
+                    if (--retry > 0)
+                    {
+                        await Task.Delay(5.Seconds());
+                    }
+                }
 
-            // Create streams
-            _stream = await Client.Containers.GetContainerLogsAsync(
+            } while (!containerStarted && retry > 0);
+
+            // listen for container logs
+            _readDockerTask =  Client.Containers.GetContainerLogsAsync(
                 id: ContainerName,
                 parameters: new ContainerLogsParameters
                 {
@@ -120,10 +139,15 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
                     ShowStdout = true,
                     ShowStderr = true,
                     Timestamps = true,
-                });
-
-            _readDockerTask = ReadDockerStreamAsync();
-
+                },
+                _logsCts.Token,
+                new Progress<string>(
+                    line =>
+                    {
+                        if (!string.IsNullOrEmpty(line))
+                            OnStdOut(this, new OutputReceivedArgs(line));
+                    }));
+            
             // Wait until container is completely ready
             if (ReadyMarker is not null)
             {
@@ -193,33 +217,13 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
                 if (task == tcs.Task)
                     return;
 
-                throw new Exception($"Docker image failed to run within {timeout}.");
+                throw new Exception($"Docker image {ImageName}:{Tag} failed to run within {timeout}.");
             }
             finally
             {
                 cts.Cancel();
                 cts.Dispose();
                 OnStdOut -= LineProcessor;
-            }
-        }
-
-        private async Task ReadDockerStreamAsync()
-        {
-            using var reader = new StreamReader(_stream!);
-
-            var tcs = new TaskCompletionSource<Done>();
-            _logsCts.Token.Register(() => tcs.SetResult(Done.Instance));
-
-            while (!_logsCts.IsCancellationRequested)
-            {
-                var task = reader.ReadLineAsync();
-                var result = await Task.WhenAny(tcs.Task, task);
-                if (result != task)
-                    break;
-
-                var line = task.Result;
-                if (!string.IsNullOrEmpty(line))
-                    OnStdOut(this, new OutputReceivedArgs(line));
             }
         }
 
@@ -234,10 +238,12 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
             _logsCts.Dispose();
 
             if (_readDockerTask is not null)
-                await _readDockerTask;
-
-            if (_stream is not null)
-                await _stream.DisposeAsync();
+                try
+                {
+                    await _readDockerTask;
+                }
+                catch(TaskCanceledException _) {}
+                    
 
             try
             {
@@ -272,7 +278,6 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
             _logsCts.Cancel();
             _logsCts.Dispose();
             _readDockerTask?.GetAwaiter().GetResult();
-            _stream?.Dispose();
 
             try
             {

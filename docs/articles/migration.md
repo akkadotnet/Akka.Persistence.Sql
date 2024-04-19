@@ -20,8 +20,8 @@ This guide are only needed if you intend to migrate from legacy `Akka.Persistenc
 * [Migrating Using Compatibility Mode](#migrating-using-compatibility-mode)
    + [Akka.Hosting Migration](#akkahosting-migration)
    + [HOCON Migration](#hocon-migration)
-* [Tag Table Based Tag Query Migration (Optional)](#tag-table-based-tag-query-migration-optional)
-* [Enable WriterUuid Anti-Corruption Layer Feature (Optional)](#enable-writeruuid-anti-corruption-layer-feature-optional)
+* [Upgrading to Tag Table (Optional)](#upgrading-to-tag-table-optional)
+* [Enable WriterUuid Anti-Corruption Layer Feature (Recommended)](#enable-writeruuid-anti-corruption-layer-feature-recommended)
 
 # Migrating Using Compatibility Mode
 

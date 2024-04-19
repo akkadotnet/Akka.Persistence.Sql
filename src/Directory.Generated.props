@@ -1,27 +1,11 @@
 <Project>
   <PropertyGroup>
-    <VersionPrefix>1.5.2</VersionPrefix>
-    <PackageReleaseNotes>&gt; **NOTE: Database schema changes**
-&gt;
-&gt; 1.5.2-beta1 package should be considered as deprecated. If you experimented with 1.5.2-beta1, you will need to drop existing persistence tables and recreate them using 1.5.2-beta2
-[Fix event journal table and tag table constraints and indices](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/211)
-[Fix snapshot table constraints and indices](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/216)
-This beta version introduces database schema optimization to:
-Improve the tag table based query performance, without compromising overall persistence performance.
-Improve inter-compatibility with other SQL persistence plugins.
-Tag Query Benchmark**
-Benchmark is performed on a worst possible scenario:
-Event journal table with 3 million row entries
-Tagged events near the end of the table
-|        Tag Count |  TagMode |         Mean |      Error |     StdDev |
-|-----------------:|--------- |-------------:|-----------:|-----------:|
-|               10 |      Csv | 1,746.621 ms | 27.8946 ms | 29.8469 ms |
-|              100 |      Csv | 1,724.465 ms | 25.4638 ms | 23.8189 ms |
-|             1000 |      Csv | 1,723.063 ms | 26.2311 ms | 24.5366 ms |
-|            10000 |      Csv | 1,873.467 ms | 26.1173 ms | 23.1523 ms |
-|               10 | TagTable |     3.201 ms |  0.0633 ms |  0.1479 ms |
-|              100 | TagTable |     5.163 ms |  0.1018 ms |  0.1358 ms |
-|             1000 | TagTable |    25.545 ms |  0.4952 ms |  0.4864 ms |
-|            10000 | TagTable |   441.877 ms |  3.5410 ms |  2.9569 ms |</PackageReleaseNotes>
+    <VersionPrefix>1.5.13</VersionPrefix>
+    <PackageReleaseNotes>[Update Akka.NET to 1.5.13](https://github.com/akkadotnet/akka.net/releases/tag/1.5.13)
+[Fix missing Persistence.Query configuration in legacy HOCON configuration mode](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/317)
+[Bump Akka.Hosting version to 1.5.12.1](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/312)
+[Bump Language.Ext.Core version to 4.4.4](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/315)
+[Bump System.Reactive.Linq version to 6.0.0](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/260)
+[Bump linq2db version to 5.2.2](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/266)</PackageReleaseNotes>
   </PropertyGroup>
 </Project>
