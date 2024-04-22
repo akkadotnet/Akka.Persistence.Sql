@@ -62,7 +62,7 @@
             ]
         }],
         "xref": [
-            "../tools/msdn.4.5.2/content/msdn.4.5.2.zip"
+            "https://learn.microsoft.com/en-us/dotnet/.xrefmap.json"
         ],
         "globalMetadata": {
             "_appTitle": "Akka.Persistence.Sql Documentation",

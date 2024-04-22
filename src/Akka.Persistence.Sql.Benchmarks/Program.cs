@@ -20,7 +20,7 @@ namespace Akka.Persistence.Sql.Benchmarks
     {
         public static async Task Main(string[] args)
         {
-            if (args.Length == 0)
+            if (args.Length == 0 || !args[0].ToLowerInvariant().Contains("generate"))
             {
                 BenchmarkSwitcher.FromAssembly(Assembly.GetExecutingAssembly()).Run(args);
                 return;

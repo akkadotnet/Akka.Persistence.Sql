@@ -1,1 +1,1 @@
-PowerShell.exe -file "serve-docs.ps1" %*  .\docs\docfx.json --serve -p 8100
+dotnet fsi build.fsx -- -t "ServeDocFx" %* 8100

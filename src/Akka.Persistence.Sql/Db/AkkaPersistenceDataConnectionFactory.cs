@@ -42,17 +42,19 @@ namespace Akka.Persistence.Sql.Db
             fmb.Build();
 
             _useCloneDataConnection = config.UseCloneConnection;
-            _opts = new DataOptions()
+            var opts =new DataOptions()
                 .UseConnectionString(config.ProviderName, config.ConnectionString)
                 .UseMappingSchema(mappingSchema);
+            _opts = opts;
 
             if (config.ProviderName.ToLower().StartsWith("sqlserver"))
                 _policy = new SqlServerRetryPolicy();
-
+            
+            
             _cloneConnection = new Lazy<AkkaDataConnection>(
                 () => new AkkaDataConnection(
-                    _opts.ConnectionOptions.ProviderName,
-                    new DataConnection(_opts)));
+                    opts.ConnectionOptions.ProviderName,
+                    new DataConnection(opts)));
         }
 
         public AkkaPersistenceDataConnectionFactory(IProviderConfig<SnapshotTableConfiguration> config)
@@ -81,17 +83,17 @@ namespace Akka.Persistence.Sql.Db
             fmb.Build();
 
             _useCloneDataConnection = config.UseCloneConnection;
-            _opts = new DataOptions()
+            var opts = new DataOptions()
                 .UseConnectionString(config.ProviderName, config.ConnectionString)
                 .UseMappingSchema(mappingSchema);
-
+            _opts = opts;
             if (config.ProviderName.ToLower().StartsWith("sqlserver"))
                 _policy = new SqlServerRetryPolicy();
 
             _cloneConnection = new Lazy<AkkaDataConnection>(
                 () => new AkkaDataConnection(
-                    _opts.ConnectionOptions.ProviderName,
-                    new DataConnection(_opts)));
+                    opts.ConnectionOptions.ProviderName,
+                    new DataConnection(opts)));
         }
 
         private static void MapJournalRow(

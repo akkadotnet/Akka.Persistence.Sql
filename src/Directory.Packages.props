@@ -50,7 +50,7 @@
   </ItemGroup>
   <!-- PostgreSql dependencies -->
   <ItemGroup>
-    <PackageVersion Include="Akka.Persistence.PostgreSql" Version="1.5.4.1" />
+    <PackageVersion Include="Akka.Persistence.PostgreSql" Version="1.5.15.1" />
     <PackageVersion Include="Npgsql" Version="7.0.6" />
   </ItemGroup>
   <!-- Redis dependencies -->
@@ -61,7 +61,7 @@
   <!-- MySql dependencies -->
   <ItemGroup>
     <PackageVersion Include="Akka.Persistence.MySql" Version="1.5.4.1" />
-    <PackageVersion Include="MySql.Data" Version="8.1.0" />
+    <PackageVersion Include="MySql.Data" Version="8.3.0" />
   </ItemGroup>
   <!-- Test dependencies -->
   <ItemGroup>
