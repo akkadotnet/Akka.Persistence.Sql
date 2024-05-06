@@ -29,15 +29,15 @@
     <PackageVersion Include="System.Reactive.Linq" Version="6.0.0" />
     <PackageVersion Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
     <PackageVersion Include="CommandLineParser" Version="2.9.1" />
-    <PackageVersion Include="LanguageExt.Core" Version="4.4.7" />
+    <PackageVersion Include="LanguageExt.Core" Version="4.4.8" />
     <PackageVersion Include="linq2db" Version="5.4.1" />
     <PackageVersion Include="FluentMigrator" Version="$(FluentMigratorVersion)" />
     <PackageVersion Include="FluentMigrator.Runner" Version="$(FluentMigratorVersion)" />
   </ItemGroup>
   <!-- SQL Server dependencies -->
   <ItemGroup>
-    <PackageVersion Include="Akka.Persistence.SqlServer" Version="1.5.4" />
-    <PackageVersion Include="Microsoft.Data.SqlClient" Version="5.1.1" />
+    <PackageVersion Include="Akka.Persistence.SqlServer" Version="1.5.15" />
+    <PackageVersion Include="Microsoft.Data.SqlClient" Version="5.1.4" />
     <PackageVersion Include="Microsoft.SqlServer.SqlManagementObjects" Version="170.18.0" />
   </ItemGroup>
   <!-- Sqlite dependencies -->
@@ -77,6 +77,6 @@
   </ItemGroup>
   <!-- SourceLink support for all Akka.NET projects -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="1.1.1" />
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
   </ItemGroup>
 </Project>
