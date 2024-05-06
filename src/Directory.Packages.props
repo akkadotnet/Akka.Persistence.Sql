@@ -5,7 +5,7 @@
     <AkkaHostingVersion>1.5.19</AkkaHostingVersion>
     <FluentMigratorVersion>3.3.2</FluentMigratorVersion>
     <SqliteVersion>1.0.118</SqliteVersion>
-    <MicrosoftSqliteVersion>7.0.11</MicrosoftSqliteVersion>
+    <MicrosoftSqliteVersion>8.0.4</MicrosoftSqliteVersion>
   </PropertyGroup>
   <!-- Akka dependencies -->
   <ItemGroup>
