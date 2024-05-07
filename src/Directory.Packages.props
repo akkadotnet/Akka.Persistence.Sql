@@ -38,7 +38,7 @@
   <ItemGroup>
     <PackageVersion Include="Akka.Persistence.SqlServer" Version="1.5.15" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="5.1.4" />
-    <PackageVersion Include="Microsoft.SqlServer.SqlManagementObjects" Version="170.18.0" />
+    <PackageVersion Include="Microsoft.SqlServer.SqlManagementObjects" Version="171.30.0" />
   </ItemGroup>
   <!-- Sqlite dependencies -->
   <ItemGroup>
