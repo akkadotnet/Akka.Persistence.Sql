@@ -1,3 +1,12 @@
+#### 1.5.20 May 8 2024 ###
+
+* [Fix missing take and optimize captures](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/347)
+* [Bump Linq2Db to 5.4.1](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/356)
+* [Bump AkkaVersion to 1.5.20](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/371)
+* [Bump Akka.Hosting version to 1.5.20](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/371)
+* [Bump FluentMigrator version to 5.2.0](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/372)
+* [Bump LanguageExt.Core version to 4.4.8](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/365)
+
 #### 1.5.14-alpha April 19 2024 ###
 * [Migrate build system to FAKE v6 and dotnet 8](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/361)
 
