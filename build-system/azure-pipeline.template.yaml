@@ -49,10 +49,10 @@ jobs:
           nobuild: true
           publishTestResults: true
           arguments: '--logger:trx --logger:"console;verbosity=normal"'
-          projects:
-            - 'src/Akka.Persistence.Sql.Tests/Akka.Persistence.Sql.Tests.csproj'
-            - 'src/Akka.Persistence.Sql.Hosting.Tests/Akka.Persistence.Sql.Hosting.Tests.csproj'
-            - 'src/Akka.Persistence.Sql.Data.Compatibility.Tests/Akka.Persistence.Sql.Data.Compatibility.Tests.csproj'
+          projects: >
+            **/*.Tests.csproj;
+            !**/*.Benchmark.*.csproj;
+            !**/Examples/**
         continueOnError: true
         condition: in( variables['Agent.OS'], 'Linux', 'Darwin' )
 
@@ -65,9 +65,11 @@ jobs:
           nobuild: true
           publishTestResults: true
           arguments: '--logger:trx --logger:"console;verbosity=normal"'
-          projects:
-            - 'src/Akka.Persistence.Sql.Tests/Akka.Persistence.Sql.Tests.csproj'
-            - 'src/Akka.Persistence.Sql.Hosting.Tests/Akka.Persistence.Sql.Hosting.Tests.csproj'
+          projects: >
+            **/*.Tests.csproj;
+            !**/*.Benchmark.*.csproj;
+            !**/*.Data.Compatibility.Tests.csproj;
+            !**/Examples/**
         continueOnError: true
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
 
