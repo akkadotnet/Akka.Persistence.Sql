@@ -19,6 +19,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_", "_", "{20C26B2D-59EA-42
 		src\Directory.Packages.props = src\Directory.Packages.props
 		build.ps1 = build.ps1
 		src\Directory.Generated.props = src\Directory.Generated.props
+		src\global.json = src\global.json
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build-system", "build-system", "{7537908B-6A42-4E34-889F-6004A97D4987}"
