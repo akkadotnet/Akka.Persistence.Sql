@@ -21,9 +21,10 @@ jobs:
         persistCredentials: true
 
       - task: UseDotNet@2
-        displayName: 'Use .NET 8'
+        displayName: 'Use .NET'
         inputs:
-          version: '8.x'
+          packageType: 'sdk'
+          useGlobalJson: true
 
       - task: DotNetCoreCLI@2
         displayName: Install DocFX
