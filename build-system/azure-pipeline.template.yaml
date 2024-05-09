@@ -25,6 +25,12 @@ jobs:
         inputs:
           packageType: 'sdk'
           useGlobalJson: true
+          
+      - task: BatchScript@1
+        displayName: 'Update Release Notes'
+        inputs:
+          filename: build.ps1
+        continueOnError: false
 
       - task: DotNetCoreCLI@2
         displayName: Build
