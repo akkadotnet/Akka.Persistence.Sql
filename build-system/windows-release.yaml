@@ -25,10 +25,9 @@ steps:
   inputs:
     version: '8.x'
 
-- task: BatchScript@1
+- pwsh: |
+    .\build.ps1
   displayName: 'Update Release Notes'
-  inputs:
-    filename: build.ps1
   continueOnError: false
 
 - task: DotNetCoreCLI@2
@@ -37,7 +36,8 @@ steps:
     command: 'pack'
     arguments: '-c Release'
     includeSymbols: true
-    packDirectory: .\bin\nuget
+    packDirectory: |
+      .\bin\nuget
   continueOnError: false
 
 - task: DotNetCoreCLI@2
@@ -47,7 +47,8 @@ steps:
     nugetFeedType: 'external'
     externalEndPoint: 'https://api.nuget.org/v3/index.json'
     publishFeedCredentials: $(nugetKey)
-    packagesToPush: .\bin\nuget\*.nupkg
+    packagesToPush: |
+      .\bin\nuget\*.nupkg
   continueOnError: false
 
 - task: GitHubRelease@0
