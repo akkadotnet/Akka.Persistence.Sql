@@ -26,11 +26,10 @@ jobs:
           packageType: 'sdk'
           useGlobalJson: true
           
-      - script: |
+      - pwsh: |
           .\build.ps1
         displayName: 'Update Release Notes'
         continueOnError: false
-        condition: eq( variables['Agent.OS'], 'Windows_NT' )
 
       - task: DotNetCoreCLI@2
         displayName: Build
