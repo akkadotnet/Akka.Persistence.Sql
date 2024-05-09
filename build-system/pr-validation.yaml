@@ -9,7 +9,7 @@ pr:
   branches:
     include: [ dev, master ] # branch names which will trigger a build
 
-name: $(Year:yyyy).$(Month).$(DayOfMonth)$(Rev:.r)
+name: $(SourceBranchName)_$(Year:yyyy).$(Month).$(DayOfMonth)$(Rev:.r)
 
 jobs:
   - template: azure-pipeline.template.yaml
@@ -17,8 +17,6 @@ jobs:
       name: 'windows_pr'
       displayName: 'Windows PR Validation'
       vmImage: 'windows-latest'
-      scriptFileName: build.cmd
-      scriptArgs: all
       outputDirectory: 'bin/nuget'
       artifactName: 'nuget_pack-$(Build.BuildId)'
 
@@ -27,7 +25,5 @@ jobs:
       name: 'linux_pr'
       displayName: 'Linux PR Validation'
       vmImage: 'ubuntu-latest'
-      scriptFileName: ./build.sh
-      scriptArgs: all
       outputDirectory: 'bin/nuget'
       artifactName: 'nuget_pack-$(Build.BuildId)'

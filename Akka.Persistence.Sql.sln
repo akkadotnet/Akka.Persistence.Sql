@@ -17,9 +17,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_", "_", "{20C26B2D-59EA-42
 		serve-docs.sh = serve-docs.sh
 		src\Directory.Build.props = src\Directory.Build.props
 		src\Directory.Packages.props = src\Directory.Packages.props
-		build.cmd = build.cmd
-		build.sh = build.sh
-		build.fsx = build.fsx
+		build.ps1 = build.ps1
+		src\Directory.Generated.props = src\Directory.Generated.props
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build-system", "build-system", "{7537908B-6A42-4E34-889F-6004A97D4987}"
@@ -78,6 +77,12 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{42F8143A-03CA-41DA-B24D-33193ABB252C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HoconConfiguration", "src\Examples\HoconConfiguration\HoconConfiguration.csproj", "{043A8917-5931-40FC-A093-21BB0AB56875}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{FD345711-9A7C-4168-8766-FCD8115C82E0}"
+	ProjectSection(SolutionItems) = preProject
+		build-system\scripts\bumpVersion.ps1 = build-system\scripts\bumpVersion.ps1
+		build-system\scripts\getReleaseNotes.ps1 = build-system\scripts\getReleaseNotes.ps1
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -148,6 +153,7 @@ Global
 		{1BE5B28E-0AB1-44BC-A5E8-5D352B42ACCF} = {3E392F73-EB03-4148-BC60-A1F734486190}
 		{043A8917-5931-40FC-A093-21BB0AB56875} = {42F8143A-03CA-41DA-B24D-33193ABB252C}
 		{7537908B-6A42-4E34-889F-6004A97D4987} = {20C26B2D-59EA-421C-9F64-BFFCE3D96260}
+		{FD345711-9A7C-4168-8766-FCD8115C82E0} = {7537908B-6A42-4E34-889F-6004A97D4987}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B99E6BB8-642A-4A68-86DF-69567CBA700A}

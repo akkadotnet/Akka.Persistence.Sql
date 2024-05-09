@@ -2,8 +2,6 @@ parameters:
   name: ''
   displayName: ''
   vmImage: ''
-  scriptFileName: ''
-  scriptArgs: ''
   outputDirectory: ''
   artifactName: ''
   timeoutInMinutes: 120
@@ -27,43 +25,90 @@ jobs:
         inputs:
           version: '8.x'
 
-      # Linux or macOS
-      - task: Bash@3
-        displayName: Linux / OSX Build
+      - task: DotNetCoreCLI@2
+        displayName: Install DocFX
         inputs:
-          filePath: ${{ parameters.scriptFileName }}
-          arguments: ${{ parameters.scriptArgs }}
+          command: 'custom'
+          custom: 'tool install -g docfx'
+        continueOnError: false
+
+      - task: DotNetCoreCLI@2
+        displayName: Build
+        inputs:
+          command: 'build'
+          configuration: 'release'
+        continueOnError: false
+
+      # Linux or macOS
+      - task: DotNetCoreCLI@2
+        displayName: Linux Unit Tests
+        inputs:
+          command: 'test'
+          configuration: 'release'
+          nobuild: true
+          publishTestResults: true
+          arguments: '--logger:trx --logger:"console;verbosity=normal"'
+          projects:
+            - 'src/Akka.Persistence.Sql.Tests/Akka.Persistence.Sql.Tests.csproj'
+            - 'src/Akka.Persistence.Sql.Hosting.Tests/Akka.Persistence.Sql.Hosting.Tests.csproj'
+            - 'src/Akka.Persistence.Sql.Data.Compatibility.Tests/Akka.Persistence.Sql.Data.Compatibility.Tests.csproj'
         continueOnError: true
         condition: in( variables['Agent.OS'], 'Linux', 'Darwin' )
 
       # Windows
-      - task: BatchScript@1
-        displayName: Windows Build
+      - task: DotNetCoreCLI@2
+        displayName: Windows Unit Tests
         inputs:
-          filename: ${{ parameters.scriptFileName }}
-          arguments: ${{ parameters.scriptArgs }}
+          command: 'test'
+          configuration: 'release'
+          nobuild: true
+          publishTestResults: true
+          arguments: '--logger:trx --logger:"console;verbosity=normal"'
+          projects:
+            - 'src/Akka.Persistence.Sql.Tests/Akka.Persistence.Sql.Tests.csproj'
+            - 'src/Akka.Persistence.Sql.Hosting.Tests/Akka.Persistence.Sql.Hosting.Tests.csproj'
+        continueOnError: true
+        condition: eq( variables['Agent.OS'], 'Windows_NT' )
+
+      - task: DotNetCoreCLI@2
+        displayName: NuGet pack
+        inputs:
+          command: 'pack'
+          configuration: 'release'
+          nobuild: true
+          includesymbols: true
+          packDirectory: ${{ parameters.outputDirectory }}
+        continueOnError: true
+        condition: eq( variables['Agent.OS'], 'Windows_NT' )
+
+      - task: DotNetCoreCLI@2
+        displayName: Build DocFx
+        inputs:
+          command: 'custom'
+          custom: 'docfx ./docs/docfx.json'
         continueOnError: true
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
 
       - task: PublishTestResults@2
         inputs:
-          testRunner: VSTest
+          testResultsFormat: VSTest
           testResultsFiles: '**/*.trx' #TestResults folder usually
           testRunTitle: ${{ parameters.name }}
           mergeTestResults: true
+          failTaskOnFailedTests: false
+          publishRunAttachments: true
 
       - task: CopyFiles@2
         displayName: 'Copy Build Output'
         inputs:
-          sourceFolder: ${{ parameters.outputDirectory }}
-          contents: '**/*'
-          targetFolder: $(Build.ArtifactStagingDirectory)
-          continueOnError: false
+          SourceFolder: ${{ parameters.outputDirectory }}
+          Contents: '**/*'
+          TargetFolder: $(Build.ArtifactStagingDirectory)
 
       - task: PublishBuildArtifacts@1
         inputs:
-          pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-          artifactName: ${{ parameters.artifactName }}
+          PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+          ArtifactName: ${{ parameters.artifactName }}
 
       - script: 'echo 1>&2'
         failOnStderr: true
