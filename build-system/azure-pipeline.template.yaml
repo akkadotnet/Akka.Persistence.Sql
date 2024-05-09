@@ -27,14 +27,6 @@ jobs:
           useGlobalJson: true
 
       - task: DotNetCoreCLI@2
-        displayName: Install DocFX
-        inputs:
-          command: 'custom'
-          custom: 'tool'
-          arguments: 'install -g docfx'
-        continueOnError: false
-
-      - task: DotNetCoreCLI@2
         displayName: Build
         inputs:
           command: 'build'
@@ -75,15 +67,6 @@ jobs:
           includeSymbols: true
           arguments: '--no-build -c Release'
           packDirectory: ${{ parameters.outputDirectory }}
-        continueOnError: true
-        condition: eq( variables['Agent.OS'], 'Windows_NT' )
-
-      - task: DotNetCoreCLI@2
-        displayName: Build DocFx
-        inputs:
-          command: 'custom'
-          custom: 'docfx'
-          arguments: './docs/docfx.json'
         continueOnError: true
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
 
