@@ -29,7 +29,6 @@ jobs:
       - script: |
           .\build.ps1
         displayName: 'Update Release Notes'
-        pwsh: true
         continueOnError: false
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
 
