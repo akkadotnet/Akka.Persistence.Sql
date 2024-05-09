@@ -50,10 +50,10 @@ jobs:
           nobuild: true
           publishTestResults: true
           arguments: '--logger:trx --logger:"console;verbosity=normal"'
-          projects: >
-            **/*.Tests.csproj;
-            !**/*.Benchmark.*.csproj;
-            !**/Examples/**
+          projects: |
+            **/*.Tests.csproj
+            !**/*.Benchmark.*.csproj
+            !**/Examples/**/*.csproj
         continueOnError: true
         condition: in( variables['Agent.OS'], 'Linux', 'Darwin' )
 
@@ -66,11 +66,11 @@ jobs:
           nobuild: true
           publishTestResults: true
           arguments: '--logger:trx --logger:"console;verbosity=normal"'
-          projects: >
-            **/*.Tests.csproj;
-            !**/*.Benchmark.*.csproj;
-            !**/*.Data.Compatibility.Tests.csproj;
-            !**/Examples/**
+          projects: |
+            **/*.Tests.csproj
+            !**/*.Benchmark.*.csproj
+            !**/*.Data.Compatibility.Tests.csproj
+            !**/Examples/**/*.csproj
         continueOnError: true
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
 
