@@ -30,7 +30,8 @@ jobs:
         displayName: Install DocFX
         inputs:
           command: 'custom'
-          custom: 'tool install -g docfx'
+          custom: 'tool'
+          arguments: 'install -g docfx'
         continueOnError: false
 
       - task: DotNetCoreCLI@2
