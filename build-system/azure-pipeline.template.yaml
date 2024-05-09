@@ -26,12 +26,12 @@ jobs:
           packageType: 'sdk'
           useGlobalJson: true
           
-      - task: AzurePowerShell@2
+      - task: BatchScript@1
         displayName: 'Update Release Notes'
         inputs:
-          ScriptType: 'FilePath'
-          ScriptPath: './build.ps1'
+          filename: build.ps1
         continueOnError: false
+        condition: eq( variables['Agent.OS'], 'Windows_NT' )
 
       - task: DotNetCoreCLI@2
         displayName: Build
