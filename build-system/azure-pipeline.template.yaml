@@ -61,7 +61,10 @@ jobs:
           publishTestResults: true
           arguments: '--no-build -c Release'
           projects: |
-            **/*.Hosting.Tests.csproj
+            **/*.Tests.csproj
+            !**/*.Data.Compatibility.Tests.csproj
+            !**/*.Benchmark.*.csproj
+            !**/Examples/**/*.csproj
         continueOnError: true
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
 
