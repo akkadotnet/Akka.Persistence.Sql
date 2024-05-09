@@ -38,7 +38,7 @@ jobs:
         displayName: Build
         inputs:
           command: 'build'
-          configuration: 'release'
+          arguments: '-c Release'
         continueOnError: false
 
       # Linux or macOS
@@ -46,12 +46,11 @@ jobs:
         displayName: Linux Unit Tests
         inputs:
           command: 'test'
-          configuration: 'release'
-          nobuild: true
           publishTestResults: true
-          arguments: '--logger:trx --logger:"console;verbosity=normal"'
+          arguments: '--no-build -c Release --logger:trx --logger:"console;verbosity=normal"'
           projects: |
             **/*.Tests.csproj
+            **/*.DockerTests.csproj
             !**/*.Benchmark.*.csproj
             !**/Examples/**/*.csproj
         continueOnError: true
@@ -62,15 +61,10 @@ jobs:
         displayName: Windows Unit Tests
         inputs:
           command: 'test'
-          configuration: 'release'
-          nobuild: true
           publishTestResults: true
-          arguments: '--logger:trx --logger:"console;verbosity=normal"'
+          arguments: '--no-build -c Release --logger:trx --logger:"console;verbosity=normal"'
           projects: |
-            **/*.Tests.csproj
-            !**/*.Benchmark.*.csproj
-            !**/*.Data.Compatibility.Tests.csproj
-            !**/Examples/**/*.csproj
+            **/*.Hosting.Tests.csproj
         continueOnError: true
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
 
@@ -78,9 +72,8 @@ jobs:
         displayName: NuGet pack
         inputs:
           command: 'pack'
-          configuration: 'release'
-          nobuild: true
-          includesymbols: true
+          includeSymbols: true
+          arguments: '--no-build -c Release'
           packDirectory: ${{ parameters.outputDirectory }}
         continueOnError: true
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
@@ -89,7 +82,8 @@ jobs:
         displayName: Build DocFx
         inputs:
           command: 'custom'
-          custom: 'docfx ./docs/docfx.json'
+          custom: 'docfx'
+          arguments: './docs/docfx.json'
         continueOnError: true
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
 
