@@ -26,10 +26,11 @@ jobs:
           packageType: 'sdk'
           useGlobalJson: true
           
-      - task: BatchScript@1
+      - task: AzurePowerShell@2
         displayName: 'Update Release Notes'
         inputs:
-          filename: build.ps1
+          ScriptType: 'FilePath'
+          ScriptPath: .\build.ps1
         continueOnError: false
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
 
@@ -46,7 +47,7 @@ jobs:
         inputs:
           command: 'test'
           publishTestResults: true
-          arguments: '--no-build -c Release --logger:trx --logger:"console;verbosity=normal"'
+          arguments: '--no-build -c Release'
           projects: |
             **/*.Tests.csproj
             **/*.DockerTests.csproj
@@ -61,7 +62,7 @@ jobs:
         inputs:
           command: 'test'
           publishTestResults: true
-          arguments: '--no-build -c Release --logger:trx --logger:"console;verbosity=normal"'
+          arguments: '--no-build -c Release'
           projects: |
             **/*.Hosting.Tests.csproj
         continueOnError: true
@@ -77,6 +78,15 @@ jobs:
         continueOnError: true
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
 
+      - task: CopyFiles@2
+        displayName: 'Copy Build Output'
+        inputs:
+          SourceFolder: ${{ parameters.outputDirectory }}
+          Contents: '**/*'
+          TargetFolder: $(Build.ArtifactStagingDirectory)
+        condition: eq( variables['Agent.OS'], 'Windows_NT' )
+      # End Windows
+
       - task: PublishTestResults@2
         inputs:
           testResultsFormat: VSTest
@@ -85,13 +95,6 @@ jobs:
           mergeTestResults: true
           failTaskOnFailedTests: false
           publishRunAttachments: true
-
-      - task: CopyFiles@2
-        displayName: 'Copy Build Output'
-        inputs:
-          SourceFolder: ${{ parameters.outputDirectory }}
-          Contents: '**/*'
-          TargetFolder: $(Build.ArtifactStagingDirectory)
 
       - task: PublishBuildArtifacts@1
         inputs:
