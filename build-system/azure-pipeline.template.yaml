@@ -26,11 +26,13 @@ jobs:
           packageType: 'sdk'
           useGlobalJson: true
           
-      - task: AzurePowerShell@2
+      - task: AzurePowerShell@5
         displayName: 'Update Release Notes'
         inputs:
           ScriptType: 'FilePath'
           ScriptPath: .\build.ps1
+          errorActionPreference: 'stop'
+          azurePowerShellVersion: 'LatestVersion'
         continueOnError: false
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
 
