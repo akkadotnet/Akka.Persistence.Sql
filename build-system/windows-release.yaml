@@ -45,7 +45,7 @@ steps:
   inputs:
     command: 'push'
     nugetFeedType: 'external'
-    externalEndPoint: 'https://api.nuget.org/v3/index.json'
+    publishVstsFeed: 'https://api.nuget.org/v3/index.json'
     publishFeedCredentials: $(nugetKey)
     packagesToPush: |
       .\bin\nuget\*.nupkg
