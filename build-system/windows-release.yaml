@@ -25,11 +25,31 @@ steps:
   inputs:
     version: '8.x'
 
-- task: BatchScript@1
-  displayName: 'FAKE Build'
+- pwsh: |
+    .\build.ps1
+  displayName: 'Update Release Notes'
+  continueOnError: false
+
+- task: DotNetCoreCLI@2
+  displayName: NuGet Pack
   inputs:
-    filename: build.cmd
-    arguments: 'nuget nugetpublishurl=https://api.nuget.org/v3/index.json nugetkey=$(nugetKey)'
+    command: 'pack'
+    arguments: '-c Release'
+    includeSymbols: true
+    packDirectory: |
+      .\bin\nuget
+  continueOnError: false
+
+- task: DotNetCoreCLI@2
+  displayName: NuGet Push
+  inputs:
+    command: 'push'
+    nugetFeedType: 'external'
+    externalEndPoint: 'https://api.nuget.org/v3/index.json'
+    publishFeedCredentials: $(nugetKey)
+    packagesToPush: |
+      .\bin\nuget\*.nupkg
+  continueOnError: false
 
 - task: GitHubRelease@0
   displayName: 'GitHub release (create)'
@@ -39,4 +59,4 @@ steps:
     title: '$(projectName) v$(Build.SourceBranchName)'
     releaseNotesFile: 'RELEASE_NOTES.md'
     assets: |
-     bin\nuget\*.nupkg
+      .\bin\nuget\*.nupkg

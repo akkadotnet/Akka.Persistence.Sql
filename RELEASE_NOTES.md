@@ -1,4 +1,4 @@
-#### 1.5.20 May 8 2024 ###
+#### 1.5.20 May 8th 2024 ####
 
 * [Fix missing take and optimize captures](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/347)
 * [Bump Linq2Db to 5.4.1](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/356)
