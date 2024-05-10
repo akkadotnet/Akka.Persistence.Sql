@@ -28,17 +28,14 @@ steps:
     packageType: 'sdk'
     useGlobalJson: true
 
-- pwsh: |
+- powershell: |
     .\build.ps1
   displayName: 'Update Release Notes'
   continueOnError: false
 
-- task: DotNetCoreCLI@2
+- powershell: |
+    dotnet pack --configuration $(buildConfiguration) --include-symbols --verbosity normal --output .\bin\nuget 
   displayName: NuGet Pack
-  inputs:
-    command: 'pack'
-    arguments: '-c $(buildConfiguration) -o ./bin/nuget'
-    includeSymbols: true
   continueOnError: false
 
 # PowerShell script to push all NuGet packages to NuGet.org
