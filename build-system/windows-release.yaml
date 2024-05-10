@@ -18,6 +18,8 @@ variables:
     value: Akka.Persistence.Sql
   - name: githubRepositoryName
     value: akkadotnet/Akka.Persistence.Sql
+  - name: buildConfiguration
+    value: 'Release'
 
 steps:
 - task: UseDotNet@2
@@ -34,21 +36,17 @@ steps:
   displayName: NuGet Pack
   inputs:
     command: 'pack'
-    arguments: '-c Release'
+    arguments: '-c $(buildConfiguration) -o ./bin/nuget'
     includeSymbols: true
-    packDirectory: |
-      .\bin\nuget
   continueOnError: false
 
-- task: DotNetCoreCLI@2
-  displayName: NuGet Push
-  inputs:
-    command: 'push'
-    nugetFeedType: 'external'
-    externalEndPoint: 'https://api.nuget.org/v3/index.json'
-    publishFeedCredentials: $(nugetKey)
-    packagesToPush: |
-      .\bin\nuget\*.nupkg
+# PowerShell script to push all NuGet packages to NuGet.org
+- powershell: |
+    $ErrorActionPreference = "Stop"  # Makes the script stop on errors
+    Get-ChildItem "bin\nuget\*.nupkg" -Recurse | ForEach-Object {
+      dotnet nuget push $_.FullName --api-key $(nugetKey) --source https://api.nuget.org/v3/index.json
+    }
+  displayName: 'Push to NuGet.org'
   continueOnError: false
 
 - task: GitHubRelease@0
