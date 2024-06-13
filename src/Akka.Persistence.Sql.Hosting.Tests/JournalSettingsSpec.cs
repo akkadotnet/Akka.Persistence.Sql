@@ -8,6 +8,9 @@ using System.Data;
 using Akka.Configuration;
 using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Extensions;
+using Akka.Persistence.Sql.Journal;
+using Akka.Persistence.Sql.Journal.Dao;
+using Akka.Persistence.Sql.Query;
 using FluentAssertions;
 using LanguageExt.UnitsOfMeasure;
 using Xunit;
@@ -19,65 +22,98 @@ namespace Akka.Persistence.Sql.Hosting.Tests
         [Fact(DisplayName = "Default options should not override default hocon config")]
         public void DefaultOptionsTest()
         {
-            var defaultConfig = ConfigurationFactory.ParseString(
-                    @"
-akka.persistence.journal.sql {
-    connection-string = a
-    provider-name = b
-}")
-                .WithFallback(SqlPersistence.DefaultConfiguration);
-
-            defaultConfig = defaultConfig.GetConfig(SqlPersistence.JournalConfigPath);
+            #region Setup
+            
+            var expectedConfig = ConfigurationFactory.ParseString(
+                    """
+                    akka.persistence.journal.sql {
+                        connection-string = a
+                        provider-name = b
+                    }
+                    akka.persistence.query.journal.sql {
+                        connection-string = a
+                        provider-name = b
+                    }
+                    """)
+                .WithFallback(SqlPersistence.DefaultConfiguration)
+                .WithFallback(SqlPersistence.DefaultQueryConfiguration);
 
             var opt = new SqlJournalOptions
             {
                 ConnectionString = "a",
                 ProviderName = "b",
             };
-            var actualConfig = opt.ToConfig().WithFallback(SqlPersistence.DefaultConfiguration);
+            var config = opt.ToConfig()
+                .WithFallback(SqlPersistence.DefaultConfiguration)
+                .WithFallback(SqlPersistence.DefaultQueryConfiguration);
+            
+            #endregion
 
-            actualConfig = actualConfig.GetConfig(SqlPersistence.JournalConfigPath);
+            #region Journal configuration
+            
+            var defaultConfig = expectedConfig.GetConfig(SqlPersistence.JournalConfigPath);
+            var actualConfig = config.GetConfig(SqlPersistence.JournalConfigPath);
 
-            actualConfig.GetString("connection-string").Should().Be(defaultConfig.GetString("connection-string"));
-            actualConfig.GetString("provider-name").Should().Be(defaultConfig.GetString("provider-name"));
-            actualConfig.GetString("table-mapping").Should().Be(defaultConfig.GetString("table-mapping"));
-            actualConfig.GetString("serializer").Should().Be(defaultConfig.GetString("serializer"));
-            actualConfig.GetBoolean("auto-initialize").Should().Be(defaultConfig.GetBoolean("auto-initialize"));
-            actualConfig.GetIsolationLevel("read-isolation-level").Should().Be(defaultConfig.GetIsolationLevel("read-isolation-level"));
-            actualConfig.GetIsolationLevel("write-isolation-level").Should().Be(defaultConfig.GetIsolationLevel("write-isolation-level"));
-            actualConfig.GetString("default.schema-name").Should().Be(defaultConfig.GetString("default.schema-name"));
+            actualConfig.AssertType(defaultConfig, "class", typeof(SqlWriteJournal));
+            actualConfig.AssertString(defaultConfig, "plugin-dispatcher");
+            actualConfig.AssertString(defaultConfig, "connection-string", "a");
+            actualConfig.AssertString(defaultConfig, "provider-name", "b");
+            actualConfig.AssertBool(defaultConfig, "delete-compatibility-mode", false);
+            actualConfig.AssertString(defaultConfig, "table-mapping", "default");
+            actualConfig.AssertInt(defaultConfig, "buffer-size", 5000);
+            actualConfig.AssertInt(defaultConfig, "batch-size", 100);
+            actualConfig.AssertInt(defaultConfig, "db-round-trip-max-batch-size", 1000);
+            actualConfig.AssertBool(defaultConfig, "prefer-parameters-on-multirow-insert", false);
+            actualConfig.AssertInt(defaultConfig, "replay-batch-size", 1000);
+            actualConfig.AssertInt(defaultConfig, "parallelism", 3);
+            actualConfig.AssertInt(defaultConfig, "max-row-by-row-size", 100);
+            actualConfig.AssertBool(defaultConfig, "use-clone-connection", true);
+            actualConfig.AssertString(defaultConfig, "materializer-dispatcher");
+            actualConfig.AssertString(defaultConfig, "tag-write-mode", "TagTable");
+            actualConfig.AssertString(defaultConfig, "tag-separator", ";");
+            actualConfig.AssertBool(defaultConfig, "auto-initialize", true);
+            actualConfig.AssertBool(defaultConfig, "warn-on-auto-init-fail", true);
+            actualConfig.AssertType(defaultConfig, "dao", typeof(ByteArrayJournalDao));
+            actualConfig.AssertString(defaultConfig, "serializer");
+            actualConfig.AssertIsolationLevel(defaultConfig, "read-isolation-level");
+            actualConfig.AssertIsolationLevel(defaultConfig, "write-isolation-level");
 
-            var defaultJournalConfig = defaultConfig.GetConfig("default.journal");
-            var actualJournalConfig = actualConfig.GetConfig("default.journal");
+            actualConfig.AssertMappingEquals(defaultConfig, "default");
+            #endregion
 
-            actualJournalConfig.GetBoolean("use-writer-uuid-column").Should().Be(defaultJournalConfig.GetBoolean("use-writer-uuid-column"));
-            actualJournalConfig.GetString("table-name").Should().Be(defaultJournalConfig.GetString("table-name"));
-            actualJournalConfig.GetString("columns.ordering").Should().Be(defaultJournalConfig.GetString("columns.ordering"));
-            actualJournalConfig.GetString("columns.deleted").Should().Be(defaultJournalConfig.GetString("columns.deleted"));
-            actualJournalConfig.GetString("columns.persistence-id").Should().Be(defaultJournalConfig.GetString("columns.persistence-id"));
-            actualJournalConfig.GetString("columns.sequence-number").Should().Be(defaultJournalConfig.GetString("columns.sequence-number"));
-            actualJournalConfig.GetString("columns.created").Should().Be(defaultJournalConfig.GetString("columns.created"));
-            actualJournalConfig.GetString("columns.tags").Should().Be(defaultJournalConfig.GetString("columns.tags"));
-            actualJournalConfig.GetString("columns.message").Should().Be(defaultJournalConfig.GetString("columns.message"));
-            actualJournalConfig.GetString("columns.identifier").Should().Be(defaultJournalConfig.GetString("columns.identifier"));
-            actualJournalConfig.GetString("columns.manifest").Should().Be(defaultJournalConfig.GetString("columns.manifest"));
-            actualJournalConfig.GetString("columns.writer-uuid").Should().Be(defaultJournalConfig.GetString("columns.writer-uuid"));
+            #region Query configuration
 
-            var defaultMetaConfig = defaultConfig.GetConfig("default.metadata");
-            var actualMetaConfig = actualConfig.GetConfig("default.metadata");
+            var defaultQueryConfig = expectedConfig.GetConfig(SqlPersistence.QueryConfigPath);
+            var actualQueryConfig = config.GetConfig(SqlPersistence.QueryConfigPath);
 
-            actualMetaConfig.GetString("table-name").Should().Be(defaultMetaConfig.GetString("table-name"));
-            actualMetaConfig.GetString("columns.persistence-id").Should().Be(defaultMetaConfig.GetString("columns.persistence-id"));
-            actualMetaConfig.GetString("columns.sequence-number").Should().Be(defaultMetaConfig.GetString("columns.sequence-number"));
-
-            var defaultTagConfig = defaultConfig.GetConfig("default.tag");
-            var actualTagConfig = actualConfig.GetConfig("default.tag");
-
-            actualTagConfig.GetString("table-name").Should().Be(defaultTagConfig.GetString("table-name"));
-            actualTagConfig.GetString("columns.ordering-id").Should().Be(defaultTagConfig.GetString("columns.ordering-id"));
-            actualTagConfig.GetString("columns.tag-value").Should().Be(defaultTagConfig.GetString("columns.tag-value"));
-            actualTagConfig.GetString("columns.persistence-id").Should().Be(defaultTagConfig.GetString("columns.persistence-id"));
-            actualTagConfig.GetString("columns.sequence-nr").Should().Be(defaultTagConfig.GetString("columns.sequence-nr"));
+            actualQueryConfig.AssertType(defaultQueryConfig, "class", typeof(SqlReadJournalProvider));
+            actualQueryConfig.AssertString(defaultQueryConfig, "write-plugin");
+            actualQueryConfig.AssertInt(defaultQueryConfig, "max-buffer-size", 500);
+            actualQueryConfig.AssertTimeSpan(defaultQueryConfig, "refresh-interval", 1.Seconds());
+            actualQueryConfig.AssertString(defaultQueryConfig, "connection-string", "a");
+            actualQueryConfig.AssertString(defaultQueryConfig, "tag-read-mode", "TagTable");
+            
+            actualQueryConfig.AssertInt(defaultQueryConfig, "journal-sequence-retrieval.batch-size", 10000);
+            actualQueryConfig.AssertInt(defaultQueryConfig, "journal-sequence-retrieval.max-tries", 10);
+            actualQueryConfig.AssertTimeSpan(defaultQueryConfig, "journal-sequence-retrieval.query-delay", 1.Seconds());
+            actualQueryConfig.AssertTimeSpan(defaultQueryConfig, "journal-sequence-retrieval.max-backoff-query-delay", 60.Seconds());
+            actualQueryConfig.AssertTimeSpan(defaultQueryConfig, "journal-sequence-retrieval.ask-timeout", 1.Seconds());
+            
+            actualQueryConfig.AssertString(defaultQueryConfig, "provider-name", "b");
+            actualQueryConfig.AssertString(defaultQueryConfig, "table-mapping", "default");
+            actualQueryConfig.AssertInt(defaultQueryConfig, "buffer-size", 5000);
+            actualQueryConfig.AssertInt(defaultQueryConfig, "batch-size", 100);
+            actualQueryConfig.AssertInt(defaultQueryConfig, "replay-batch-size", 1000);
+            actualQueryConfig.AssertInt(defaultQueryConfig, "parallelism", 3);
+            actualQueryConfig.AssertInt(defaultQueryConfig, "max-row-by-row-size", 100);
+            actualQueryConfig.AssertBool(defaultQueryConfig, "use-clone-connection", true);
+            actualQueryConfig.AssertString(defaultQueryConfig, "tag-separator", ";");
+            actualQueryConfig.AssertIsolationLevel(defaultQueryConfig, "read-isolation-level");
+            actualQueryConfig.AssertType(defaultQueryConfig, "dao", typeof(ByteArrayJournalDao));
+            
+            actualQueryConfig.AssertMappingEquals(defaultQueryConfig, "default");
+            
+            #endregion
         }
 
         [Fact(DisplayName = "Custom Options should modify default config")]
@@ -92,6 +128,9 @@ akka.persistence.journal.sql {
                 Serializer = "hyperion",
                 ReadIsolationLevel = IsolationLevel.Snapshot,
                 WriteIsolationLevel = IsolationLevel.Snapshot,
+                TagStorageMode = TagMode.Csv,
+                TagSeparator = ":",
+                DeleteCompatibilityMode = true,
                 DatabaseOptions = new JournalDatabaseOptions(DatabaseMapping.SqlServer)
                 {
                     SchemaName = "schema",
@@ -128,23 +167,29 @@ akka.persistence.journal.sql {
             };
 
             var fullConfig = opt.ToConfig();
-            var journalConfig = fullConfig
-                .GetConfig("akka.persistence.journal.custom")
-                .WithFallback(SqlPersistence.DefaultJournalConfiguration);
-            var config = new JournalConfig(journalConfig);
 
-            fullConfig.GetTimeSpan("akka.persistence.query.journal.sql.refresh-interval").Should().Be(5.Seconds());
+            #region Journal configuration
+            var journalConfig = new JournalConfig(
+                fullConfig
+                    .GetConfig("akka.persistence.journal.custom")
+                    .WithFallback(SqlPersistence.DefaultJournalConfiguration));
 
-            config.AutoInitialize.Should().BeFalse();
-            config.ConnectionString.Should().Be("a");
-            config.ProviderName.Should().Be("b");
-            config.DefaultSerializer.Should().Be("hyperion");
-            config.ReadIsolationLevel.Should().Be(IsolationLevel.Snapshot);
-            config.WriteIsolationLevel.Should().Be(IsolationLevel.Snapshot);
+            journalConfig.AutoInitialize.Should().BeFalse();
+            journalConfig.ConnectionString.Should().Be("a");
+            journalConfig.ProviderName.Should().Be("b");
+            journalConfig.DefaultSerializer.Should().Be("hyperion");
+            journalConfig.UseCloneConnection.Should().BeTrue(); // non-overridable
+            journalConfig.ReadIsolationLevel.Should().Be(IsolationLevel.Snapshot);
+            journalConfig.WriteIsolationLevel.Should().Be(IsolationLevel.Snapshot);
 
-            config.TableConfig.SchemaName.Should().Be("schema");
+            journalConfig.PluginConfig.TagSeparator.Should().Be(":");
+            journalConfig.PluginConfig.TagMode.Should().Be(TagMode.Csv);
 
-            var journalTable = config.TableConfig.EventJournalTable;
+            journalConfig.DaoConfig.SqlCommonCompatibilityMode.Should().BeTrue();
+
+            journalConfig.TableConfig.SchemaName.Should().Be("schema");
+
+            var journalTable = journalConfig.TableConfig.EventJournalTable;
             journalTable.UseWriterUuidColumn.Should().BeFalse();
             journalTable.Name.Should().Be("aa");
             journalTable.ColumnNames.Ordering.Should().Be("a");
@@ -158,17 +203,68 @@ akka.persistence.journal.sql {
             journalTable.ColumnNames.Manifest.Should().Be("i");
             journalTable.ColumnNames.WriterUuid.Should().Be("j");
 
-            var metaTable = config.TableConfig.MetadataTable;
+            var metaTable = journalConfig.TableConfig.MetadataTable;
             metaTable.Name.Should().Be("bb");
             metaTable.ColumnNames.PersistenceId.Should().Be("a");
             metaTable.ColumnNames.SequenceNumber.Should().Be("b");
 
-            var tagTable = config.TableConfig.TagTable;
+            var tagTable = journalConfig.TableConfig.TagTable;
             tagTable.Name.Should().Be("cc");
             tagTable.ColumnNames.OrderingId.Should().Be("a");
             tagTable.ColumnNames.Tag.Should().Be("b");
             tagTable.ColumnNames.PersistenceId.Should().Be("c");
             tagTable.ColumnNames.SequenceNumber.Should().Be("d");
+            #endregion
+
+            #region Query configuration
+            var queryConfig = new ReadJournalConfig(
+                fullConfig
+                    .GetConfig("akka.persistence.query.journal.custom")
+                    .WithFallback(SqlPersistence.DefaultQueryConfiguration));
+
+            queryConfig.ConnectionString.Should().Be("a");
+            queryConfig.ProviderName.Should().Be("b");
+            queryConfig.DefaultSerializer.Should().Be("hyperion");
+            queryConfig.UseCloneConnection.Should().BeTrue(); // non-overridable
+            queryConfig.RefreshInterval.Should().Be(5.Seconds());
+
+            queryConfig.PluginConfig.TagSeparator.Should().Be(":");
+            queryConfig.PluginConfig.TagMode.Should().Be(TagMode.Csv);
+
+            queryConfig.JournalSequenceRetrievalConfiguration.BatchSize.Should().Be(10000); // non-overridable
+            queryConfig.JournalSequenceRetrievalConfiguration.MaxTries.Should().Be(10); // non-overridable
+            queryConfig.JournalSequenceRetrievalConfiguration.QueryDelay.Should().Be(1.Seconds()); // non-overridable
+            queryConfig.JournalSequenceRetrievalConfiguration.MaxBackoffQueryDelay.Should().Be(60.Seconds()); // non-overridable
+            queryConfig.JournalSequenceRetrievalConfiguration.AskTimeout.Should().Be(1.Seconds()); // non-overridable
+            
+            queryConfig.TableConfig.SchemaName.Should().Be("schema");
+
+            journalTable = queryConfig.TableConfig.EventJournalTable;
+            journalTable.UseWriterUuidColumn.Should().BeFalse();
+            journalTable.Name.Should().Be("aa");
+            journalTable.ColumnNames.Ordering.Should().Be("a");
+            journalTable.ColumnNames.Deleted.Should().Be("b");
+            journalTable.ColumnNames.PersistenceId.Should().Be("c");
+            journalTable.ColumnNames.SequenceNumber.Should().Be("d");
+            journalTable.ColumnNames.Created.Should().Be("e");
+            journalTable.ColumnNames.Tags.Should().Be("f");
+            journalTable.ColumnNames.Message.Should().Be("g");
+            journalTable.ColumnNames.Identifier.Should().Be("h");
+            journalTable.ColumnNames.Manifest.Should().Be("i");
+            journalTable.ColumnNames.WriterUuid.Should().Be("j");
+
+            metaTable = queryConfig.TableConfig.MetadataTable;
+            metaTable.Name.Should().Be("bb");
+            metaTable.ColumnNames.PersistenceId.Should().Be("a");
+            metaTable.ColumnNames.SequenceNumber.Should().Be("b");
+
+            tagTable = queryConfig.TableConfig.TagTable;
+            tagTable.Name.Should().Be("cc");
+            tagTable.ColumnNames.OrderingId.Should().Be("a");
+            tagTable.ColumnNames.Tag.Should().Be("b");
+            tagTable.ColumnNames.PersistenceId.Should().Be("c");
+            tagTable.ColumnNames.SequenceNumber.Should().Be("d");
+            #endregion
         }
     }
 }
