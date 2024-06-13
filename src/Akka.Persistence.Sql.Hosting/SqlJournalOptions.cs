@@ -154,32 +154,41 @@ namespace Akka.Persistence.Sql.Hosting
 
             base.Build(sb);
 
-            if (IsDefaultPlugin)
-            {
-                sb.AppendLine("akka.persistence.query.journal.sql {");
-                sb.AppendLine($"connection-string = {ConnectionString.ToHocon()}");
-                sb.AppendLine($"provider-name = {ProviderName.ToHocon()}");
-                
-                if (DatabaseOptions is not null)
-                    sb.AppendLine($"table-mapping = {DatabaseOptions.Mapping.Name().ToHocon()}");
-
-                if (TagStorageMode is not null)
-                    sb.AppendLine($"tag-read-mode = {TagStorageMode.ToString().ToHocon()}");
-
-                if (TagSeparator is not null)
-                    sb.AppendLine($"tag-separator = {TagSeparator.ToHocon()}");
+            BuildQueryConfig(sb, QueryPluginId);
             
-                if (ReadIsolationLevel is not null)
-                    sb.AppendLine($"read-isolation-level = {ReadIsolationLevel.ToHocon()}");
+            if (IsDefaultPlugin && Identifier is not "sql")
+                BuildQueryConfig(sb, "akka.persistence.query.journal.sql");
 
-                DatabaseOptions?.Build(sb);
+            return sb;
+        }
+
+        private StringBuilder BuildQueryConfig(StringBuilder sb, string queryPluginId)
+        {
+            sb.Append(queryPluginId).AppendLine("{");
+            sb.AppendLine($"connection-string = {ConnectionString.ToHocon()}");
+            sb.AppendLine($"provider-name = {ProviderName.ToHocon()}");
                 
-                sb.AppendLine("}");
-            }
+            if (DatabaseOptions is not null)
+                sb.AppendLine($"table-mapping = {DatabaseOptions.Mapping.Name().ToHocon()}");
+
+            if (TagStorageMode is not null)
+                sb.AppendLine($"tag-read-mode = {TagStorageMode.ToString().ToHocon()}");
+
+            if (TagSeparator is not null)
+                sb.AppendLine($"tag-separator = {TagSeparator.ToHocon()}");
+            
+            if (ReadIsolationLevel is not null)
+                sb.AppendLine($"read-isolation-level = {ReadIsolationLevel.ToHocon()}");
 
             if (QueryRefreshInterval is not null)
-                sb.AppendLine($"akka.persistence.query.journal.sql.refresh-interval = {QueryRefreshInterval.ToHocon()}");
-
+                sb.AppendLine($"refresh-interval = {QueryRefreshInterval.ToHocon()}");
+            
+            sb.AppendLine($"serializer = {Serializer.ToHocon()}");
+            
+            DatabaseOptions?.Build(sb);
+                
+            sb.AppendLine("}");
+            
             return sb;
         }
     }
