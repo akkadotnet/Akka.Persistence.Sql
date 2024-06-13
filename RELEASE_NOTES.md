@@ -1,3 +1,10 @@
+#### 1.5.24 June 13th 2024 ####
+
+* [Bump AkkaVersion to 1.5.24](https://github.com/akkadotnet/akka.net/releases/tag/1.5.24)
+* [Bump Akka.Hosting version to 1.5.24](https://github.com/akkadotnet/Akka.Hosting/releases/tag/1.5.24)
+* [Fix missing Query configuration value override for non-default journal ids](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/404)
+* [Bump System.Reactive.Linq version to 6.0.1](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/389)
+
 #### 1.5.20 May 8th 2024 ####
 
 * [Fix missing take and optimize captures](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/347)
