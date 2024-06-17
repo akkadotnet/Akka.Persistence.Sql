@@ -1,3 +1,8 @@
+#### 1.5.25 June 17th 2024 ####
+
+* [Bump AkkaVersion to 1.5.25](https://github.com/akkadotnet/akka.net/releases/tag/1.5.25)
+* [Bump Akka.Hosting version to 1.5.25](https://github.com/akkadotnet/Akka.Hosting/releases/tag/1.5.25)
+
 #### 1.5.24 June 13th 2024 ####
 
 * [Bump AkkaVersion to 1.5.24](https://github.com/akkadotnet/akka.net/releases/tag/1.5.24)
