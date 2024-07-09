@@ -71,7 +71,7 @@ namespace Akka.Persistence.Sql.Query
                             o =>
                                 ReceiveHandler(
                                     o,
-                                    _maxTries,
+                                    a.Max,
                                     missingByCounter,
                                     moduloCounter,
                                     previousDelay));
