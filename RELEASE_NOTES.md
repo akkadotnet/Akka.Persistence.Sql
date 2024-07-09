@@ -1,3 +1,9 @@
+#### 1.5.26 July 9th 2024 ####
+
+* [Bump AkkaVersion to 1.5.26](https://github.com/akkadotnet/akka.net/releases/tag/1.5.26)
+* [Bump LanguageExt.Core to 4.4.9](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/411)
+* [Fix long delay during JournalSequenceActor initialization](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/415)
+
 #### 1.5.25 June 17th 2024 ####
 
 * [Bump AkkaVersion to 1.5.25](https://github.com/akkadotnet/akka.net/releases/tag/1.5.25)
