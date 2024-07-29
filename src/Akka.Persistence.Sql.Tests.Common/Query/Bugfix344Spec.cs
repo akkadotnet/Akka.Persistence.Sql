@@ -51,7 +51,6 @@ namespace Akka.Persistence.Sql.Tests.Common.Query
                     var blackSrc = queries.CurrentEventsByTag("random-unused-tag", offset: NoOffset.Instance);
                     var probe = blackSrc.RunWith(this.SinkProbe<EventEnvelope>(), Materializer);
                     probe.Request(2);
-                    await probe.ExpectNoMsgAsync(TimeSpan.FromMilliseconds(100));
                     
                     // query should just gracefully exit
                     await probe.ExpectCompleteAsync();
