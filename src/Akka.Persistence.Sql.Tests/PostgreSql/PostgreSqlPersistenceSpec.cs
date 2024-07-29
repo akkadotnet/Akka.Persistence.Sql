@@ -11,4 +11,7 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql
 {
     [CollectionDefinition(nameof(PostgreSqlPersistenceSpec), DisableParallelization = true)]
     public sealed class PostgreSqlPersistenceSpec : ICollectionFixture<PostgreSqlContainer> { }
+    
+    [CollectionDefinition(nameof(PostgreSqlBugfix344Fixture), DisableParallelization = true)]
+    public sealed class PostgreSqlBugfix344Fixture : ICollectionFixture<PostgreSqlContainer> { }
 }
