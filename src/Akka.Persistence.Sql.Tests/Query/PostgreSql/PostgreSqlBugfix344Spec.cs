@@ -6,12 +6,20 @@
 
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.Sql.Tests.Common.Query;
-using Akka.Persistence.Sql.Tests.PostgreSql;
 using Xunit;
 using Xunit.Abstractions;
+#if !DEBUG
+using Akka.Persistence.Sql.Tests.Common.Internal.Xunit;
+#endif
 
 namespace Akka.Persistence.Sql.Tests.Query.PostgreSql
 {
+    /// <summary>
+    /// Need our own collection, to ensure that the database tables haven't been initialized yet
+    /// </summary>
+    [CollectionDefinition(nameof(PostgreSqlBugfix344Fixture), DisableParallelization = true)]
+    public sealed class PostgreSqlBugfix344Fixture : ICollectionFixture<PostgreSqlContainer> { }
+    
 #if !DEBUG
     [SkipWindows]
 #endif
