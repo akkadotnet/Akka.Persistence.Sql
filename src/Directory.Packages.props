@@ -2,7 +2,7 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <AkkaVersion>1.5.27.1</AkkaVersion>
-    <AkkaHostingVersion>1.5.25</AkkaHostingVersion>
+    <AkkaHostingVersion>1.5.27</AkkaHostingVersion>
     <FluentMigratorVersion>5.2.0</FluentMigratorVersion>
     <SqliteVersion>1.0.118</SqliteVersion>
     <MicrosoftSqliteVersion>8.0.7</MicrosoftSqliteVersion>
