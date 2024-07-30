@@ -28,7 +28,7 @@ namespace Akka.Persistence.Sql.Query.Dao
 {
     public abstract class BaseByteReadArrayJournalDao : BaseJournalDaoWithReadMessages, IReadJournalDao
     {
-        private readonly Flow<JournalRow, Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, NotUsed> _deserializeFlow;
+        private readonly Flow<JournalRow, Try<(IPersistentRepresentation, string[], long)>, NotUsed> _deserializeFlow;
 
         private readonly ReadJournalConfig _readJournalConfig;
         private readonly DbStateHolder _dbStateHolder;
@@ -70,7 +70,7 @@ namespace Akka.Persistence.Sql.Query.Dao
                 });
         }
 
-        public Source<Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, NotUsed> EventsByTag(
+        public Source<Try<(IPersistentRepresentation, string[], long)>, NotUsed> EventsByTag(
             string tag,
             long offset,
             long maxOffset,
@@ -170,8 +170,8 @@ namespace Akka.Persistence.Sql.Query.Dao
                         {
                             try
                             {
-                                var (representation, _, ordering) = t.Get();
-                                return new Try<ReplayCompletion>(new ReplayCompletion(representation, ordering));
+                                var (representation, tags, ordering) = t.Get();
+                                return new Try<ReplayCompletion>(new ReplayCompletion(representation, tags, ordering));
                             }
                             catch (Exception e)
                             {
@@ -225,7 +225,7 @@ namespace Akka.Persistence.Sql.Query.Dao
                 : (int)max;
 
 
-        public Source<Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, NotUsed> Events(
+        public Source<Try<(IPersistentRepresentation, string[], long)>, NotUsed> Events(
             long offset,
             long maxOffset,
             long max)
@@ -318,7 +318,7 @@ namespace Akka.Persistence.Sql.Query.Dao
             var result = new List<JournalRow>();
             foreach (var rowAndTags in rowsAndTags)
             {
-                rowAndTags.row.TagArray = rowAndTags.tags?.Split(';') ?? Array.Empty<string>();
+                rowAndTags.row.TagArray = rowAndTags.tags?.Split([';'], StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
                 result.Add(rowAndTags.row);
             }
 

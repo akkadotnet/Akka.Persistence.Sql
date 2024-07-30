@@ -518,7 +518,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                         .Where(r => r.PersistenceId == persistenceId)
                         .Select(r => LinqToDB.Sql.Ext.Max<long?>(r.SequenceNumber).ToValue()));
 
-        private static Func<Util.Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, Util.Try<ReplayCompletion>> MessageWithBatchMapper()
+        private static Func<Util.Try<(IPersistentRepresentation, string[], long)>, Util.Try<ReplayCompletion>> MessageWithBatchMapper()
             => x => x.IsSuccess
                 ? new Util.Try<ReplayCompletion>(new ReplayCompletion(x.Success.Value))
                 : new Util.Try<ReplayCompletion>(x.Failure.Value);

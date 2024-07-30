@@ -17,7 +17,7 @@ namespace Akka.Persistence.Sql.Query
         Source<string, NotUsed> AllPersistenceIdsSource(
             long max);
 
-        Source<Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, NotUsed> EventsByTag(
+        Source<Try<(IPersistentRepresentation, string[], long)>, NotUsed> EventsByTag(
             string tag,
             long offset,
             long maxOffset,

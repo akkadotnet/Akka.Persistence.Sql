@@ -138,7 +138,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
             }
         }
 
-        protected override Try<(IPersistentRepresentation, IImmutableSet<string>, long)> Deserialize(JournalRow t)
+        protected override Try<(IPersistentRepresentation, string[], long)> Deserialize(JournalRow t)
         {
             try
             {
@@ -146,7 +146,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 if (identifierMaybe.HasValue)
                 {
                     // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
-                    return new Try<(IPersistentRepresentation, IImmutableSet<string>, long)>(
+                    return new Try<(IPersistentRepresentation, string[], long)>(
                         (
                             new Persistent(
                                 payload: _serializer.Deserialize(t.Message, identifierMaybe.Value, t.Manifest),
@@ -157,16 +157,14 @@ namespace Akka.Persistence.Sql.Journal.Dao
                                 sender: ActorRefs.NoSender,
                                 writerGuid: t.WriterUuid,
                                 timestamp: t.Timestamp),
-                            t.Tags?
-                                .Split(_separatorArray, StringSplitOptions.RemoveEmptyEntries)
-                                .ToImmutableHashSet() ?? t.TagArray?.ToImmutableHashSet() ?? ImmutableHashSet<string>.Empty,
+                            t.Tags?.Split(_separatorArray, StringSplitOptions.RemoveEmptyEntries) ?? t.TagArray ?? Array.Empty<string>(),
                             t.Ordering));
                 }
 
                 var type = Type.GetType(t.Manifest, true);
 
                 // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
-                return new Try<(IPersistentRepresentation, IImmutableSet<string>, long)>(
+                return new Try<(IPersistentRepresentation, string[], long)>(
                     (
                         new Persistent(
                             payload: Akka.Serialization.Serialization.WithTransport(
@@ -181,13 +179,12 @@ namespace Akka.Persistence.Sql.Journal.Dao
                             writerGuid: t.WriterUuid,
                             timestamp: t.Timestamp),
                         t.Tags?
-                            .Split(_separatorArray, StringSplitOptions.RemoveEmptyEntries)
-                            .ToImmutableHashSet() ?? t.TagArray?.ToImmutableHashSet() ?? ImmutableHashSet<string>.Empty,
+                            .Split(_separatorArray, StringSplitOptions.RemoveEmptyEntries) ?? t.TagArray ?? Array.Empty<string>(),
                         t.Ordering));
             }
             catch (Exception e)
             {
-                return new Try<(IPersistentRepresentation, IImmutableSet<string>, long)>(e);
+                return new Try<(IPersistentRepresentation, string[], long)>(e);
             }
         }
     }

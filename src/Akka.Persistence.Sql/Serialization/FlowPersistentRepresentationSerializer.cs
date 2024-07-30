@@ -12,7 +12,7 @@ namespace Akka.Persistence.Sql.Serialization
 {
     public abstract class FlowPersistentRepresentationSerializer<T> : PersistentRepresentationSerializer<T>
     {
-        public Flow<T, Try<(IPersistentRepresentation, IImmutableSet<string>, long)>, NotUsed> DeserializeFlow()
+        public Flow<T, Try<(IPersistentRepresentation, string[], long)>, NotUsed> DeserializeFlow()
             => Flow.Create<T, NotUsed>().Select(Deserialize);
     }
 }
