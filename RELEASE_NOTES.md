@@ -1,3 +1,10 @@
+#### 1.5.27 July 30th 2024 ####
+
+* [Bump Akka to 1.5.27.1](https://github.com/akkadotnet/akka.net/releases/tag/1.5.27.1)
+* [Bump Akka.Hosting to v1.5.27](https://github.com/akkadotnet/Akka.Hosting/releases/tag/1.5.27)
+* [Resolved: Auto initialization of tables isn't supported from the read journal side.](https://github.com/akkadotnet/Akka.Persistence.Sql/issues/344)
+* [Add EventEnvelope Tags support on queries](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/426)
+
 #### 1.5.26 July 9th 2024 ####
 
 * [Bump AkkaVersion to 1.5.26](https://github.com/akkadotnet/akka.net/releases/tag/1.5.26)
