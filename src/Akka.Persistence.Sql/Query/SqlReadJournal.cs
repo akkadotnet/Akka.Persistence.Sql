@@ -54,16 +54,16 @@ namespace Akka.Persistence.Sql.Query
         {
             var writePluginId = config.GetString("write-plugin");
             _eventAdapters = Persistence.Instance.Apply(system).AdaptersFor(writePluginId);
-
+            
+            // Fix for https://github.com/akkadotnet/Akka.Persistence.Sql/issues/344
+            var writeJournal = Persistence.Instance.Apply(system).JournalFor(writePluginId);
+            // we want to block, we want to crash if the journal is not available
+            var started = writeJournal.Ask<Initialized>(IsInitialized.Instance, TimeSpan.FromSeconds(5)).Result;
+            
             _readJournalConfig = new ReadJournalConfig(config);
             _system = system;
 
             var connFact = new AkkaPersistenceDataConnectionFactory(_readJournalConfig);
-            
-            // Fix for https://github.com/akkadotnet/Akka.Persistence.Sql/issues/344
-            // var writeJournal = Persistence.Instance.Apply(system).JournalFor(writePluginId);
-            // // we want to block, we want to crash if the journal is not available
-            // var started = writeJournal.Ask<Initialized>(IsInitialized.Instance, TimeSpan.FromSeconds(5)).Result;
 
             _mat = Materializer.CreateSystemMaterializer(
                 context: system,
