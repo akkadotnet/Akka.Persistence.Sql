@@ -27,6 +27,8 @@ namespace Akka.Persistence.Sql.Tests.Common.Query
             : base(Config(tagMode, fixture), name, output)
             => ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
 
+        protected override bool SupportsTagsInEventEnvelope => true;
+
         public async Task InitializeAsync()
         {
             // Force start read journal

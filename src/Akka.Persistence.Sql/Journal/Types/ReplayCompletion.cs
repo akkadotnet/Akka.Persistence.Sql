@@ -5,24 +5,32 @@
 // -----------------------------------------------------------------------
 
 using System.Collections.Immutable;
+using Akka.Annotations;
 
 namespace Akka.Persistence.Sql.Journal.Types
 {
+    [InternalApi]
     public sealed class ReplayCompletion
     {
         public readonly long Ordering;
 
         public readonly IPersistentRepresentation Representation;
 
+        public readonly string[] Tags;
+
         public ReplayCompletion(
             IPersistentRepresentation representation,
+            string[] tags,
             long ordering)
         {
             Representation = representation;
             Ordering = ordering;
+            Tags = tags;
         }
 
-        public ReplayCompletion((IPersistentRepresentation, IImmutableSet<string>, long) success)
-            => (Representation, _, Ordering) = success;
+        public ReplayCompletion((IPersistentRepresentation, string[], long) success)
+        {
+            (Representation, Tags, Ordering) = success;
+        }
     }
 }

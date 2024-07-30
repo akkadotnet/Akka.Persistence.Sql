@@ -111,6 +111,6 @@ namespace Akka.Persistence.Sql.Serialization
             IImmutableSet<string> tTags,
             long timeStamp = 0);
 
-        protected abstract Try<(IPersistentRepresentation, IImmutableSet<string>, long)> Deserialize(T t);
+        protected abstract Try<(IPersistentRepresentation, string[], long)> Deserialize(T t);
     }
 }

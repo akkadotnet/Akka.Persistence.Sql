@@ -190,7 +190,7 @@ namespace Akka.Persistence.Sql.Query
             => _readJournalDao
                 .MessagesWithBatch(persistenceId, fromSequenceNr, toSequenceNr, _readJournalConfig.MaxBufferSize, refreshInterval)
                 .SelectAsync(1, representationAndOrdering => Task.FromResult(representationAndOrdering.Get()))
-                .SelectMany(r => AdaptEvents(r.Representation).Select(_ => new { representation = r.Representation, ordering = r.Ordering }))
+                .SelectMany(r => AdaptEvents(r.Representation).Select(_ => new { representation = r.Representation, ordering = r.Ordering, tags = r.Tags}))
                 .Select(
                     r =>
                         new EventEnvelope(
@@ -198,7 +198,8 @@ namespace Akka.Persistence.Sql.Query
                             persistenceId: r.representation.PersistenceId,
                             sequenceNr: r.representation.SequenceNr,
                             @event: r.representation.Payload,
-                            timestamp: r.representation.Timestamp));
+                            timestamp: r.representation.Timestamp, 
+                            tags: r.tags));
 
         private Source<EventEnvelope, NotUsed> CurrentJournalEvents(long offset, long max, MaxOrderingId latestOrdering)
         {
@@ -211,7 +212,7 @@ namespace Akka.Persistence.Sql.Query
                 .SelectMany(
                     a =>
                     {
-                        var (representation, _, ordering) = a;
+                        var (representation, tags, ordering) = a;
                         return AdaptEvents(representation)
                             .Select(
                                 r =>
@@ -220,7 +221,8 @@ namespace Akka.Persistence.Sql.Query
                                         persistenceId: r.PersistenceId,
                                         sequenceNr: r.SequenceNr,
                                         @event: r.Payload,
-                                        timestamp: r.Timestamp));
+                                        timestamp: r.Timestamp,
+                                        tags: tags));
                     });
         }
 
@@ -239,7 +241,7 @@ namespace Akka.Persistence.Sql.Query
                 .SelectMany(
                     a =>
                     {
-                        var (representation, _, ordering) = a;
+                        var (representation, tags, ordering) = a;
                         return AdaptEvents(representation)
                             .Select(
                                 r =>
@@ -248,7 +250,8 @@ namespace Akka.Persistence.Sql.Query
                                         persistenceId: r.PersistenceId,
                                         sequenceNr: r.SequenceNr,
                                         @event: r.Payload,
-                                        timestamp: r.Timestamp));
+                                        timestamp: r.Timestamp,
+                                        tags: tags));
                     });
         }
 
