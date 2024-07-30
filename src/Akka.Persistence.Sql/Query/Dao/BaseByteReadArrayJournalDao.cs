@@ -170,8 +170,8 @@ namespace Akka.Persistence.Sql.Query.Dao
                         {
                             try
                             {
-                                var (representation, _, ordering) = t.Get();
-                                return new Try<ReplayCompletion>(new ReplayCompletion(representation, ordering));
+                                var (representation, tags, ordering) = t.Get();
+                                return new Try<ReplayCompletion>(new ReplayCompletion(representation, tags, ordering));
                             }
                             catch (Exception e)
                             {
