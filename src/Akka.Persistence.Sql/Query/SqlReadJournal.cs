@@ -195,7 +195,7 @@ namespace Akka.Persistence.Sql.Query
                             sequenceNr: r.representation.SequenceNr,
                             @event: r.representation.Payload,
                             timestamp: r.representation.Timestamp, 
-                            tags: r.tags.ToArray()));
+                            tags: r.tags));
 
         private Source<EventEnvelope, NotUsed> CurrentJournalEvents(long offset, long max, MaxOrderingId latestOrdering)
         {
@@ -218,7 +218,7 @@ namespace Akka.Persistence.Sql.Query
                                         sequenceNr: r.SequenceNr,
                                         @event: r.Payload,
                                         timestamp: r.Timestamp,
-                                        tags: tags.ToArray()));
+                                        tags: tags));
                     });
         }
 
@@ -247,7 +247,7 @@ namespace Akka.Persistence.Sql.Query
                                         sequenceNr: r.SequenceNr,
                                         @event: r.Payload,
                                         timestamp: r.Timestamp,
-                                        tags: tags.ToArray()));
+                                        tags: tags));
                     });
         }
 

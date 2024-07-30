@@ -16,11 +16,11 @@ namespace Akka.Persistence.Sql.Journal.Types
 
         public readonly IPersistentRepresentation Representation;
 
-        public readonly IImmutableSet<string> Tags;
+        public readonly string[] Tags;
 
         public ReplayCompletion(
             IPersistentRepresentation representation,
-            IImmutableSet<string> tags,
+            string[] tags,
             long ordering)
         {
             Representation = representation;
@@ -28,7 +28,7 @@ namespace Akka.Persistence.Sql.Journal.Types
             Tags = tags;
         }
 
-        public ReplayCompletion((IPersistentRepresentation, IImmutableSet<string>, long) success)
+        public ReplayCompletion((IPersistentRepresentation, string[], long) success)
         {
             (Representation, Tags, Ordering) = success;
         }
