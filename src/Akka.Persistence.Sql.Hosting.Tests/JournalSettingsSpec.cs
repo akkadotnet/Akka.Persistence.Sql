@@ -87,7 +87,7 @@ namespace Akka.Persistence.Sql.Hosting.Tests
             var actualQueryConfig = config.GetConfig(SqlPersistence.QueryConfigPath);
 
             actualQueryConfig.AssertType(defaultQueryConfig, "class", typeof(SqlReadJournalProvider));
-            actualQueryConfig.AssertString(defaultQueryConfig, "write-plugin");
+            actualQueryConfig.AssertString(defaultQueryConfig, "write-plugin", "akka.persistence.journal.sql");
             actualQueryConfig.AssertInt(defaultQueryConfig, "max-buffer-size", 500);
             actualQueryConfig.AssertTimeSpan(defaultQueryConfig, "refresh-interval", 1.Seconds());
             actualQueryConfig.AssertString(defaultQueryConfig, "connection-string", "a");
@@ -224,6 +224,7 @@ namespace Akka.Persistence.Sql.Hosting.Tests
 
             queryConfig.ConnectionString.Should().Be("a");
             queryConfig.ProviderName.Should().Be("b");
+            queryConfig.WritePluginId.Should().Be("akka.persistence.journal.custom");
             queryConfig.DefaultSerializer.Should().Be("hyperion");
             queryConfig.UseCloneConnection.Should().BeTrue(); // non-overridable
             queryConfig.RefreshInterval.Should().Be(5.Seconds());

@@ -16,6 +16,7 @@ namespace Akka.Persistence.Sql.Config
         {
             ConnectionString = config.GetString("connection-string");
             ProviderName = config.GetString("provider-name");
+            WritePluginId = config.GetString("write-plugin");
             TableConfig = new JournalTableConfig(config);
             DaoConfig = new BaseByteArrayJournalDaoConfig(config);
             UseCloneConnection = config.GetBoolean("use-clone-connection");
@@ -31,6 +32,8 @@ namespace Akka.Persistence.Sql.Config
             WriteIsolationLevel = IsolationLevel.Unspecified;
         }
 
+        public string WritePluginId { get; }
+        
         public BaseByteArrayJournalDaoConfig DaoConfig { get; }
 
         public int MaxBufferSize { get; }

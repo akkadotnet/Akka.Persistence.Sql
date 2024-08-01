@@ -17,43 +17,36 @@ public static class ConfigExtensions
         actual.HasPath(key).Should().BeTrue();
         if (value is not null)
             Type.GetType(actual.GetString(key)).Should().Be(value);
-        actual.GetString(key).Should().Be(expected.GetString(key));
+        else
+            actual.GetString(key).Should().Be(expected.GetString(key));
     }
     
     public static void AssertString(this Configuration.Config actual, Configuration.Config expected, string key, string? value = null)
     {
         expected.HasPath(key).Should().BeTrue();
         actual.HasPath(key).Should().BeTrue();
-        if (value is not null)
-            actual.GetString(key).Should().Be(value);
-        actual.GetString(key).Should().Be(expected.GetString(key));
+        actual.GetString(key).Should().Be(value ?? expected.GetString(key));
     }
 
     public static void AssertInt(this Configuration.Config actual, Configuration.Config expected, string key, int? value = null)
     {
         expected.HasPath(key).Should().BeTrue();
         actual.HasPath(key).Should().BeTrue();
-        if (value is not null)
-            actual.GetInt(key).Should().Be(value.Value);
-        actual.GetInt(key).Should().Be(expected.GetInt(key));
+        actual.GetInt(key).Should().Be(value ?? expected.GetInt(key));
     }
 
     public static void AssertBool(this Configuration.Config actual, Configuration.Config expected, string key, bool? value = null)
     {
         expected.HasPath(key).Should().BeTrue();
         actual.HasPath(key).Should().BeTrue();
-        if (value is not null)
-            actual.GetBoolean(key).Should().Be(value.Value);
-        actual.GetBoolean(key).Should().Be(expected.GetBoolean(key));
+        actual.GetBoolean(key).Should().Be(value ?? expected.GetBoolean(key));
     }
 
     public static void AssertTimeSpan(this Configuration.Config actual, Configuration.Config expected, string key, TimeSpan? value = null)
     {
         expected.HasPath(key).Should().BeTrue();
         actual.HasPath(key).Should().BeTrue();
-        if (value is not null)
-            actual.GetTimeSpan(key).Should().Be(value.Value);
-        actual.GetTimeSpan(key).Should().Be(expected.GetTimeSpan(key));
+        actual.GetTimeSpan(key).Should().Be(value ?? expected.GetTimeSpan(key));
     }
     
     public static void AssertIsolationLevel(this Configuration.Config actual, Configuration.Config expected, string key)

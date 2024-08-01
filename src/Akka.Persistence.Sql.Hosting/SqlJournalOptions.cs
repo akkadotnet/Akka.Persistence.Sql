@@ -154,19 +154,20 @@ namespace Akka.Persistence.Sql.Hosting
 
             base.Build(sb);
 
-            BuildQueryConfig(sb, QueryPluginId);
+            BuildQueryConfig(sb, QueryPluginId, PluginId);
             
             if (IsDefaultPlugin && Identifier is not "sql")
-                BuildQueryConfig(sb, "akka.persistence.query.journal.sql");
-
+                BuildQueryConfig(sb, "akka.persistence.query.journal.sql", "akka.persistence.journal.sql");
+            
             return sb;
         }
 
-        private StringBuilder BuildQueryConfig(StringBuilder sb, string queryPluginId)
+        private StringBuilder BuildQueryConfig(StringBuilder sb, string queryPluginId, string pluginId)
         {
             sb.Append(queryPluginId).AppendLine("{");
             sb.AppendLine($"connection-string = {ConnectionString.ToHocon()}");
             sb.AppendLine($"provider-name = {ProviderName.ToHocon()}");
+            sb.AppendLine($"write-plugin = {pluginId}");
                 
             if (DatabaseOptions is not null)
                 sb.AppendLine($"table-mapping = {DatabaseOptions.Mapping.Name().ToHocon()}");
