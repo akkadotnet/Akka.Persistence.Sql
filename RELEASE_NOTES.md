@@ -1,3 +1,7 @@
+#### 1.5.27.1 August 1st 2024 ####
+
+* [Fix missing "writer-plugin" generation from Akka.Persistence.Sql.Hosting](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/427)
+
 #### 1.5.27 July 30th 2024 ####
 
 * [Bump Akka to 1.5.27.1](https://github.com/akkadotnet/akka.net/releases/tag/1.5.27.1)
