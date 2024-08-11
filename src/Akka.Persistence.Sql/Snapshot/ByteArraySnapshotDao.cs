@@ -134,32 +134,39 @@ namespace Akka.Persistence.Sql.Snapshot
                         {
                             if (connection.UseDateTime)
                             {
-                                //TODO: Make this actually work because at some point we split tables, may need to generalize.
-                                var set = await connection.GetTable<LongSnapshotRow>()
-                                    .Where(r => r.PersistenceId.In(a.Entries.Keys))
-                                    .Select(
-                                        r => new
-                                        {
-                                            Created = r.Created,
-                                            PersistenceId = r.PersistenceId,
-                                            SequenceNumber = r.SequenceNumber,
-                                            Manifest = r.Manifest,
-                                            Payload = r.Payload,
-                                            SerializerId = r.SerializerId,
-                                            RowNum = LinqToDB.Sql.Ext.Rank().Over().PartitionBy(r.PersistenceId).OrderByDesc(r.SequenceNumber).ToValue(),
-                                        })
-                                    .Where(r => r.RowNum == 1)
-                                    .Select(
-                                        r => new LongSnapshotRow()
-                                        {
-                                            Created = r.Created,
-                                            PersistenceId = r.PersistenceId,
-                                            SequenceNumber = r.SequenceNumber,
-                                            Manifest = r.Manifest,
-                                            Payload = r.Payload,
-                                            SerializerId = r.SerializerId,
-                                        }).ToListAsync();
-                                return new SnapshotReadGroup(a, set, (Exception?)null);
+                                //TODO: Consolidate/fixup different rowtype issues.
+                                try
+                                {
+                                    var set = await connection.GetTable<DateTimeSnapshotRow>()
+                                        .Where(r => r.PersistenceId.In(a.Entries.Keys))
+                                        .Select(
+                                            r => new
+                                            {
+                                                Created = r.Created,
+                                                PersistenceId = r.PersistenceId,
+                                                SequenceNumber = r.SequenceNumber,
+                                                Manifest = r.Manifest,
+                                                Payload = r.Payload,
+                                                SerializerId = r.SerializerId,
+                                                RowNum = LinqToDB.Sql.Ext.Rank().Over().PartitionBy(r.PersistenceId).OrderByDesc(r.SequenceNumber).ToValue()
+                                            })
+                                        .Where(r => r.RowNum == 1)
+                                        .Select(
+                                            r => new LongSnapshotRow()
+                                            {
+                                                Created = r.Created.Ticks,
+                                                PersistenceId = r.PersistenceId,
+                                                SequenceNumber = r.SequenceNumber,
+                                                Manifest = r.Manifest,
+                                                Payload = r.Payload,
+                                                SerializerId = r.SerializerId,
+                                            }).ToListAsync();
+                                    return new SnapshotReadGroup(a, set, err: (Exception?)null);
+                                }
+                                catch (Exception ex)
+                                {
+                                    return new (a, null, err: ex);
+                                }
                             }
                             else
                             {
