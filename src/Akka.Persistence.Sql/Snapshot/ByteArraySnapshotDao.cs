@@ -35,6 +35,25 @@ namespace Akka.Persistence.Sql.Snapshot
         public readonly TaskCompletionSource<Option<SelectedSnapshot>> TCS;
     }
 
+    public readonly record struct SnapshotReadGroup
+    {
+        public SnapshotReadGroup(QueryLatestSnapSet a, List<LongSnapshotRow> b, Exception? err)
+        {
+            this.a = a;
+            this.b = b;
+            this.err = err;
+        }
+        public QueryLatestSnapSet a { get; }
+        public List<LongSnapshotRow> b { get; }
+        public Exception? err { get; }
+        public void Deconstruct(out QueryLatestSnapSet a, out List<LongSnapshotRow> b, out Exception? err)
+        {
+            a = this.a;
+            b = this.b;
+            err = this.err;
+        }
+    }
+
     public class QueryLatestSnapSet
     {
         public readonly Dictionary<string, List<TaskCompletionSource<Option<SelectedSnapshot>>>> Entries = new();
@@ -80,8 +99,12 @@ namespace Akka.Persistence.Sql.Snapshot
 
             _shutdownCts = new CancellationTokenSource();
             _pendingLatestChannel = Channel.CreateUnbounded<LatestSnapRequestEntry>();
-            _latestSnapStream = Source.ChannelReader(_pendingLatestChannel.Reader).BatchWeighted(
-                    50,
+            int maxSubStreamsForReads = 8; // TODO: Configurable
+            int maxRequestsPerBatch = 50;
+            _latestSnapStream = Source.ChannelReader(_pendingLatestChannel.Reader)
+                .GroupBy(maxSubStreamsForReads, a=> a.PersistenceId.GetHashCode()% maxSubStreamsForReads)
+                .BatchWeighted(
+                    maxRequestsPerBatch,
                     a => 1,
                     e =>
                     {
@@ -94,8 +117,7 @@ namespace Akka.Persistence.Sql.Snapshot
                         a.Add(e);
                         return a;
                     })
-                .SelectAsync(
-                    1,
+                .SelectAsync(1,
                     async a =>
                     {
 
@@ -115,7 +137,7 @@ namespace Akka.Persistence.Sql.Snapshot
                                             Manifest = r.Manifest,
                                             Payload = r.Payload,
                                             SerializerId = r.SerializerId,
-                                            RowNum = LinqToDB.Sql.Ext.Rank().Over().PartitionBy(r.PersistenceId).OrderByDesc(r.SequenceNumber).ToValue()
+                                            RowNum = LinqToDB.Sql.Ext.Rank().Over().PartitionBy(r.PersistenceId).OrderByDesc(r.SequenceNumber).ToValue(),
                                         })
                                     .Where(r => r.RowNum == 1)
                                     .Select(
@@ -128,7 +150,7 @@ namespace Akka.Persistence.Sql.Snapshot
                                             Payload = r.Payload,
                                             SerializerId = r.SerializerId,
                                         }).ToListAsync();
-                                return (a, set, err: (Exception?)null);
+                                return new SnapshotReadGroup(a, set, (Exception?)null);
                             }
                             else
                             {
@@ -158,15 +180,15 @@ namespace Akka.Persistence.Sql.Snapshot
                                                 Payload = r.Payload,
                                                 SerializerId = r.SerializerId,
                                             }).ToListAsync();
-                                    return (a, set, err: (Exception?)null);
+                                    return new (a, set, err: (Exception?)null);
                                 }
                                 catch (Exception ex)
                                 {
-                                    return (a, null, err: ex);
+                                    return new (a, null, err: ex);
                                 }
                             }
                         }
-                    }).Async().Select(
+                    }).Select(
                     (ab) =>
                     {
                         var (a, b, c) = ab;
