@@ -88,6 +88,8 @@ namespace Akka.Persistence.Sql.Snapshot
         private readonly IsolationLevel _writeIsolationLevel;
         private readonly Channel<LatestSnapRequestEntry> _pendingLatestChannel;
         private readonly Task<Done> _latestSnapStream;
+        private readonly int _maxSubStreamsForReads;
+        private readonly int _maxBatchPerSubStreamRead;
 
         public ByteArraySnapshotDao(
             AkkaPersistenceDataConnectionFactory connectionFactory,
@@ -108,12 +110,12 @@ namespace Akka.Persistence.Sql.Snapshot
 
             _shutdownCts = new CancellationTokenSource();
             _pendingLatestChannel = Channel.CreateUnbounded<LatestSnapRequestEntry>();
-            int maxSubStreamsForReads = 8; // TODO: Configurable
-            int maxRequestsPerBatch = 50;
+            _maxSubStreamsForReads =  _snapshotConfig.MaxSubStreamsForReads;
+            _maxBatchPerSubStreamRead = _snapshotConfig.MaxBatchPerSubStreamRead;
             _latestSnapStream = Source.ChannelReader(_pendingLatestChannel.Reader)
-                .GroupBy(maxSubStreamsForReads, a=> a.PersistenceId.GetHashCode()% maxSubStreamsForReads)
+                .GroupBy(_maxSubStreamsForReads, a=> a.PersistenceId.GetHashCode()% _maxSubStreamsForReads)
                 .BatchWeighted(
-                    maxRequestsPerBatch,
+                    _maxBatchPerSubStreamRead,
                     a => 1,
                     e =>
                     {
