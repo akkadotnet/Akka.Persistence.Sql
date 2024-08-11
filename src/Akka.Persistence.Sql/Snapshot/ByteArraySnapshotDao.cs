@@ -204,8 +204,8 @@ namespace Akka.Persistence.Sql.Snapshot
                                 }
                             }
                         }
-                    }).Select(
-                    (ab) =>
+                    }).SelectAsync(1,
+                    async (ab) =>
                     {
                         var (a, b, c) = ab;
                         if (c != null)
