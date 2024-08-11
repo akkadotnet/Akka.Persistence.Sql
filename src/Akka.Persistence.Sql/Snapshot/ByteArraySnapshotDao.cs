@@ -23,6 +23,15 @@ using LinqToDB.Tools;
 
 namespace Akka.Persistence.Sql.Snapshot
 {
+    public static class SubFlowExtensions
+    {
+        public static Source<TOut, TMat> MergeSubStreamsAsSource<TOut, TMat,
+            TClosed>(this SubFlow<TOut, TMat, TClosed> subFlow)
+        {
+            return (Source<TOut,TMat>)(subFlow.MergeSubstreams());
+        }
+    }
+
     public class LatestSnapRequestEntry
     {
         public LatestSnapRequestEntry(string persistenceId)
@@ -265,7 +274,7 @@ namespace Akka.Persistence.Sql.Snapshot
                         }
 
                         return Done.Instance;
-                    }).RunWith(Sink.Ignore<Done>(), materializer);
+                    }).MergeSubStreamsAsSource().RunWith(Sink.Ignore<Done>(), materializer);
         }
 
         public async Task DeleteAllSnapshotsAsync(
