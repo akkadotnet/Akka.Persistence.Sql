@@ -186,7 +186,7 @@ namespace Akka.Persistence.Sql.Query.Dao
                 async input =>
                 {
                     return await input._dbStateHolder.ExecuteWithTransactionAsync(
-                        new QueryArgs(input.offset,default,input.maxTake, default),
+                        new QueryArgs(input.offset, default, input.maxTake),
                         static async (connection, token, args) =>
                         {
                             // persistence-jdbc does not filter deleted here.

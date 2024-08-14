@@ -36,7 +36,7 @@ namespace Akka.Persistence.Sql.Config
             TagTable = new TagTableConfig(mappingConfig);
         }
 
-        public string SchemaName { get; }
+        public string? SchemaName { get; }
 
         // TODO: implement this settings
         public bool UseEventManifestColumn { get; } = false;
@@ -61,7 +61,7 @@ namespace Akka.Persistence.Sql.Config
                    SchemaName == other.SchemaName;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (ReferenceEquals(null, obj))
                 return false;

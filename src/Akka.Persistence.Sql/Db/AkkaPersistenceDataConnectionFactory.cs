@@ -20,7 +20,7 @@ namespace Akka.Persistence.Sql.Db
     {
         private readonly Lazy<AkkaDataConnection> _cloneConnection;
         private readonly DataOptions _opts;
-        private readonly IRetryPolicy _policy;
+        private readonly IRetryPolicy? _policy;
         private readonly bool _useCloneDataConnection;
 
         public AkkaPersistenceDataConnectionFactory(IProviderConfig<JournalTableConfig> config)
@@ -53,7 +53,7 @@ namespace Akka.Persistence.Sql.Db
             
             _cloneConnection = new Lazy<AkkaDataConnection>(
                 () => new AkkaDataConnection(
-                    opts.ConnectionOptions.ProviderName,
+                    config.ProviderName,
                     new DataConnection(opts)));
         }
 
@@ -92,7 +92,7 @@ namespace Akka.Persistence.Sql.Db
 
             _cloneConnection = new Lazy<AkkaDataConnection>(
                 () => new AkkaDataConnection(
-                    opts.ConnectionOptions.ProviderName,
+                    config.ProviderName,
                     new DataConnection(opts)));
         }
 
@@ -387,7 +387,7 @@ namespace Akka.Persistence.Sql.Db
         {
             if (!_useCloneDataConnection)
                 return new AkkaDataConnection(
-                    _opts.ConnectionOptions.ProviderName,
+                    _opts.ConnectionOptions.ProviderName!,
                     new DataConnection(_opts)
                     {
                         RetryPolicy = _policy,

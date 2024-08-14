@@ -37,7 +37,7 @@ namespace Akka.Persistence.Sql.Db
 
         public IDataProvider DataProvider => _connection.DataProvider;
 
-        public IRetryPolicy RetryPolicy
+        public IRetryPolicy? RetryPolicy
         {
             get => _connection.RetryPolicy;
             set => _connection.RetryPolicy = value;
@@ -55,13 +55,13 @@ namespace Akka.Persistence.Sql.Db
         public DatabaseSchema GetSchema()
             => _connection.DataProvider.GetSchemaProvider().GetSchema(_connection);
 
-        public ITable<T> CreateTable<T>()
+        public ITable<T> CreateTable<T>() where T : notnull
             => _connection.CreateTable<T>();
 
         public async Task CreateTableAsync<T>(
             TableOptions tableOptions,
-            string statementFooter = default,
-            CancellationToken cancellationToken = default)
+            string? statementFooter = default,
+            CancellationToken cancellationToken = default) where T : notnull
             => await _connection.CreateTableAsync<T>(
                 tableOptions: tableOptions,
                 statementFooter: statementFooter,

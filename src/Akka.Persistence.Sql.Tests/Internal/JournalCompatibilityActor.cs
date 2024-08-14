@@ -33,7 +33,7 @@ namespace Akka.Persistence.Sql.Tests.Internal
     {
         private readonly List<SomeEvent> _events = new();
 
-        private IActorRef _deleteSubscriber;
+        private IActorRef? _deleteSubscriber;
 
         public JournalCompatibilityActor(string journal, string persistenceId)
         {

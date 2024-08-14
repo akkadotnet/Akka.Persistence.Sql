@@ -29,8 +29,8 @@ namespace Akka.Persistence.Sql.Tests.Common.Internal
             LogLevel logLevel,
             EventId eventId,
             TState state,
-            Exception exception,
-            Func<TState, Exception, string> formatter)
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
         {
             if (!IsEnabled(logLevel))
                 return;
@@ -48,7 +48,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Internal
                 _ => logLevel >= _logLevel,
             };
 
-        public IDisposable BeginScope<TState>(TState state)
+        public IDisposable BeginScope<TState>(TState state) where TState : notnull
             => throw new NotImplementedException();
 
         private void WriteLogEntry(LogLevel logLevel, EventId eventId, string message, Exception? exception)
@@ -73,8 +73,8 @@ namespace Akka.Persistence.Sql.Tests.Common.Internal
 
         private static bool TryFormatMessage<TState>(
             TState state,
-            Exception exception,
-            Func<TState, Exception, string> formatter,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter,
             out string result)
         {
             formatter = formatter ?? throw new ArgumentNullException(nameof(formatter));

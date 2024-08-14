@@ -217,7 +217,7 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
                 {
                     await _readDockerTask;
                 }
-                catch(TaskCanceledException _) { }
+                catch(TaskCanceledException) { }
 
             try
             {

@@ -41,7 +41,7 @@ namespace Akka.Persistence.Sql.Config
             WriteIsolationLevel = config.GetIsolationLevel("write-isolation-level");
         }
 
-        public string UseSharedDb { get; }
+        public string? UseSharedDb { get; }
 
         /// <summary>
         ///     Flag determining in in case of event journal or metadata table missing, they should be automatically initialized.

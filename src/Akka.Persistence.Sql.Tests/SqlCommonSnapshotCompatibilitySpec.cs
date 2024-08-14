@@ -32,9 +32,9 @@ namespace Akka.Persistence.Sql.Tests
         protected ITestOutputHelper Output { get; }
         protected abstract string OldSnapshot { get; }
         protected abstract string NewSnapshot { get; }
-        protected ActorSystem Sys { get; private set; }
-        protected Akka.TestKit.Xunit2.TestKit TestKit { get; private set; }
-        protected TestProbe Probe { get; private set; }
+        protected ActorSystem? Sys { get; private set; }
+        protected Akka.TestKit.Xunit2.TestKit? TestKit { get; private set; }
+        protected TestProbe? Probe { get; private set; }
 
         public async Task InitializeAsync()
         {
@@ -58,17 +58,17 @@ namespace Akka.Persistence.Sql.Tests
 
         public Task DisposeAsync()
         {
-            TestKit.Shutdown();
+            TestKit?.Shutdown();
             return Task.CompletedTask;
         }
 
         [Fact]
         public void Can_Recover_SqlCommon_Snapshot()
         {
-            var persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatibilityActor(OldSnapshot, "p-1")));
+            var persistRef = Sys!.ActorOf(Props.Create(() => new SnapshotCompatibilityActor(OldSnapshot, "p-1")));
             var ourGuid = Guid.NewGuid();
 
-            Probe.Send(persistRef, new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 });
+            Probe!.Send(persistRef, new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 });
             Probe.ExpectMsg(true);
             Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
             Probe.ExpectMsg(true, 5.Seconds());
@@ -83,10 +83,10 @@ namespace Akka.Persistence.Sql.Tests
         [Fact]
         public void Can_Persist_SqlCommon_Snapshot()
         {
-            var persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatibilityActor(OldSnapshot, "p-2")));
+            var persistRef = Sys!.ActorOf(Props.Create(() => new SnapshotCompatibilityActor(OldSnapshot, "p-2")));
             var ourGuid = Guid.NewGuid();
 
-            Probe.Send(persistRef, new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 });
+            Probe!.Send(persistRef, new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 });
             Probe.ExpectMsg(true);
             Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
             Probe.ExpectMsg(true, 5.Seconds());
@@ -107,10 +107,10 @@ namespace Akka.Persistence.Sql.Tests
         [Fact]
         public void SqlCommon_Snapshot_Can_Recover_L2Db_Snapshot()
         {
-            var persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatibilityActor(NewSnapshot, "p-3")));
+            var persistRef = Sys!.ActorOf(Props.Create(() => new SnapshotCompatibilityActor(NewSnapshot, "p-3")));
             var ourGuid = Guid.NewGuid();
 
-            Probe.Send(persistRef, new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 });
+            Probe!.Send(persistRef, new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 });
             Probe.ExpectMsg(true);
             Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
             Probe.ExpectMsg(true, 5.Seconds());
@@ -125,10 +125,10 @@ namespace Akka.Persistence.Sql.Tests
         [Fact]
         public void SqlCommon_Snapshot_Can_Persist_L2db_Snapshot()
         {
-            var persistRef = Sys.ActorOf(Props.Create(() => new SnapshotCompatibilityActor(NewSnapshot, "p-4")));
+            var persistRef = Sys!.ActorOf(Props.Create(() => new SnapshotCompatibilityActor(NewSnapshot, "p-4")));
             var ourGuid = Guid.NewGuid();
 
-            Probe.Send(persistRef, new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 });
+            Probe!.Send(persistRef, new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 });
             Probe.ExpectMsg(true);
             Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
             Probe.ExpectMsg(true, 5.Seconds());
@@ -148,7 +148,7 @@ namespace Akka.Persistence.Sql.Tests
 
         private void EnsureTerminated(IActorRef actorRef)
         {
-            Probe.Watch(actorRef);
+            Probe!.Watch(actorRef);
             actorRef.Tell(PoisonPill.Instance);
             Probe.ExpectTerminated(actorRef);
             Probe.Unwatch(actorRef);
