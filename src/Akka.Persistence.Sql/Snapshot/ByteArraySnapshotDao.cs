@@ -34,14 +34,16 @@ namespace Akka.Persistence.Sql.Snapshot
 
     public class LatestSnapRequestEntry
     {
-        public LatestSnapRequestEntry(string persistenceId)
+        public LatestSnapRequestEntry(string persistenceId, CancellationToken cancellationToken)
         {
             PersistenceId = persistenceId;
+            CTS = cancellationToken;
             TCS = new TaskCompletionSource<Option<SelectedSnapshot>>(TaskCreationOptions.RunContinuationsAsynchronously);
         }
 
         public readonly string PersistenceId;
         public readonly TaskCompletionSource<Option<SelectedSnapshot>> TCS;
+        public readonly CancellationToken CTS;
     }
 
     public readonly record struct SnapshotReadGroup
@@ -65,13 +67,17 @@ namespace Akka.Persistence.Sql.Snapshot
 
     public class QueryLatestSnapSet
     {
-        public readonly Dictionary<string, List<TaskCompletionSource<Option<SelectedSnapshot>>>> Entries = new();
+        public readonly Dictionary<string, List<LatestSnapRequestEntry>> Entries = new();
 
         public void Add(LatestSnapRequestEntry entry)
         {
             if (Entries.TryGetValue(entry.PersistenceId, out var item) == false)
             {
-                item = Entries[entry.PersistenceId] = new List<TaskCompletionSource<Option<SelectedSnapshot>>>();
+                item = Entries[entry.PersistenceId] = new List<LatestSnapRequestEntry>();
+            }
+            item.Add(entry);
+        }
+    }
             }
             item.Add(entry.TCS);
         }
@@ -185,9 +191,9 @@ namespace Akka.Persistence.Sql.Snapshot
                                                 Manifest = r.Manifest,
                                                 Payload = r.Payload,
                                                 SerializerId = r.SerializerId,
-                                                RowNum = LinqToDB.Sql.Ext.Rank().Over().PartitionBy(r.PersistenceId).OrderByDesc(r.SequenceNumber).ToValue()
+                                                LatestRowNum = LinqToDB.Sql.Ext.Rank().Over().PartitionBy(r.PersistenceId).OrderByDesc(r.SequenceNumber).ToValue()
                                             })
-                                        .Where(r => r.RowNum == 1)
+                                        .Where(r => r.LatestRowNum == 1)
                                         .Select(
                                             r => new LongSnapshotRow()
                                             {
@@ -216,7 +222,15 @@ namespace Akka.Persistence.Sql.Snapshot
                             {
                                 foreach (var taskCompletionSource in taskCompletionSourcese)
                                 {
-                                    taskCompletionSource.TrySetException(c);
+                                    if (taskCompletionSource.CTS.IsCancellationRequested)
+                                    {
+                                        taskCompletionSource.TCS.TrySetCanceled(taskCompletionSource.CTS);
+                                    }
+                                    else
+                                    {
+                                     
+                                        taskCompletionSource.TCS.TrySetException(c);   
+                                    }
                                 }
                             }
                         }
@@ -230,7 +244,14 @@ namespace Akka.Persistence.Sql.Snapshot
                                 {
                                     foreach (var taskCompletionSource in keyValuePair.Value)
                                     {
-                                        taskCompletionSource.TrySetResult(Option<SelectedSnapshot>.None);
+                                        if (taskCompletionSource.CTS.IsCancellationRequested)
+                                        {
+                                            taskCompletionSource.TCS.TrySetCanceled(taskCompletionSource.CTS);
+                                        }
+                                        else
+                                        {
+                                            taskCompletionSource.TCS.TrySetResult(Option<SelectedSnapshot>.None);
+                                        }
                                     }
                                 }
                             }
@@ -245,14 +266,28 @@ namespace Akka.Persistence.Sql.Snapshot
                                         {
                                             foreach (var taskCompletionSource in toSet)
                                             {
-                                                taskCompletionSource.TrySetResult(res.Success);
+                                                if (taskCompletionSource.CTS.IsCancellationRequested)
+                                                {
+                                                    taskCompletionSource.TCS.TrySetCanceled(taskCompletionSource.CTS);
+                                                }
+                                                else
+                                                {
+                                                    taskCompletionSource.TCS.TrySetResult(res.Success);
+                                                }
                                             }
                                         }
                                         else
                                         {
                                             foreach (var taskCompletionSource in toSet)
                                             {
-                                                taskCompletionSource.TrySetException(res.Failure.Value);
+                                                if (taskCompletionSource.CTS.IsCancellationRequested)
+                                                {
+                                                    taskCompletionSource.TCS.TrySetCanceled(taskCompletionSource.CTS);
+                                                }
+                                                else
+                                                {
+                                                    taskCompletionSource.TCS.TrySetException(res.Failure.Value);
+                                                }
                                             }
                                         }
                                     }
@@ -260,7 +295,7 @@ namespace Akka.Persistence.Sql.Snapshot
                                     {
                                         foreach (var taskCompletionSource in toSet)
                                         {
-                                            taskCompletionSource.TrySetException(e);
+                                            taskCompletionSource.TCS.TrySetException(e);
                                         }
                                     }
                                 }
@@ -275,7 +310,7 @@ namespace Akka.Persistence.Sql.Snapshot
                                     {
                                         foreach (var taskCompletionSource in setNo)
                                         {
-                                            taskCompletionSource.TrySetResult(Option<SelectedSnapshot>.None);
+                                            taskCompletionSource.TCS.TrySetResult(Option<SelectedSnapshot>.None);
                                         }
                                     }
                                 }
@@ -422,7 +457,7 @@ namespace Akka.Persistence.Sql.Snapshot
             string persistenceId,
             CancellationToken cancellationToken = default)
         {
-            var req = new LatestSnapRequestEntry(persistenceId);
+            var req = new LatestSnapRequestEntry(persistenceId, cancellationToken);
             if (_pendingLatestChannel.Writer.TryWrite(req))
             {
                 return req.TCS.Task;
