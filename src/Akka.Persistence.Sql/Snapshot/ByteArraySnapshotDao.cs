@@ -78,10 +78,7 @@ namespace Akka.Persistence.Sql.Snapshot
             item.Add(entry);
         }
     }
-            }
-            item.Add(entry.TCS);
-        }
-    }
+
     public class ByteArraySnapshotDao : ISnapshotDao
     {
         private readonly AkkaPersistenceDataConnectionFactory _connectionFactory;
