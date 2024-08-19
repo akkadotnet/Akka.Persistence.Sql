@@ -9,6 +9,7 @@
     <ItemGroup>
         <PackageReference Include="Akka" />
         <PackageReference Include="Akka.Hosting.TestKit" />
+        <PackageReference Include="FluentAssertions" />
         
         <PackageReference Include="Microsoft.NET.Test.Sdk" />
     </ItemGroup>
