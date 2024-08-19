@@ -14,6 +14,7 @@
     <PackageReference Include="Akka.Persistence.PostgreSql" />
     <PackageReference Include="Akka.Persistence.MySql" />
     <PackageReference Include="Akka.Serialization.Hyperion" />
+    <PackageReference Include="Microsoft.Data.SqlClient" />
 
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
 
