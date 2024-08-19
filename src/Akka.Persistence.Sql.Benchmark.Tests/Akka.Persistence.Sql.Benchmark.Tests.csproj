@@ -9,6 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Akka" />
+    <PackageReference Include="Akka.Persistence" />
+    <PackageReference Include="Akka.Persistence.Query" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="JetBrains.dotMemoryUnit" />
 

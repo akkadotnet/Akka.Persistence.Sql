@@ -9,16 +9,16 @@
   </PropertyGroup>
   <!-- Akka dependencies -->
   <ItemGroup>
-    <PackageVersion Include="Akka" Version="$(AkkaVersion)" />
+    <PackageVersion Include="Akka" Version="1.5.27.1" />
     <PackageVersion Include="Akka.Cluster.Hosting" Version="$(AkkaHostingVersion)" />
     <PackageVersion Include="Akka.Cluster.Sharding" Version="$(AkkaVersion)" />
     <PackageVersion Include="Akka.Hosting" Version="$(AkkaHostingVersion)" />
-    <PackageVersion Include="Akka.Persistence" Version="$(AkkaVersion)" />
+    <PackageVersion Include="Akka.Persistence" Version="1.5.27.1" />
     <PackageVersion Include="Akka.Persistence.Hosting" Version="$(AkkaHostingVersion)" />
     <PackageVersion Include="Akka.Persistence.Sql.Compat.Common" Version="0.1.0" />
     <PackageVersion Include="Akka.Persistence.TCK" Version="$(AkkaVersion)" />
     <PackageVersion Include="Akka.Persistence.TestKit" Version="$(AkkaVersion)" />
-    <PackageVersion Include="Akka.Persistence.Query" Version="$(AkkaVersion)" />
+    <PackageVersion Include="Akka.Persistence.Query" Version="1.5.27.1" />
     <PackageVersion Include="Akka.Serialization.Hyperion" Version="$(AkkaVersion)" />
     <PackageVersion Include="Akka.Streams" Version="$(AkkaVersion)" />
   </ItemGroup>

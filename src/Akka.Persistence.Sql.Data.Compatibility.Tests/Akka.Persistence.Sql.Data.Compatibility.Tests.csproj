@@ -8,6 +8,7 @@
     <PackageReference Include="Akka.Cluster.Hosting" />
     <PackageReference Include="Akka.Cluster.Sharding" />
     <PackageReference Include="Akka.Hosting" />
+    <PackageReference Include="Akka.Persistence.Query" />
     <PackageReference Include="Akka.Persistence.Sql.Compat.Common" />
 
     <PackageReference Include="Docker.DotNet" />
