@@ -96,7 +96,7 @@ namespace Akka.Persistence.Sql.Query.Dao
                                         .GetTable<JournalRow>()
                                         .Where(
                                             r =>
-                                                r.Tags.Contains(inVals.Tag) &&
+                                                r.Tags != null && r.Tags.Contains(inVals.Tag) &&
                                                 !r.Deleted &&
                                                 r.Ordering > inVals.Offset &&
                                                 r.Ordering <= inVals.MaxOffset)

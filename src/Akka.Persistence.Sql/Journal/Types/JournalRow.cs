@@ -22,7 +22,7 @@ namespace Akka.Persistence.Sql.Journal.Types
 
         public byte[] Message { get; set; } = Array.Empty<byte>();
 
-        public string Tags { get; set; } = string.Empty;
+        public string? Tags { get; set; } = string.Empty;
 
         public string Manifest { get; set; }  = string.Empty;
 

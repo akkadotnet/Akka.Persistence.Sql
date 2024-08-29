@@ -143,8 +143,8 @@ namespace Akka.Persistence.Sql.Journal.Dao
             try
             {
                 var identifierMaybe = t.Identifier;
-                var tags = t.Tags.Split(_separatorArray, StringSplitOptions.RemoveEmptyEntries);
-                if (tags.Length == 0)
+                var tags = t.Tags?.Split(_separatorArray, StringSplitOptions.RemoveEmptyEntries);
+                if (tags is null || tags.Length == 0)
                     tags = t.TagArray;
                     
                 if (identifierMaybe.HasValue)
