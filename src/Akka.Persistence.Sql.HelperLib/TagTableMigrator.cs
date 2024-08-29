@@ -101,9 +101,9 @@ namespace Akka.Persistence.Sql.HelperLib
                         var tagList = new List<JournalTagRow>();
                         foreach (var row in rows)
                         {
-                            var tags = row.Tags
+                            var tags = row.Tags?
                                 .Split(new[] { _separator }, StringSplitOptions.RemoveEmptyEntries)
-                                .Where(s => !string.IsNullOrWhiteSpace(s));
+                                .Where(s => !string.IsNullOrWhiteSpace(s)) ?? Array.Empty<string>();
 
                             tagList.AddRange(
                                 tags.Select(

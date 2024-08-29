@@ -12,13 +12,13 @@ namespace Akka.Persistence.Sql.Journal.Types
         public long OrderingId { get; set; }
 
         // ReSharper disable once InconsistentNaming
-        public string TagValue { get; set; }
+        public string TagValue { get; set; } = string.Empty;
     }
 
     public sealed class JournalTagRow : TagRow
     {
         public long SequenceNumber { get; set; }
 
-        public string PersistenceId { get; set; }
+        public string PersistenceId { get; set; } = string.Empty;
     }
 }

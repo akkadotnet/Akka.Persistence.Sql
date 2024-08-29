@@ -43,7 +43,7 @@ namespace Akka.Persistence.Sql.Query
             _log = Context.GetLogger();
         }
 
-        public ITimerScheduler Timers { get; set; }
+        public ITimerScheduler Timers { get; set; } = null!;
 
         private bool ReceiveHandler(object message)
             => ReceiveHandler(message, 0, ImmutableDictionary<int, MissingElements>.Empty, 0, _queryDelay);

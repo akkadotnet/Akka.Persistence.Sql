@@ -36,8 +36,8 @@ namespace Akka.Persistence.Sql.Utility
         /// <returns></returns>
         public static ActorMaterializer CreateSystemMaterializer(
             ExtendedActorSystem context,
-            ActorMaterializerSettings settings = null,
-            string namePrefix = null)
+            ActorMaterializerSettings? settings = null,
+            string? namePrefix = null)
         {
             var haveShutDown = new AtomicBoolean();
             var system = ActorSystemOf(context);

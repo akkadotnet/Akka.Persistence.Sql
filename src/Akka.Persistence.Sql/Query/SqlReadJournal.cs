@@ -296,8 +296,7 @@ namespace Akka.Persistence.Sql.Query
                             var nextStartingOffset = xs.Count == 0
                                 ? Math.Max(uf.offset, queryUntil.Max)
                                 : xs.Select(r => r.Offset as Sequence)
-                                    .Where(r => r != null)
-                                    .Max(t => t.Value);
+                                    .Max(t => t?.Value ?? long.MinValue);
 
                             return Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>.Create(
                                 ((nextStartingOffset, nextControl), xs));
@@ -373,8 +372,7 @@ namespace Akka.Persistence.Sql.Query
                             var nextStartingOffset = xs.Count == 0
                                 ? Math.Max(uf.offset, queryUntil.Max)
                                 : xs.Select(r => r.Offset as Sequence)
-                                    .Where(r => r != null)
-                                    .Max(t => t.Value);
+                                    .Max(t => t?.Value ?? long.MinValue);
 
                             return Option<((long nextStartingOffset, FlowControlEnum nextControl), IImmutableList<EventEnvelope>xs)>.Create(
                                 ((nextStartingOffset, nextControl), xs));

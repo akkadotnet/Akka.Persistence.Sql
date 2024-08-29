@@ -11,7 +11,7 @@ namespace Akka.Persistence.Sql.Journal.Types
     public sealed class JournalMetaData
     {
         [Column(IsPrimaryKey = true, CanBeNull = false)]
-        public string PersistenceId { get; set; }
+        public string PersistenceId { get; set; }  = string.Empty;
 
         [PrimaryKey]
         public long SequenceNumber { get; set; }

@@ -42,7 +42,7 @@ namespace Akka.Persistence.Sql.Snapshot
                 logger: Context.GetLogger());
         }
 
-        public IStash Stash { get; set; }
+        public IStash Stash { get; set; } = null!;
 
         protected override void PreStart()
         {
@@ -89,25 +89,25 @@ namespace Akka.Persistence.Sql.Snapshot
             return Status.Success.Instance;
         }
 
-        protected override async Task<SelectedSnapshot> LoadAsync(
+        protected override async Task<SelectedSnapshot?> LoadAsync(
             string persistenceId,
             SnapshotSelectionCriteria criteria)
             => criteria.MaxSequenceNr switch
             {
                 long.MaxValue when criteria.MaxTimeStamp == DateTime.MaxValue
-                    => (await _dao.LatestSnapshotAsync(persistenceId)).GetOrElse(null),
+                    => (await _dao.LatestSnapshotAsync(persistenceId)).GetOrNull(),
 
                 long.MaxValue
-                    => (await _dao.SnapshotForMaxTimestampAsync(persistenceId, criteria.MaxTimeStamp)).GetOrElse(null),
+                    => (await _dao.SnapshotForMaxTimestampAsync(persistenceId, criteria.MaxTimeStamp)).GetOrNull(),
 
                 _ => criteria.MaxTimeStamp == DateTime.MaxValue
                     ? (await _dao.SnapshotForMaxSequenceNrAsync(
                         persistenceId: persistenceId,
-                        sequenceNr: criteria.MaxSequenceNr)).GetOrElse(null)
+                        sequenceNr: criteria.MaxSequenceNr)).GetOrNull()
                     : (await _dao.SnapshotForMaxSequenceNrAndMaxTimestampAsync(
                         persistenceId: persistenceId,
                         sequenceNr: criteria.MaxSequenceNr,
-                        timestamp: criteria.MaxTimeStamp)).GetOrElse(null),
+                        timestamp: criteria.MaxTimeStamp)).GetOrNull(),
             };
 
         protected override async Task SaveAsync(SnapshotMetadata metadata, object snapshot)

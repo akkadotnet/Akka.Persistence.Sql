@@ -14,7 +14,7 @@ namespace Akka.Persistence.Sql.HelperLib
             string tableName,
             string persistenceIdCol,
             string sequenceNoCol,
-            string schemaName = null)
+            string? schemaName = null)
         {
             var idx = BeginCreateIndex(
                 tableName,
@@ -33,7 +33,7 @@ namespace Akka.Persistence.Sql.HelperLib
         public IndexDefinition JournalOrdering(
             string tableName,
             string orderingCol,
-            string schemaName = null)
+            string? schemaName = null)
         {
             var idx = BeginCreateIndex(
                 tableName,
@@ -51,7 +51,7 @@ namespace Akka.Persistence.Sql.HelperLib
         public IndexDefinition JournalTimestamp(
             string tableName,
             string timestampCol,
-            string schemaName = null)
+            string? schemaName = null)
         {
             var idx = BeginCreateIndex(
                 tableName,
@@ -64,11 +64,11 @@ namespace Akka.Persistence.Sql.HelperLib
             return idx;
         }
 
-        private static IndexDefinition BeginCreateIndex(string tableName, string schemaName, string indexName)
+        private static IndexDefinition BeginCreateIndex(string tableName, string? schemaName, string indexName)
         {
             var idx = new IndexDefinition();
 
-            if (string.IsNullOrWhiteSpace(schemaName) == false)
+            if (!string.IsNullOrWhiteSpace(schemaName))
                 idx.SchemaName = schemaName;
 
             idx.TableName = tableName;

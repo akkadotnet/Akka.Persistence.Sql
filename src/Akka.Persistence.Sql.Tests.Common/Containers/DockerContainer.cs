@@ -242,7 +242,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
                 {
                     await _readDockerTask;
                 }
-                catch(TaskCanceledException _) {}
+                catch(TaskCanceledException) {}
                     
 
             try
