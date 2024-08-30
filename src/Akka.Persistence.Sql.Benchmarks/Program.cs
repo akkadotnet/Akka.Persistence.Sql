@@ -20,33 +20,34 @@ namespace Akka.Persistence.Sql.Benchmarks
     {
         public static async Task Main(string[] args)
         {
-            if (args.Length == 0 || !args[0].ToLowerInvariant().Contains("generate"))
+            if (args.Length == 0 || !args[0].Contains("generate", StringComparison.InvariantCultureIgnoreCase))
             {
                 BenchmarkSwitcher.FromAssembly(Assembly.GetExecutingAssembly()).Run(args);
                 return;
             }
 
-            if (args[0].ToLowerInvariant() == "generate")
+            if (args[0].Equals("generate", StringComparison.InvariantCultureIgnoreCase))
             {
                 var fixture = new SqlServerContainer();
                 await fixture.InitializeAsync();
 
                 var config = ConfigurationFactory.ParseString(
-                        @$"
-akka.persistence.journal {{
+                        $$"""
+akka.persistence.journal {
     plugin = akka.persistence.journal.sql
-    sql {{
-        connection-string = ""{fixture.ConnectionString}""
-        provider-name = ""{fixture.ProviderName}""
+    sql {
+        connection-string = "{{fixture.ConnectionString}}"
+        provider-name = "{{fixture.ProviderName}}"
         tag-write-mode = Both
-        event-adapters {{
-            event-tagger = ""{typeof(EventTagger).AssemblyQualifiedName}""
-        }}
-        event-adapter-bindings {{
-            ""System.Int32"" = event-tagger
-        }}
-    }}
-}}")
+        event-adapters {
+            event-tagger = "{{typeof(EventTagger).AssemblyQualifiedName}}"
+        }
+        event-adapter-bindings {
+            "System.Int32" = event-tagger
+        }
+    }
+}
+""")
                     .WithFallback(Persistence.DefaultConfig())
                     .WithFallback(SqlPersistence.DefaultConfiguration);
 
@@ -59,11 +60,12 @@ akka.persistence.journal {{
 
                 await File.WriteAllTextAsync(
                     "benchmark.conf",
-                    $@"
-benchmark {{
-    connection-string = ""{fixture.ConnectionString}""
-    provider-name = ""{fixture.ProviderName}""
-}}");
+                    $$"""
+benchmark {
+    connection-string = "{{fixture.ConnectionString}}"
+    provider-name = "{{fixture.ProviderName}}"
+}
+""");
 
                 Console.WriteLine($"Connection String: {fixture.ConnectionString}");
                 Console.WriteLine($"Provider Name: {fixture.ProviderName}");

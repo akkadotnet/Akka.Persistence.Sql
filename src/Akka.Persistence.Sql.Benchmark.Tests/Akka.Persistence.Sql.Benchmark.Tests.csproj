@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MathNet.Numerics" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="JetBrains.dotMemoryUnit" />
 
