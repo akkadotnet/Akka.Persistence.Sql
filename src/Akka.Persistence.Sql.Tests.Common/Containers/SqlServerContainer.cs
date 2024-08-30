@@ -25,7 +25,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
 
         private readonly DbConnectionStringBuilder _connectionStringBuilder;
 
-        public SqlServerContainer() : base("mcr.microsoft.com/mssql/server", "2019-latest", $"mssql-{Guid.NewGuid():N}")
+        public SqlServerContainer() : base("mcr.microsoft.com/mssql/server", "2022-latest", $"mssql-{Guid.NewGuid():N}")
             => _connectionStringBuilder = new DbConnectionStringBuilder
             {
                 ["Server"] = $"localhost,{Port}",
@@ -36,7 +36,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
 
         public override string ConnectionString => _connectionStringBuilder.ToString();
 
-        public override string ProviderName => LinqToDB.ProviderName.SqlServer2019;
+        public override string ProviderName => LinqToDB.ProviderName.SqlServer2022;
 
         private int Port { get; } = ThreadLocalRandom.Current.Next(9000, 10000);
 
