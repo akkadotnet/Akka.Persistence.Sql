@@ -43,7 +43,7 @@ namespace Akka.Persistence.Sql.Config
             DataOptions = null;
         }
 
-        public SnapshotConfig(
+        private SnapshotConfig(
             SnapshotTableConfiguration tableConfig,
             IPluginConfig pluginConfig,
             string? useSharedDb,

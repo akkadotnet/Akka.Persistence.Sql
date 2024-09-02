@@ -35,7 +35,7 @@ namespace Akka.Persistence.Sql.Config
             WriteIsolationLevel = config.GetIsolationLevel("write-isolation-level");
         }
 
-        public JournalConfig(
+        private JournalConfig(
             string materializerDispatcher,
             string connectionString,
             string providerName,

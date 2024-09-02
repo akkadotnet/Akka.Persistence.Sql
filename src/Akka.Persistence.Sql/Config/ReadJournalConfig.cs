@@ -34,7 +34,7 @@ namespace Akka.Persistence.Sql.Config
             WriteIsolationLevel = IsolationLevel.Unspecified;
         }
 
-        public ReadJournalConfig(
+        private ReadJournalConfig(
             string connectionString,
             string providerName,
             string writePluginId,
@@ -102,7 +102,7 @@ namespace Akka.Persistence.Sql.Config
 
         public ReadJournalConfig WithDataOptions(DataOptions dataOptions)
             => Copy(dataOptions: dataOptions);
-        
+
         private ReadJournalConfig Copy(
             string? connectionString = null,
             string? providerName = null,
