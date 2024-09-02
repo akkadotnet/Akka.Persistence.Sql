@@ -124,6 +124,7 @@ namespace Akka.Persistence.Sql.Hosting
         ///     <para>
         ///         The custom <see cref="DataOptions"/> used for the connection to the database. If not provided,
         ///         <see cref="DataOptionsExtensions.UseConnectionString(LinqToDB.DataOptions,string,string)"/> will be used
+        ///         The MappingSchema will always be overridden by Akka.Persistence.Sql.
         ///     </para>
         ///     <para>
         ///         Data option documentation can be read
@@ -247,6 +248,7 @@ namespace Akka.Persistence.Sql.Hosting
         ///     <para>
         ///         The custom <see cref="DataOptions"/> used for the connection to the database. If not provided,
         ///         <see cref="DataOptionsExtensions.UseConnectionString(LinqToDB.DataOptions,string,string)"/> will be used
+        ///         The MappingSchema will always be overridden by Akka.Persistence.Sql.
         ///     </para>
         ///     <para>
         ///         Data option documentation can be read
@@ -310,6 +312,7 @@ namespace Akka.Persistence.Sql.Hosting
         ///     <para>
         ///         The custom <see cref="DataOptions"/> used for the connection to the database. If not provided,
         ///         <see cref="DataOptionsExtensions.UseConnectionString(LinqToDB.DataOptions,string,string)"/> will be used
+        ///         The MappingSchema will always be overridden by Akka.Persistence.Sql.
         ///     </para>
         ///     <para>
         ///         Data option documentation can be read

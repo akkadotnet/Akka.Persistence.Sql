@@ -77,7 +77,7 @@ var host = new HostBuilder()
 
 You must always provide a `connectionString` and a `providerName`, even if you provide a `DataOptions` object. 
 Please consult the Linq2Db documentation for more information on how to configure a valid `DataOptions` object. 
-The `ConnectionOptions.MappingSchema` option will always be overridden by Akka.Persistence.Sql.
+The `MappingSchema` will always be overridden by Akka.Persistence.Sql.
 
 ## The Classic Way, Using HOCON
 
