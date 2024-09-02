@@ -52,6 +52,33 @@ var host = new HostBuilder()
     })
 ```
 
+You can also provide your own [`LinqToDb.DataOptions`](https://linq2db.github.io/api/linq2db/LinqToDB.DataOptions.html) object for a more advanced configuration.
+Assuming a setup with a custom connection factory with Npgsql: 
+Ï
+```csharp
+var npgsqlDataSource = new NpgsqlDataSourceBuilder(_myConnectionString)
+    .UsePasswordProvider(stringBuilder => "my dynamic password", null)
+    .Build();
+
+var dataOptions = new DataOptions()
+    .UseConnectionFactory((opt) => npgsqlDataSource.CreateConnection());
+    
+var host = new HostBuilder()
+    .ConfigureServices((context, services) => {
+        services.AddAkka("my-system-name", (builder, provider) =>
+        {
+            builder.WithSqlPersistence(
+                connectionString: _myConnectionString,
+                providerName: ProviderName.PostgreSQL,
+                dataOptions: dataOptions)
+        });
+    })
+```
+
+You must always provide a `connectionString` and a `providerName`, even if you provide a `DataOptions` object. 
+Please consult the Linq2Db documentation for more information on how to configure a valid `DataOptions` object. 
+The `ConnectionOptions.MappingSchema` option will always be overridden by Akka.Persistence.Sql.
+
 ## The Classic Way, Using HOCON
 
 These are the minimum HOCON configuration you need to start using Akka.Persistence.Sql:
