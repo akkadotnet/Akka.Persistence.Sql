@@ -53,6 +53,11 @@ namespace Akka.Persistence.Sql.Query
             Configuration.Config config)
         {
             _readJournalConfig = new ReadJournalConfig(config);
+
+            var setup = system.Settings.Setup.Get<DataOptionsSetup>();
+            if (setup.HasValue)
+                _readJournalConfig = setup.Value.Apply(_readJournalConfig);
+
             _eventAdapters = Persistence.Instance.Apply(system).AdaptersFor(_readJournalConfig.WritePluginId);
             
             // Fix for https://github.com/akkadotnet/Akka.Persistence.Sql/issues/344

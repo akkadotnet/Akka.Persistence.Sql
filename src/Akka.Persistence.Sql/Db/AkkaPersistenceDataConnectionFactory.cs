@@ -42,10 +42,8 @@ namespace Akka.Persistence.Sql.Db
             fmb.Build();
 
             _useCloneDataConnection = config.UseCloneConnection;
-            var opts =new DataOptions()
-                .UseConnectionString(config.ProviderName, config.ConnectionString)
-                .UseMappingSchema(mappingSchema);
-            _opts = opts;
+
+            _opts = BuildDataOptions(config, mappingSchema);
 
             if (config.ProviderName.ToLower().StartsWith("sqlserver"))
                 _policy = new SqlServerRetryPolicy();
@@ -54,7 +52,7 @@ namespace Akka.Persistence.Sql.Db
             _cloneConnection = new Lazy<AkkaDataConnection>(
                 () => new AkkaDataConnection(
                     config.ProviderName,
-                    new DataConnection(opts)));
+                    new DataConnection(_opts)));
         }
 
         public AkkaPersistenceDataConnectionFactory(IProviderConfig<SnapshotTableConfiguration> config)
@@ -83,17 +81,16 @@ namespace Akka.Persistence.Sql.Db
             fmb.Build();
 
             _useCloneDataConnection = config.UseCloneConnection;
-            var opts = new DataOptions()
-                .UseConnectionString(config.ProviderName, config.ConnectionString)
-                .UseMappingSchema(mappingSchema);
-            _opts = opts;
+
+            _opts = BuildDataOptions(config, mappingSchema);
+
             if (config.ProviderName.ToLower().StartsWith("sqlserver"))
                 _policy = new SqlServerRetryPolicy();
 
             _cloneConnection = new Lazy<AkkaDataConnection>(
                 () => new AkkaDataConnection(
                     config.ProviderName,
-                    new DataConnection(opts)));
+                    new DataConnection(_opts)));
         }
 
         private static void MapJournalRow(
@@ -381,6 +378,15 @@ namespace Akka.Persistence.Sql.Db
                 //    .HasConversion(l => DateTimeHelpers.FromUnixEpochMillis(l),
                 //        dt => DateTimeHelpers.ToUnixEpochMillis(dt));
             }
+        }
+
+        private static DataOptions BuildDataOptions<TTable>(IProviderConfig<TTable> config, MappingSchema mappingSchema)
+        {
+            // LinqToDB.Data.DataConnection.ConfigurationApplier extracts different combinations therefore we can't
+            // just override the connection string or the provider name. We assume that the passed DataOptions object
+            // has sufficient information to build a connection or else we use the provided config.
+            var options = config.DataOptions ?? new DataOptions().UseConnectionString(config.ProviderName, config.ConnectionString);
+            return options.UseMappingSchema(mappingSchema);
         }
 
         public AkkaDataConnection GetConnection()

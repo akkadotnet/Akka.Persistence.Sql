@@ -5,10 +5,12 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using Akka.Actor;
 using Akka.Hosting;
 using Akka.Persistence.Hosting;
 using Akka.Persistence.Sql.Config;
+using LinqToDB;
 
 namespace Akka.Persistence.Sql.Hosting
 {
@@ -118,6 +120,16 @@ namespace Akka.Persistence.Sql.Hosting
         ///         </item>
         ///     </list>
         /// </param>
+        /// <param name="dataOptions">
+        ///     <para>
+        ///         The custom <see cref="DataOptions"/> used for the connection to the database. If not provided,
+        ///         <see cref="DataOptionsExtensions.UseConnectionString(LinqToDB.DataOptions,string,string)"/> will be used
+        ///     </para>
+        ///     <para>
+        ///         Data option documentation can be read
+        ///         <a href="https://linq2db.github.io/api/linq2db/LinqToDB.DataOptions.html">here</a>
+        ///     </para>
+        /// </param>
         /// <returns>
         ///     The same <see cref="AkkaConfigurationBuilder" /> instance originally passed in.
         /// </returns>
@@ -138,7 +150,8 @@ namespace Akka.Persistence.Sql.Hosting
             DatabaseMapping? databaseMapping = null,
             TagMode? tagStorageMode = null,
             bool? deleteCompatibilityMode = null,
-            bool? useWriterUuidColumn = null)
+            bool? useWriterUuidColumn = null,
+            DataOptions? dataOptions = null)
         {
             if (mode == PersistenceMode.SnapshotStore && journalBuilder is not null)
                 throw new Exception($"{nameof(journalBuilder)} can only be set when {nameof(mode)} is set to either {PersistenceMode.Both} or {PersistenceMode.Journal}");
@@ -196,9 +209,9 @@ namespace Akka.Persistence.Sql.Hosting
 
             return mode switch
             {
-                PersistenceMode.Journal => builder.WithSqlPersistence(journalOpt),
-                PersistenceMode.SnapshotStore => builder.WithSqlPersistence(null, snapshotOpt),
-                PersistenceMode.Both => builder.WithSqlPersistence(journalOpt, snapshotOpt),
+                PersistenceMode.Journal => builder.WithSqlPersistence(journalOpt, null, dataOptions),
+                PersistenceMode.SnapshotStore => builder.WithSqlPersistence(null, snapshotOpt, dataOptions),
+                PersistenceMode.Both => builder.WithSqlPersistence(journalOpt, snapshotOpt, dataOptions),
                 _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Invalid PersistenceMode defined."),
             };
         }
@@ -230,6 +243,16 @@ namespace Akka.Persistence.Sql.Hosting
         ///     </para>
         ///     <b>Default</b>: <c>true</c>
         /// </param>
+        /// <param name="dataOptions">
+        ///     <para>
+        ///         The custom <see cref="DataOptions"/> used for the connection to the database. If not provided,
+        ///         <see cref="DataOptionsExtensions.UseConnectionString(LinqToDB.DataOptions,string,string)"/> will be used
+        ///     </para>
+        ///     <para>
+        ///         Data option documentation can be read
+        ///         <a href="https://linq2db.github.io/api/linq2db/LinqToDB.DataOptions.html">here</a>
+        ///     </para>
+        /// </param>
         /// <returns>
         ///     The same <see cref="AkkaConfigurationBuilder" /> instance originally passed in.
         /// </returns>
@@ -241,7 +264,8 @@ namespace Akka.Persistence.Sql.Hosting
             this AkkaConfigurationBuilder builder,
             Action<SqlJournalOptions>? journalOptionConfigurator = null,
             Action<SqlSnapshotOptions>? snapshotOptionConfigurator = null,
-            bool isDefaultPlugin = true)
+            bool isDefaultPlugin = true,
+            DataOptions? dataOptions = null)
         {
             if (journalOptionConfigurator is null && snapshotOptionConfigurator is null)
                 throw new ArgumentException($"{nameof(journalOptionConfigurator)} and {nameof(snapshotOptionConfigurator)} could not both be null");
@@ -282,6 +306,16 @@ namespace Akka.Persistence.Sql.Hosting
         ///     </para>
         ///     <i>Default</i>: <c>null</c>
         /// </param>
+        /// <param name="dataOptions">
+        ///     <para>
+        ///         The custom <see cref="DataOptions"/> used for the connection to the database. If not provided,
+        ///         <see cref="DataOptionsExtensions.UseConnectionString(LinqToDB.DataOptions,string,string)"/> will be used
+        ///     </para>
+        ///     <para>
+        ///         Data option documentation can be read
+        ///         <a href="https://linq2db.github.io/api/linq2db/LinqToDB.DataOptions.html">here</a>
+        ///     </para>
+        /// </param>
         /// <returns>
         ///     The same <see cref="AkkaConfigurationBuilder" /> instance originally passed in.
         /// </returns>
@@ -291,8 +325,18 @@ namespace Akka.Persistence.Sql.Hosting
         public static AkkaConfigurationBuilder WithSqlPersistence(
             this AkkaConfigurationBuilder builder,
             SqlJournalOptions? journalOptions = null,
-            SqlSnapshotOptions? snapshotOptions = null)
+            SqlSnapshotOptions? snapshotOptions = null,
+            DataOptions? dataOptions = null)
         {
+            if (dataOptions != null)
+            {
+                if (builder.Setups.Any(s => s is DataOptionsSetup))
+                    throw new ArgumentException($"{nameof(DataOptionsSetup)} and {nameof(dataOptions)} could not both be set");
+
+                var setup = new DataOptionsSetup(dataOptions);
+                builder.AddSetup(setup);
+            }
+
             return (journalOptions, snapshotOptions) switch
             {
                 (null, null) =>

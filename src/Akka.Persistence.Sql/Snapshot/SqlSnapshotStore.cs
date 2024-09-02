@@ -34,6 +34,10 @@ namespace Akka.Persistence.Sql.Snapshot
             var config = snapshotConfig.WithFallback(SqlPersistence.DefaultSnapshotConfiguration);
             _settings = new SnapshotConfig(config);
 
+            var setup = Context.System.Settings.Setup.Get<DataOptionsSetup>();
+            if (setup.HasValue)
+                _settings = setup.Value.Apply(_settings);
+
             _dao = new ByteArraySnapshotDao(
                 connectionFactory: new AkkaPersistenceDataConnectionFactory(_settings),
                 snapshotConfig: _settings,

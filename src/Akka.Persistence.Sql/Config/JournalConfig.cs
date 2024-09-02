@@ -6,6 +6,7 @@
 
 using System.Data;
 using Akka.Persistence.Sql.Extensions;
+using LinqToDB;
 
 namespace Akka.Persistence.Sql.Config
 {
@@ -32,6 +33,38 @@ namespace Akka.Persistence.Sql.Config
 
             ReadIsolationLevel = config.GetIsolationLevel("read-isolation-level");
             WriteIsolationLevel = config.GetIsolationLevel("write-isolation-level");
+        }
+
+        public JournalConfig(
+            string materializerDispatcher,
+            string connectionString,
+            string providerName,
+            JournalTableConfig tableConfig,
+            IPluginConfig pluginConfig,
+            BaseByteArrayJournalDaoConfig daoConfig,
+            string? useSharedDb,
+            bool useCloneConnection,
+            string defaultSerializer,
+            bool autoInitialize,
+            bool warnOnAutoInitializeFail,
+            IsolationLevel writeIsolationLevel,
+            IsolationLevel readIsolationLevel,
+            DataOptions? dataOptions)
+        {
+            MaterializerDispatcher = materializerDispatcher;
+            ConnectionString = connectionString;
+            ProviderName = providerName;
+            TableConfig = tableConfig;
+            PluginConfig = pluginConfig;
+            DaoConfig = daoConfig;
+            UseSharedDb = useSharedDb;
+            UseCloneConnection = useCloneConnection;
+            DefaultSerializer = defaultSerializer;
+            AutoInitialize = autoInitialize;
+            WarnOnAutoInitializeFail = warnOnAutoInitializeFail;
+            WriteIsolationLevel = writeIsolationLevel;
+            ReadIsolationLevel = readIsolationLevel;
+            DataOptions = dataOptions;
         }
 
         public string MaterializerDispatcher { get; }
@@ -64,6 +97,42 @@ namespace Akka.Persistence.Sql.Config
         public IsolationLevel WriteIsolationLevel { get; }
 
         public IsolationLevel ReadIsolationLevel { get; }
+
+        public DataOptions? DataOptions { get; }
+
+        public JournalConfig WithDataOptions(DataOptions dataOptions)
+            => Copy(dataOptions: dataOptions);
+
+        private JournalConfig Copy(
+            string? materializerDispatcher = null,
+            string? connectionString = null,
+            string? providerName = null,
+            JournalTableConfig? tableConfig = null,
+            IPluginConfig? pluginConfig = null,
+            BaseByteArrayJournalDaoConfig? daoConfig = null,
+            string? useSharedDb = null,
+            bool? useCloneConnection = null,
+            string? defaultSerializer = null,
+            bool? autoInitialize = null,
+            bool? warnOnAutoInitializeFail = null,
+            IsolationLevel? writeIsolationLevel = null,
+            IsolationLevel? readIsolationLevel = null,
+            DataOptions? dataOptions = null)
+            => new(
+                materializerDispatcher ?? MaterializerDispatcher,
+                connectionString ?? ConnectionString,
+                providerName ?? ProviderName,
+                tableConfig ?? TableConfig,
+                pluginConfig ?? PluginConfig,
+                daoConfig ?? DaoConfig,
+                useSharedDb ?? UseSharedDb,
+                useCloneConnection ?? UseCloneConnection,
+                defaultSerializer ?? DefaultSerializer,
+                autoInitialize ?? AutoInitialize,
+                warnOnAutoInitializeFail ?? WarnOnAutoInitializeFail,
+                writeIsolationLevel ?? WriteIsolationLevel,
+                readIsolationLevel ?? ReadIsolationLevel,
+                dataOptions ?? DataOptions);
     }
 
     public interface IProviderConfig
@@ -88,6 +157,8 @@ namespace Akka.Persistence.Sql.Config
         bool UseCloneConnection { get; }
 
         string DefaultSerializer { get; }
+
+        DataOptions? DataOptions { get; }
     }
 
     public interface IPluginConfig
