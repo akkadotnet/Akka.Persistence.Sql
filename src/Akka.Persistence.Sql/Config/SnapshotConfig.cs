@@ -113,9 +113,9 @@ namespace Akka.Persistence.Sql.Config
             string? connectionString = null,
             string? providerName = null,
             IDaoConfig? daoConfig = null,
-            bool? useCloneConnection = false,
-            bool? autoInitialize = false,
-            bool? warnOnAutoInitializeFail = false,
+            bool? useCloneConnection = null,
+            bool? autoInitialize = null,
+            bool? warnOnAutoInitializeFail = null,
             IsolationLevel? writeIsolationLevel = null,
             IsolationLevel? readIsolationLevel = null,
             DataOptions? dataOptions = null)

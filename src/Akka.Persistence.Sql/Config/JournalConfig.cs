@@ -33,6 +33,8 @@ namespace Akka.Persistence.Sql.Config
 
             ReadIsolationLevel = config.GetIsolationLevel("read-isolation-level");
             WriteIsolationLevel = config.GetIsolationLevel("write-isolation-level");
+
+            DataOptions = null;
         }
 
         private JournalConfig(
