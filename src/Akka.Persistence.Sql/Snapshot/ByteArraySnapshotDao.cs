@@ -634,6 +634,7 @@ namespace Akka.Persistence.Sql.Snapshot
         public async Task DeleteAsync(
             string persistenceId,
             long sequenceNr,
+            DateTime timestamp,
             CancellationToken cancellationToken = default)
         {
             var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
@@ -644,22 +645,31 @@ namespace Akka.Persistence.Sql.Snapshot
                 {
                     if (connection.UseDateTime)
                     {
-                        await connection
-                            .GetTable<DateTimeSnapshotRow>()
-                            .Where(
-                                r =>
-                                    r.PersistenceId == persistenceId &&
-                                    r.SequenceNumber == sequenceNr)
+                        var query = connection.GetTable<DateTimeSnapshotRow>()
+                                .Where(
+                                    r =>
+                                        r.PersistenceId == persistenceId &&
+                                        r.SequenceNumber == sequenceNr);
+                        
+                        if (timestamp > DateTime.MinValue)
+                            query = query.Where(r => r.Created <= timestamp);
+                        
+                        await query
                             .DeleteAsync(token);
                     }
                     else
                     {
-                        await connection
+                        var query = connection
                             .GetTable<LongSnapshotRow>()
                             .Where(
                                 r =>
                                     r.PersistenceId == persistenceId &&
-                                    r.SequenceNumber == sequenceNr)
+                                    r.SequenceNumber == sequenceNr);
+                        
+                        if (timestamp > DateTime.MinValue)
+                            query = query.Where(r => r.Created <= timestamp.Ticks);
+                        
+                        await query
                             .DeleteAsync(token);
                     }
                 });

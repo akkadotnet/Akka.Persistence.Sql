@@ -12,6 +12,7 @@
         <PackageReference Include="BenchmarkDotNet" />
         <!-- FluentAssertions is used in some benchmarks to validate internal behaviors -->
         <PackageReference Include="FluentAssertions" />
+        <PackageReference Include="Npgsql" />
     </ItemGroup>
 
     <ItemGroup>

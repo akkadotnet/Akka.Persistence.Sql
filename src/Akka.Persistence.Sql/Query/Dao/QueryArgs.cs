@@ -15,16 +15,12 @@ namespace Akka.Persistence.Sql.Query.Dao
         public readonly int Max;
         public readonly string Tag;
             
-        public QueryArgs(long offset, long maxOffset, int max, string tag)
+        public QueryArgs(long offset, long maxOffset, int max, string? tag = null)
         {
             Offset = offset;
             MaxOffset = maxOffset;
             Max = max;
-            Tag = tag;
-        }
-
-        public QueryArgs(long offset, long maxOffset, int max) : this(offset, maxOffset, max, null!)
-        {
+            Tag = tag ?? string.Empty;
         }
     }
 }

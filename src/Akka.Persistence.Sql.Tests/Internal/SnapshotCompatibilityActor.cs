@@ -15,7 +15,7 @@ namespace Akka.Persistence.Sql.Tests.Internal
     {
         private List<SomeEvent> _events = new();
 
-        private IActorRef _sender;
+        private IActorRef? _sender;
 
         public SnapshotCompatibilityActor(string snapshot, string persistenceId)
         {

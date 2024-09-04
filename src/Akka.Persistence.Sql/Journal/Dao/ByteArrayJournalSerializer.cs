@@ -27,13 +27,13 @@ namespace Akka.Persistence.Sql.Journal.Dao
         private readonly string[] _separatorArray;
         private readonly Akka.Serialization.Serialization _serializer;
         private readonly TagMode _tagWriteMode;
-        private readonly string _writerUuid;
+        private readonly string? _writerUuid;
 
         public ByteArrayJournalSerializer(
             IProviderConfig<JournalTableConfig> journalConfig,
             Akka.Serialization.Serialization serializer,
             string separator,
-            string writerUuid)
+            string? writerUuid)
         {
             _journalConfig = journalConfig;
             _serializer = serializer;
@@ -62,7 +62,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
             long timestamp,
             TagMode tagWriteMode,
             string separator,
-            string uuid)
+            string? uuid)
             => tagWriteMode switch
             {
                 TagMode.Csv => new JournalRow
@@ -143,6 +143,10 @@ namespace Akka.Persistence.Sql.Journal.Dao
             try
             {
                 var identifierMaybe = t.Identifier;
+                var tags = t.Tags?.Split(_separatorArray, StringSplitOptions.RemoveEmptyEntries);
+                if (tags is null || tags.Length == 0)
+                    tags = t.TagArray;
+                    
                 if (identifierMaybe.HasValue)
                 {
                     // TODO: hack. Replace when https://github.com/akkadotnet/akka.net/issues/3811
@@ -157,7 +161,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                                 sender: ActorRefs.NoSender,
                                 writerGuid: t.WriterUuid,
                                 timestamp: t.Timestamp),
-                            t.Tags?.Split(_separatorArray, StringSplitOptions.RemoveEmptyEntries) ?? t.TagArray ?? Array.Empty<string>(),
+                            tags,
                             t.Ordering));
                 }
 
@@ -178,8 +182,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                             sender: ActorRefs.NoSender,
                             writerGuid: t.WriterUuid,
                             timestamp: t.Timestamp),
-                        t.Tags?
-                            .Split(_separatorArray, StringSplitOptions.RemoveEmptyEntries) ?? t.TagArray ?? Array.Empty<string>(),
+                        tags,
                         t.Ordering));
             }
             catch (Exception e)

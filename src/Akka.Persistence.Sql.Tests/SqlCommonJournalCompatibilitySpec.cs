@@ -34,9 +34,9 @@ namespace Akka.Persistence.Sql.Tests
 
         protected abstract string OldJournal { get; }
         protected abstract string NewJournal { get; }
-        protected ActorSystem Sys { get; private set; }
-        protected Akka.TestKit.Xunit2.TestKit TestKit { get; private set; }
-        protected TestProbe Probe { get; private set; }
+        protected ActorSystem? Sys { get; private set; }
+        protected Akka.TestKit.Xunit2.TestKit? TestKit { get; private set; }
+        protected TestProbe? Probe { get; private set; }
 
         public async Task InitializeAsync()
         {
@@ -60,18 +60,18 @@ namespace Akka.Persistence.Sql.Tests
 
         public Task DisposeAsync()
         {
-            TestKit.Shutdown();
+            TestKit?.Shutdown();
             return Task.CompletedTask;
         }
 
         [Fact]
         public void Can_Recover_SqlCommon_Journal()
         {
-            var persistRef = Sys.ActorOf(Props.Create(() => new JournalCompatibilityActor(OldJournal, "p-1")));
+            var persistRef = Sys!.ActorOf(Props.Create(() => new JournalCompatibilityActor(OldJournal, "p-1")));
             var ourGuid = Guid.NewGuid();
             var someEvent = new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 };
 
-            Probe.Send(persistRef, someEvent);
+            Probe!.Send(persistRef, someEvent);
             Probe.ExpectMsg(someEvent, 5.Seconds());
             Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
             Probe.ExpectMsg(true, 5.Seconds());
@@ -86,11 +86,11 @@ namespace Akka.Persistence.Sql.Tests
         [Fact]
         public void Can_Persist_SqlCommon_Journal()
         {
-            var persistRef = Sys.ActorOf(Props.Create(() => new JournalCompatibilityActor(OldJournal, "p-2")));
+            var persistRef = Sys!.ActorOf(Props.Create(() => new JournalCompatibilityActor(OldJournal, "p-2")));
             var ourGuid = Guid.NewGuid();
             var someEvent = new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 };
 
-            Probe.Send(persistRef, someEvent);
+            Probe!.Send(persistRef, someEvent);
             Probe.ExpectMsg(someEvent, 5.Seconds());
             Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
             Probe.ExpectMsg(true, 5.Seconds());
@@ -113,11 +113,11 @@ namespace Akka.Persistence.Sql.Tests
         [Fact]
         public void SqlCommon_Journal_Can_Recover_L2Db_Journal()
         {
-            var persistRef = Sys.ActorOf(Props.Create(() => new JournalCompatibilityActor(NewJournal, "p-3")));
+            var persistRef = Sys!.ActorOf(Props.Create(() => new JournalCompatibilityActor(NewJournal, "p-3")));
             var ourGuid = Guid.NewGuid();
             var someEvent = new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 };
 
-            Probe.Send(persistRef, someEvent);
+            Probe!.Send(persistRef, someEvent);
             Probe.ExpectMsg(someEvent, 5.Seconds());
             Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
             Probe.ExpectMsg(true, 5.Seconds());
@@ -132,11 +132,11 @@ namespace Akka.Persistence.Sql.Tests
         [Fact]
         public void SqlCommon_Journal_Can_Persist_L2db_Journal()
         {
-            var persistRef = Sys.ActorOf(Props.Create(() => new JournalCompatibilityActor(NewJournal, "p-4")));
+            var persistRef = Sys!.ActorOf(Props.Create(() => new JournalCompatibilityActor(NewJournal, "p-4")));
             var ourGuid = Guid.NewGuid();
             var someEvent = new SomeEvent { EventName = "rec-test", Guid = ourGuid, Number = 1 };
 
-            Probe.Send(persistRef, someEvent);
+            Probe!.Send(persistRef, someEvent);
             Probe.ExpectMsg(someEvent, 5.Seconds());
             Probe.Send(persistRef, new ContainsEvent { Guid = ourGuid });
             Probe.ExpectMsg(true, 5.Seconds());
@@ -159,7 +159,7 @@ namespace Akka.Persistence.Sql.Tests
         public void L2db_Journal_Delete_Compat_mode_Preserves_proper_SequenceNr()
         {
             const string persistenceId = "d-1";
-            var persistRef = Sys.ActorOf(Props.Create(() => new JournalCompatibilityActor(NewJournal, persistenceId)));
+            var persistRef = Sys!.ActorOf(Props.Create(() => new JournalCompatibilityActor(NewJournal, persistenceId)));
 
             var ourGuid1 = Guid.NewGuid();
             var ourGuid2 = Guid.NewGuid();
@@ -172,7 +172,7 @@ namespace Akka.Persistence.Sql.Tests
             var event4 = new SomeEvent { EventName = "rec-test", Guid = ourGuid4, Number = 4 };
             var event5 = new SomeEvent { EventName = "rec-test", Guid = ourGuid5, Number = 5 };
 
-            Probe.Send(persistRef, event1);
+            Probe!.Send(persistRef, event1);
             Probe.ExpectMsg(event1, 5.Seconds());
             Probe.Send(persistRef, event2);
             Probe.ExpectMsg(event2, 5.Seconds());
@@ -214,7 +214,7 @@ namespace Akka.Persistence.Sql.Tests
 
         private void EnsureTerminated(IActorRef actorRef)
         {
-            Probe.Watch(actorRef);
+            Probe!.Watch(actorRef);
             actorRef.Tell(PoisonPill.Instance);
             Probe.ExpectTerminated(actorRef);
             Probe.Unwatch(actorRef);

@@ -50,9 +50,9 @@ namespace Akka.Persistence.Sql.Journal
 
         private readonly Dictionary<string, Task> _writeInProgress = new();
 
-        private ByteArrayJournalDao _journal;
+        private ByteArrayJournalDao? _journal;
 
-        private ActorMaterializer _mat;
+        private ActorMaterializer? _mat;
 
         public SqlWriteJournal(Configuration.Config journalConfig)
         {
@@ -66,7 +66,7 @@ namespace Akka.Persistence.Sql.Journal
 
         // Stash is needed because we need to stash all incoming messages while we're waiting for the
         // journal DAO to be properly initialized.
-        public IStash Stash { get; set; }
+        public IStash Stash { get; set; } = null!;
 
         protected override void PreStart()
         {
@@ -163,7 +163,7 @@ namespace Akka.Persistence.Sql.Journal
             }
         }
 
-        public override void AroundPreRestart(Exception cause, object message)
+        public override void AroundPreRestart(Exception cause, object? message)
         {
             _log.Error(cause, $"Sql Journal Error on {message?.GetType().ToString() ?? "null"}");
             base.AroundPreRestart(cause, message);
@@ -176,7 +176,7 @@ namespace Akka.Persistence.Sql.Journal
             long toSequenceNr,
             long max,
             Action<IPersistentRepresentation> recoveryCallback)
-            => await _journal
+            => await _journal!
                 .MessagesWithBatch(
                     persistenceId: persistenceId,
                     fromSequenceNr: fromSequenceNr,
@@ -200,7 +200,7 @@ namespace Akka.Persistence.Sql.Journal
                 await new NoThrowAwaiter(wip);
             }
 
-            return await _journal.HighestSequenceNr(persistenceId, fromSequenceNr);
+            return await _journal!.HighestSequenceNr(persistenceId, fromSequenceNr);
         }
 
         protected override Task<IImmutableList<Exception>> WriteMessagesAsync(IEnumerable<AtomicWrite> messages)
@@ -211,7 +211,7 @@ namespace Akka.Persistence.Sql.Journal
             var messagesList = messages.ToList();
             var persistenceId = messagesList.Head().PersistenceId;
 
-            var future = _journal.AsyncWriteMessages(messagesList, currentTime);
+            var future = _journal!.AsyncWriteMessages(messagesList, currentTime);
 
             _writeInProgress[persistenceId] = future;
             var self = Self;
@@ -229,6 +229,6 @@ namespace Akka.Persistence.Sql.Journal
         }
 
         protected override async Task DeleteMessagesToAsync(string persistenceId, long toSequenceNr)
-            => await _journal.Delete(persistenceId, toSequenceNr);
+            => await _journal!.Delete(persistenceId, toSequenceNr);
     }
 }

@@ -19,7 +19,7 @@ using Akka.Util;
 using Akka.Util.Internal;
 using JetBrains.dotMemoryUnit;
 using JetBrains.dotMemoryUnit.Kernel;
-using LanguageExt.UnitsOfMeasure;
+using MathNet.Numerics.Statistics;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -28,7 +28,8 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
     public abstract class SqlJournalPerfSpec<T> : Akka.TestKit.Xunit2.TestKit where T : ITestContainer
     {
         // Number of measurement iterations each test will be run.
-        private const int MeasurementIterations = 10;
+        private const int MeasurementIterations = 101;
+        private const double OutlierRejectionSigma = 2;
 
         // Number of messages sent to the PersistentActor under test for each test iteration
         private readonly int _eventsCount;
@@ -48,9 +49,10 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             _eventsCount = eventsCount;
             _expectDuration = TimeSpan.FromSeconds(timeoutDurationSeconds);
             _testProbe = CreateTestProbe();
+            _commands = Enumerable.Range(1, _eventsCount).ToArray();
         }
 
-        private IReadOnlyList<int> Commands => Enumerable.Range(1, _eventsCount).ToList();
+        private readonly IReadOnlyList<int> _commands; 
 
         internal IActorRef BenchActor(string pid, int replyAfter)
             => Sys.ActorOf(Props.Create(() => new BenchActor(pid, _testProbe, _eventsCount)));
@@ -127,10 +129,25 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
                 i++;
             }
 
-            var avgTime = measurements.Select(c => c.TotalMilliseconds).Sum() / MeasurementIterations;
-            var msgPerSec = _eventsCount / avgTime * 1000;
+            var (rejected, times) = RejectOutliers(measurements.Select(c => c.TotalMilliseconds).ToArray(), OutlierRejectionSigma);
 
-            Output.WriteLine($"Average time: {avgTime} ms, {msgPerSec} msg/sec");
+            var mean = times.Average();
+            var stdDev = times.PopulationStandardDeviation();
+            var min = times.Minimum();
+            var q1 = times.LowerQuartile();
+            var median = times.Median();
+            var q3 = times.UpperQuartile();
+            var max = times.Maximum();
+            
+            Output.WriteLine($"Mean: {mean:F2} ms, Standard Deviation: {stdDev:F2} ms, Min: {min:F2} ms, Q1: {q1:F2} ms, Median: {median:F2} ms, Q3: {q3:F2} ms, Max: {max:F2} ms");
+
+            var msgPerSec = _eventsCount / mean * 1000;
+            Output.WriteLine($"Mean throughput: {msgPerSec:F2} msg/s");
+            
+            var medianMsgPerSec = _eventsCount / median * 1000;
+            Output.WriteLine($"Median throughput: {medianMsgPerSec:F2} msg/s");
+            
+            Output.WriteLine($"Rejected outlier (sigma: {OutlierRejectionSigma}): {string.Join(", ", rejected)}");
         }
 
         internal async Task MeasureGroupAsync(Func<TimeSpan, string> msg, Func<Task> block, int numMsg, int numGroup)
@@ -151,12 +168,40 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
                 i++;
             }
 
-            var avgTime = measurements.Select(c => c.TotalMilliseconds).Sum() / MeasurementIterations;
-            var msgPerSec = numMsg / avgTime * 1000;
-            var msgPerSecTotal = numMsg * numGroup / avgTime * 1000;
+            var (rejected, times) = RejectOutliers(measurements.Select(c => c.TotalMilliseconds).ToArray(), OutlierRejectionSigma);
 
-            Output.WriteLine(
-                $"Workers: {numGroup} , Average time: {avgTime} ms, {msgPerSec} msg/sec/actor, {msgPerSecTotal} total msg/sec.");
+            var mean = times.Average();
+            var stdDev = times.PopulationStandardDeviation();
+            var min = times.Minimum();
+            var q1 = times.LowerQuartile();
+            var median = times.Median();
+            var q3 = times.UpperQuartile();
+            var max = times.Maximum();
+            
+            Output.WriteLine($"Workers: {numGroup}, Mean: {mean:F2} ms, Standard Deviation: {stdDev:F2} ms, Min: {min:F2} ms, Q1: {q1:F2} ms, Median: {median:F2} ms, Q3: {q3:F2} ms, Max: {max:F2} ms");
+
+            var msgPerSec = numMsg / mean * 1000;
+            var msgPerSecTotal = numMsg * numGroup / mean * 1000;
+            
+            Output.WriteLine($"Mean throughput: {msgPerSec:F2} msg/s/actor, Mean total throughput: {msgPerSecTotal:F2} msg/s");
+            
+            var medianMsgPerSec = numMsg / median * 1000;
+            var medianMsgPerSecTotal = numMsg * numGroup / median * 1000;
+            Output.WriteLine($"Median throughput: {medianMsgPerSec:F2} msg/s/actor, Median total throughput: {medianMsgPerSecTotal:F2} msg/s");
+            
+            Output.WriteLine($"Rejected outlier (sigma: {OutlierRejectionSigma}): {string.Join(", ", rejected)}");
+        }
+
+        private static (IReadOnlyList<double> Rejected, IReadOnlyList<double> Measurements) RejectOutliers(IReadOnlyList<double> measurements, double sigma)
+        {
+            var mean = measurements.Average();
+            var stdDev = measurements.PopulationStandardDeviation();
+            var threshold = sigma * stdDev;
+            var minThreshold = mean - threshold;
+            var maxThreshold = mean + threshold;
+            var rejected = measurements.Where(m => m < minThreshold || m > maxThreshold);
+            var accepted = measurements.Where(m => m >= minThreshold && m <= maxThreshold);
+            return (rejected.ToArray(), accepted.ToArray());
         }
 
         [DotMemoryUnit(CollectAllocations = true, FailIfRunWithoutSupport = false)]
@@ -175,7 +220,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
                         d => $"Persist()-ing {_eventsCount} took {d.TotalMilliseconds} ms",
                         async () =>
                         {
-                            await FeedAndExpectLastAsync(p1, "p", Commands);
+                            await FeedAndExpectLastAsync(p1, "p", _commands);
                             p1.Tell(ResetCounter.Instance);
                         }).GetAwaiter().GetResult();
 #pragma warning restore xUnit1031
@@ -190,7 +235,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
                         d => $"Persist()-ing {_eventsCount} took {d.TotalMilliseconds} ms",
                         async () =>
                         {
-                            await FeedAndExpectLastAsync(p1, "p", Commands);
+                            await FeedAndExpectLastAsync(p1, "p", _commands);
                             p1.Tell(ResetCounter.Instance);
                         }).GetAwaiter().GetResult();
 #pragma warning restore xUnit1031
@@ -242,7 +287,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
                     $"Persist()-ing {_eventsCount} took {d.TotalMilliseconds} ms",
                 async () =>
                 {
-                    await FeedAndExpectLastAsync(p1, "p", Commands);
+                    await FeedAndExpectLastAsync(p1, "p", _commands);
                     p1.Tell(ResetCounter.Instance);
                 });
             //}
@@ -361,6 +406,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
         protected async Task RunGroupBenchmarkAsync(int numGroup, int numCommands)
         {
             var p1 = BenchActorNewProbeGroup("GroupPersistPid" + numGroup, numGroup, numCommands);
+            var commands = _commands.Take(numCommands).ToArray();
             await MeasureGroupAsync(
                 d => $"Persist()-ing {numCommands} * {numGroup} took {d.TotalMilliseconds} ms",
                 async () =>
@@ -368,7 +414,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
                     await FeedAndExpectLastRouterSetAsync(
                         p1,
                         "p",
-                        Commands.Take(numCommands).ToImmutableList(),
+                        commands,
                         numGroup);
 
                     p1.aut.Tell(new Broadcast(ResetCounter.Instance));
@@ -450,7 +496,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
                 d => $"PersistAll()-ing {_eventsCount} took {d.TotalMilliseconds} ms",
                 async () =>
                 {
-                    await FeedAndExpectLastAsync(p1, "pb", Commands);
+                    await FeedAndExpectLastAsync(p1, "pb", _commands);
                     p1.Tell(ResetCounter.Instance);
                 });
         }
@@ -463,7 +509,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
                 d => $"PersistAsync()-ing {_eventsCount} took {d.TotalMilliseconds} ms",
                 async () =>
                 {
-                    await FeedAndExpectLastAsync(p1, "pa", Commands);
+                    await FeedAndExpectLastAsync(p1, "pa", _commands);
                     p1.Tell(ResetCounter.Instance);
                 });
         }
@@ -476,7 +522,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
                 d => $"PersistAllAsync()-ing {_eventsCount} took {d.TotalMilliseconds} ms",
                 async () =>
                 {
-                    await FeedAndExpectLastAsync(p1, "pba", Commands);
+                    await FeedAndExpectLastAsync(p1, "pba", _commands);
                     p1.Tell(ResetCounter.Instance);
                 });
         }
@@ -486,14 +532,14 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
         {
             var p1 = BenchActor("PersistRecoverPid", _eventsCount);
 
-            await FeedAndExpectLastAsync(p1, "p", Commands);
+            await FeedAndExpectLastAsync(p1, "p", _commands);
 
             await MeasureAsync(
                 d => $"Recovering {_eventsCount} took {d.TotalMilliseconds} ms",
                 async () =>
                 {
                     BenchActor("PersistRecoverPid", _eventsCount);
-                    await _testProbe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                    await _testProbe.ExpectMsgAsync(_commands[^1], _expectDuration);
                 });
         }
 
@@ -503,8 +549,8 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             var p1 = BenchActorNewProbe("DoublePersistRecoverPid1", _eventsCount);
             var p2 = BenchActorNewProbe("DoublePersistRecoverPid2", _eventsCount);
 
-            await FeedAndExpectLastSpecificAsync(p1, "p", Commands);
-            await FeedAndExpectLastSpecificAsync(p2, "p", Commands);
+            await FeedAndExpectLastSpecificAsync(p1, "p", _commands);
+            await FeedAndExpectLastSpecificAsync(p2, "p", _commands);
 
             await MeasureGroupAsync(
                 d => $"Recovering {_eventsCount} took {d.TotalMilliseconds} ms",
@@ -513,13 +559,13 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
                     async Task Task1()
                     {
                         var (_, probe) = BenchActorNewProbe("DoublePersistRecoverPid1", _eventsCount);
-                        await probe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                        await probe.ExpectMsgAsync(_commands[^1], _expectDuration);
                     }
 
                     async Task Task2()
                     {
                         var (_, probe) = BenchActorNewProbe("DoublePersistRecoverPid2", _eventsCount);
-                        await probe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                        await probe.ExpectMsgAsync(_commands[^1], _expectDuration);
                     }
 
                     await Task.WhenAll(Task1(), Task2());
@@ -536,10 +582,10 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             var p3 = BenchActorNewProbe("QuadPersistRecoverPid3", _eventsCount);
             var p4 = BenchActorNewProbe("QuadPersistRecoverPid4", _eventsCount);
 
-            await FeedAndExpectLastSpecificAsync(p1, "p", Commands);
-            await FeedAndExpectLastSpecificAsync(p2, "p", Commands);
-            await FeedAndExpectLastSpecificAsync(p3, "p", Commands);
-            await FeedAndExpectLastSpecificAsync(p4, "p", Commands);
+            await FeedAndExpectLastSpecificAsync(p1, "p", _commands);
+            await FeedAndExpectLastSpecificAsync(p2, "p", _commands);
+            await FeedAndExpectLastSpecificAsync(p3, "p", _commands);
+            await FeedAndExpectLastSpecificAsync(p4, "p", _commands);
 
             await MeasureGroupAsync(
                 d => $"Recovering {_eventsCount} took {d.TotalMilliseconds} ms",
@@ -548,25 +594,25 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
                     async Task Task1()
                     {
                         var (_, probe) = BenchActorNewProbe("QuadPersistRecoverPid1", _eventsCount);
-                        await probe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                        await probe.ExpectMsgAsync(_commands[^1], _expectDuration);
                     }
 
                     async Task Task2()
                     {
                         var (_, probe) = BenchActorNewProbe("QuadPersistRecoverPid2", _eventsCount);
-                        await probe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                        await probe.ExpectMsgAsync(_commands[^1], _expectDuration);
                     }
 
                     async Task Task3()
                     {
                         var (_, probe) = BenchActorNewProbe("QuadPersistRecoverPid3", _eventsCount);
-                        await probe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                        await probe.ExpectMsgAsync(_commands[^1], _expectDuration);
                     }
 
                     async Task Task4()
                     {
                         var (_, probe) = BenchActorNewProbe("QuadPersistRecoverPid4", _eventsCount);
-                        await probe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                        await probe.ExpectMsgAsync(_commands[^1], _expectDuration);
                     }
 
                     await Task.WhenAll(Task1(), Task2(), Task3(), Task4());
@@ -587,14 +633,14 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             var p7 = BenchActorNewProbe("OctPersistRecoverPid7", _eventsCount);
             var p8 = BenchActorNewProbe("OctPersistRecoverPid8", _eventsCount);
 
-            await FeedAndExpectLastSpecificAsync(p1, "p", Commands);
-            await FeedAndExpectLastSpecificAsync(p2, "p", Commands);
-            await FeedAndExpectLastSpecificAsync(p3, "p", Commands);
-            await FeedAndExpectLastSpecificAsync(p4, "p", Commands);
-            await FeedAndExpectLastSpecificAsync(p5, "p", Commands);
-            await FeedAndExpectLastSpecificAsync(p6, "p", Commands);
-            await FeedAndExpectLastSpecificAsync(p7, "p", Commands);
-            await FeedAndExpectLastSpecificAsync(p8, "p", Commands);
+            await FeedAndExpectLastSpecificAsync(p1, "p", _commands);
+            await FeedAndExpectLastSpecificAsync(p2, "p", _commands);
+            await FeedAndExpectLastSpecificAsync(p3, "p", _commands);
+            await FeedAndExpectLastSpecificAsync(p4, "p", _commands);
+            await FeedAndExpectLastSpecificAsync(p5, "p", _commands);
+            await FeedAndExpectLastSpecificAsync(p6, "p", _commands);
+            await FeedAndExpectLastSpecificAsync(p7, "p", _commands);
+            await FeedAndExpectLastSpecificAsync(p8, "p", _commands);
 
             await MeasureGroupAsync(
                 d => $"Recovering {_eventsCount} took {d.TotalMilliseconds} ms , {_eventsCount * 8 / d.TotalMilliseconds * 1000} total msg/sec",
@@ -603,49 +649,49 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
                     async Task Task1()
                     {
                         var (_, probe) = BenchActorNewProbe("OctPersistRecoverPid1", _eventsCount);
-                        await probe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                        await probe.ExpectMsgAsync(_commands[^1], _expectDuration);
                     }
 
                     async Task Task2()
                     {
                         var (_, probe) = BenchActorNewProbe("OctPersistRecoverPid2", _eventsCount);
-                        await probe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                        await probe.ExpectMsgAsync(_commands[^1], _expectDuration);
                     }
 
                     async Task Task3()
                     {
                         var (_, probe) = BenchActorNewProbe("OctPersistRecoverPid3", _eventsCount);
-                        await probe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                        await probe.ExpectMsgAsync(_commands[^1], _expectDuration);
                     }
 
                     async Task Task4()
                     {
                         var (_, probe) = BenchActorNewProbe("OctPersistRecoverPid4", _eventsCount);
-                        await probe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                        await probe.ExpectMsgAsync(_commands[^1], _expectDuration);
                     }
 
                     async Task Task5()
                     {
                         var (_, probe) = BenchActorNewProbe("OctPersistRecoverPid5", _eventsCount);
-                        await probe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                        await probe.ExpectMsgAsync(_commands[^1], _expectDuration);
                     }
 
                     async Task Task6()
                     {
                         var (_, probe) = BenchActorNewProbe("OctPersistRecoverPid6", _eventsCount);
-                        await probe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                        await probe.ExpectMsgAsync(_commands[^1], _expectDuration);
                     }
 
                     async Task Task7()
                     {
                         var (_, probe) = BenchActorNewProbe("OctPersistRecoverPid7", _eventsCount);
-                        await probe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                        await probe.ExpectMsgAsync(_commands[^1], _expectDuration);
                     }
 
                     async Task Task8()
                     {
                         var (_, probe) = BenchActorNewProbe("OctPersistRecoverPid8", _eventsCount);
-                        await probe.ExpectMsgAsync(Commands[^1], _expectDuration);
+                        await probe.ExpectMsgAsync(_commands[^1], _expectDuration);
                     }
 
                     await Task.WhenAll(Task1(), Task2(), Task3(), Task4(), Task5(), Task6(), Task7(), Task8());

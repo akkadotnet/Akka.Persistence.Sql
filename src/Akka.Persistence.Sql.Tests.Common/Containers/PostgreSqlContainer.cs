@@ -36,7 +36,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
 
         public override string ConnectionString => _connectionStringBuilder.ToString();
 
-        public override string ProviderName => LinqToDB.ProviderName.PostgreSQL95;
+        public override string ProviderName => LinqToDB.ProviderName.PostgreSQL15;
 
         private int Port { get; } = ThreadLocalRandom.Current.Next(9000, 10000);
 

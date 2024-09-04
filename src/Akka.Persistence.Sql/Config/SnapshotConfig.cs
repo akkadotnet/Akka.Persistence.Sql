@@ -43,8 +43,7 @@ namespace Akka.Persistence.Sql.Config
             MaxBatchPerSubStreamRead = config.GetInt("max-batch-per-substream-read", 25);
         }
 
-
-        public string UseSharedDb { get; }
+        public string? UseSharedDb { get; }
 
         /// <summary>
         ///     Flag determining in in case of event journal or metadata table missing, they should be automatically initialized.

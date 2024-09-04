@@ -36,7 +36,7 @@ namespace Akka.Persistence.Sql.Config
 
         public string MaterializerDispatcher { get; }
 
-        public string UseSharedDb { get; }
+        public string? UseSharedDb { get; }
 
         public BaseByteArrayJournalDaoConfig DaoConfig { get; }
 

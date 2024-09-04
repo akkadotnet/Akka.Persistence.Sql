@@ -31,7 +31,7 @@ namespace Akka.Persistence.Sql.Config
 
         public SnapshotTableConfig SnapshotTable { get; }
 
-        public string SchemaName { get; }
+        public string? SchemaName { get; }
 
         public override int GetHashCode()
             => HashCode.Combine(SnapshotTable, SchemaName);

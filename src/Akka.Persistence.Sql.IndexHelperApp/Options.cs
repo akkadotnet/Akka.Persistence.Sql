@@ -15,14 +15,14 @@ namespace Akka.Persistence.Sql.IndexHelperApp
             "file",
             Required = true,
             HelpText = "Specify the HOCON file to use")]
-        public string File { get; set; }
+        public string File { get; set; } = string.Empty;
 
         [Option(
             'p',
             "path",
             Required = true,
             HelpText = "The Path to the Akka.Persistence.Sql Config in the HOCON.")]
-        public string HoconPath { get; set; }
+        public string HoconPath { get; set; } = string.Empty;
 
         [Option(
             "OrderingIdx",

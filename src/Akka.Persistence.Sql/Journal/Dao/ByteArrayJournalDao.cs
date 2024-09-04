@@ -25,7 +25,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
             JournalConfig journalConfig,
             Akka.Serialization.Serialization serializer,
             ILoggingAdapter logger,
-            string selfUuid,
+            string? selfUuid,
             CancellationToken shutdownToken)
             : base(
                 scheduler: scheduler,
