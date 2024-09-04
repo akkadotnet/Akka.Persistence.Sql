@@ -56,6 +56,7 @@ namespace Akka.Persistence.Sql.Snapshot
         Task DeleteAsync(
             string persistenceId,
             long sequenceNr,
+            DateTime timestamp,
             CancellationToken cancellationToken = default);
 
         Task SaveAsync(
