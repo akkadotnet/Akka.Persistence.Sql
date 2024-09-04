@@ -39,6 +39,8 @@ namespace Akka.Persistence.Sql.Config
             WarnOnAutoInitializeFail = config.GetBoolean("warn-on-auto-init-fail");
             ReadIsolationLevel = config.GetIsolationLevel("read-isolation-level");
             WriteIsolationLevel = config.GetIsolationLevel("write-isolation-level");
+            MaxSubStreamsForReads = config.GetInt("max-substreams-for-reads", 8);
+            MaxBatchPerSubStreamRead = config.GetInt("max-batch-per-substream-read", 25);
         }
 
         public string? UseSharedDb { get; }
@@ -67,5 +69,8 @@ namespace Akka.Persistence.Sql.Config
         public IsolationLevel WriteIsolationLevel { get; }
 
         public IsolationLevel ReadIsolationLevel { get; }
+        public int MaxSubStreamsForReads { get; }
+        
+        public int MaxBatchPerSubStreamRead { get; }
     }
 }
