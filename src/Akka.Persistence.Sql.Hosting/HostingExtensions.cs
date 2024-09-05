@@ -123,11 +123,25 @@ namespace Akka.Persistence.Sql.Hosting
         /// <param name="dataOptions">
         ///     <para>
         ///         The custom <see cref="DataOptions"/> used for the connection to the database. If not provided,
-        ///         <see cref="DataOptionsExtensions.UseConnectionString(LinqToDB.DataOptions,string,string)"/> will be used
-        ///         The MappingSchema will always be overridden by Akka.Persistence.Sql.
+        ///         <see cref="DataOptionsExtensions.UseConnectionString(LinqToDB.DataOptions,string,string)"/> will be used.
         ///     </para>
         ///     <para>
-        ///         Data option documentation can be read
+        ///         If provided, you must give enough information for linq2db to connect to the database.
+        ///         This includes setting the connection string and provider name again, if needed in your use case.
+        ///     </para>
+        ///     <para>
+        ///         The following settings will be always overriden by Akka.Persistence.Sql:
+        ///         <list type="number">
+        ///             <item>
+        ///                 MappingSchema
+        ///             </item>
+        ///             <item>
+        ///                 RetryPolicy
+        ///             </item>
+        ///         </list>
+        ///     </para>
+        ///     <para>
+        ///         DataOptions documentation can be read
         ///         <a href="https://linq2db.github.io/api/linq2db/LinqToDB.DataOptions.html">here</a>
         ///     </para>
         /// </param>
@@ -247,11 +261,25 @@ namespace Akka.Persistence.Sql.Hosting
         /// <param name="dataOptions">
         ///     <para>
         ///         The custom <see cref="DataOptions"/> used for the connection to the database. If not provided,
-        ///         <see cref="DataOptionsExtensions.UseConnectionString(LinqToDB.DataOptions,string,string)"/> will be used
-        ///         The MappingSchema will always be overridden by Akka.Persistence.Sql.
+        ///         <see cref="DataOptionsExtensions.UseConnectionString(LinqToDB.DataOptions,string,string)"/> will be used.
         ///     </para>
         ///     <para>
-        ///         Data option documentation can be read
+        ///         If provided, you must give enough information for linq2db to connect to the database.
+        ///         This includes setting the connection string and provider name again, if needed in your use case.
+        ///     </para>
+        ///     <para>
+        ///         The following settings will be always overriden by Akka.Persistence.Sql:
+        ///         <list type="number">
+        ///             <item>
+        ///                 MappingSchema
+        ///             </item>
+        ///             <item>
+        ///                 RetryPolicy
+        ///             </item>
+        ///         </list>
+        ///     </para>
+        ///     <para>
+        ///         DataOptions documentation can be read
         ///         <a href="https://linq2db.github.io/api/linq2db/LinqToDB.DataOptions.html">here</a>
         ///     </para>
         /// </param>
@@ -311,11 +339,25 @@ namespace Akka.Persistence.Sql.Hosting
         /// <param name="dataOptions">
         ///     <para>
         ///         The custom <see cref="DataOptions"/> used for the connection to the database. If not provided,
-        ///         <see cref="DataOptionsExtensions.UseConnectionString(LinqToDB.DataOptions,string,string)"/> will be used
-        ///         The MappingSchema will always be overridden by Akka.Persistence.Sql.
+        ///         <see cref="DataOptionsExtensions.UseConnectionString(LinqToDB.DataOptions,string,string)"/> will be used.
         ///     </para>
         ///     <para>
-        ///         Data option documentation can be read
+        ///         If provided, you must give enough information for linq2db to connect to the database.
+        ///         This includes setting the connection string and provider name again, if needed in your use case.
+        ///     </para>
+        ///     <para>
+        ///         The following settings will be always overriden by Akka.Persistence.Sql:
+        ///         <list type="number">
+        ///             <item>
+        ///                 MappingSchema
+        ///             </item>
+        ///             <item>
+        ///                 RetryPolicy
+        ///             </item>
+        ///         </list>
+        ///     </para>
+        ///     <para>
+        ///         DataOptions documentation can be read
         ///         <a href="https://linq2db.github.io/api/linq2db/LinqToDB.DataOptions.html">here</a>
         ///     </para>
         /// </param>

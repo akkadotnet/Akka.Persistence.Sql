@@ -53,22 +53,21 @@ var host = new HostBuilder()
 ```
 
 You can also provide your own [`LinqToDb.DataOptions`](https://linq2db.github.io/api/linq2db/LinqToDB.DataOptions.html) object for a more advanced configuration.
-Assuming a setup with a custom connection factory with Npgsql: 
-Ï
+Assuming a setup with a custom `NpgsqlDataSource`:
 ```csharp
-var npgsqlDataSource = new NpgsqlDataSourceBuilder(_myConnectionString)
-    .UsePasswordProvider(stringBuilder => "my dynamic password", null)
-    .Build();
+NpgsqlDataSource dataSource = new NpgsqlDataSourceBuilder(_myConnectionString).Build();
 
-var dataOptions = new DataOptions()
-    .UseConnectionFactory((opt) => npgsqlDataSource.CreateConnection());
+DataOptions dataOptions = new DataOptions()
+    .UseDataProvider(DataConnection.GetDataProvider(ProviderName.PostgreSQL, dataSource.ConnectionString) ?? throw new Exception("Could not get data provider"))
+    .UseProvider(ProviderName.PostgreSQL)
+    .UseConnectionFactory((opt) => dataSource.CreateConnection());
     
 var host = new HostBuilder()
     .ConfigureServices((context, services) => {
         services.AddAkka("my-system-name", (builder, provider) =>
         {
             builder.WithSqlPersistence(
-                connectionString: _myConnectionString,
+                connectionString: dataSource.ConnectionString,
                 providerName: ProviderName.PostgreSQL,
                 dataOptions: dataOptions)
         });

@@ -383,9 +383,10 @@ namespace Akka.Persistence.Sql.Db
         private static DataOptions BuildDataOptions<TTable>(IProviderConfig<TTable> config, MappingSchema mappingSchema)
         {
             // LinqToDB.Data.DataConnection.ConfigurationApplier extracts different combinations therefore we can't
-            // just override the connection string
-            var options = config.DataOptions ?? new DataOptions().UseConnectionString(config.ConnectionString);
-            return options.UseMappingSchema(mappingSchema).UseProvider(config.ProviderName);
+            // just override the connection string or the provider name. If data options are set, we assume that a valid
+            // connection can be created.
+            var options = config.DataOptions ?? new DataOptions().UseConnectionString(config.ProviderName, config.ConnectionString);
+            return options.UseMappingSchema(mappingSchema);
         }
 
         public AkkaDataConnection GetConnection()

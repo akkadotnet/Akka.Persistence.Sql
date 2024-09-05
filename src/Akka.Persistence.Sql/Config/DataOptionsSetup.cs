@@ -11,7 +11,7 @@ namespace Akka.Persistence.Sql.Config
 {
     public sealed class DataOptionsSetup: Setup
     {
-        public DataOptions? DataOptions { get; }
+        private DataOptions? DataOptions { get; }
 
         public DataOptionsSetup(DataOptions dataOptions)
         {
