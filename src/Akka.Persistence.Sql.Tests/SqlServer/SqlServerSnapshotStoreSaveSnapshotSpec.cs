@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using Akka.Persistence.Sql.Tests.Common.Containers;
+using Akka.Persistence.Sql.Tests.Common.Internal.Xunit;
 using Xunit;
 using Xunit.Abstractions;
 
