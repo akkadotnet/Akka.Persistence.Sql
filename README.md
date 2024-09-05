@@ -47,9 +47,9 @@ var host = new HostBuilder()
         {
             builder.WithSqlPersistence(
                 connectionString: _myConnectionString,
-                providerName: ProviderName.SqlServer2019)
+                providerName: ProviderName.SqlServer2019);
         });
-    })
+    });
 ```
 
 You can also provide your own [`LinqToDb.DataOptions`](https://linq2db.github.io/api/linq2db/LinqToDB.DataOptions.html) object for a more advanced configuration.
@@ -69,9 +69,9 @@ var host = new HostBuilder()
             builder.WithSqlPersistence(
                 connectionString: dataSource.ConnectionString,
                 providerName: ProviderName.PostgreSQL,
-                dataOptions: dataOptions)
+                dataOptions: dataOptions);
         });
-    })
+    });
 ```
 If `dataOptions` are provided, you must supply enough information for linq2db to connect to the database. 
 This includes setting the connection string and provider name again, if necessary for your use case. 
