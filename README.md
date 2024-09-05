@@ -73,9 +73,10 @@ var host = new HostBuilder()
         });
     })
 ```
-If `dataOptions` are provided, you must give enough information for linq2db to connect to the database.
-This includes setting the connection string and provider name again, if needed in your use case. 
-Please consult the Linq2Db documentation for more information on how to configure a valid `DataOptions` object.  `MappingSchema` and `RetryPolicy` will always be overridden by Akka.Persistence.Sql.
+If `dataOptions` are provided, you must supply enough information for linq2db to connect to the database. 
+This includes setting the connection string and provider name again, if necessary for your use case. 
+Please consult the Linq2Db documentation for more details on configuring a valid DataOptions object. 
+Note that `MappingSchema` and `RetryPolicy` will always be overridden by Akka.Persistence.Sql.
 
 ## The Classic Way, Using HOCON
 
