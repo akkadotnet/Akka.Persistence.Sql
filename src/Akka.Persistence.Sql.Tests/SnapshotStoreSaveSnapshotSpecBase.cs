@@ -15,7 +15,7 @@ using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Tests
 {
-    public class SnapshotStoreSaveSnapshotSpecBase: SnapshotStoreSaveSnapshotSpec
+    public abstract class SnapshotStoreSaveSnapshotSpecBase: SnapshotStoreSaveSnapshotSpec
     {
         protected SnapshotStoreSaveSnapshotSpecBase(Configuration.Config config, string actorSystemName, ITestOutputHelper? output = null) 
             : base(config, actorSystemName, output)
