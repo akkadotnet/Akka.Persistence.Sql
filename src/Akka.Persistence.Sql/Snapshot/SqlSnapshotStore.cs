@@ -118,7 +118,7 @@ namespace Akka.Persistence.Sql.Snapshot
             => await _dao.SaveAsync(metadata, snapshot);
 
         protected override async Task DeleteAsync(SnapshotMetadata metadata)
-            => await _dao.DeleteAsync(metadata.PersistenceId, metadata.SequenceNr);
+            => await _dao.DeleteAsync(metadata.PersistenceId, metadata.SequenceNr, metadata.Timestamp);
 
         protected override async Task DeleteAsync(string persistenceId, SnapshotSelectionCriteria criteria)
         {
