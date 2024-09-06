@@ -13,34 +13,66 @@ using Akka.Streams;
 using Akka.Streams.TestKit;
 using FluentAssertions;
 using LanguageExt.UnitsOfMeasure;
+using LinqToDB;
+using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Hosting.Tests
 {
-    public class SqlEndToEndSpec : Akka.Hosting.TestKit.TestKit, IClassFixture<SqliteContainer>
+    public class SqlEndToEndSpec : SqlEndToEndSpecBase
+    {
+        public SqlEndToEndSpec(ITestOutputHelper output, SqliteContainer fixture)
+            : base(nameof(SqlEndToEndSpec), output, fixture)
+        {
+        }
+
+        protected override void ConfigureSqlPersistence(AkkaConfigurationBuilder builder)
+        {
+            builder.WithSqlPersistence(
+                connectionString: Fixture.ConnectionString,
+                providerName: Fixture.ProviderName);
+        }
+    }
+    
+    public class SqlDataOptionsEndToEndSpec : SqlEndToEndSpecBase
+    {
+        public SqlDataOptionsEndToEndSpec(ITestOutputHelper output, SqliteContainer fixture)
+            : base(nameof(SqlDataOptionsEndToEndSpec), output, fixture)
+        {
+        }
+
+        protected override void ConfigureSqlPersistence(AkkaConfigurationBuilder builder)
+        {
+            builder.WithSqlPersistence(new DataOptions()
+                .UseConnectionString(Fixture.ProviderName, Fixture.ConnectionString));
+        }
+    }
+    
+    public abstract class SqlEndToEndSpecBase : Akka.Hosting.TestKit.TestKit, IClassFixture<SqliteContainer>
     {
         private const string GetAll = "getAll";
         private const string Ack = "ACK";
         private const string SnapshotAck = "SnapACK";
         private const string PId = "ac1";
 
-        private readonly SqliteContainer _fixture;
+        protected readonly SqliteContainer Fixture;
 
-        public SqlEndToEndSpec(ITestOutputHelper output, SqliteContainer fixture) : base(nameof(SqlEndToEndSpec), output)
-            => _fixture = fixture;
+        protected SqlEndToEndSpecBase(string name, ITestOutputHelper output, SqliteContainer fixture) 
+            : base(name, output, logLevel: LogLevel.Debug)
+            => Fixture = fixture;
 
         protected override async Task BeforeTestStart()
         {
             await base.BeforeTestStart();
-            await _fixture.InitializeAsync();
+            await Fixture.InitializeAsync();
         }
 
         protected override void ConfigureAkka(AkkaConfigurationBuilder builder, IServiceProvider provider)
         {
-            builder.WithSqlPersistence(
-                    connectionString: _fixture.ConnectionString,
-                    providerName: _fixture.ProviderName)
+            ConfigureSqlPersistence(builder);
+            
+            builder
                 .StartActors(
                     (system, registry) =>
                     {
@@ -48,6 +80,8 @@ namespace Akka.Persistence.Sql.Hosting.Tests
                         registry.Register<MyPersistenceActor>(myActor);
                     });
         }
+
+        protected abstract void ConfigureSqlPersistence(AkkaConfigurationBuilder builder);
 
         [Fact]
         public async Task Should_Start_ActorSystem_wth_Sql_Persistence()

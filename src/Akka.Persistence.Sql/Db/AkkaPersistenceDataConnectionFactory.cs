@@ -32,15 +32,15 @@ namespace Akka.Persistence.Sql.Db
 
             var mappingSchema = new MappingSchema(configName, MappingSchema.Default);
 
+            _opts = BuildDataOptions(config, mappingSchema);
+
             var fmb = new FluentMappingBuilder(mappingSchema);
-            MapJournalRow(config, fmb);
+            MapJournalRow(config, fmb, _opts.ConnectionOptions.ProviderName!);
             MapMetadataRow(config, fmb);
-            MapTagRow(config, fmb);
+            MapTagRow(config, fmb, _opts.ConnectionOptions.ProviderName!);
             fmb.Build();
 
             _useCloneDataConnection = config.UseCloneConnection;
-
-            _opts = BuildDataOptions(config, mappingSchema);
 
             if (_opts.RetryPolicyOptions.RetryPolicy is null && _opts.ConnectionOptions.ProviderName!.ToLowerInvariant().StartsWith("sqlserver"))
                 _opts = _opts.WithOptions( _opts.RetryPolicyOptions with { RetryPolicy = new SqlServerRetryPolicy() } );
@@ -67,11 +67,11 @@ namespace Akka.Persistence.Sql.Db
 
             if (_opts.ConnectionOptions.ProviderName!.ToLowerInvariant().Contains("sqlserver"))
             {
-                MapDateTimeSnapshotRow(config, fmb);
+                MapDateTimeSnapshotRow(config, fmb, _opts.ConnectionOptions.ProviderName!);
             }
             else
             {
-                MapLongSnapshotRow(config, fmb);
+                MapLongSnapshotRow(config, fmb, _opts.ConnectionOptions.ProviderName!);
             }
 
             fmb.Build();
@@ -89,7 +89,8 @@ namespace Akka.Persistence.Sql.Db
 
         private static void MapJournalRow(
             IProviderConfig<JournalTableConfig> config,
-            FluentMappingBuilder fmb)
+            FluentMappingBuilder fmb,
+            string providerName)
         {
             var tableConfig = config.TableConfig;
             var journalConfig = tableConfig.EventJournalTable;
@@ -135,14 +136,14 @@ namespace Akka.Persistence.Sql.Db
                 .Member(r => r.TagArray)
                 .IsNotColumn();
 
-            if (config.ProviderName.StartsWith(ProviderName.MySql))
+            if (providerName.StartsWith(ProviderName.MySql))
             {
                 rowBuilder
                     .Member(r => r.Message)
                     .HasDbType("LONGBLOB");
             }
 
-            if (config.ProviderName.ToLower().Contains("sqlite"))
+            if (providerName.ToLower().Contains("sqlite"))
             {
                 rowBuilder
                     .Member(r => r.Ordering)
@@ -225,7 +226,8 @@ namespace Akka.Persistence.Sql.Db
 
         private static void MapTagRow(
             IProviderConfig<JournalTableConfig> config,
-            FluentMappingBuilder fmb)
+            FluentMappingBuilder fmb,
+            string providerName)
         {
             if (config.PluginConfig.TagMode is TagMode.Csv)
                 return;
@@ -261,7 +263,7 @@ namespace Akka.Persistence.Sql.Db
                 .HasColumnName(columnNames.SequenceNumber)
                 .IsNullable(false);
 
-            if (config.ProviderName.ToLower().Contains("sqlite"))
+            if (providerName.ToLower().Contains("sqlite"))
             {
                 rowBuilder
                     .Member(r => r.OrderingId)
@@ -274,7 +276,8 @@ namespace Akka.Persistence.Sql.Db
 
         private static void MapDateTimeSnapshotRow(
             IProviderConfig<SnapshotTableConfiguration> config,
-            FluentMappingBuilder fmb)
+            FluentMappingBuilder fmb,
+            string providerName)
         {
             var tableConfig = config.TableConfig;
             var snapshotConfig = tableConfig.SnapshotTable;
@@ -308,7 +311,7 @@ namespace Akka.Persistence.Sql.Db
                 .Member(r => r.SerializerId)
                 .HasColumnName(snapshotConfig.ColumnNames.SerializerId);
 
-            if (config.ProviderName.StartsWith(ProviderName.MySql))
+            if (providerName.StartsWith(ProviderName.MySql))
             {
                 rowBuilder
                     .Member(r => r.Payload)
@@ -325,7 +328,8 @@ namespace Akka.Persistence.Sql.Db
 
         private static void MapLongSnapshotRow(
             IProviderConfig<SnapshotTableConfiguration> config,
-            FluentMappingBuilder fmb)
+            FluentMappingBuilder fmb,
+            string providerName)
         {
             var tableConfig = config.TableConfig;
             var snapshotConfig = tableConfig.SnapshotTable;
@@ -359,7 +363,7 @@ namespace Akka.Persistence.Sql.Db
                 .Member(r => r.SerializerId)
                 .HasColumnName(snapshotConfig.ColumnNames.SerializerId);
 
-            if (config.ProviderName.StartsWith(ProviderName.MySql))
+            if (providerName.StartsWith(ProviderName.MySql))
             {
                 rowBuilder
                     .Member(r => r.Payload)

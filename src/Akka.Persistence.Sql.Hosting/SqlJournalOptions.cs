@@ -149,15 +149,22 @@ namespace Akka.Persistence.Sql.Hosting
         
         protected override StringBuilder Build(StringBuilder sb)
         {
-            if (string.IsNullOrWhiteSpace(ConnectionString))
-                throw new ArgumentNullException(nameof(ConnectionString), $"{nameof(ConnectionString)} can not be null or empty.");
+            if (DataOptions is null)
+            {
+                if (string.IsNullOrWhiteSpace(ConnectionString))
+                    throw new ArgumentNullException(nameof(ConnectionString), $"{nameof(ConnectionString)} can not be null or empty.");
 
-            if (string.IsNullOrWhiteSpace(ProviderName))
-                throw new ArgumentNullException(nameof(ProviderName), $"{nameof(ProviderName)} can not be null or empty.");
+                if (string.IsNullOrWhiteSpace(ProviderName))
+                    throw new ArgumentNullException(nameof(ProviderName), $"{nameof(ProviderName)} can not be null or empty.");
+            }
 
             sb.AppendLine($"plugin-id = {PluginId.ToHocon()}");
-            sb.AppendLine($"connection-string = {ConnectionString.ToHocon()}");
-            sb.AppendLine($"provider-name = {ProviderName.ToHocon()}");
+            
+            if(ConnectionString is not null)
+                sb.AppendLine($"connection-string = {ConnectionString.ToHocon()}");
+            
+            if(ProviderName is not null)
+                sb.AppendLine($"provider-name = {ProviderName.ToHocon()}");
 
             if (DeleteCompatibilityMode is not null)
                 sb.AppendLine($"delete-compatibility-mode = {DeleteCompatibilityMode.ToHocon()}");
@@ -193,8 +200,13 @@ namespace Akka.Persistence.Sql.Hosting
         {
             sb.Append(queryPluginId).AppendLine("{");
             sb.AppendLine($"plugin-id = {QueryPluginId.ToHocon()}");
-            sb.AppendLine($"connection-string = {ConnectionString.ToHocon()}");
-            sb.AppendLine($"provider-name = {ProviderName.ToHocon()}");
+            
+            if(ConnectionString is not null)
+                sb.AppendLine($"connection-string = {ConnectionString.ToHocon()}");
+            
+            if(ProviderName is not null)
+                sb.AppendLine($"provider-name = {ProviderName.ToHocon()}");
+            
             sb.AppendLine($"write-plugin = {pluginId}");
                 
             if (DatabaseOptions is not null)

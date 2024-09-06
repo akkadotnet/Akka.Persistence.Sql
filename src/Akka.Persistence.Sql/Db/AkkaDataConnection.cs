@@ -12,7 +12,6 @@ using Akka.Persistence.Sql.Journal.Types;
 using Akka.Persistence.Sql.Snapshot;
 using LinqToDB;
 using LinqToDB.Data;
-using LinqToDB.Data.RetryPolicy;
 using LinqToDB.DataProvider;
 using LinqToDB.SchemaProvider;
 

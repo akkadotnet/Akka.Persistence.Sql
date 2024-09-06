@@ -20,7 +20,7 @@ namespace Akka.Persistence.Sql.Config
             ReplayBatchSize = config.GetInt("replay-batch-size", 1000);
             Parallelism = config.GetInt("parallelism", 2);
             MaxRowByRowSize = config.GetInt("max-row-by-row-size", 100);
-            SqlCommonCompatibilityMode = config.GetBoolean("delete-compatibility-mode", true);
+            SqlCommonCompatibilityMode = config.GetBoolean("delete-compatibility-mode");
         }
 
         public bool PreferParametersOnMultiRowInsert { get; }

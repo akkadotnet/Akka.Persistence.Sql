@@ -497,7 +497,7 @@ namespace Akka.Persistence.Sql.Hosting
         {
             if (journalOptions?.DataOptions is not null)
             {
-                if(builder.Setups.First(s => s is MultiDataOptionsSetup) is not MultiDataOptionsSetup setup)
+                if(builder.Setups.FirstOrDefault(s => s is MultiDataOptionsSetup) is not MultiDataOptionsSetup setup)
                 {
                     setup = new MultiDataOptionsSetup();
                     builder.Setups.Add(setup);
@@ -508,7 +508,7 @@ namespace Akka.Persistence.Sql.Hosting
 
             if (snapshotOptions?.DataOptions is not null)
             {
-                if(builder.Setups.First(s => s is MultiDataOptionsSetup) is not MultiDataOptionsSetup setup)
+                if(builder.Setups.FirstOrDefault(s => s is MultiDataOptionsSetup) is not MultiDataOptionsSetup setup)
                 {
                     setup = new MultiDataOptionsSetup();
                     builder.Setups.Add(setup);
