@@ -66,10 +66,7 @@ var host = new HostBuilder()
     .ConfigureServices((context, services) => {
         services.AddAkka("my-system-name", (builder, provider) =>
         {
-            builder.WithSqlPersistence(
-                connectionString: dataSource.ConnectionString,
-                providerName: ProviderName.PostgreSQL,
-                dataOptions: dataOptions);
+            builder.WithSqlPersistence(dataOptions);
         });
     });
 ```
