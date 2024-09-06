@@ -10,6 +10,7 @@ using System.Text;
 using Akka.Hosting;
 using Akka.Persistence.Hosting;
 using Akka.Persistence.Sql.Config;
+using LinqToDB;
 
 namespace Akka.Persistence.Sql.Hosting
 {
@@ -114,6 +115,31 @@ namespace Akka.Persistence.Sql.Hosting
         ///     </para>
         /// </summary>
         public IsolationLevel? WriteIsolationLevel { get; set; }
+        
+        /// <summary>
+        ///     <para>
+        ///         The custom <see cref="DataOptions"/> used for the connection to the database for both event writes and query reads.
+        ///         If not provided, <see cref="DataOptionsExtensions.UseConnectionString(LinqToDB.DataOptions,string,string)"/>
+        ///         will be used.
+        ///     </para>
+        ///     <para>
+        ///         If provided, you must give enough information for linq2db to connect to the database.
+        ///         This includes setting the connection string and provider name again, if needed in your use case.
+        ///     </para>
+        ///     <para>
+        ///         The following settings will be always overriden by Akka.Persistence.Sql:
+        ///         <list type="number">
+        ///             <item>
+        ///                 MappingSchema
+        ///             </item>
+        ///         </list>
+        ///     </para>
+        ///     <para>
+        ///         DataOptions documentation can be read
+        ///         <a href="https://linq2db.github.io/api/linq2db/LinqToDB.DataOptions.html">here</a>
+        ///     </para>
+        /// </summary>
+        public DataOptions? DataOptions { get; set; }
 
         protected override Configuration.Config InternalDefaultConfig => Default;
 
@@ -129,6 +155,7 @@ namespace Akka.Persistence.Sql.Hosting
             if (string.IsNullOrWhiteSpace(ProviderName))
                 throw new ArgumentNullException(nameof(ProviderName), $"{nameof(ProviderName)} can not be null or empty.");
 
+            sb.AppendLine($"plugin-id = {PluginId.ToHocon()}");
             sb.AppendLine($"connection-string = {ConnectionString.ToHocon()}");
             sb.AppendLine($"provider-name = {ProviderName.ToHocon()}");
 
@@ -165,6 +192,7 @@ namespace Akka.Persistence.Sql.Hosting
         private StringBuilder BuildQueryConfig(StringBuilder sb, string queryPluginId, string pluginId)
         {
             sb.Append(queryPluginId).AppendLine("{");
+            sb.AppendLine($"plugin-id = {QueryPluginId.ToHocon()}");
             sb.AppendLine($"connection-string = {ConnectionString.ToHocon()}");
             sb.AppendLine($"provider-name = {ProviderName.ToHocon()}");
             sb.AppendLine($"write-plugin = {pluginId}");

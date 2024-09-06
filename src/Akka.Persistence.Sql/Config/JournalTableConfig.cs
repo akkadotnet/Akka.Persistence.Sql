@@ -56,8 +56,10 @@ namespace Akka.Persistence.Sql.Config
             if (ReferenceEquals(this, other))
                 return true;
 
-            return Equals(EventJournalTable, other.EventJournalTable) &&
-                   Equals(MetadataTable, other.MetadataTable) &&
+            return EventJournalTable.Equals(other.EventJournalTable) &&
+                   MetadataTable.Equals(other.MetadataTable) &&
+                   TagTable.Equals(other.TagTable) &&
+                   UseEventManifestColumn == other.UseEventManifestColumn &&
                    SchemaName == other.SchemaName;
         }
 
@@ -73,6 +75,6 @@ namespace Akka.Persistence.Sql.Config
         }
 
         public override int GetHashCode()
-            => HashCode.Combine(EventJournalTable, SchemaName, MetadataTable);
+            => HashCode.Combine(EventJournalTable, UseEventManifestColumn, SchemaName, MetadataTable, TagTable);
     }
 }

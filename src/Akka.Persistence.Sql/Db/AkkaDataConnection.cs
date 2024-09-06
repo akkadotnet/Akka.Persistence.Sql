@@ -37,12 +37,6 @@ namespace Akka.Persistence.Sql.Db
 
         public IDataProvider DataProvider => _connection.DataProvider;
 
-        public IRetryPolicy? RetryPolicy
-        {
-            get => _connection.RetryPolicy;
-            set => _connection.RetryPolicy = value;
-        }
-
         public ValueTask DisposeAsync()
             => _connection.DisposeAsync();
 

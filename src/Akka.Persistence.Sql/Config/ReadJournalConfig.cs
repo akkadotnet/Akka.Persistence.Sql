@@ -15,6 +15,7 @@ namespace Akka.Persistence.Sql.Config
     {
         public ReadJournalConfig(Configuration.Config config)
         {
+            PluginId = config.GetString("plugin-id");
             ConnectionString = config.GetString("connection-string");
             ProviderName = config.GetString("provider-name");
             WritePluginId = config.GetString("write-plugin");
@@ -67,6 +68,8 @@ namespace Akka.Persistence.Sql.Config
             DataOptions = dataOptions;
             UseCloneConnection = useCloneConnection;
         }
+        
+        public string? PluginId { get; }
 
         public string WritePluginId { get; }
         

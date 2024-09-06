@@ -31,6 +31,7 @@ namespace Akka.Persistence.Sql.Config
                 ? null
                 : dbConf;
 
+            PluginId = config.GetString("plugin-id");
             DefaultSerializer = config.GetString("serializer");
             ConnectionString = config.GetString("connection-string");
             ProviderName = config.GetString("provider-name");
@@ -72,6 +73,8 @@ namespace Akka.Persistence.Sql.Config
             ReadIsolationLevel = readIsolationLevel;
             DataOptions = dataOptions;
         }
+        
+        public string? PluginId { get; }
 
         public string? UseSharedDb { get; }
 

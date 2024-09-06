@@ -10,7 +10,6 @@ using Akka.Persistence.Sql.Journal.Types;
 using Akka.Persistence.Sql.Snapshot;
 using LinqToDB;
 using LinqToDB.Data;
-using LinqToDB.Data.RetryPolicy;
 using LinqToDB.DataProvider.SqlServer;
 using LinqToDB.Mapping;
 
@@ -20,7 +19,6 @@ namespace Akka.Persistence.Sql.Db
     {
         private readonly Lazy<AkkaDataConnection> _cloneConnection;
         private readonly DataOptions _opts;
-        private readonly IRetryPolicy? _policy;
         private readonly bool _useCloneDataConnection;
 
         public AkkaPersistenceDataConnectionFactory(IProviderConfig<JournalTableConfig> config)
@@ -28,10 +26,9 @@ namespace Akka.Persistence.Sql.Db
             // Build Mapping Schema to be used for all connections.
             // Make a unique mapping schema name here to avoid problems
             // with multiple configurations using different schemas.
-            var configName = "akka.persistence.l2db." + HashCode.Combine(
-                config.ConnectionString,
-                config.ProviderName,
-                config.TableConfig.GetHashCode());
+            var configName = "akka.persistence.sql." + ( config.DataOptions is not null 
+                ? HashCode.Combine(config.DataOptions.GetHashCode(), config.TableConfig.GetHashCode())
+                : HashCode.Combine(config.ConnectionString, config.ProviderName, config.TableConfig.GetHashCode()) );
 
             var mappingSchema = new MappingSchema(configName, MappingSchema.Default);
 
@@ -45,9 +42,8 @@ namespace Akka.Persistence.Sql.Db
 
             _opts = BuildDataOptions(config, mappingSchema);
 
-            if (config.ProviderName.ToLower().StartsWith("sqlserver"))
-                _policy = new SqlServerRetryPolicy();
-            
+            if (_opts.RetryPolicyOptions.RetryPolicy is null && _opts.ConnectionOptions.ProviderName!.ToLowerInvariant().StartsWith("sqlserver"))
+                _opts = _opts.WithOptions( _opts.RetryPolicyOptions with { RetryPolicy = new SqlServerRetryPolicy() } );
             
             _cloneConnection = new Lazy<AkkaDataConnection>(
                 () => new AkkaDataConnection(
@@ -60,16 +56,16 @@ namespace Akka.Persistence.Sql.Db
             // Build Mapping Schema to be used for all connections.
             // Make a unique mapping schema name here to avoid problems
             // with multiple configurations using different schemas.
-            var configName = "akka.persistence.l2db." + HashCode.Combine(
-                config.ConnectionString,
-                config.ProviderName,
-                config.TableConfig.GetHashCode());
+            var configName = "akka.persistence.sql." + ( config.DataOptions is not null 
+                ? HashCode.Combine(config.DataOptions.GetHashCode(), config.TableConfig.GetHashCode())
+                : HashCode.Combine(config.ConnectionString, config.ProviderName, config.TableConfig.GetHashCode()) );
 
             var mappingSchema = new MappingSchema(configName, MappingSchema.Default);
+            _opts = BuildDataOptions(config, mappingSchema);
 
             var fmb = new FluentMappingBuilder(mappingSchema);
 
-            if (config.ProviderName.ToLower().Contains("sqlserver"))
+            if (_opts.ConnectionOptions.ProviderName!.ToLowerInvariant().Contains("sqlserver"))
             {
                 MapDateTimeSnapshotRow(config, fmb);
             }
@@ -82,10 +78,8 @@ namespace Akka.Persistence.Sql.Db
 
             _useCloneDataConnection = config.UseCloneConnection;
 
-            _opts = BuildDataOptions(config, mappingSchema);
-
-            if (config.ProviderName.ToLower().StartsWith("sqlserver"))
-                _policy = new SqlServerRetryPolicy();
+            if (_opts.RetryPolicyOptions.RetryPolicy is null && _opts.ConnectionOptions.ProviderName!.ToLowerInvariant().StartsWith("sqlserver"))
+                _opts = _opts.WithOptions( _opts.RetryPolicyOptions with { RetryPolicy = new SqlServerRetryPolicy() } );
 
             _cloneConnection = new Lazy<AkkaDataConnection>(
                 () => new AkkaDataConnection(
@@ -394,14 +388,9 @@ namespace Akka.Persistence.Sql.Db
             if (!_useCloneDataConnection)
                 return new AkkaDataConnection(
                     _opts.ConnectionOptions.ProviderName!,
-                    new DataConnection(_opts)
-                    {
-                        RetryPolicy = _policy,
-                    });
+                    new DataConnection(_opts));
 
-            var connection = _cloneConnection.Value.Clone();
-            connection.RetryPolicy = _policy;
-            return connection;
+            return _cloneConnection.Value.Clone();
         }
     }
 }

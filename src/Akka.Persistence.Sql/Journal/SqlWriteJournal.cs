@@ -62,9 +62,17 @@ namespace Akka.Persistence.Sql.Journal
             var config = journalConfig.WithFallback(SqlPersistence.DefaultJournalConfiguration);
             _journalConfig = new JournalConfig(config);
 
-            var setup = Context.System.Settings.Setup.Get<DataOptionsSetup>();
-            if (setup.HasValue)
-                _journalConfig = setup.Value.Apply(_journalConfig);
+            var setup = Context.System.Settings.Setup;
+            var singleSetup = setup.Get<DataOptionsSetup>();
+            if (singleSetup.HasValue)
+                _journalConfig = singleSetup.Value.Apply(_journalConfig);
+            
+            if (_journalConfig.PluginId is not null)
+            {
+                var multiSetup = setup.Get<MultiDataOptionsSetup>();
+                if (multiSetup.HasValue && multiSetup.Value.TryGetDataOptionsFor(_journalConfig.PluginId, out var dataOptions))
+                    _journalConfig = _journalConfig.WithDataOptions(dataOptions);
+            }
 
             _useWriterUuid = _journalConfig.TableConfig.EventJournalTable.UseWriterUuidColumn;
         }

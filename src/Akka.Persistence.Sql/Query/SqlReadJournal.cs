@@ -54,9 +54,17 @@ namespace Akka.Persistence.Sql.Query
         {
             _readJournalConfig = new ReadJournalConfig(config);
 
-            var setup = system.Settings.Setup.Get<DataOptionsSetup>();
-            if (setup.HasValue)
-                _readJournalConfig = setup.Value.Apply(_readJournalConfig);
+            var setup = system.Settings.Setup;
+            var singleSetup = setup.Get<DataOptionsSetup>();
+            if (singleSetup.HasValue)
+                _readJournalConfig = singleSetup.Value.Apply(_readJournalConfig);
+            
+            if (_readJournalConfig.PluginId is not null)
+            {
+                var multiSetup = setup.Get<MultiDataOptionsSetup>();
+                if (multiSetup.HasValue && multiSetup.Value.TryGetDataOptionsFor(_readJournalConfig.PluginId, out var dataOptions))
+                    _readJournalConfig = _readJournalConfig.WithDataOptions(dataOptions);
+            }
 
             _eventAdapters = Persistence.Instance.Apply(system).AdaptersFor(_readJournalConfig.WritePluginId);
             

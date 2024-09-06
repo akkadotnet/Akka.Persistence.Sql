@@ -14,6 +14,7 @@ namespace Akka.Persistence.Sql.Config
     {
         public JournalConfig(Configuration.Config config)
         {
+            PluginId = config.GetString("plugin-id");
             MaterializerDispatcher = config.GetString("materializer-dispatcher", "akka.actor.default-dispatcher");
             ConnectionString = config.GetString("connection-string");
             ProviderName = config.GetString("provider-name");
@@ -68,6 +69,8 @@ namespace Akka.Persistence.Sql.Config
             ReadIsolationLevel = readIsolationLevel;
             DataOptions = dataOptions;
         }
+        
+        public string? PluginId { get; }
 
         public string MaterializerDispatcher { get; }
 
