@@ -55,6 +55,7 @@ namespace Akka.Persistence.Sql.Hosting.Tests
             var actualConfig = config.GetConfig(SqlPersistence.JournalConfigPath);
 
             actualConfig.AssertType(defaultConfig, "class", typeof(SqlWriteJournal));
+            actualConfig.AssertString(defaultConfig, "plugin-id");
             actualConfig.AssertString(defaultConfig, "plugin-dispatcher");
             actualConfig.AssertString(defaultConfig, "connection-string", "a");
             actualConfig.AssertString(defaultConfig, "provider-name", "b");
@@ -87,6 +88,7 @@ namespace Akka.Persistence.Sql.Hosting.Tests
             var actualQueryConfig = config.GetConfig(SqlPersistence.QueryConfigPath);
 
             actualQueryConfig.AssertType(defaultQueryConfig, "class", typeof(SqlReadJournalProvider));
+            actualConfig.AssertString(defaultConfig, "plugin-id");
             actualQueryConfig.AssertString(defaultQueryConfig, "write-plugin", "akka.persistence.journal.sql");
             actualQueryConfig.AssertInt(defaultQueryConfig, "max-buffer-size", 500);
             actualQueryConfig.AssertTimeSpan(defaultQueryConfig, "refresh-interval", 1.Seconds());
@@ -174,6 +176,7 @@ namespace Akka.Persistence.Sql.Hosting.Tests
                     .GetConfig("akka.persistence.journal.custom")
                     .WithFallback(SqlPersistence.DefaultJournalConfiguration));
 
+            journalConfig.PluginId.Should().Be("akka.persistence.journal.custom");
             journalConfig.AutoInitialize.Should().BeFalse();
             journalConfig.ConnectionString.Should().Be("a");
             journalConfig.ProviderName.Should().Be("b");
@@ -222,6 +225,7 @@ namespace Akka.Persistence.Sql.Hosting.Tests
                     .GetConfig("akka.persistence.query.journal.custom")
                     .WithFallback(SqlPersistence.DefaultQueryConfiguration));
 
+            queryConfig.PluginId.Should().Be("akka.persistence.query.journal.custom");
             queryConfig.ConnectionString.Should().Be("a");
             queryConfig.ProviderName.Should().Be("b");
             queryConfig.WritePluginId.Should().Be("akka.persistence.journal.custom");

@@ -21,7 +21,7 @@ namespace Akka.Persistence.Sql.Config
 
         public string SequenceNumber { get; }
 
-        public bool Equals(MetadataTableColumnNames other)
+        public bool Equals(MetadataTableColumnNames? other)
         {
             if (ReferenceEquals(null, other))
                 return false;
@@ -32,7 +32,7 @@ namespace Akka.Persistence.Sql.Config
             return PersistenceId == other.PersistenceId && SequenceNumber == other.SequenceNumber;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (ReferenceEquals(null, obj))
                 return false;

@@ -47,10 +47,33 @@ var host = new HostBuilder()
         {
             builder.WithSqlPersistence(
                 connectionString: _myConnectionString,
-                providerName: ProviderName.SqlServer2019)
+                providerName: ProviderName.SqlServer2019);
         });
-    })
+    });
 ```
+
+You can also provide your own [`LinqToDb.DataOptions`](https://linq2db.github.io/api/linq2db/LinqToDB.DataOptions.html) object for a more advanced configuration.
+Assuming a setup with a custom `NpgsqlDataSource`:
+```csharp
+NpgsqlDataSource dataSource = new NpgsqlDataSourceBuilder(_myConnectionString).Build();
+
+DataOptions dataOptions = new DataOptions()
+    .UseDataProvider(DataConnection.GetDataProvider(ProviderName.PostgreSQL, dataSource.ConnectionString) ?? throw new Exception("Could not get data provider"))
+    .UseProvider(ProviderName.PostgreSQL)
+    .UseConnectionFactory((opt) => dataSource.CreateConnection());
+    
+var host = new HostBuilder()
+    .ConfigureServices((context, services) => {
+        services.AddAkka("my-system-name", (builder, provider) =>
+        {
+            builder.WithSqlPersistence(dataOptions);
+        });
+    });
+```
+If `dataOptions` are provided, you must supply enough information for linq2db to connect to the database. 
+This includes setting the connection string and provider name again, if necessary for your use case. 
+Please consult the Linq2Db documentation for more details on configuring a valid DataOptions object. 
+Note that `MappingSchema` and `RetryPolicy` will always be overridden by Akka.Persistence.Sql.
 
 ## The Classic Way, Using HOCON
 

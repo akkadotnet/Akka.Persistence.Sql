@@ -38,6 +38,7 @@ akka.persistence.snapshot-store.sql {
             actualConfig = actualConfig.GetConfig(SqlPersistence.SnapshotStoreConfigPath);
 
             actualConfig.GetString("connection-string").Should().Be(defaultConfig.GetString("connection-string"));
+            actualConfig.GetString("plugin-id").Should().Be(defaultConfig.GetString("plugin-id"));
             actualConfig.GetString("provider-name").Should().Be(defaultConfig.GetString("provider-name"));
             actualConfig.GetString("table-mapping").Should().Be(defaultConfig.GetString("table-mapping"));
             actualConfig.GetString("serializer").Should().Be(defaultConfig.GetString("serializer"));
@@ -91,6 +92,7 @@ akka.persistence.snapshot-store.sql {
                 .WithFallback(SqlPersistence.DefaultSnapshotConfiguration);
             var config = new SnapshotConfig(snapshotConfig);
 
+            config.PluginId.Should().Be("akka.persistence.snapshot-store.custom");
             config.AutoInitialize.Should().BeFalse();
             config.ConnectionString.Should().Be("a");
             config.ProviderName.Should().Be("b");

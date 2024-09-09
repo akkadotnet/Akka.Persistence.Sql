@@ -32,13 +32,15 @@ namespace Akka.Persistence.Sql.Config
             if (ReferenceEquals(this, other))
                 return true;
 
-            return Name == other.Name && Equals(ColumnNames, other.ColumnNames);
+            return Name == other.Name &&
+                   UseWriterUuidColumn == other.UseWriterUuidColumn &&
+                   ColumnNames.Equals(other.ColumnNames);
         }
 
-        public override bool Equals(object obj)
-            => ReferenceEquals(this, obj) || (obj is EventJournalTableConfig other && Equals(other));
+        public override bool Equals(object? obj)
+            => obj is not null && (ReferenceEquals(this, obj) || (obj is EventJournalTableConfig other && Equals(other)));
 
         public override int GetHashCode()
-            => HashCode.Combine(Name, ColumnNames);
+            => HashCode.Combine(Name, UseWriterUuidColumn, ColumnNames);
     }
 }

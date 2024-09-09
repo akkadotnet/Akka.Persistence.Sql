@@ -45,7 +45,7 @@ namespace Akka.Persistence.Sql.Config
 
         public string WriterUuid { get; }
 
-        public bool Equals(JournalTableColumnNames other)
+        public bool Equals(JournalTableColumnNames? other)
             => other is not null &&
                Ordering == other.Ordering &&
                Deleted == other.Deleted &&
@@ -55,10 +55,14 @@ namespace Akka.Persistence.Sql.Config
                Tags == other.Tags &&
                Message == other.Message &&
                Identifier == other.Identifier &&
-               Manifest == other.Manifest;
+               Manifest == other.Manifest &&
+               WriterUuid == other.WriterUuid;
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
+            if(obj is null)
+                return false;
+            
             if (ReferenceEquals(this, obj))
                 return true;
 
@@ -77,6 +81,7 @@ namespace Akka.Persistence.Sql.Config
             hashCode.Add(Message);
             hashCode.Add(Identifier);
             hashCode.Add(Manifest);
+            hashCode.Add(WriterUuid);
             return hashCode.ToHashCode();
         }
     }

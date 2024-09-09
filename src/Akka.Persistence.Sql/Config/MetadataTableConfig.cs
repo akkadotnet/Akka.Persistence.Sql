@@ -21,7 +21,7 @@ namespace Akka.Persistence.Sql.Config
 
         public MetadataTableColumnNames ColumnNames { get; }
 
-        public bool Equals(MetadataTableConfig other)
+        public bool Equals(MetadataTableConfig? other)
         {
             if (ReferenceEquals(null, other))
                 return false;
@@ -29,10 +29,10 @@ namespace Akka.Persistence.Sql.Config
             if (ReferenceEquals(this, other))
                 return true;
 
-            return Name == other.Name && Equals(ColumnNames, other.ColumnNames);
+            return Name == other.Name && ColumnNames.Equals(other.ColumnNames);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
             => ReferenceEquals(this, obj) || (obj is MetadataTableConfig other && Equals(other));
 
         public override int GetHashCode()

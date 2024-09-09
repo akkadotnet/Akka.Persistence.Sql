@@ -22,7 +22,7 @@ namespace Akka.Persistence.Sql.Config
 
         public TagTableColumnNames ColumnNames { get; }
 
-        public bool Equals(TagTableConfig other)
+        public bool Equals(TagTableConfig? other)
         {
             if (ReferenceEquals(null, other))
                 return false;
@@ -30,11 +30,14 @@ namespace Akka.Persistence.Sql.Config
             if (ReferenceEquals(this, other))
                 return true;
 
-            return Name == other.Name && Equals(ColumnNames, other.ColumnNames);
+            return Name == other.Name && ColumnNames.Equals(other.ColumnNames);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
+            if(obj is null)
+                return false;
+            
             if (ReferenceEquals(this, obj))
                 return true;
 

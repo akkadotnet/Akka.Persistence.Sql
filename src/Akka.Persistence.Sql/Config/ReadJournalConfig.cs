@@ -7,6 +7,7 @@
 using System;
 using System.Data;
 using Akka.Persistence.Sql.Extensions;
+using LinqToDB;
 
 namespace Akka.Persistence.Sql.Config
 {
@@ -14,6 +15,7 @@ namespace Akka.Persistence.Sql.Config
     {
         public ReadJournalConfig(Configuration.Config config)
         {
+            PluginId = config.GetString("plugin-id");
             ConnectionString = config.GetString("connection-string");
             ProviderName = config.GetString("provider-name");
             WritePluginId = config.GetString("write-plugin");
@@ -27,10 +29,47 @@ namespace Akka.Persistence.Sql.Config
             AddShutdownHook = config.GetBoolean("add-shutdown-hook", true);
             DefaultSerializer = config.GetString("serializer");
             ReadIsolationLevel = config.GetIsolationLevel("read-isolation-level");
+            DataOptions = null;
 
             // We don't do any writes in a read journal
             WriteIsolationLevel = IsolationLevel.Unspecified;
         }
+
+        private ReadJournalConfig(
+            string connectionString,
+            string providerName,
+            string writePluginId,
+            JournalTableConfig tableConfig,
+            BaseByteArrayJournalDaoConfig daoConfig,
+            int maxBufferSize,
+            bool addShutdownHook,
+            TimeSpan refreshInterval,
+            JournalSequenceRetrievalConfig journalSequenceRetrievalConfiguration,
+            IPluginConfig pluginConfig,
+            string defaultSerializer,
+            IsolationLevel writeIsolationLevel,
+            IsolationLevel readIsolationLevel,
+            DataOptions? dataOptions,
+            bool useCloneConnection)
+        {
+            ConnectionString = connectionString;
+            ProviderName = providerName;
+            WritePluginId = writePluginId;
+            TableConfig = tableConfig;
+            DaoConfig = daoConfig;
+            MaxBufferSize = maxBufferSize;
+            AddShutdownHook = addShutdownHook;
+            RefreshInterval = refreshInterval;
+            JournalSequenceRetrievalConfiguration = journalSequenceRetrievalConfiguration;
+            PluginConfig = pluginConfig;
+            DefaultSerializer = defaultSerializer;
+            WriteIsolationLevel = writeIsolationLevel;
+            ReadIsolationLevel = readIsolationLevel;
+            DataOptions = dataOptions;
+            UseCloneConnection = useCloneConnection;
+        }
+        
+        public string? PluginId { get; }
 
         public string WritePluginId { get; }
         
@@ -61,5 +100,43 @@ namespace Akka.Persistence.Sql.Config
         public IsolationLevel WriteIsolationLevel { get; }
 
         public IsolationLevel ReadIsolationLevel { get; }
+
+        public DataOptions? DataOptions { get; }
+
+        public ReadJournalConfig WithDataOptions(DataOptions dataOptions)
+            => Copy(dataOptions: dataOptions);
+
+        private ReadJournalConfig Copy(
+            string? connectionString = null,
+            string? providerName = null,
+            string? writePluginId = null,
+            JournalTableConfig? tableConfig = null,
+            BaseByteArrayJournalDaoConfig? daoConfig = null,
+            int? maxBufferSize = null,
+            bool? addShutdownHook = null,
+            TimeSpan? refreshInterval = null,
+            JournalSequenceRetrievalConfig? journalSequenceRetrievalConfiguration = null,
+            IPluginConfig? pluginConfig = null,
+            string? defaultSerializer = null,
+            IsolationLevel? writeIsolationLevel = null,
+            IsolationLevel? readIsolationLevel = null,
+            DataOptions? dataOptions = null,
+            bool? useCloneConnection = null)
+            => new(
+                connectionString ?? ConnectionString,
+                providerName ?? ProviderName,
+                writePluginId ?? WritePluginId,
+                tableConfig ?? TableConfig,
+                daoConfig ?? DaoConfig,
+                maxBufferSize ?? MaxBufferSize,
+                addShutdownHook ?? AddShutdownHook,
+                refreshInterval ?? RefreshInterval,
+                journalSequenceRetrievalConfiguration ?? JournalSequenceRetrievalConfiguration,
+                pluginConfig ?? PluginConfig,
+                defaultSerializer ?? DefaultSerializer,
+                writeIsolationLevel ?? WriteIsolationLevel,
+                readIsolationLevel ?? ReadIsolationLevel,
+                dataOptions ?? DataOptions,
+                useCloneConnection ?? UseCloneConnection);
     }
 }

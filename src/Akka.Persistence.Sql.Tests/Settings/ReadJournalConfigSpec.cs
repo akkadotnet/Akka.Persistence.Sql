@@ -294,7 +294,7 @@ namespace Akka.Persistence.Sql.Tests.Settings
             daoConfig.ReplayBatchSize.Should().Be(1000);
             daoConfig.Parallelism.Should().Be(3);
             daoConfig.MaxRowByRowSize.Should().Be(100);
-            daoConfig.SqlCommonCompatibilityMode.Should().BeTrue();
+            daoConfig.SqlCommonCompatibilityMode.Should().BeFalse();
         }
     }
 }

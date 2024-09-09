@@ -8,7 +8,7 @@ using System;
 
 namespace Akka.Persistence.Sql.Config
 {
-    public class SnapshotTableColumnNames
+    public class SnapshotTableColumnNames: IEquatable<SnapshotTableColumnNames>
     {
         public SnapshotTableColumnNames(Configuration.Config config)
         {
@@ -35,5 +35,32 @@ namespace Akka.Persistence.Sql.Config
 
         public override int GetHashCode()
             => HashCode.Combine(PersistenceId, SequenceNumber, Created, Snapshot, Manifest, SerializerId);
+
+        public bool Equals(SnapshotTableColumnNames? other)
+        {
+            if (other is null)
+                return false;
+
+            if (ReferenceEquals(this, other))
+                return true;
+
+            return PersistenceId == other.PersistenceId && 
+                   SequenceNumber == other.SequenceNumber && 
+                   Created == other.Created && 
+                   Snapshot == other.Snapshot && 
+                   Manifest == other.Manifest && 
+                   SerializerId == other.SerializerId;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (obj is null)
+                return false;
+
+            if (ReferenceEquals(this, obj))
+                return true;
+
+            return obj is SnapshotTableColumnNames other && Equals(other);
+        }
     }
 }

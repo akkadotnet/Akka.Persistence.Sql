@@ -28,7 +28,7 @@ namespace Akka.Persistence.Sql.Config
 
         public string PersistenceId { get; }
 
-        public bool Equals(TagTableColumnNames other)
+        public bool Equals(TagTableColumnNames? other)
         {
             if (ReferenceEquals(null, other))
                 return false;
@@ -39,7 +39,7 @@ namespace Akka.Persistence.Sql.Config
             return OrderingId == other.OrderingId;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (ReferenceEquals(this, obj))
                 return true;
@@ -48,6 +48,6 @@ namespace Akka.Persistence.Sql.Config
         }
 
         public override int GetHashCode()
-            => HashCode.Combine(OrderingId, Tag);
+            => HashCode.Combine(OrderingId, Tag, SequenceNumber, PersistenceId);
     }
 }

@@ -12,7 +12,6 @@ using Akka.Persistence.Sql.Journal.Types;
 using Akka.Persistence.Sql.Snapshot;
 using LinqToDB;
 using LinqToDB.Data;
-using LinqToDB.Data.RetryPolicy;
 using LinqToDB.DataProvider;
 using LinqToDB.SchemaProvider;
 
@@ -36,12 +35,6 @@ namespace Akka.Persistence.Sql.Db
         public bool UseDateTime { get; }
 
         public IDataProvider DataProvider => _connection.DataProvider;
-
-        public IRetryPolicy? RetryPolicy
-        {
-            get => _connection.RetryPolicy;
-            set => _connection.RetryPolicy = value;
-        }
 
         public ValueTask DisposeAsync()
             => _connection.DisposeAsync();

@@ -34,6 +34,18 @@ namespace Akka.Persistence.Sql.Snapshot
             var config = snapshotConfig.WithFallback(SqlPersistence.DefaultSnapshotConfiguration);
             _settings = new SnapshotConfig(config);
 
+            var setup = Context.System.Settings.Setup;
+            var singleSetup = setup.Get<DataOptionsSetup>();
+            if (singleSetup.HasValue)
+                _settings = singleSetup.Value.Apply(_settings);
+
+            if (_settings.PluginId is not null)
+            {
+                var multiSetup = setup.Get<MultiDataOptionsSetup>();
+                if (multiSetup.HasValue && multiSetup.Value.TryGetDataOptionsFor(_settings.PluginId, out var dataOptions))
+                    _settings = _settings.WithDataOptions(dataOptions);
+            }
+
             _dao = new ByteArraySnapshotDao(
                 connectionFactory: new AkkaPersistenceDataConnectionFactory(_settings),
                 snapshotConfig: _settings,
