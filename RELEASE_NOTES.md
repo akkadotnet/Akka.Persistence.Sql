@@ -1,3 +1,35 @@
+#### 1.5.28 September 9th 2024 ####
+
+* [Bump Akka to 1.5.28](https://github.com/akkadotnet/akka.net/releases/tag/1.5.28)
+* [Bump Akka.Hosting to v1.5.28](https://github.com/akkadotnet/Akka.Hosting/releases/tag/1.5.28)
+* [Harden SQL journal and snapshot store against initialization failures](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/444)
+* [Cleanup nullability warnings](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/437)
+* [Port Akka.NET #7313: Made DateTime.UtcNow the default timestamp for SnapshotMetadata](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/448)
+* [Add DataOptions support](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/426)
+
+**Linq2Db DataOptions Support**
+
+You can now use [DataOptions](https://linq2db.github.io/api/linq2db/LinqToDB.DataOptions.html) to set up your persistence journal, read journal, and snapshot store with a new `Akka.Persistence.Sql.Hosting` API.
+
+Here is an example of setting up persistence on PostgreSQL using `NpgsqlDataSource` instead of the previous connection string and provider name setup.
+
+```csharp
+var dataSource = new NpgsqlDataSourceBuilder(_myConnectionString).Build();
+
+var dataOptions = new DataOptions()
+    .UseDataProvider(DataConnection.GetDataProvider(ProviderName.PostgreSQL, dataSource.ConnectionString))
+    .UseProvider(ProviderName.PostgreSQL)
+    .UseConnectionFactory((opt) => dataSource.CreateConnection());
+    
+var host = new HostBuilder()
+    .ConfigureServices((context, services) => {
+        services.AddAkka("my-system-name", (builder, provider) =>
+        {
+            builder.WithSqlPersistence(dataOptions);
+        });
+    });
+```
+
 #### 1.5.27.1 August 1st 2024 ####
 
 * [Fix missing "writer-plugin" generation from Akka.Persistence.Sql.Hosting](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/427)
