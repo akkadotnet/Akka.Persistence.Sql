@@ -150,6 +150,13 @@ namespace Akka.Persistence.Sql.Db
                     .HasDbType("INTEGER");
             }
 
+            if (providerName.Equals(ProviderName.PostgreSQL15))
+            {
+                rowBuilder
+                    .Member(r => r.Ordering)
+                    .HasDbType("BIGINT GENERATED ALWAYS AS IDENTITY");
+            }
+
             if (journalConfig.UseWriterUuidColumn)
             {
                 rowBuilder
