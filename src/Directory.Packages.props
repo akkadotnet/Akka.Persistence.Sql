@@ -52,7 +52,7 @@
   <!-- PostgreSql dependencies -->
   <ItemGroup>
     <PackageVersion Include="Akka.Persistence.PostgreSql" Version="1.5.20" />
-    <PackageVersion Include="Npgsql" Version="8.0.3" />
+    <PackageVersion Include="Npgsql" Version="8.0.4" />
   </ItemGroup>
   <!-- Redis dependencies -->
   <ItemGroup>
