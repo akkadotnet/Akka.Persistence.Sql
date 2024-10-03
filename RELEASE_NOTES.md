@@ -1,3 +1,9 @@
+#### 1.5.29 October 3rd 2024 ####
+
+* [Bump Akka to 1.5.29](https://github.com/akkadotnet/akka.net/releases/tag/1.5.29)
+* [Bump Akka.Hosting to v1.5.29](https://github.com/akkadotnet/Akka.Hosting/releases/tag/1.5.29)
+* [PostgreSql: Use BIGINT for ordering column if PostgreSql version is greater than 10](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/459)
+
 #### 1.5.28 September 9th 2024 ####
 
 * [Bump Akka to 1.5.28](https://github.com/akkadotnet/akka.net/releases/tag/1.5.28)
