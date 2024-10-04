@@ -3,7 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <AkkaVersion>1.5.30</AkkaVersion>
     <AkkaHostingVersion>1.5.29</AkkaHostingVersion>
-    <FluentMigratorVersion>5.2.0</FluentMigratorVersion>
+    <FluentMigratorVersion>6.2.0</FluentMigratorVersion>
     <SqliteVersion>1.0.118</SqliteVersion>
     <MicrosoftSqliteVersion>8.0.7</MicrosoftSqliteVersion>
   </PropertyGroup>
