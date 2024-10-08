@@ -10,6 +10,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Akka.Actor;
+using Akka.Event;
 using Akka.Pattern;
 using Akka.Persistence.Journal;
 using Akka.Persistence.Query;
@@ -47,6 +48,8 @@ namespace Akka.Persistence.Sql.Query
         private readonly ReadJournalConfig _readJournalConfig;
         private readonly ByteArrayReadJournalDao _readJournalDao;
         private readonly ExtendedActorSystem _system;
+        private readonly IActorRef _queryPermitter;
+        private readonly ILoggingAdapter _log;
 
         public SqlReadJournal(
             ExtendedActorSystem system,
@@ -59,12 +62,9 @@ namespace Akka.Persistence.Sql.Query
             if (singleSetup.HasValue)
                 _readJournalConfig = singleSetup.Value.Apply(_readJournalConfig);
             
-            if (_readJournalConfig.PluginId is not null)
-            {
-                var multiSetup = setup.Get<MultiDataOptionsSetup>();
-                if (multiSetup.HasValue && multiSetup.Value.TryGetDataOptionsFor(_readJournalConfig.PluginId, out var dataOptions))
-                    _readJournalConfig = _readJournalConfig.WithDataOptions(dataOptions);
-            }
+            var multiSetup = setup.Get<MultiDataOptionsSetup>();
+            if (multiSetup.HasValue && multiSetup.Value.TryGetDataOptionsFor(_readJournalConfig.PluginId, out var dataOptions))
+                _readJournalConfig = _readJournalConfig.WithDataOptions(dataOptions);
 
             _eventAdapters = Persistence.Instance.Apply(system).AdaptersFor(_readJournalConfig.WritePluginId);
             
@@ -82,6 +82,11 @@ namespace Akka.Persistence.Sql.Query
                 settings: ActorMaterializerSettings.Create(system),
                 namePrefix: $"l2db-query-mat-{Guid.NewGuid():N}");
 
+            _log = Logging.GetLogger(system, $"{_readJournalConfig.PluginId}-{nameof(SqlReadJournal)}");
+            _queryPermitter = system.ActorOf(
+                Props.Create(() => new QueryThrottler(_readJournalConfig.MaxConcurrentQueries)), 
+                $"{_readJournalConfig.PluginId}-query-permitter");
+
             _readJournalDao = new ByteArrayReadJournalDao(
                 scheduler: system.Scheduler.Advanced,
                 materializer: _mat,
@@ -92,6 +97,7 @@ namespace Akka.Persistence.Sql.Query
                     serializer: system.Serialization,
                     separator: _readJournalConfig.PluginConfig.TagSeparator,
                     writerUuid: null),
+                _queryPermitter,
                 // TODO: figure out a way to signal shutdown to the query executor here
                 default);
 

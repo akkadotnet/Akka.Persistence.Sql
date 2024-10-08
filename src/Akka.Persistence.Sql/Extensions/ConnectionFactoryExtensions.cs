@@ -8,7 +8,10 @@ using System;
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
+using Akka.Actor;
+using Akka.Event;
 using Akka.Persistence.Sql.Db;
+using Akka.Persistence.Sql.Query;
 using Akka.Persistence.Sql.Query.Dao;
 
 namespace Akka.Persistence.Sql.Extensions
@@ -44,6 +47,24 @@ namespace Akka.Persistence.Sql.Extensions
             }
         }
 
+        public static async Task<T> ExecuteQueryWithTransactionAsync<T>(
+            this AkkaPersistenceDataConnectionFactory factory,
+            IActorRef queryPermitter,
+            IsolationLevel level,
+            CancellationToken token,
+            Func<AkkaDataConnection, CancellationToken, Task<T>> handler)
+        {
+            await queryPermitter.Ask<QueryStartGranted>(RequestQueryStart.Instance);
+            try
+            {
+                return await factory.ExecuteWithTransactionAsync(level, token, handler);
+            }
+            finally
+            {
+                queryPermitter.Tell(ReturnQueryStart.Instance);
+            }
+        }
+
         public static async Task<T> ExecuteWithTransactionAsync<T>(
             this AkkaPersistenceDataConnectionFactory factory,
             IsolationLevel level,
@@ -74,12 +95,21 @@ namespace Akka.Persistence.Sql.Extensions
             }
         }
         
-        internal static Task<T> ExecuteWithTransactionAsync<TState,T>(
+        internal static async Task<T> ExecuteQueryWithTransactionAsync<TState,T>(
             this DbStateHolder factory,
+            IActorRef queryPermitter,
             TState state,
             Func<AkkaDataConnection, CancellationToken, TState, Task<T>> handler)
         {
-            return factory.ConnectionFactory.ExecuteWithTransactionAsync(state, factory.IsolationLevel, factory.ShutdownToken, handler);
+            await queryPermitter.Ask<QueryStartGranted>(RequestQueryStart.Instance);
+            try
+            {
+                return await factory.ConnectionFactory.ExecuteWithTransactionAsync(state, factory.IsolationLevel, factory.ShutdownToken, handler);
+            }
+            finally
+            {
+                queryPermitter.Tell(ReturnQueryStart.Instance);
+            }
         }
         
         public static async Task<T> ExecuteWithTransactionAsync<TState,T>(

@@ -6,6 +6,8 @@
 
 using System.Data;
 using System.Threading;
+using Akka.Actor;
+using Akka.Event;
 using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Db;
 
@@ -20,17 +22,20 @@ namespace Akka.Persistence.Sql.Query.Dao
         public readonly IsolationLevel IsolationLevel;
         public readonly CancellationToken ShutdownToken;
         public readonly TagMode Mode;
+        public readonly IActorRef QueryPermitter;
+        
         public DbStateHolder(
             AkkaPersistenceDataConnectionFactory connectionFactory,
             IsolationLevel isolationLevel, 
             CancellationToken shutdownToken, 
-            TagMode mode
-        )
+            TagMode mode,
+            IActorRef queryPermitter)
         {
             ConnectionFactory = connectionFactory;
             IsolationLevel = isolationLevel;
             ShutdownToken = shutdownToken;
             Mode = mode;
+            QueryPermitter = queryPermitter;
         }
     }
 }
