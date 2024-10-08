@@ -140,6 +140,8 @@ namespace Akka.Persistence.Sql.Hosting
         ///     </para>
         /// </summary>
         public DataOptions? DataOptions { get; set; }
+        
+        public int? MaxConcurrentQueries { get; set; }
 
         protected override Configuration.Config InternalDefaultConfig => Default;
 
@@ -223,6 +225,9 @@ namespace Akka.Persistence.Sql.Hosting
 
             if (QueryRefreshInterval is not null)
                 sb.AppendLine($"refresh-interval = {QueryRefreshInterval.ToHocon()}");
+            
+            if(MaxConcurrentQueries is not null)
+                sb.AppendLine($"max-concurrent-queries = {MaxConcurrentQueries.ToHocon()}");
             
             sb.AppendLine($"serializer = {Serializer.ToHocon()}");
             

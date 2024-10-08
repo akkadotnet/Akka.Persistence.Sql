@@ -118,6 +118,9 @@ namespace Akka.Persistence.Sql.Hosting
         ///         </item>
         ///     </list>
         /// </param>
+        /// <param name="maxConcurrentQueries">
+        ///     Determines how many queries are allowed to run in parallel at any given time
+        /// </param>
         /// <returns>
         ///     The same <see cref="AkkaConfigurationBuilder" /> instance originally passed in.
         /// </returns>
@@ -142,7 +145,8 @@ namespace Akka.Persistence.Sql.Hosting
             DatabaseMapping? databaseMapping = null,
             TagMode? tagStorageMode = null,
             bool? deleteCompatibilityMode = null,
-            bool? useWriterUuidColumn = null)
+            bool? useWriterUuidColumn = null,
+            int? maxConcurrentQueries = null)
         {
             if (mode == PersistenceMode.SnapshotStore && journalBuilder is not null)
                 throw new Exception($"{nameof(journalBuilder)} can only be set when {nameof(mode)} is set to either {PersistenceMode.Both} or {PersistenceMode.Journal}");
@@ -160,6 +164,7 @@ namespace Akka.Persistence.Sql.Hosting
                 AutoInitialize = autoInitialize,
                 TagStorageMode = tagStorageMode,
                 DeleteCompatibilityMode = deleteCompatibilityMode,
+                MaxConcurrentQueries = maxConcurrentQueries,
             };
 
             if (databaseMapping is not null)
@@ -323,6 +328,9 @@ namespace Akka.Persistence.Sql.Hosting
         ///         </item>
         ///     </list>
         /// </param>
+        /// <param name="maxConcurrentQueries">
+        ///     Determines how many queries are allowed to run in parallel at any given time
+        /// </param>
         /// <returns>
         ///     The same <see cref="AkkaConfigurationBuilder" /> instance originally passed in.
         /// </returns>
@@ -345,7 +353,8 @@ namespace Akka.Persistence.Sql.Hosting
             DatabaseMapping? databaseMapping = null,
             TagMode? tagStorageMode = null,
             bool? deleteCompatibilityMode = null,
-            bool? useWriterUuidColumn = null)
+            bool? useWriterUuidColumn = null,
+            int? maxConcurrentQueries = null)
         {
             if (mode == PersistenceMode.SnapshotStore && journalBuilder is not null)
                 throw new Exception($"{nameof(journalBuilder)} can only be set when {nameof(mode)} is set to either {PersistenceMode.Both} or {PersistenceMode.Journal}");
@@ -359,6 +368,7 @@ namespace Akka.Persistence.Sql.Hosting
                 TagStorageMode = tagStorageMode,
                 DeleteCompatibilityMode = deleteCompatibilityMode,
                 DataOptions = dataOptions,
+                MaxConcurrentQueries = maxConcurrentQueries,
             };
 
             if (databaseMapping is not null)
