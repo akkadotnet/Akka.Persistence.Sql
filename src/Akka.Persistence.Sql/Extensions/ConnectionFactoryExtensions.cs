@@ -47,21 +47,24 @@ namespace Akka.Persistence.Sql.Extensions
             }
         }
 
-        public static async Task<T> ExecuteQueryWithTransactionAsync<T>(
+        internal static async Task<T> ExecuteQueryWithTransactionAsync<T>(
             this AkkaPersistenceDataConnectionFactory factory,
-            IActorRef queryPermitter,
-            IsolationLevel level,
-            CancellationToken token,
+            DbStateHolder state,
             Func<AkkaDataConnection, CancellationToken, Task<T>> handler)
         {
-            await queryPermitter.Ask<QueryStartGranted>(RequestQueryStart.Instance);
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(state.ShutdownToken);
+            {
+                cts.CancelAfter(state.QueryThrottleTimeout);
+                await state.QueryPermitter.Ask<QueryStartGranted>(RequestQueryStart.Instance, cts.Token);
+            }
+            
             try
             {
-                return await factory.ExecuteWithTransactionAsync(level, token, handler);
+                return await factory.ExecuteWithTransactionAsync(state.IsolationLevel, state.ShutdownToken, handler);
             }
             finally
             {
-                queryPermitter.Tell(ReturnQueryStart.Instance);
+                state.QueryPermitter.Tell(ReturnQueryStart.Instance);
             }
         }
 
@@ -100,7 +103,12 @@ namespace Akka.Persistence.Sql.Extensions
             TState state,
             Func<AkkaDataConnection, CancellationToken, TState, Task<T>> handler)
         {
-            await factory.QueryPermitter.Ask<QueryStartGranted>(RequestQueryStart.Instance, factory.QueryThrottleTimeout);
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(factory.ShutdownToken);
+            {
+                cts.CancelAfter(factory.QueryThrottleTimeout);
+                await factory.QueryPermitter.Ask<QueryStartGranted>(RequestQueryStart.Instance, cts.Token);
+            }
+            
             try
             {
                 return await factory.ConnectionFactory.ExecuteWithTransactionAsync(state, factory.IsolationLevel, factory.ShutdownToken, handler);

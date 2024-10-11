@@ -213,9 +213,7 @@ namespace Akka.Persistence.Sql.Query.Dao
         public async Task<long> MaxJournalSequenceAsync()
         {
             return await ConnectionFactory.ExecuteQueryWithTransactionAsync(
-                _dbStateHolder.QueryPermitter,
-                ReadIsolationLevel,
-                ShutdownToken,
+                _dbStateHolder,
                 async (connection, token) =>
                 {
                     // persistence-jdbc does not filter deleted here.
