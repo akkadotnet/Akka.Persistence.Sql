@@ -97,18 +97,17 @@ namespace Akka.Persistence.Sql.Extensions
         
         internal static async Task<T> ExecuteQueryWithTransactionAsync<TState,T>(
             this DbStateHolder factory,
-            IActorRef queryPermitter,
             TState state,
             Func<AkkaDataConnection, CancellationToken, TState, Task<T>> handler)
         {
-            await queryPermitter.Ask<QueryStartGranted>(RequestQueryStart.Instance);
+            await factory.QueryPermitter.Ask<QueryStartGranted>(RequestQueryStart.Instance, factory.QueryThrottleTimeout);
             try
             {
                 return await factory.ConnectionFactory.ExecuteWithTransactionAsync(state, factory.IsolationLevel, factory.ShutdownToken, handler);
             }
             finally
             {
-                queryPermitter.Tell(ReturnQueryStart.Instance);
+                factory.QueryPermitter.Tell(ReturnQueryStart.Instance);
             }
         }
         

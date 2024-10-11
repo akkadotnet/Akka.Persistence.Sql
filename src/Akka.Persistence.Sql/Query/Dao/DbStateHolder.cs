@@ -4,6 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Data;
 using System.Threading;
 using Akka.Actor;
@@ -23,19 +24,22 @@ namespace Akka.Persistence.Sql.Query.Dao
         public readonly CancellationToken ShutdownToken;
         public readonly TagMode Mode;
         public readonly IActorRef QueryPermitter;
+        public readonly TimeSpan QueryThrottleTimeout;
         
         public DbStateHolder(
             AkkaPersistenceDataConnectionFactory connectionFactory,
             IsolationLevel isolationLevel, 
             CancellationToken shutdownToken, 
             TagMode mode,
-            IActorRef queryPermitter)
+            IActorRef queryPermitter,
+            TimeSpan queryThrottleTimeout)
         {
             ConnectionFactory = connectionFactory;
             IsolationLevel = isolationLevel;
             ShutdownToken = shutdownToken;
             Mode = mode;
             QueryPermitter = queryPermitter;
+            QueryThrottleTimeout = queryThrottleTimeout;
         }
     }
 }

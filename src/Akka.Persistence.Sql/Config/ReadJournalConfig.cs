@@ -30,6 +30,7 @@ namespace Akka.Persistence.Sql.Config
             DefaultSerializer = config.GetString("serializer");
             ReadIsolationLevel = config.GetIsolationLevel("read-isolation-level");
             MaxConcurrentQueries = config.GetInt("max-concurrent-queries", 100);
+            QueryThrottleTimeout = config.GetTimeSpan("query-throttle-timeout", TimeSpan.FromSeconds(3));
             DataOptions = null;
 
             // We don't do any writes in a read journal
@@ -53,7 +54,8 @@ namespace Akka.Persistence.Sql.Config
             IsolationLevel readIsolationLevel,
             DataOptions? dataOptions,
             bool useCloneConnection,
-            int maxConcurrentQueries)
+            int maxConcurrentQueries,
+            TimeSpan queryThrottleTimeout)
         {
             PluginId = pluginId ?? SqlPersistence.QueryConfigPath;
             ConnectionString = connectionString;
@@ -72,6 +74,7 @@ namespace Akka.Persistence.Sql.Config
             DataOptions = dataOptions;
             UseCloneConnection = useCloneConnection;
             MaxConcurrentQueries = maxConcurrentQueries;
+            QueryThrottleTimeout = queryThrottleTimeout;
         }
         
         public string PluginId { get; }
@@ -109,6 +112,8 @@ namespace Akka.Persistence.Sql.Config
         public DataOptions? DataOptions { get; }
         
         public int MaxConcurrentQueries { get; }
+        
+        public TimeSpan QueryThrottleTimeout { get; }
 
         public ReadJournalConfig WithDataOptions(DataOptions dataOptions)
             => Copy(dataOptions: dataOptions);
@@ -133,7 +138,8 @@ namespace Akka.Persistence.Sql.Config
             IsolationLevel? readIsolationLevel = null,
             DataOptions? dataOptions = null,
             bool? useCloneConnection = null,
-            int? maxConcurrentQueries = null)
+            int? maxConcurrentQueries = null,
+            TimeSpan? queryThrottleTimeout = null)
             => new(
                 pluginId ?? PluginId,
                 connectionString ?? ConnectionString,
@@ -151,6 +157,7 @@ namespace Akka.Persistence.Sql.Config
                 readIsolationLevel ?? ReadIsolationLevel,
                 dataOptions ?? DataOptions,
                 useCloneConnection ?? UseCloneConnection,
-                maxConcurrentQueries ?? MaxConcurrentQueries);
+                maxConcurrentQueries ?? MaxConcurrentQueries,
+                queryThrottleTimeout ?? QueryThrottleTimeout);
     }
 }

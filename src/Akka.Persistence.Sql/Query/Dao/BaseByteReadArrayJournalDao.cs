@@ -45,7 +45,13 @@ namespace Akka.Persistence.Sql.Query.Dao
             : base(scheduler, materializer, connectionFactory, readJournalConfig, shutdownToken)
         {
             _readJournalConfig = readJournalConfig;
-            _dbStateHolder = new DbStateHolder(connectionFactory, ReadIsolationLevel, ShutdownToken, _readJournalConfig.PluginConfig.TagMode, queryPermitter);
+            _dbStateHolder = new DbStateHolder(
+                connectionFactory: connectionFactory,
+                isolationLevel: ReadIsolationLevel,
+                shutdownToken: ShutdownToken,
+                mode: _readJournalConfig.PluginConfig.TagMode,
+                queryPermitter: queryPermitter, 
+                queryThrottleTimeout: readJournalConfig.QueryThrottleTimeout);
             _deserializeFlow = serializer.DeserializeFlow();
         }
 
@@ -58,7 +64,6 @@ namespace Akka.Persistence.Sql.Query.Dao
                 static async input =>
                 {
                     return await input._dbStateHolder.ExecuteQueryWithTransactionAsync(
-                        input._dbStateHolder.QueryPermitter,
                         input.maxTake,
                         async (connection, token,take) =>
                         {
@@ -92,7 +97,6 @@ namespace Akka.Persistence.Sql.Query.Dao
                         {
                             //var tagValue = input.tag;
                             return await input._dbStateHolder.ExecuteQueryWithTransactionAsync(
-                                input._dbStateHolder.QueryPermitter,
                                 input.args,
                                 static async (connection, token, inVals) =>
                                 {
@@ -117,7 +121,6 @@ namespace Akka.Persistence.Sql.Query.Dao
                         static async input =>
                         {
                             return await input._dbStateHolder.ExecuteQueryWithTransactionAsync(
-                                input._dbStateHolder.QueryPermitter,
                                 input.args,
                                 static async (connection, token,txInput) =>
                                 {
@@ -152,7 +155,6 @@ namespace Akka.Persistence.Sql.Query.Dao
                         static async state =>
                         {
                             return await state._dbStateHolder.ExecuteQueryWithTransactionAsync(
-                                state._dbStateHolder.QueryPermitter,
                                 state,
                                 async (connection, token, txState) =>
                                 {
@@ -192,7 +194,6 @@ namespace Akka.Persistence.Sql.Query.Dao
                 async input =>
                 {
                     return await input._dbStateHolder.ExecuteQueryWithTransactionAsync(
-                        input._dbStateHolder.QueryPermitter,
                         new QueryArgs(input.offset, default, input.maxTake),
                         static async (connection, token, args) =>
                         {
@@ -243,22 +244,21 @@ namespace Akka.Persistence.Sql.Query.Dao
             return AsyncSource<JournalRow>.FromEnumerable(
                 new {_dbStateHolder , args=new QueryArgs(offset,maxOffset,maxTake) },
                 static async input => 
-                    await ExecuteEventQuery(input._dbStateHolder, input._dbStateHolder.Mode, input.args, input._dbStateHolder.QueryPermitter))
+                    await ExecuteEventQuery(input._dbStateHolder, input._dbStateHolder.Mode, input.args))
                 .Via(_deserializeFlow);
         }
         
         
-        internal static async Task<List<JournalRow>> ExecuteEventQuery(DbStateHolder stateHolder, TagMode tagMode, QueryArgs queryArgs, IActorRef queryPermitter)
+        internal static async Task<List<JournalRow>> ExecuteEventQuery(DbStateHolder stateHolder, TagMode tagMode, QueryArgs queryArgs)
         {
             return tagMode != TagMode.TagTable
-                ? await ExecuteEventQueryNonTagTable(stateHolder, queryArgs, queryPermitter)
-                : await ExecuteEventQueryTagTable(stateHolder, queryArgs, queryPermitter);
+                ? await ExecuteEventQueryNonTagTable(stateHolder, queryArgs)
+                : await ExecuteEventQueryTagTable(stateHolder, queryArgs);
         }
 
-        private static async Task<List<JournalRow>> ExecuteEventQueryTagTable(DbStateHolder stateHolder, QueryArgs queryArgs, IActorRef queryPermitter)
+        private static async Task<List<JournalRow>> ExecuteEventQueryTagTable(DbStateHolder stateHolder, QueryArgs queryArgs)
         {
             return await stateHolder.ExecuteQueryWithTransactionAsync(
-                queryPermitter,
                 queryArgs,
                 static async (connection, token, a) =>
                 {
@@ -275,10 +275,9 @@ namespace Akka.Persistence.Sql.Query.Dao
                 });
         }
 
-        private static async Task<List<JournalRow>> ExecuteEventQueryNonTagTable(DbStateHolder stateHolder, QueryArgs queryArgs, IActorRef queryPermitter)
+        private static async Task<List<JournalRow>> ExecuteEventQueryNonTagTable(DbStateHolder stateHolder, QueryArgs queryArgs)
         {
             return await stateHolder.ExecuteQueryWithTransactionAsync(
-                queryPermitter,
                 queryArgs,
                 static async (connection, token, a) =>
                 {
