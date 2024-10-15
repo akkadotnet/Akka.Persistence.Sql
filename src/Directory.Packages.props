@@ -62,7 +62,7 @@
   <!-- MySql dependencies -->
   <ItemGroup>
     <PackageVersion Include="Akka.Persistence.MySql" Version="1.5.13" />
-    <PackageVersion Include="MySql.Data" Version="8.4.0" />
+    <PackageVersion Include="MySql.Data" Version="9.1.0" />
   </ItemGroup>
   <!-- Test dependencies -->
   <ItemGroup>
