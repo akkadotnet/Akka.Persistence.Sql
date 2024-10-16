@@ -103,9 +103,9 @@ internal sealed class QueryThrottler : ReceiveActor
         if (_usedPermits < 0)
             throw new IllegalStateException("Permits must not be negative");
 
-        if (_pending.Count > 0)
+        var popRef = _pending.First?.Value;
+        if (popRef is not null)
         {
-            var popRef = _pending.First?.Value;
             _pending.RemoveFirst();
             QueryStartGranted(popRef);
         }
