@@ -29,6 +29,8 @@ namespace Akka.Persistence.Sql.Config
             AddShutdownHook = config.GetBoolean("add-shutdown-hook", true);
             DefaultSerializer = config.GetString("serializer");
             ReadIsolationLevel = config.GetIsolationLevel("read-isolation-level");
+            MaxConcurrentQueries = config.GetInt("max-concurrent-queries", 100);
+            QueryThrottleTimeout = config.GetTimeSpan("query-throttle-timeout", TimeSpan.FromSeconds(3));
             DataOptions = null;
 
             // We don't do any writes in a read journal
@@ -36,6 +38,7 @@ namespace Akka.Persistence.Sql.Config
         }
 
         private ReadJournalConfig(
+            string? pluginId,
             string connectionString,
             string providerName,
             string writePluginId,
@@ -50,8 +53,11 @@ namespace Akka.Persistence.Sql.Config
             IsolationLevel writeIsolationLevel,
             IsolationLevel readIsolationLevel,
             DataOptions? dataOptions,
-            bool useCloneConnection)
+            bool useCloneConnection,
+            int maxConcurrentQueries,
+            TimeSpan queryThrottleTimeout)
         {
+            PluginId = pluginId ?? SqlPersistence.QueryConfigPath;
             ConnectionString = connectionString;
             ProviderName = providerName;
             WritePluginId = writePluginId;
@@ -67,9 +73,11 @@ namespace Akka.Persistence.Sql.Config
             ReadIsolationLevel = readIsolationLevel;
             DataOptions = dataOptions;
             UseCloneConnection = useCloneConnection;
+            MaxConcurrentQueries = maxConcurrentQueries;
+            QueryThrottleTimeout = queryThrottleTimeout;
         }
         
-        public string? PluginId { get; }
+        public string PluginId { get; }
 
         public string WritePluginId { get; }
         
@@ -102,11 +110,19 @@ namespace Akka.Persistence.Sql.Config
         public IsolationLevel ReadIsolationLevel { get; }
 
         public DataOptions? DataOptions { get; }
+        
+        public int MaxConcurrentQueries { get; }
+        
+        public TimeSpan QueryThrottleTimeout { get; }
 
         public ReadJournalConfig WithDataOptions(DataOptions dataOptions)
             => Copy(dataOptions: dataOptions);
 
+        public ReadJournalConfig WithPluginId(string pluginId)
+            => Copy(pluginId: pluginId);
+
         private ReadJournalConfig Copy(
+            string? pluginId = null,
             string? connectionString = null,
             string? providerName = null,
             string? writePluginId = null,
@@ -121,8 +137,11 @@ namespace Akka.Persistence.Sql.Config
             IsolationLevel? writeIsolationLevel = null,
             IsolationLevel? readIsolationLevel = null,
             DataOptions? dataOptions = null,
-            bool? useCloneConnection = null)
+            bool? useCloneConnection = null,
+            int? maxConcurrentQueries = null,
+            TimeSpan? queryThrottleTimeout = null)
             => new(
+                pluginId ?? PluginId,
                 connectionString ?? ConnectionString,
                 providerName ?? ProviderName,
                 writePluginId ?? WritePluginId,
@@ -137,6 +156,8 @@ namespace Akka.Persistence.Sql.Config
                 writeIsolationLevel ?? WriteIsolationLevel,
                 readIsolationLevel ?? ReadIsolationLevel,
                 dataOptions ?? DataOptions,
-                useCloneConnection ?? UseCloneConnection);
+                useCloneConnection ?? UseCloneConnection,
+                maxConcurrentQueries ?? MaxConcurrentQueries,
+                queryThrottleTimeout ?? QueryThrottleTimeout);
     }
 }

@@ -140,6 +140,23 @@ namespace Akka.Persistence.Sql.Hosting
         ///     </para>
         /// </summary>
         public DataOptions? DataOptions { get; set; }
+        
+        /// <summary>
+        ///     <para>
+        ///         Determines how many queries are allowed to run in parallel at any given time
+        ///     </para>
+        ///     <b>Default</b>: 100
+        /// </summary>
+        public int? MaxConcurrentQueries { get; set; }
+        
+        /// <summary>
+        ///     <para>
+        ///         How long should a query request stays in queue when it is being throttled before
+        ///         signaling an operation timeout
+        ///     </para>
+        ///     <b>Default</b>: 3 seconds
+        /// </summary>
+        public TimeSpan? QueryThrottleTimeout { get; set; }
 
         protected override Configuration.Config InternalDefaultConfig => Default;
 
@@ -223,6 +240,12 @@ namespace Akka.Persistence.Sql.Hosting
 
             if (QueryRefreshInterval is not null)
                 sb.AppendLine($"refresh-interval = {QueryRefreshInterval.ToHocon()}");
+            
+            if(MaxConcurrentQueries is not null)
+                sb.AppendLine($"max-concurrent-queries = {MaxConcurrentQueries.ToHocon()}");
+            
+            if(QueryThrottleTimeout is not null)
+                sb.AppendLine($"query-throttle-timeout = {QueryThrottleTimeout.Value.ToHocon()}");
             
             sb.AppendLine($"serializer = {Serializer.ToHocon()}");
             
