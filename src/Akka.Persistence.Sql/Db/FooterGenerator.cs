@@ -31,7 +31,19 @@ IF NOT EXISTS (
         object_id = OBJECT_ID('{journalFullTableName}') AND
         name = 'UQ_{tableName}'
 )
-ALTER TABLE {journalFullTableName} ADD CONSTRAINT UQ_{tableName} UNIQUE ({columns.PersistenceId}, {columns.SequenceNumber});
+BEGIN TRY
+    ALTER TABLE {journalFullTableName} ADD CONSTRAINT UQ_{tableName} UNIQUE ({columns.PersistenceId}, {columns.SequenceNumber});
+END TRY
+BEGIN CATCH
+    IF ERROR_NUMBER() = 2714 -- Error code for 'constraint already exists'
+    BEGIN
+        PRINT 'Constraint UQ_{tableName} already exists, skipping.';
+    END
+    ELSE
+    BEGIN
+        THROW;
+    END
+END CATCH;
 
 IF NOT EXISTS (
     SELECT 1
@@ -40,7 +52,19 @@ IF NOT EXISTS (
         object_id = OBJECT_ID('{journalFullTableName}') AND
         name = 'IX_{tableName}_{columns.SequenceNumber}'
 )
-CREATE INDEX IX_{tableName}_{columns.SequenceNumber} ON {journalFullTableName}({columns.SequenceNumber});
+BEGIN TRY
+    CREATE INDEX IX_{tableName}_{columns.SequenceNumber} ON {journalFullTableName}({columns.SequenceNumber});
+END TRY
+BEGIN CATCH
+    IF ERROR_NUMBER() = 1913 -- Error code for 'index already exists'
+    BEGIN
+        PRINT 'Index IX_{tableName}_{columns.Created} already exists, skipping.';
+    END
+    ELSE
+    BEGIN
+        THROW;
+    END
+END CATCH;
 
 IF NOT EXISTS (
     SELECT 1
@@ -49,7 +73,20 @@ IF NOT EXISTS (
         object_id = OBJECT_ID('{journalFullTableName}') AND
         name = 'IX_{tableName}_{columns.Created}'
 )
-CREATE INDEX IX_{tableName}_{columns.Created} ON {journalFullTableName}({columns.Created});";
+BEGIN TRY
+    CREATE INDEX IX_{tableName}_{columns.Created} ON {journalFullTableName}({columns.Created});
+END TRY
+BEGIN CATCH
+    IF ERROR_NUMBER() = 1913 -- Error code for 'index already exists'
+    BEGIN
+        PRINT 'Index IX_{tableName}_{columns.Created} already exists, skipping.';
+    END
+    ELSE
+    BEGIN
+        THROW;
+    END
+END CATCH;
+";
             #endregion
 
             #region MySql
@@ -159,6 +196,7 @@ CREATE INDEX IF NOT EXISTS {tableName}_{columns.SequenceNumber}_idx ON {journalF
             #region SqlServer
             if (config.ProviderName.StartsWith(ProviderName.SqlServer))
                 return $@";
+
 IF NOT EXISTS (
     SELECT 1
     FROM sys.indexes
@@ -166,7 +204,19 @@ IF NOT EXISTS (
         object_id = OBJECT_ID('{tagFullTableName}') AND
         name = 'IX_{tableName}_{columns.PersistenceId}_{columns.SequenceNumber}'
 )
-CREATE INDEX IX_{tableName}_{columns.PersistenceId}_{columns.SequenceNumber} ON {tagFullTableName} ({columns.PersistenceId}, {columns.SequenceNumber});
+BEGIN TRY
+    CREATE INDEX IX_{tableName}_{columns.PersistenceId}_{columns.SequenceNumber} ON {tagFullTableName} ({columns.PersistenceId}, {columns.SequenceNumber});
+END TRY
+BEGIN CATCH
+    IF ERROR_NUMBER() = 1913 -- Error code for 'index already exists'
+    BEGIN
+        PRINT 'Index IX_{tableName}_{columns.PersistenceId}_{columns.SequenceNumber} already exists, skipping.';
+    END
+    ELSE
+    BEGIN
+        THROW;
+    END
+END CATCH;
 
 IF NOT EXISTS (
     SELECT 1
@@ -175,7 +225,19 @@ IF NOT EXISTS (
         object_id = OBJECT_ID('{tagFullTableName}') AND
         name = 'IX_{tableName}_{columns.Tag}'
 )
-CREATE INDEX IX_{tableName}_{columns.Tag} ON {tagFullTableName} ({columns.Tag});
+BEGIN TRY
+    CREATE INDEX IX_{tableName}_{columns.Tag} ON {tagFullTableName} ({columns.Tag});
+END TRY
+BEGIN CATCH
+    IF ERROR_NUMBER() = 1913 -- Error code for 'index already exists'
+    BEGIN
+        PRINT 'Index IX_{tableName}_{columns.Tag} already exists, skipping.';
+    END
+    ELSE
+    BEGIN
+        THROW;
+    END
+END CATCH;
 ";
             #endregion
 
@@ -261,6 +323,7 @@ CREATE INDEX IF NOT EXISTS {tableName}_{columns.Tag}_idx ON {tagFullTableName} (
             #region SqlServer
             if (config.ProviderName.StartsWith(ProviderName.SqlServer))
                 return @$";
+
 IF NOT EXISTS (
     SELECT 1
     FROM sys.indexes
@@ -268,7 +331,19 @@ IF NOT EXISTS (
         object_id = OBJECT_ID('{fullTableName}') AND
         name = 'IX_{tableName}_{columns.SequenceNumber}'
 )
-CREATE INDEX IX_{tableName}_{columns.SequenceNumber} ON {fullTableName}({columns.SequenceNumber});
+BEGIN TRY
+    CREATE INDEX IX_{tableName}_{columns.SequenceNumber} ON {fullTableName}({columns.SequenceNumber});
+END TRY
+BEGIN CATCH
+    IF ERROR_NUMBER() = 1913 -- Error code for 'index already exists'
+    BEGIN
+        PRINT 'Index IX_{tableName}_{columns.SequenceNumber} already exists, skipping.';
+    END
+    ELSE
+    BEGIN
+        THROW;
+    END
+END CATCH;
 
 IF NOT EXISTS (
     SELECT 1
@@ -277,7 +352,20 @@ IF NOT EXISTS (
         object_id = OBJECT_ID('{fullTableName}') AND
         name = 'IX_{tableName}_{columns.Created}'
 )
-CREATE INDEX IX_{tableName}_{columns.Created} ON {fullTableName}({columns.Created});";
+BEGIN TRY
+    CREATE INDEX IX_{tableName}_{columns.Created} ON {fullTableName}({columns.Created});
+END TRY
+BEGIN CATCH
+    IF ERROR_NUMBER() = 1913 -- Error code for 'index already exists'
+    BEGIN
+        PRINT 'Index IX_{tableName}_{columns.Created} already exists, skipping.';
+    END
+    ELSE
+    BEGIN
+        THROW;
+    END
+END CATCH;
+";
             #endregion
 
             #region MySql
