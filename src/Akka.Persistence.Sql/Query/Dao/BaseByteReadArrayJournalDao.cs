@@ -12,6 +12,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
+using Akka.Event;
 using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Db;
 using Akka.Persistence.Sql.Extensions;
@@ -39,11 +40,18 @@ namespace Akka.Persistence.Sql.Query.Dao
             AkkaPersistenceDataConnectionFactory connectionFactory,
             ReadJournalConfig readJournalConfig,
             FlowPersistentRepresentationSerializer<JournalRow> serializer,
+            IActorRef queryPermitter,
             CancellationToken shutdownToken)
             : base(scheduler, materializer, connectionFactory, readJournalConfig, shutdownToken)
         {
             _readJournalConfig = readJournalConfig;
-            _dbStateHolder = new DbStateHolder(connectionFactory, ReadIsolationLevel, ShutdownToken, _readJournalConfig.PluginConfig.TagMode);
+            _dbStateHolder = new DbStateHolder(
+                connectionFactory: connectionFactory,
+                isolationLevel: ReadIsolationLevel,
+                shutdownToken: ShutdownToken,
+                mode: _readJournalConfig.PluginConfig.TagMode,
+                queryPermitter: queryPermitter, 
+                queryThrottleTimeout: readJournalConfig.QueryThrottleTimeout);
             _deserializeFlow = serializer.DeserializeFlow();
         }
 
@@ -52,10 +60,10 @@ namespace Akka.Persistence.Sql.Query.Dao
             var maxTake = MaxTake(max);
 
             return AsyncSource<string>.FromEnumerable(
-                new { _dbStateHolder, maxTake },
+                new { _dbStateHolder, maxTake},
                 static async input =>
                 {
-                    return await input._dbStateHolder.ExecuteWithTransactionAsync(
+                    return await input._dbStateHolder.ExecuteQueryWithTransactionAsync(
                         input.maxTake,
                         async (connection, token,take) =>
                         {
@@ -88,7 +96,7 @@ namespace Akka.Persistence.Sql.Query.Dao
                         static async input =>
                         {
                             //var tagValue = input.tag;
-                            return await input._dbStateHolder.ExecuteWithTransactionAsync(
+                            return await input._dbStateHolder.ExecuteQueryWithTransactionAsync(
                                 input.args,
                                 static async (connection, token, inVals) =>
                                 {
@@ -112,7 +120,7 @@ namespace Akka.Persistence.Sql.Query.Dao
                         new { _dbStateHolder, args= new QueryArgs(offset,maxOffset,maxTake,tag)},
                         static async input =>
                         {
-                            return await input._dbStateHolder.ExecuteWithTransactionAsync(
+                            return await input._dbStateHolder.ExecuteQueryWithTransactionAsync(
                                 input.args,
                                 static async (connection, token,txInput) =>
                                 {
@@ -146,7 +154,7 @@ namespace Akka.Persistence.Sql.Query.Dao
                         new {  persistenceId, fromSequenceNr, toSequenceNr, toTake = MaxTake(max), _dbStateHolder },
                         static async state =>
                         {
-                            return await state._dbStateHolder.ExecuteWithTransactionAsync(
+                            return await state._dbStateHolder.ExecuteQueryWithTransactionAsync(
                                 state,
                                 async (connection, token, txState) =>
                                 {
@@ -185,7 +193,7 @@ namespace Akka.Persistence.Sql.Query.Dao
                 new { maxTake = MaxTake(limit), offset, _dbStateHolder },
                 async input =>
                 {
-                    return await input._dbStateHolder.ExecuteWithTransactionAsync(
+                    return await input._dbStateHolder.ExecuteQueryWithTransactionAsync(
                         new QueryArgs(input.offset, default, input.maxTake),
                         static async (connection, token, args) =>
                         {
@@ -204,9 +212,8 @@ namespace Akka.Persistence.Sql.Query.Dao
 
         public async Task<long> MaxJournalSequenceAsync()
         {
-            return await ConnectionFactory.ExecuteWithTransactionAsync(
-                ReadIsolationLevel,
-                ShutdownToken,
+            return await ConnectionFactory.ExecuteQueryWithTransactionAsync(
+                _dbStateHolder,
                 async (connection, token) =>
                 {
                     // persistence-jdbc does not filter deleted here.
@@ -234,11 +241,9 @@ namespace Akka.Persistence.Sql.Query.Dao
 
             return AsyncSource<JournalRow>.FromEnumerable(
                 new {_dbStateHolder , args=new QueryArgs(offset,maxOffset,maxTake) },
-                static async input =>
-                {
-                    return await ExecuteEventQuery(input._dbStateHolder, input._dbStateHolder.Mode, input.args);
-                }
-            ).Via(_deserializeFlow);
+                static async input => 
+                    await ExecuteEventQuery(input._dbStateHolder, input._dbStateHolder.Mode, input.args))
+                .Via(_deserializeFlow);
         }
         
         
@@ -251,7 +256,7 @@ namespace Akka.Persistence.Sql.Query.Dao
 
         private static async Task<List<JournalRow>> ExecuteEventQueryTagTable(DbStateHolder stateHolder, QueryArgs queryArgs)
         {
-            return await stateHolder.ExecuteWithTransactionAsync(
+            return await stateHolder.ExecuteQueryWithTransactionAsync(
                 queryArgs,
                 static async (connection, token, a) =>
                 {
@@ -270,7 +275,7 @@ namespace Akka.Persistence.Sql.Query.Dao
 
         private static async Task<List<JournalRow>> ExecuteEventQueryNonTagTable(DbStateHolder stateHolder, QueryArgs queryArgs)
         {
-            return await stateHolder.ExecuteWithTransactionAsync(
+            return await stateHolder.ExecuteQueryWithTransactionAsync(
                 queryArgs,
                 static async (connection, token, a) =>
                 {

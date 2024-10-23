@@ -7,3 +7,4 @@
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Akka.Persistence.Sql.Tests.Common")]
+[assembly: InternalsVisibleTo("Akka.Persistence.Sql.Tests")]

@@ -6,6 +6,7 @@
 
 using System.Threading;
 using Akka.Actor;
+using Akka.Event;
 using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Db;
 using Akka.Persistence.Sql.Journal.Types;
@@ -22,7 +23,8 @@ namespace Akka.Persistence.Sql.Query.Dao
             AkkaPersistenceDataConnectionFactory connectionFactory,
             ReadJournalConfig readJournalConfig,
             FlowPersistentRepresentationSerializer<JournalRow> serializer,
+            IActorRef queryPermitter,
             CancellationToken token)
-            : base(scheduler, materializer, connectionFactory, readJournalConfig, serializer, token) { }
+            : base(scheduler, materializer, connectionFactory, readJournalConfig, serializer, queryPermitter, token) { }
     }
 }
