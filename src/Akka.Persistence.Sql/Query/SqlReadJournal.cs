@@ -219,13 +219,14 @@ namespace Akka.Persistence.Sql.Query
                             timestamp: r.representation.Timestamp, 
                             tags: r.tags));
 
-        private Source<EventEnvelope, NotUsed> CurrentJournalEvents(long offset, long max, MaxOrderingId latestOrdering)
+        private Source<EventEnvelope, Task<long>> CurrentJournalEvents(long offset, long max, MaxOrderingId latestOrdering)
         {
             if (latestOrdering.Max < offset)
-                return Source.Empty<EventEnvelope>();
+                return Source.Empty<EventEnvelope>().MapMaterializedValue(_ => Task.FromResult(0L));
 
             return _readJournalDao
                 .Events(offset, latestOrdering.Max, max)
+                .AlsoToMaterialized(Sink.Aggregate(0L, (count, _) => count + 1), Keep.Right)
                 .SelectAsync(1, r => Task.FromResult(r.Get()))
                 .SelectMany(
                     a =>
@@ -366,10 +367,15 @@ namespace Akka.Persistence.Sql.Query
                                     GetMaxOrderingId.Instance,
                                     askTimeout);
 
-                            var xs = await CurrentJournalEvents(uf.offset, batchSize, queryUntil)
-                                .RunWith(Sink.Seq<EventEnvelope>(), _mat);
+                            var (xsTask, readCountTask) = CurrentJournalEvents(uf.offset, batchSize, queryUntil)
+                                .ToMaterialized(Sink.Seq<EventEnvelope>(), Keep.Both)
+                                .Run(_mat);
 
-                            var hasMoreEvents = xs.Count == batchSize;
+                            await Task.WhenAll(xsTask, readCountTask);
+                            var xs = xsTask.Result;
+                            var readCount = readCountTask.Result;
+
+                            var hasMoreEvents = readCount == batchSize;
 
                             var nextControl = FlowControlEnum.Unknown;
                             if (terminateAfterOffset.HasValue)
