@@ -226,7 +226,7 @@ namespace Akka.Persistence.Sql.Query
 
             return _readJournalDao
                 .Events(offset, latestOrdering.Max, max)
-                .AlsoToMaterialized(Sink.Aggregate(0L, (count, _) => count + 1), Keep.Right)
+                .AlsoToMaterialized(Sink.Aggregate<Try<(IPersistentRepresentation, string[], long)>, long>(0L, (readCount, _) => readCount + 1), Keep.Right)
                 .SelectAsync(1, r => Task.FromResult(r.Get()))
                 .SelectMany(
                     a =>
@@ -367,15 +367,14 @@ namespace Akka.Persistence.Sql.Query
                                     GetMaxOrderingId.Instance,
                                     askTimeout);
 
-                            var (xsTask, readCountTask) = CurrentJournalEvents(uf.offset, batchSize, queryUntil)
+                            var readBatch = CurrentJournalEvents(uf.offset, batchSize, queryUntil)
                                 .ToMaterialized(Sink.Seq<EventEnvelope>(), Keep.Both)
                                 .Run(_mat);
 
-                            await Task.WhenAll(xsTask, readCountTask);
-                            var xs = xsTask.Result;
-                            var readCount = readCountTask.Result;
+                            var rawReadCount = await readBatch.Item1;
+                            var xs = await readBatch.Item2;
 
-                            var hasMoreEvents = readCount == batchSize;
+                            var hasMoreEvents = rawReadCount == batchSize;
 
                             var nextControl = FlowControlEnum.Unknown;
                             if (terminateAfterOffset.HasValue)
