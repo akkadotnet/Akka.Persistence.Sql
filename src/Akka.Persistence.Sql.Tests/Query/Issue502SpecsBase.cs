@@ -32,7 +32,7 @@ using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Tests.Query
 {
-    public class Issue502SpecsBase<T> : PluginSpec where T : ITestContainer
+    public abstract class Issue502SpecsBase<T> : PluginSpec where T : ITestContainer
     {
         private readonly TestProbe _senderProbe;
         private readonly ActorMaterializer _materializer;
