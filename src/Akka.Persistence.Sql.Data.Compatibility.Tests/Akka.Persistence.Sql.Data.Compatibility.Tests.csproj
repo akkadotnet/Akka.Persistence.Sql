@@ -23,6 +23,7 @@
 
     <PackageReference Include="System.Data.SQLite" />
 
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio">

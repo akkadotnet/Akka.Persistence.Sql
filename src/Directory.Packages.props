@@ -6,6 +6,7 @@
     <FluentMigratorVersion>5.2.0</FluentMigratorVersion>
     <SqliteVersion>1.0.118</SqliteVersion>
     <MicrosoftSqliteVersion>8.0.7</MicrosoftSqliteVersion>
+    <MicrosoftExtensionsVersion>[8.0.0, )</MicrosoftExtensionsVersion>
   </PropertyGroup>
   <!-- Akka dependencies -->
   <ItemGroup>
@@ -75,7 +76,8 @@
     <PackageVersion Include="xunit" Version="2.8.1" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="$(MicrosoftExtensionsVersion)" />
+    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="$(MicrosoftExtensionsVersion)" />
   </ItemGroup>
   <!-- SourceLink support for all Akka.NET projects -->
   <ItemGroup>
