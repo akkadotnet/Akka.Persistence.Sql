@@ -1,3 +1,11 @@
+#### 1.5.35 January 20th 2025 ####
+
+* [Bump Akka to 1.5.35](https://github.com/akkadotnet/akka.net/releases/tag/1.5.35)
+* [Bump Akka.Hosting to v1.5.35](https://github.com/akkadotnet/Akka.Hosting/releases/tag/1.5.35)
+* [Implement query throttling](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/485)
+* [Fix SqlServer table initialization race condition](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/489)
+* [Fix query batch size detection failure](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/505)
+
 #### 1.5.30 October 4th 2024 ####
 
 * [Bump Akka to 1.5.30](https://github.com/akkadotnet/akka.net/releases/tag/1.5.30)
