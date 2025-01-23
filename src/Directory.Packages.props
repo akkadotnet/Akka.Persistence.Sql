@@ -77,7 +77,6 @@
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="$(MicrosoftExtensionsVersion)" />
-    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="$(MicrosoftExtensionsVersion)" />
   </ItemGroup>
   <!-- SourceLink support for all Akka.NET projects -->
   <ItemGroup>
