@@ -6,7 +6,7 @@
     <FluentMigratorVersion>5.2.0</FluentMigratorVersion>
     <SqliteVersion>1.0.118</SqliteVersion>
     <MicrosoftSqliteVersion>8.0.7</MicrosoftSqliteVersion>
-    <MicrosoftExtensionsVersion>[8.0.0, )</MicrosoftExtensionsVersion>
+    <MicrosoftExtensionsVersion>[6.0.0, )</MicrosoftExtensionsVersion>
   </PropertyGroup>
   <!-- Akka dependencies -->
   <ItemGroup>
