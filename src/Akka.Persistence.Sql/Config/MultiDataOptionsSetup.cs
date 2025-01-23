@@ -17,7 +17,7 @@ namespace Akka.Persistence.Sql.Config
         public void AddDataOptions(string pluginId, DataOptions dataOptions)
             => _options[pluginId] = dataOptions;
 
-        public bool TryGetDataOptionsFor(string pluginId, out DataOptions dataOptions)
+        public bool TryGetDataOptionsFor(string pluginId, out DataOptions? dataOptions)
             => _options.TryGetValue(pluginId, out dataOptions);
 
         public void RemoveDataOptionsFor(string pluginId)

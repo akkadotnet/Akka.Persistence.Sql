@@ -137,7 +137,7 @@ akka.persistence {{
 }}")
                 .WithFallback(SqlPersistence.DefaultConfiguration)
                 .WithFallback(ClusterSharding.DefaultConfig())
-                .WithFallback(ClusterSingletonManager.DefaultConfig());
+                .WithFallback(ClusterSingleton.DefaultConfig());
 
         protected virtual Task InitializeTestAsync()
             => Task.CompletedTask;

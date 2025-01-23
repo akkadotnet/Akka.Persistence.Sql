@@ -48,7 +48,7 @@ namespace Akka.Persistence.Sql.Config
         // ReSharper disable once InconsistentNaming
         public TagTableConfig TagTable { get; }
 
-        public bool Equals(JournalTableConfig other)
+        public bool Equals(JournalTableConfig? other)
         {
             if (ReferenceEquals(null, other))
                 return false;

@@ -43,7 +43,7 @@ namespace Akka.Persistence.Sql.Snapshot
             {
                 var multiSetup = setup.Get<MultiDataOptionsSetup>();
                 if (multiSetup.HasValue && multiSetup.Value.TryGetDataOptionsFor(_settings.PluginId, out var dataOptions))
-                    _settings = _settings.WithDataOptions(dataOptions);
+                    _settings = _settings.WithDataOptions(dataOptions!);
             }
 
             _dao = new ByteArraySnapshotDao(
@@ -76,7 +76,6 @@ namespace Akka.Persistence.Sql.Snapshot
                     _log.Error(msg.Cause, "Error during {0} initialization", Self);
                     // trigger a restart so we have some hope of succeeding in the future even if initialization failed
                     throw new ApplicationException("Failed to initialize SQL SnapshotStore.", msg.Cause);
-                    return true;
 
                 default:
                     Stash.Stash();

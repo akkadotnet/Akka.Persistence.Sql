@@ -71,7 +71,7 @@ namespace Akka.Persistence.Sql.Journal
             {
                 var multiSetup = setup.Get<MultiDataOptionsSetup>();
                 if (multiSetup.HasValue && multiSetup.Value.TryGetDataOptionsFor(_journalConfig.PluginId, out var dataOptions))
-                    _journalConfig = _journalConfig.WithDataOptions(dataOptions);
+                    _journalConfig = _journalConfig.WithDataOptions(dataOptions!);
             }
 
             _useWriterUuid = _journalConfig.TableConfig.EventJournalTable.UseWriterUuidColumn;

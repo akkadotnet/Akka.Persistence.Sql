@@ -64,7 +64,7 @@ namespace Akka.Persistence.Sql.Query
             
             var multiSetup = setup.Get<MultiDataOptionsSetup>();
             if (multiSetup.HasValue && multiSetup.Value.TryGetDataOptionsFor(_readJournalConfig.PluginId, out var dataOptions))
-                _readJournalConfig = _readJournalConfig.WithDataOptions(dataOptions);
+                _readJournalConfig = _readJournalConfig.WithDataOptions(dataOptions!);
 
             _eventAdapters = Persistence.Instance.Apply(system).AdaptersFor(_readJournalConfig.WritePluginId);
             

@@ -24,7 +24,7 @@ namespace Akka.Persistence.Sql.Config
 
         public JournalTableColumnNames ColumnNames { get; }
 
-        public bool Equals(EventJournalTableConfig other)
+        public bool Equals(EventJournalTableConfig? other)
         {
             if (ReferenceEquals(null, other))
                 return false;
