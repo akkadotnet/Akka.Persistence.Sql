@@ -14,6 +14,7 @@
 
   <PropertyGroup>
     <NetStandardLibVersion>netstandard2.0</NetStandardLibVersion>
+    <NetLibVersion>net6.0</NetLibVersion>
     <NetCoreTestVersion>net8.0</NetCoreTestVersion>
   </PropertyGroup>
 

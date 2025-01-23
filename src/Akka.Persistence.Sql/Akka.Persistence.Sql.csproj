@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Description>An Akka Persistence Module for SQL Databases using Linq2Db.</Description>
-    <TargetFramework>$(NetStandardLibVersion)</TargetFramework>
+    <TargetFrameworks>$(NetStandardLibVersion);$(NetLibVersion)</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
