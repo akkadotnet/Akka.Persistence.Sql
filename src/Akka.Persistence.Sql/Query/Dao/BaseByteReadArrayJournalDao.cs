@@ -323,7 +323,7 @@ namespace Akka.Persistence.Sql.Query.Dao
             var result = new List<JournalRow>();
             foreach (var rowAndTags in rowsAndTags)
             {
-                rowAndTags.row.TagArray = rowAndTags.tags?.Split([';'], StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+                rowAndTags.row.TagArray = rowAndTags.tags.Split(new []{';'}, StringSplitOptions.RemoveEmptyEntries);
                 result.Add(rowAndTags.row);
             }
 
