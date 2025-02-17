@@ -93,9 +93,12 @@ internal sealed class GetWatchCount
 /// <remarks>
 /// Works almost identically to the RecoveryPermitter built into Akka.Persistence.
 /// 
-/// NOTE: Since this permitter works with Ask and we can't death watch an Ask temp
-///       actor, there is a possibility that a permit requester failed to return
-///       the request permit.
+/// NOTE: Since this permitter works with Ask operation from outside an actor,
+///       we can not rely on the actor termination as a signal for permit revocation.
+/// 
+///       A query operation needs to be executed within the context of the permit
+///       and an Ask temporary actor will always terminate before the actual
+///       permits are used, making the Terminated message useless for this use case.
 /// 
 ///       ALWAYS USE A TRY...FINALLY BLOCK WHEN USING ASK AND RETURN THE PERMIT IN
 ///       THE FINALLY BLOCK
@@ -177,6 +180,13 @@ internal sealed class QueryThrottler : ReceiveActor
     {
         _usedPermits--;
 
+        // _usedPermits can go negative if a piece of code returns
+        // granted permits multiple times. This is not a critical
+        // error, the throttler should not stop working because of this.
+        //
+        // However, if this does trip, we will need to look into
+        // the query codes and figure out which code is over returning
+        // permits.
         if (_usedPermits < 0)
         {
             _log.Warning("Permits must not be negative");
