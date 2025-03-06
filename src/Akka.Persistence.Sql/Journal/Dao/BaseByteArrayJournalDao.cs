@@ -20,6 +20,7 @@ using Akka.Persistence.Sql.Journal.Types;
 using Akka.Persistence.Sql.Serialization;
 using Akka.Streams;
 using Akka.Streams.Dsl;
+using Akka.Streams.Supervision;
 using LanguageExt;
 using LinqToDB;
 using LinqToDB.Data;
@@ -86,6 +87,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
                         return NotUsed.Instance;
                     })
+                .AddAttributes(ActorAttributes.CreateSupervisionStrategy(Deciders.RestartingDecider))
                 .ToMaterialized(
                     Sink.Ignore<NotUsed>(),
                     Keep.Left).Run(Materializer);
