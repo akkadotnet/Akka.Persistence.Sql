@@ -1,4 +1,4 @@
-#### 1.5.40 March 19th 2025 ####
+#### 1.5.40 March 24th 2025 ####
 
 Akka.Persistence.Sql 1.5.40 contains a mission-critical bugfix from Akka 1.5.40 that fixes the [`SelectAsync` `NullReferenceException` issue](https://github.com/akkadotnet/Akka.Persistence.Sql/issues/498) 
 
