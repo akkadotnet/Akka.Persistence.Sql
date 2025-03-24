@@ -44,7 +44,7 @@
   </ItemGroup>
   <!-- Sqlite dependencies -->
   <ItemGroup>
-    <PackageVersion Include="Akka.Persistence.Sqlite" Version="$(AkkaVersion)" />
+    <PackageVersion Include="Akka.Persistence.Sqlite" Version="1.5.39" />
     <PackageVersion Include="System.Data.SQLite" Version="$(SqliteVersion)" />
     <PackageVersion Include="System.Data.SQLite.Core" Version="$(SqliteVersion)" />
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="$(MicrosoftSqliteVersion)" />
