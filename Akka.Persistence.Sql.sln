@@ -85,6 +85,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{FD34
 		build-system\scripts\getReleaseNotes.ps1 = build-system\scripts\getReleaseNotes.ps1
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TransactionTest", "src\Examples\TransactionTest\TransactionTest.csproj", "{D105AF9E-AFF6-4326-AEA2-E9AD8A6B5E8E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -139,6 +141,10 @@ Global
 		{043A8917-5931-40FC-A093-21BB0AB56875}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{043A8917-5931-40FC-A093-21BB0AB56875}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{043A8917-5931-40FC-A093-21BB0AB56875}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D105AF9E-AFF6-4326-AEA2-E9AD8A6B5E8E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D105AF9E-AFF6-4326-AEA2-E9AD8A6B5E8E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D105AF9E-AFF6-4326-AEA2-E9AD8A6B5E8E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D105AF9E-AFF6-4326-AEA2-E9AD8A6B5E8E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -155,6 +161,7 @@ Global
 		{043A8917-5931-40FC-A093-21BB0AB56875} = {42F8143A-03CA-41DA-B24D-33193ABB252C}
 		{7537908B-6A42-4E34-889F-6004A97D4987} = {20C26B2D-59EA-421C-9F64-BFFCE3D96260}
 		{FD345711-9A7C-4168-8766-FCD8115C82E0} = {7537908B-6A42-4E34-889F-6004A97D4987}
+		{D105AF9E-AFF6-4326-AEA2-E9AD8A6B5E8E} = {42F8143A-03CA-41DA-B24D-33193ABB252C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B99E6BB8-642A-4A68-86DF-69567CBA700A}
