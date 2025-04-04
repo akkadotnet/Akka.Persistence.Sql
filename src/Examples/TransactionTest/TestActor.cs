@@ -16,6 +16,18 @@ public sealed class SaveEvent
     private SaveEvent() { }
 }
 
+public sealed class Initialize
+{
+    public static readonly Initialize Instance = new ();
+    private Initialize() { }
+}
+
+public sealed class Initialized
+{
+    public static readonly Initialized Instance = new ();
+    private Initialized() { }
+}
+
 public class TestActor: ReceivePersistentActor
 {
     private readonly IHostApplicationLifetime _applicationLifetime;
@@ -31,8 +43,7 @@ public class TestActor: ReceivePersistentActor
         
         Recover<SnapshotOffer>(offer => _payload = (byte[])offer.Snapshot);
         Recover<byte[]>(bytes => _payload = bytes);
-        Recover<RecoveryCompleted>(
-            _ =>
+        Recover<RecoveryCompleted>(_ =>
             {
                 log.Info("Recovery Completed");
                 if (_payload == null)
@@ -45,13 +56,14 @@ public class TestActor: ReceivePersistentActor
                     }
                 }
             });
+        Command<Initialize>(_ => Sender.Tell(Initialized.Instance, Self));
         Command<SaveEvent>(_ =>
             {
                 Persist(_payload,
                     _ =>
                     {
                         _currentIndex++;
-                        if (_currentIndex % 5 == 0)
+                        if (_currentIndex % 10 == 0)
                         {
                             SaveSnapshot(_payload);
                         }
@@ -61,6 +73,12 @@ public class TestActor: ReceivePersistentActor
             evt =>
             {
                 DeleteMessages(evt.Metadata.SequenceNr - 1);
+            });
+        Command<SaveSnapshotFailure>(
+            fail =>
+            {
+                log.Error(fail.Cause, "Failed to save snapshot");
+                _applicationLifetime.StopApplication();
             });
         Command<DeleteMessagesSuccess>(
             _ =>
@@ -76,4 +94,17 @@ public class TestActor: ReceivePersistentActor
     }
     
     public override string PersistenceId { get; }
+
+    protected override void OnPersistFailure(Exception cause, object @event, long sequenceNr)
+    {
+        base.OnPersistFailure(cause, @event, sequenceNr);
+        if(cause is not TimeoutException)
+            _applicationLifetime.StopApplication();
+    }
+
+    protected override void OnPersistRejected(Exception cause, object @event, long sequenceNr)
+    {
+        base.OnPersistRejected(cause, @event, sequenceNr);
+        _applicationLifetime.StopApplication();
+    }
 }
