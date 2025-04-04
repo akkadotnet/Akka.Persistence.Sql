@@ -12,12 +12,13 @@ namespace TransactionTest;
 public class StressTestService: IHostedService
 {
     private const int TotalActors = 500;
-    private const int LargePayloadActorCount = 100;
-    private const int LargePayloadSize = 5 * 1024 * 1024;
-    private const int SmallPayloadSize = 5 * 1024;
+    private const int LargePayloadActorCount = 30;
+    private const int LargePayloadSize = 4 * 1024 * 1024;
+    private const int SmallPayloadSize = 1024;
+    private const int PersistBurstSize = 20;
     
     private readonly Random _random = new();
-    private readonly List<IActorRef> _actors = new();
+    private readonly IActorRef?[] _actors = new IActorRef[TotalActors];
     private readonly IHostApplicationLifetime _applicationLifetime;
     private readonly ActorSystem _system;
     private CancellationTokenSource? _shutdownCts;
@@ -32,18 +33,7 @@ public class StressTestService: IHostedService
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        foreach (var i in Enumerable.Range(0, TotalActors))
-        {
-            var actor = i < LargePayloadActorCount 
-                ? _system.ActorOf(Props.Create(() => new TestActor($"p-{i}", LargePayloadSize, _applicationLifetime)), $"p-{i}") 
-                : _system.ActorOf(Props.Create(() => new TestActor($"p-{i}", SmallPayloadSize, _applicationLifetime)), $"p-{i}");
-            _actors.Add(actor);
-        }
-
         _shutdownCts = new CancellationTokenSource();
-        
-        await Task.Delay(TimeSpan.FromSeconds(10), _shutdownCts.Token);
-        
         _timer = new PeriodicTimer(TimeSpan.FromMilliseconds(100));
         _timerTask = Task.Run(
             async () =>
@@ -52,8 +42,20 @@ public class StressTestService: IHostedService
                 {
                     while (await _timer.WaitForNextTickAsync(_shutdownCts.Token))
                     {
-                        var index = _random.Next(0, TotalActors);
-                        _actors[index].Tell(SaveEvent.Instance);
+                        var startIndex = _random.Next(0, TotalActors - PersistBurstSize);
+                        foreach (var index in Enumerable.Range(startIndex, PersistBurstSize))
+                        {
+                            var actor = _actors[index];
+                            if (actor is null)
+                            {
+                                actor = index < LargePayloadActorCount 
+                                    ? _system.ActorOf(Props.Create(() => new TestActor($"p-{index}", LargePayloadSize, _applicationLifetime)), $"p-{index}") 
+                                    : _system.ActorOf(Props.Create(() => new TestActor($"p-{index}", SmallPayloadSize, _applicationLifetime)), $"p-{index}");
+                                await actor.Ask<Initialized>(Initialize.Instance, _shutdownCts.Token);
+                                _actors[index] = actor;
+                            }
+                            actor.Tell(SaveEvent.Instance);
+                        }
                     }
                 }
                 catch (TimeoutException)
@@ -73,5 +75,6 @@ public class StressTestService: IHostedService
             await _shutdownCts.CancelAsync();
         if(_timerTask is not null)
             await _timerTask;
+        _timer?.Dispose();
     }
 }
