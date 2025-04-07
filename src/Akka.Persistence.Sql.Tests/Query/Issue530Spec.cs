@@ -39,6 +39,7 @@ public class Issue530Spec: PluginSpec
             {
                 var readJournal1 = query.ReadJournalFor<SqlReadJournal>("akka.persistence.query.journal.sql");
                 var readJournal2 = query.ReadJournalFor<SqlReadJournal>("akka.persistence.query.journal.sql2");
+                var readJournal3 = query.ReadJournalFor<SqlReadJournal>("akka.persistence.query.journal.sql3");
             })
             .Should().NotThrow<InvalidActorNameException>();
     }
@@ -48,7 +49,7 @@ public class Issue530Spec: PluginSpec
             if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
                 throw new Exception("Failed to clean up database in 10 seconds");
 
-            var config = ConfigurationFactory.ParseString(
+            var baseConfig = ConfigurationFactory.ParseString(
                     $$"""
                       akka {
                           loglevel = INFO
@@ -72,11 +73,29 @@ public class Issue530Spec: PluginSpec
                       akka.test.single-expect-default = 10s
                       """)
                 .WithFallback(SqlPersistence.DefaultConfiguration);
-            return ConfigurationFactory.ParseString("akka.persistence.query.journal.sql2.plugin-id = akka.persistence.query.journal.sql2")
+            
+            // new read journal pointing to a different write plugin
+            var config1 = ConfigurationFactory.ParseString(
+                    """
+                    akka.persistence.query.journal.sql2 {
+                        plugin-id = akka.persistence.query.journal.sql2
+                        write-plugin = akka.persistence.journal.sql2
+                    }
+                    """)
                 .WithFallback(
-                    config.GetConfig("akka.persistence.query.journal.sql")
-                    .MoveTo("akka.persistence.query.journal.sql2"))
-                .WithFallback(config);
+                    baseConfig.GetConfig("akka.persistence.journal.sql")
+                        .MoveTo("akka.persistence.journal.sql2"))
+                .WithFallback(
+                    baseConfig.GetConfig("akka.persistence.query.journal.sql")
+                        .MoveTo("akka.persistence.query.journal.sql2"));
+            
+            // new read journal pointing to the default write plugin
+            return ConfigurationFactory.ParseString("akka.persistence.query.journal.sql3.plugin-id = akka.persistence.query.journal.sql3")
+                .WithFallback(config1)
+                .WithFallback(
+                    baseConfig.GetConfig("akka.persistence.query.journal.sql")
+                    .MoveTo("akka.persistence.query.journal.sql3"))
+                .WithFallback(baseConfig);
         }
 
 }
