@@ -12,10 +12,10 @@ namespace TransactionTest;
 public class StressTestService: IHostedService
 {
     private const int TotalActors = 500;
-    private const int LargePayloadActorCount = 30;
+    private const int LargePayloadActorCount = 20;
     private const int LargePayloadSize = 4 * 1024 * 1024;
     private const int SmallPayloadSize = 1024;
-    private const int PersistBurstSize = 20;
+    private const int PersistBurstSize = 50;
     
     private readonly Random _random = new();
     private readonly IActorRef?[] _actors = new IActorRef[TotalActors];

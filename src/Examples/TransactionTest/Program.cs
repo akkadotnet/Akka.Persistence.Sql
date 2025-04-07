@@ -11,6 +11,7 @@ using TransactionTest;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 const string connectionString = "Server=localhost, 1433;Database=akka;User Id=sa;Password='Strong(!)Password';";
+//const string connectionString = "Server=MY-COMPUTER\\SQLEXPRESS;Database=akka;User Id=sa;Password='Strong(!)Password';";
 
 await Host.CreateDefaultBuilder(args)
     .ConfigureLogging(
