@@ -83,7 +83,7 @@ namespace Akka.Persistence.Sql.Query
                 namePrefix: $"l2db-query-mat-{Guid.NewGuid():N}");
 
             _log = Logging.GetLogger(system, $"{_readJournalConfig.PluginId}-{nameof(SqlReadJournal)}");
-            _queryPermitter = system.ActorOf(
+            _queryPermitter = system.SystemActorOf(
                 Props.Create(() => new QueryThrottler(_readJournalConfig.MaxConcurrentQueries)), 
                 $"{_readJournalConfig.PluginId}-query-permitter");
 
@@ -101,7 +101,7 @@ namespace Akka.Persistence.Sql.Query
                 // TODO: figure out a way to signal shutdown to the query executor here
                 default);
 
-            _journalSequenceActor = system.ActorOf(
+            _journalSequenceActor = system.SystemActorOf(
                 props: Props.Create(
                     () => new JournalSequenceActor(
                         _readJournalDao,
