@@ -106,7 +106,7 @@ namespace Akka.Persistence.Sql.Query
                     () => new JournalSequenceActor(
                         _readJournalDao,
                         _readJournalConfig.JournalSequenceRetrievalConfiguration)),
-                name: $"{_readJournalConfig.TableConfig.EventJournalTable.Name}akka-persistence-sql-sequence-actor");
+                name: $"{_readJournalConfig.PluginId}-{_readJournalConfig.TableConfig.EventJournalTable.Name}-akka-persistence-sql-sequence-actor");
 
             _delaySource = Source.Tick(TimeSpan.FromSeconds(0), _readJournalConfig.RefreshInterval, 0L).Take(1);
         }
