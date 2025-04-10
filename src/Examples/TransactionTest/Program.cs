@@ -1,4 +1,5 @@
-﻿using Akka.Actor;
+﻿using System.Data;
+using Akka.Actor;
 using Akka.Event;
 using Akka.Hosting;
 using Akka.Persistence;
@@ -10,8 +11,8 @@ using Microsoft.Extensions.Logging;
 using TransactionTest;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
-const string connectionString = "Server=localhost, 1433;Database=akka;User Id=sa;Password='Strong(!)Password';";
-//const string connectionString = "Server=MY-COMPUTER\\SQLEXPRESS;Database=akka;User Id=sa;Password='Strong(!)Password';";
+const string connectionString = "Server=localhost, 1433;Database=akka;User Id=sa;Password='Strong(!)Password';TrustServerCertificate=true;";
+//const string connectionString = "Server=MY-COMPUTER\\SQLEXPRESS;Database=akka;User Id=sa;Password='Strong(!)Password';TrustServerCertificate=true;";
 
 await Host.CreateDefaultBuilder(args)
     .ConfigureLogging(
