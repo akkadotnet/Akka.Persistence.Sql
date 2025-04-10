@@ -42,7 +42,12 @@ public class TestActor: ReceivePersistentActor
         var log = Context.GetLogger();
         
         Recover<SnapshotOffer>(offer => _payload = (byte[])offer.Snapshot);
-        Recover<byte[]>(bytes => _payload = bytes);
+        Recover<byte[]>(
+            bytes =>
+            {
+                _payload = bytes;
+                _currentIndex++;
+            });
         Recover<RecoveryCompleted>(_ =>
             {
                 log.Info("Recovery Completed");
@@ -63,7 +68,7 @@ public class TestActor: ReceivePersistentActor
                     _ =>
                     {
                         _currentIndex++;
-                        if (_currentIndex % 10 == 0)
+                        if (_currentIndex % 10 == 0 || _currentIndex > 10)
                         {
                             SaveSnapshot(_payload);
                         }
