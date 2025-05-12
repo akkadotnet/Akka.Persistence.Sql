@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Akka.Persistence.Sql.Journal.Dao
@@ -15,14 +16,17 @@ namespace Akka.Persistence.Sql.Journal.Dao
     {
         Task Delete(
             string persistenceId,
-            long toSequenceNr);
+            long toSequenceNr, 
+            CancellationToken cancellationToken);
 
         Task<long> HighestSequenceNr(
             string persistenceId,
-            long fromSequenceNr);
+            long fromSequenceNr, 
+            CancellationToken cancellationToken);
 
         Task<IImmutableList<Exception>> AsyncWriteMessages(
             IEnumerable<AtomicWrite> messages,
+            CancellationToken cancellationToken,
             long timeStamp = 0);
     }
 }
