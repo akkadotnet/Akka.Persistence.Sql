@@ -13,7 +13,7 @@ public class StressTestService: IHostedService
 {
     private const int TotalActors = 500;
     private const int LargePayloadActorCount = 20;
-    private const int LargePayloadSize = 4 * 1024 * 1024;
+    private const int LargePayloadSize = 1024 * 1024;
     private const int SmallPayloadSize = 1024;
     private const int PersistBurstSize = 50;
     
