@@ -64,18 +64,19 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 .BatchWeighted(
                     JournalConfig.DaoConfig.BatchSize,
                     cf => cf.Rows.Count,
-                    r => new WriteQueueSet(ImmutableList.Create(new[] { r.Tcs }), r.Rows),
+                    r => new WriteQueueSet(ImmutableList.Create([r.Tcs]), r.Rows, ImmutableList.Create([r.CancellationToken])),
                     (oldRows, newRows) =>
                         new WriteQueueSet(
                             oldRows.Tcs.Add(newRows.Tcs),
-                            oldRows.Rows.Concat(newRows.Rows)))
+                            oldRows.Rows.Concat(newRows.Rows),
+                            oldRows.CancellationTokens.Add(newRows.CancellationToken)))
                 .SelectAsync(
                     JournalConfig.DaoConfig.Parallelism,
                     async promisesAndRows =>
                     {
                         try
                         {
-                            await WriteJournalRows(promisesAndRows.Rows);
+                            await WriteJournalRows(promisesAndRows.Rows, promisesAndRows.CancellationTokens);
                             foreach (var taskCompletionSource in promisesAndRows.Tcs)
                                 taskCompletionSource.TrySetResult(NotUsed.Instance);
                         }
@@ -95,6 +96,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
         public async Task<IImmutableList<Exception>> AsyncWriteMessages(
             IEnumerable<AtomicWrite> messages,
+            CancellationToken cancellationToken,
             long timeStamp = 0)
         {
             var serializedTries = Serializer.Serialize(messages, timeStamp);
@@ -103,18 +105,19 @@ namespace Akka.Persistence.Sql.Journal.Dao
             var rows = Seq(FlattenListOfListsToList(serializedTries));
 
             // Wait for the write to go through. If Task fails, write will be captured as WriteMessagesFailure.
-            await QueueWriteJournalRows(rows);
+            await QueueWriteJournalRows(rows, cancellationToken);
 
             // If we get here, we build an ImmutableList containing our rejections.
             // These will be captured as WriteMessagesRejected
             return BuildWriteRejections(serializedTries);
         }
 
-        public async Task Delete(string persistenceId, long maxSequenceNr)
+        public async Task Delete(string persistenceId, long maxSequenceNr, CancellationToken cancellationToken)
         {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ShutdownToken);
             await ConnectionFactory.ExecuteWithTransactionAsync(
                 WriteIsolationLevel,
-                ShutdownToken,
+                cts.Token,
                 async (connection, token) =>
                 {
                     await connection
@@ -211,11 +214,12 @@ namespace Akka.Persistence.Sql.Journal.Dao
             return Done.Instance;
         }
 
-        public async Task<long> HighestSequenceNr(string persistenceId, long fromSequenceNr)
+        public async Task<long> HighestSequenceNr(string persistenceId, long fromSequenceNr, CancellationToken cancellationToken)
         {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ShutdownToken);
             return await ConnectionFactory.ExecuteWithTransactionAsync(
                 ReadIsolationLevel,
-                ShutdownToken,
+                cts.Token,
                 async (connection, token) => (await MaxSeqNumberForPersistenceIdQuery(connection, persistenceId, fromSequenceNr).MaxAsync(token))
                     .GetValueOrDefault(0));
         }
@@ -261,13 +265,13 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 });
         }
 
-        private async Task QueueWriteJournalRows(Seq<JournalRow> xs)
+        private async Task QueueWriteJournalRows(Seq<JournalRow> xs, CancellationToken cancellationToken)
         {
             var promise = new TaskCompletionSource<NotUsed>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             // Send promise and rows into queue. If the Queue takes it,
             // It will write the Promise state when finished writing (or failing)
-            var result = await WriteQueue.OfferAsync(new WriteQueueEntry(promise, xs));
+            var result = await WriteQueue.OfferAsync(new WriteQueueEntry(promise, xs, cancellationToken));
 
             switch (result)
             {
@@ -294,7 +298,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
             await promise.Task;
         }
 
-        private async Task WriteJournalRows(Seq<JournalRow> xs)
+        private async Task WriteJournalRows(Seq<JournalRow> xs, ImmutableList<CancellationToken> cancellationTokens)
         {
             switch (xs.Count)
             {
@@ -306,24 +310,26 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 // Isn't worth it due to insert caching/etc.
                 case 1 when _tagWriteMode == TagMode.Csv || xs.Head().TagArray.Length == 0:
                 {
+                    using var cts = CancellationTokenSource.CreateLinkedTokenSource(ShutdownToken, cancellationTokens[0]);
                     await ConnectionFactory.ExecuteWithTransactionAsync(
                         WriteIsolationLevel,
-                        ShutdownToken,
+                        cts.Token,
                         async (connection, token) => await connection.InsertAsync(xs.Head, token));
                     break;
                 }
 
                 default:
-                    await InsertMultiple(xs);
+                    await InsertMultiple(xs, cancellationTokens);
                     break;
             }
         }
 
-        private async Task InsertMultiple(Seq<JournalRow> xs)
+        private async Task InsertMultiple(Seq<JournalRow> xs, ImmutableList<CancellationToken> cancellationTokens)
         {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationTokens.Add(ShutdownToken).ToArray());
             await ConnectionFactory.ExecuteWithTransactionAsync(
                 WriteIsolationLevel,
-                ShutdownToken,
+                cts.Token,
                 async (connection, token) =>
                 {
                     if (_tagWriteMode == TagMode.Csv)

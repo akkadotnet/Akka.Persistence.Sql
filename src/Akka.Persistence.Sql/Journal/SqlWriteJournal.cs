@@ -204,7 +204,7 @@ namespace Akka.Persistence.Sql.Journal
                         : Task.FromException<ReplayCompletion>(t.Failure.Value))
                 .RunForeach(r => recoveryCallback(r.Representation), _mat);
 
-        public override async Task<long> ReadHighestSequenceNrAsync(string persistenceId, long fromSequenceNr)
+        public override async Task<long> ReadHighestSequenceNrAsync(string persistenceId, long fromSequenceNr, CancellationToken cancellationToken)
         {
             if (_writeInProgress.TryGetValue(persistenceId, out var wip))
             {
@@ -213,10 +213,10 @@ namespace Akka.Persistence.Sql.Journal
                 await new NoThrowAwaiter(wip);
             }
 
-            return await _journal!.HighestSequenceNr(persistenceId, fromSequenceNr);
+            return await _journal!.HighestSequenceNr(persistenceId, fromSequenceNr, cancellationToken);
         }
 
-        protected override Task<IImmutableList<Exception>> WriteMessagesAsync(IEnumerable<AtomicWrite> messages)
+        protected override Task<IImmutableList<Exception>> WriteMessagesAsync(IEnumerable<AtomicWrite> messages, CancellationToken cancellationToken)
         {
             // TODO: CurrentTimeMillis;
             var currentTime = DateTime.UtcNow.Ticks;
@@ -224,7 +224,7 @@ namespace Akka.Persistence.Sql.Journal
             var messagesList = messages.ToList();
             var persistenceId = messagesList.Head().PersistenceId;
 
-            var future = _journal!.AsyncWriteMessages(messagesList, currentTime);
+            var future = _journal!.AsyncWriteMessages(messagesList, cancellationToken, currentTime);
 
             _writeInProgress[persistenceId] = future;
             var self = Self;
@@ -241,7 +241,7 @@ namespace Akka.Persistence.Sql.Journal
             return future;
         }
 
-        protected override async Task DeleteMessagesToAsync(string persistenceId, long toSequenceNr)
-            => await _journal!.Delete(persistenceId, toSequenceNr);
+        protected override async Task DeleteMessagesToAsync(string persistenceId, long toSequenceNr, CancellationToken cancellationToken)
+            => await _journal!.Delete(persistenceId, toSequenceNr, cancellationToken);
     }
 }
