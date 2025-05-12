@@ -31,6 +31,7 @@ public sealed class Initialized
 public class TestActor: ReceivePersistentActor
 {
     private readonly IHostApplicationLifetime _applicationLifetime;
+    private readonly ILoggingAdapter _log;
     private int _currentIndex;
     private byte[]? _payload;
     
@@ -39,7 +40,7 @@ public class TestActor: ReceivePersistentActor
         PersistenceId = persistenceId;
         _applicationLifetime = applicationLifetime;
 
-        var log = Context.GetLogger();
+        _log = Context.GetLogger();
         
         Recover<SnapshotOffer>(offer => _payload = (byte[])offer.Snapshot);
         Recover<byte[]>(
@@ -50,7 +51,7 @@ public class TestActor: ReceivePersistentActor
             });
         Recover<RecoveryCompleted>(_ =>
             {
-                log.Info("Recovery Completed");
+                _log.Info("Recovery Completed");
                 if (_payload == null)
                 {
                     var rnd = new Random();
@@ -82,24 +83,26 @@ public class TestActor: ReceivePersistentActor
         Command<SaveSnapshotFailure>(
             fail =>
             {
-                log.Error(fail.Cause, "Failed to save snapshot");
-                _applicationLifetime.StopApplication();
+                _log.Error(fail.Cause, "Failed to save snapshot");
+                // _applicationLifetime.StopApplication();
             });
         Command<DeleteMessagesSuccess>(
             _ =>
             {
-                log.Info("Messages deleted");
+                // no-op
+                // log.Info("Messages deleted");
             });
         Command<DeleteMessagesFailure>(
             fail =>
             {
-                log.Error(fail.Cause, "Failed to delete messages");
-                _applicationLifetime.StopApplication();
+                _log.Error(fail.Cause, "Failed to delete messages");
+                // _applicationLifetime.StopApplication();
             });
     }
     
     public override string PersistenceId { get; }
 
+    /*
     protected override void OnPersistFailure(Exception cause, object @event, long sequenceNr)
     {
         base.OnPersistFailure(cause, @event, sequenceNr);
@@ -112,4 +115,5 @@ public class TestActor: ReceivePersistentActor
         base.OnPersistRejected(cause, @event, sequenceNr);
         _applicationLifetime.StopApplication();
     }
+    */
 }

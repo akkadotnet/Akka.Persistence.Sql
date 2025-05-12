@@ -5,6 +5,9 @@ using Akka.Hosting;
 using Akka.Persistence;
 using Akka.Persistence.Sql.Hosting;
 using LinqToDB;
+using LinqToDB.Data;
+using LinqToDB.Data.RetryPolicy;
+using LinqToDB.DataProvider.SqlServer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -42,12 +45,26 @@ await Host.CreateDefaultBuilder(args)
                             options =>
                             {
                                 options.ConnectionString = connectionString;
-                                options.ProviderName = ProviderName.SqlServer2016;
+                                options.ProviderName = ProviderName.SqlServer2022;
+                                options.DataOptions = new DataOptions()
+                                    .WithOptions(
+                                        new ConnectionOptions()
+                                            .WithConnectionString(connectionString)
+                                            .WithProviderName(ProviderName.SqlServer2022))
+                                    .WithOptions( new RetryPolicyOptions()
+                                        .WithFactory(_ => new SqlServerRetryPolicy(10)));
                             },
                             options =>
                             {
                                 options.ConnectionString = connectionString;
-                                options.ProviderName = ProviderName.SqlServer2016;
+                                options.ProviderName = ProviderName.SqlServer2022;
+                                options.DataOptions = new DataOptions()
+                                    .WithOptions(
+                                        new ConnectionOptions()
+                                            .WithConnectionString(connectionString)
+                                            .WithProviderName(ProviderName.SqlServer2022))
+                                    .WithOptions( new RetryPolicyOptions()
+                                        .WithFactory(_ => new SqlServerRetryPolicy(10)));
                             }
                         )
                         .AddHocon(
