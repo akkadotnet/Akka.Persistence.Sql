@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using Akka.Actor;
+using Akka.Annotations;
 using Akka.Persistence.Query;
 
 namespace Akka.Persistence.Sql.Query
@@ -22,6 +23,16 @@ namespace Akka.Persistence.Sql.Query
             _config = config.WithFallback(SqlPersistence.DefaultQueryConfiguration);
         }
 
+        /// <summary>
+        ///     Note that this is safe to do because the only place this is being called is
+        ///     inside the `PersistenceQuery.ReadJournalFor{T}()` public method inside
+        ///     Akka.Persistence.Query and the result of that method call is then cached
+        ///     and reused for the duration of the ActorSystem lifetime.
+        /// </summary>
+        /// <returns>
+        ///     A new instance of IReadJournal specific to this persistence plugin.
+        /// </returns>
+        [InternalApi]
         public IReadJournal GetReadJournal()
             => new SqlReadJournal(_system, _config);
     }
