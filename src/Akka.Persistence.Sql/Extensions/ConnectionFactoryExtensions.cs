@@ -34,18 +34,12 @@ namespace Akka.Persistence.Sql.Extensions
             }
             catch (Exception ex1)
             {
-                if (ex1 is InvalidOperationException op1 && op1.Message.StartsWith("This SqlTransaction has completed"))
-                    throw;
-                
                 try
                 {
                     await tx.RollbackAsync(token);
                 }
                 catch (Exception ex2)
                 {
-                    if (ex2 is InvalidOperationException op && op.Message.StartsWith("This SqlTransaction has completed"))
-                        throw ex1;
-                    
                     throw new AggregateException("Exception thrown when rolling back database transaction", ex2, ex1);
                 }
 
@@ -92,9 +86,6 @@ namespace Akka.Persistence.Sql.Extensions
                 }
                 catch (Exception ex2)
                 {
-                    if (ex2 is InvalidOperationException op && op.Message.StartsWith("This SqlTransaction has completed"))
-                        throw ex1;
-                    
                     throw new AggregateException("Exception thrown when rolling back database transaction", ex2, ex1);
                 }
 
@@ -142,9 +133,6 @@ namespace Akka.Persistence.Sql.Extensions
                 }
                 catch (Exception ex2)
                 {
-                    if (ex2 is InvalidOperationException op && op.Message.StartsWith("This SqlTransaction has completed"))
-                        throw ex1;
-                    
                     throw new AggregateException("Exception thrown when rolling back database transaction", ex2, ex1);
                 }
 
