@@ -42,7 +42,7 @@ namespace Akka.Persistence.Sql.Db
 
             _useCloneDataConnection = config.UseCloneConnection;
 
-            if (_opts.RetryPolicyOptions.RetryPolicy is null && _opts.ConnectionOptions.ProviderName!.ToLowerInvariant().StartsWith("sqlserver"))
+            if (_opts.RetryPolicyOptions.RetryPolicy is null && _opts.RetryPolicyOptions.Factory is null && _opts.ConnectionOptions.ProviderName!.ToLowerInvariant().StartsWith("sqlserver"))
                 _opts = _opts.WithOptions( _opts.RetryPolicyOptions with { RetryPolicy = new SqlServerRetryPolicy() } );
             
             _cloneConnection = new Lazy<AkkaDataConnection>(
