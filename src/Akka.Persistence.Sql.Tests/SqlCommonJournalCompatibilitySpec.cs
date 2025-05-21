@@ -4,6 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+/*
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -221,3 +222,4 @@ namespace Akka.Persistence.Sql.Tests
         }
     }
 }
+*/

@@ -48,7 +48,6 @@ jobs:
           projects: |
             **/*.Tests.csproj
             **/*.DockerTests.csproj
-            !**/*.Data.Compatibility.Tests.csproj
             !**/*.Benchmark.*.csproj
             !**/Examples/**/*.csproj
         continueOnError: true

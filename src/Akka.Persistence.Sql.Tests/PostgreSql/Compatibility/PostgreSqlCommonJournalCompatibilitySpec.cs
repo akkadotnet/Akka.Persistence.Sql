@@ -3,7 +3,7 @@
 //      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
-
+/*
 using System;
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using Xunit;
@@ -31,3 +31,4 @@ namespace Akka.Persistence.Sql.Tests.PostgreSql.Compatibility
         protected override string NewJournal => "akka.persistence.journal.sql";
     }
 }
+*/
