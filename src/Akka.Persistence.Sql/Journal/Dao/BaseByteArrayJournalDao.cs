@@ -119,6 +119,9 @@ namespace Akka.Persistence.Sql.Journal.Dao
             {
                 maxMarkedDeletion = await MaxMarkedForDeletionMaxPersistenceIdQuery(connection, persistenceId, maxSequenceNr).FirstOrDefaultAsync(ShutdownToken);
             }
+
+            if (maxMarkedDeletion is 0)
+                return;
             
             await ConnectionFactory.ExecuteWithTransactionAsync(
                 WriteIsolationLevel,
