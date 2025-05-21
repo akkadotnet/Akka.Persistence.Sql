@@ -29,7 +29,7 @@ namespace Akka.Persistence.Sql.Hosting
         ///     <para>
         ///         Should the SQL store table be initialized automatically.
         ///     </para>
-        ///     <i>Default</i>: <c>false</c>
+        ///     <i>Default</i>: <c>true</c>
         /// </param>
         /// <param name="providerName">
         ///     A string constant defining the database type to connect to, valid values are defined inside
@@ -244,7 +244,7 @@ namespace Akka.Persistence.Sql.Hosting
         ///     <para>
         ///         Should the SQL store table be initialized automatically.
         ///     </para>
-        ///     <i>Default</i>: <c>false</c>
+        ///     <i>Default</i>: <c>true</c>
         /// </param>
         /// <param name="mode">
         ///     <para>
