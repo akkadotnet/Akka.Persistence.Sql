@@ -52,7 +52,7 @@ namespace Akka.Persistence.Sql.Snapshot
 
         public async Task DeleteAllSnapshotsAsync(
             string persistenceId,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken)
         {
             var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
             await _connectionFactory.ExecuteWithTransactionAsync(
@@ -80,7 +80,7 @@ namespace Akka.Persistence.Sql.Snapshot
         public async Task DeleteUpToMaxSequenceNrAsync(
             string persistenceId,
             long maxSequenceNr,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken)
         {
             var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
             await _connectionFactory.ExecuteWithTransactionAsync(
@@ -114,7 +114,7 @@ namespace Akka.Persistence.Sql.Snapshot
         public async Task DeleteUpToMaxTimestampAsync(
             string persistenceId,
             DateTime maxTimestamp,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken)
         {
             var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
             await _connectionFactory.ExecuteWithTransactionAsync(
@@ -149,7 +149,7 @@ namespace Akka.Persistence.Sql.Snapshot
             string persistenceId,
             long maxSequenceNr,
             DateTime maxTimestamp,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken)
         {
             var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
             await _connectionFactory.ExecuteWithTransactionAsync(
@@ -184,7 +184,7 @@ namespace Akka.Persistence.Sql.Snapshot
 
         public async Task<Option<SelectedSnapshot>> LatestSnapshotAsync(
             string persistenceId,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken)
         {
             var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
             return await _connectionFactory.ExecuteWithTransactionAsync(
@@ -222,7 +222,7 @@ namespace Akka.Persistence.Sql.Snapshot
         public async Task<Option<SelectedSnapshot>> SnapshotForMaxTimestampAsync(
             string persistenceId,
             DateTime timestamp,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken)
         {
             var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
             return await _connectionFactory.ExecuteWithTransactionAsync(
@@ -266,7 +266,7 @@ namespace Akka.Persistence.Sql.Snapshot
         public async Task<Option<SelectedSnapshot>> SnapshotForMaxSequenceNrAsync(
             string persistenceId,
             long sequenceNr,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken)
         {
             var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
             return await _connectionFactory.ExecuteWithTransactionAsync(
@@ -311,7 +311,7 @@ namespace Akka.Persistence.Sql.Snapshot
             string persistenceId,
             long sequenceNr,
             DateTime timestamp,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken)
         {
             var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
             return await _connectionFactory.ExecuteWithTransactionAsync(
@@ -358,7 +358,7 @@ namespace Akka.Persistence.Sql.Snapshot
             string persistenceId,
             long sequenceNr,
             DateTime timestamp,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken)
         {
             var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
             await _connectionFactory.ExecuteWithTransactionAsync(
@@ -401,7 +401,7 @@ namespace Akka.Persistence.Sql.Snapshot
         public async Task SaveAsync(
             SnapshotMetadata snapshotMetadata,
             object snapshot,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken)
         {
             var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
             await _connectionFactory.ExecuteWithTransactionAsync(

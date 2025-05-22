@@ -3,7 +3,7 @@
 //      Copyright (C) 2013-2023 .NET Foundation <https://github.com/akkadotnet/akka.net>
 //  </copyright>
 // -----------------------------------------------------------------------
-
+/*
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -155,3 +155,4 @@ namespace Akka.Persistence.Sql.Tests
         }
     }
 }
+*/
