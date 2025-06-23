@@ -19,7 +19,7 @@ using LinqToDB;
 
 namespace Akka.Persistence.Sql.Snapshot
 {
-    public class ByteArraySnapshotDao : ISnapshotDao
+    public class ByteArraySnapshotDao : ISnapshotDao, IDisposable
     {
         private readonly AkkaPersistenceDataConnectionFactory _connectionFactory;
         private readonly ByteArrayDateTimeSnapshotSerializer _dateTimeSerializer;
@@ -54,7 +54,7 @@ namespace Akka.Persistence.Sql.Snapshot
             string persistenceId,
             CancellationToken cancellationToken)
         {
-            var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
             await _connectionFactory.ExecuteWithTransactionAsync(
                 _writeIsolationLevel,
                 cts.Token,
@@ -82,7 +82,7 @@ namespace Akka.Persistence.Sql.Snapshot
             long maxSequenceNr,
             CancellationToken cancellationToken)
         {
-            var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
             await _connectionFactory.ExecuteWithTransactionAsync(
                 _writeIsolationLevel,
                 cts.Token,
@@ -116,7 +116,7 @@ namespace Akka.Persistence.Sql.Snapshot
             DateTime maxTimestamp,
             CancellationToken cancellationToken)
         {
-            var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
             await _connectionFactory.ExecuteWithTransactionAsync(
                 _writeIsolationLevel,
                 cts.Token,
@@ -151,7 +151,7 @@ namespace Akka.Persistence.Sql.Snapshot
             DateTime maxTimestamp,
             CancellationToken cancellationToken)
         {
-            var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
             await _connectionFactory.ExecuteWithTransactionAsync(
                 _writeIsolationLevel,
                 cts.Token,
@@ -186,7 +186,7 @@ namespace Akka.Persistence.Sql.Snapshot
             string persistenceId,
             CancellationToken cancellationToken)
         {
-            var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
             return await _connectionFactory.ExecuteWithTransactionAsync(
                 _readIsolationLevel,
                 cts.Token,
@@ -224,7 +224,7 @@ namespace Akka.Persistence.Sql.Snapshot
             DateTime timestamp,
             CancellationToken cancellationToken)
         {
-            var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
             return await _connectionFactory.ExecuteWithTransactionAsync(
                 _readIsolationLevel,
                 cts.Token,
@@ -268,7 +268,7 @@ namespace Akka.Persistence.Sql.Snapshot
             long sequenceNr,
             CancellationToken cancellationToken)
         {
-            var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
             return await _connectionFactory.ExecuteWithTransactionAsync(
                 _readIsolationLevel,
                 cts.Token,
@@ -313,7 +313,7 @@ namespace Akka.Persistence.Sql.Snapshot
             DateTime timestamp,
             CancellationToken cancellationToken)
         {
-            var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
             return await _connectionFactory.ExecuteWithTransactionAsync(
                 _readIsolationLevel,
                 cts.Token,
@@ -360,7 +360,7 @@ namespace Akka.Persistence.Sql.Snapshot
             DateTime timestamp,
             CancellationToken cancellationToken)
         {
-            var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
             await _connectionFactory.ExecuteWithTransactionAsync(
                 _writeIsolationLevel,
                 cts.Token,
@@ -403,7 +403,7 @@ namespace Akka.Persistence.Sql.Snapshot
             object snapshot,
             CancellationToken cancellationToken)
         {
-            var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdownCts.Token);
             await _connectionFactory.ExecuteWithTransactionAsync(
                 _writeIsolationLevel,
                 cts.Token,
@@ -442,6 +442,12 @@ namespace Akka.Persistence.Sql.Snapshot
             {
                 await connection.CreateTableAsync<LongSnapshotRow>(TableOptions.CreateIfNotExists, footer);
             }
+        }
+
+        public void Dispose()
+        {
+            _shutdownCts.Cancel();
+            _shutdownCts.Dispose();
         }
     }
 }

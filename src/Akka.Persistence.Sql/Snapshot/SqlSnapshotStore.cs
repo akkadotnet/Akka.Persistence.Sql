@@ -64,6 +64,12 @@ namespace Akka.Persistence.Sql.Snapshot
             BecomeStacked(WaitingForInitialization);
         }
 
+        protected override void PostStop()
+        {
+            _dao.Dispose();
+            base.PostStop();
+        }
+
         private bool WaitingForInitialization(object message)
         {
             switch (message)
