@@ -1,3 +1,9 @@
+#### 1.5.44 June 23rd 2025 ####
+
+* [Bump AkkaVersion and AkkaHostingVersion to 1.5.44](https://github.com/akkadotnet/akka.net/releases/tag/1.5.44)
+* [Improve journal delete performance](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/538)
+* [Fix snapshot store `CancellationTokenSource` memory leak](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/542)
+
 #### 1.5.42 May 22nd 2025 ####
 
 * [Bump AkkaVersion to 1.5.42](https://github.com/akkadotnet/akka.net/releases/tag/1.5.42)
