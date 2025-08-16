@@ -43,7 +43,7 @@ namespace Akka.Persistence.Sql.Db
             => _connection.Dispose();
 
         public AkkaDataConnection Clone()
-            => new(_providerName, (DataConnection)_connection.Clone());
+            => throw new NotSupportedException();//_providerName, (DataConnection)_connection.Clone());
 
         public DatabaseSchema GetSchema()
             => _connection.DataProvider.GetSchemaProvider().GetSchema(_connection);

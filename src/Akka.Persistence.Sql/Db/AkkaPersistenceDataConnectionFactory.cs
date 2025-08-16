@@ -396,12 +396,12 @@ namespace Akka.Persistence.Sql.Db
 
         public AkkaDataConnection GetConnection()
         {
-            if (!_useCloneDataConnection)
+            //if (!_useCloneDataConnection)
                 return new AkkaDataConnection(
                     _opts.ConnectionOptions.ProviderName!,
                     new DataConnection(_opts));
 
-            return _cloneConnection.Value.Clone();
+            // return _cloneConnection.Value.Clone();
         }
     }
 }

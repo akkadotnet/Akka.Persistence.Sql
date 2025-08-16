@@ -23,6 +23,7 @@ using Akka.Streams.Dsl;
 using Akka.Streams.Supervision;
 using LanguageExt;
 using LinqToDB;
+using LinqToDB.Async;
 using LinqToDB.Data;
 using static LanguageExt.Prelude;
 

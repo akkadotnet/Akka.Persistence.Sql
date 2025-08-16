@@ -38,7 +38,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
 
         public override string ConnectionString => _connectionStringBuilder.ToString();
 
-        public override string ProviderName => LinqToDB.ProviderName.MySqlOfficial;
+        public override string ProviderName => LinqToDB.ProviderName.MySql80MySqlConnector;//.MySqlOfficial;
 
         private int Port { get; } = ThreadLocalRandom.Current.Next(9000, 10000);
 
