@@ -1,3 +1,7 @@
+#### 1.5.51 October 1st 2025 ####
+
+* [Bump AkkaVersion and AkkaHostingVersion to 1.5.51](https://github.com/akkadotnet/akka.net/releases/tag/1.5.51)
+
 #### 1.5.44 June 23rd 2025 ####
 
 * [Bump AkkaVersion and AkkaHostingVersion to 1.5.44](https://github.com/akkadotnet/akka.net/releases/tag/1.5.44)
