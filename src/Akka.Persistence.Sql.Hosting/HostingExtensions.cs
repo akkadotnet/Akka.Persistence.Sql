@@ -17,19 +17,14 @@ namespace Akka.Persistence.Sql.Hosting
     public static class HostingExtensions
     {
         /// <summary>
-        ///     Adds Akka.Persistence.Sql support to this <see cref="ActorSystem" />.
+        ///     Adds Akka.Persistence.Sql support to this <see cref="ActorSystem" /> with optional support
+        ///     for health checks on both journal and snapshot store.
         /// </summary>
         /// <param name="builder">
         ///     The builder instance being configured.
         /// </param>
         /// <param name="connectionString">
         ///     Connection string used for database access.
-        /// </param>
-        /// <param name="autoInitialize">
-        ///     <para>
-        ///         Should the SQL store table be initialized automatically.
-        ///     </para>
-        ///     <i>Default</i>: <c>true</c>
         /// </param>
         /// <param name="providerName">
         ///     A string constant defining the database type to connect to, valid values are defined inside
@@ -53,6 +48,18 @@ namespace Akka.Persistence.Sql.Hosting
         ///         An <see cref="Action{T}" /> used to configure an <see cref="AkkaPersistenceJournalBuilder" /> instance.
         ///     </para>
         ///     <i>Default</i>: <c>null</c>
+        /// </param>
+        /// <param name="snapshotBuilder">
+        ///     <para>
+        ///         An <see cref="Action{T}" /> used to configure an <see cref="AkkaPersistenceSnapshotBuilder" /> instance.
+        ///     </para>
+        ///     <i>Default</i>: <c>null</c>
+        /// </param>
+        /// <param name="autoInitialize">
+        ///     <para>
+        ///         Should the SQL store table be initialized automatically.
+        ///     </para>
+        ///     <i>Default</i>: <c>true</c>
         /// </param>
         /// <param name="pluginIdentifier">
         ///     <para>
@@ -132,6 +139,18 @@ namespace Akka.Persistence.Sql.Hosting
         ///     Thrown when <paramref name="connectionString"/> or <paramref name="providerName"/> is null
         ///     or whitespace
         /// </exception>
+        /// <example>
+        /// <code>
+        /// builder.WithSqlPersistence(
+        ///     connectionString: "...",
+        ///     providerName: ProviderName.SQLite,
+        ///     journalBuilder: journal => journal
+        ///         .AddEventAdapter&lt;MyAdapter&gt;("adapter", new[] { typeof(MyEvent) })
+        ///         .WithHealthCheck(HealthStatus.Degraded),
+        ///     snapshotBuilder: snapshot => snapshot
+        ///         .WithHealthCheck(HealthStatus.Degraded));
+        /// </code>
+        /// </example>
         public static AkkaConfigurationBuilder WithSqlPersistence(
             this AkkaConfigurationBuilder builder,
             string connectionString,
@@ -139,6 +158,7 @@ namespace Akka.Persistence.Sql.Hosting
             PersistenceMode mode = PersistenceMode.Both,
             string? schemaName = null,
             Action<AkkaPersistenceJournalBuilder>? journalBuilder = null,
+            Action<AkkaPersistenceSnapshotBuilder>? snapshotBuilder = null,
             bool autoInitialize = true,
             string pluginIdentifier = "sql",
             bool isDefaultPlugin = true,
@@ -150,6 +170,9 @@ namespace Akka.Persistence.Sql.Hosting
         {
             if (mode == PersistenceMode.SnapshotStore && journalBuilder is not null)
                 throw new Exception($"{nameof(journalBuilder)} can only be set when {nameof(mode)} is set to either {PersistenceMode.Both} or {PersistenceMode.Journal}");
+
+            if (mode == PersistenceMode.Journal && snapshotBuilder is not null)
+                throw new Exception($"{nameof(snapshotBuilder)} can only be set when {nameof(mode)} is set to either {PersistenceMode.Both} or {PersistenceMode.SnapshotStore}");
 
             if (string.IsNullOrWhiteSpace(connectionString))
                 throw new ArgumentNullException(nameof(connectionString), $"{nameof(connectionString)} can not be null");
@@ -183,10 +206,6 @@ namespace Akka.Persistence.Sql.Hosting
                 journalOpt.DatabaseOptions.JournalTable.UseWriterUuidColumn = useWriterUuidColumn;
             }
 
-            var adapters = new AkkaPersistenceJournalBuilder(journalOpt.Identifier, builder);
-            journalBuilder?.Invoke(adapters);
-            journalOpt.Adapters = adapters;
-
             var snapshotOpt = new SqlSnapshotOptions(isDefaultPlugin, pluginIdentifier)
             {
                 ConnectionString = connectionString,
@@ -205,9 +224,9 @@ namespace Akka.Persistence.Sql.Hosting
 
             return mode switch
             {
-                PersistenceMode.Journal => builder.WithSqlPersistence(journalOpt, null),
-                PersistenceMode.SnapshotStore => builder.WithSqlPersistence(null, snapshotOpt),
-                PersistenceMode.Both => builder.WithSqlPersistence(journalOpt, snapshotOpt),
+                PersistenceMode.Journal => builder.WithSqlPersistence(journalOpt, null, journalBuilder, snapshotBuilder),
+                PersistenceMode.SnapshotStore => builder.WithSqlPersistence(null, snapshotOpt, journalBuilder, snapshotBuilder),
+                PersistenceMode.Both => builder.WithSqlPersistence(journalOpt, snapshotOpt, journalBuilder, snapshotBuilder),
                 _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Invalid PersistenceMode defined."),
             };
         }
@@ -361,7 +380,7 @@ namespace Akka.Persistence.Sql.Hosting
 
             if (dataOptions is null)
                 throw new ArgumentNullException(nameof(dataOptions), $"{nameof(dataOptions)} can not be null");
-            
+
             var journalOpt = new SqlJournalOptions(isDefaultPlugin, pluginIdentifier)
             {
                 AutoInitialize = autoInitialize,
@@ -387,10 +406,6 @@ namespace Akka.Persistence.Sql.Hosting
                 journalOpt.DatabaseOptions.JournalTable.UseWriterUuidColumn = useWriterUuidColumn;
             }
 
-            var adapters = new AkkaPersistenceJournalBuilder(journalOpt.Identifier, builder);
-            journalBuilder?.Invoke(adapters);
-            journalOpt.Adapters = adapters;
-
             var snapshotOpt = new SqlSnapshotOptions(isDefaultPlugin, pluginIdentifier)
             {
                 DataOptions = dataOptions,
@@ -408,13 +423,13 @@ namespace Akka.Persistence.Sql.Hosting
 
             return mode switch
             {
-                PersistenceMode.Journal => builder.WithSqlPersistence(journalOpt, null),
-                PersistenceMode.SnapshotStore => builder.WithSqlPersistence(null, snapshotOpt),
-                PersistenceMode.Both => builder.WithSqlPersistence(journalOpt, snapshotOpt),
+                PersistenceMode.Journal => builder.WithSqlPersistence(journalOpt, null, journalBuilder, null),
+                PersistenceMode.SnapshotStore => builder.WithSqlPersistence(null, snapshotOpt, journalBuilder, null),
+                PersistenceMode.Both => builder.WithSqlPersistence(journalOpt, snapshotOpt, journalBuilder, null),
                 _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Invalid PersistenceMode defined."),
             };
         }
-        
+
         /// <summary>
         ///     Adds Akka.Persistence.Sql support to this <see cref="ActorSystem" />. At least one of the
         ///     configurator delegate needs to be populated else this method will throw an exception.
@@ -494,6 +509,18 @@ namespace Akka.Persistence.Sql.Hosting
         ///     </para>
         ///     <i>Default</i>: <c>null</c>
         /// </param>
+        /// <param name="journalBuilder">
+        ///     <para>
+        ///         An <see cref="Action{T}" /> used to configure an <see cref="AkkaPersistenceJournalBuilder" /> instance for event adapters and health checks.
+        ///     </para>
+        ///     <i>Default</i>: <c>null</c>
+        /// </param>
+        /// <param name="snapshotBuilder">
+        ///     <para>
+        ///         An <see cref="Action{T}" /> used to configure an <see cref="AkkaPersistenceSnapshotBuilder" /> instance for health checks.
+        ///     </para>
+        ///     <i>Default</i>: <c>null</c>
+        /// </param>
         /// <returns>
         ///     The same <see cref="AkkaConfigurationBuilder" /> instance originally passed in.
         /// </returns>
@@ -503,8 +530,11 @@ namespace Akka.Persistence.Sql.Hosting
         public static AkkaConfigurationBuilder WithSqlPersistence(
             this AkkaConfigurationBuilder builder,
             SqlJournalOptions? journalOptions = null,
-            SqlSnapshotOptions? snapshotOptions = null)
+            SqlSnapshotOptions? snapshotOptions = null,
+            Action<AkkaPersistenceJournalBuilder>? journalBuilder = null,
+            Action<AkkaPersistenceSnapshotBuilder>? snapshotBuilder = null)
         {
+            // Register DataOptions if needed (SQL-specific setup)
             if (journalOptions?.DataOptions is not null)
             {
                 if(builder.Setups.FirstOrDefault(s => s is MultiDataOptionsSetup) is not MultiDataOptionsSetup setup)
@@ -525,30 +555,22 @@ namespace Akka.Persistence.Sql.Hosting
                 }
                 setup.AddDataOptions(snapshotOptions.PluginId, snapshotOptions.DataOptions);
             }
-            
+
+            // Use unified API from Akka.Persistence.Hosting
             return (journalOptions, snapshotOptions) switch
             {
                 (null, null) =>
                     throw new ArgumentException($"{nameof(journalOptions)} and {nameof(snapshotOptions)} could not both be null"),
 
-                (_, null) =>
-                    builder
-                        .AddHocon(journalOptions.ToConfig(), HoconAddMode.Prepend)
-                        .AddHocon(journalOptions.DefaultConfig, HoconAddMode.Append)
-                        .AddHocon(journalOptions.DefaultQueryConfig, HoconAddMode.Append),
+                (_, null) => builder
+                    .WithJournal(journalOptions, journalBuilder)
+                    .AddHocon(journalOptions.DefaultQueryConfig, HoconAddMode.Append),
 
-                (null, _) =>
-                    builder
-                        .AddHocon(snapshotOptions.ToConfig(), HoconAddMode.Prepend)
-                        .AddHocon(snapshotOptions.DefaultConfig, HoconAddMode.Append),
+                (null, _) => builder.WithSnapshot(snapshotOptions, snapshotBuilder),
 
-                (_, _) =>
-                    builder
-                        .AddHocon(journalOptions.ToConfig(), HoconAddMode.Prepend)
-                        .AddHocon(snapshotOptions.ToConfig(), HoconAddMode.Prepend)
-                        .AddHocon(journalOptions.DefaultConfig, HoconAddMode.Append)
-                        .AddHocon(snapshotOptions.DefaultConfig, HoconAddMode.Append)
-                        .AddHocon(journalOptions.DefaultQueryConfig, HoconAddMode.Append),
+                (_, _) => builder
+                    .WithJournalAndSnapshot(journalOptions, snapshotOptions, journalBuilder, snapshotBuilder)
+                    .AddHocon(journalOptions.DefaultQueryConfig, HoconAddMode.Append),
             };
         }
     }
