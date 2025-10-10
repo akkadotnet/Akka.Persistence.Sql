@@ -46,24 +46,12 @@ public class RuntimeEventAdapterSpec : Akka.Hosting.TestKit.TestKit, IClassFixtu
     protected override void ConfigureAkka(AkkaConfigurationBuilder builder, IServiceProvider provider)
     {
         // Mimic the user's scenario from issue #552:
-        // 1. First call: Set up global persistence with event adapters (for tagging)
-        var journalOptions = new SqlJournalOptions(isDefaultPlugin: true, identifier: "sql")
-        {
-            ConnectionString = _fixture.ConnectionString,
-            ProviderName = _fixture.ProviderName,
-            AutoInitialize = true,
-            Adapters = new AkkaPersistenceJournalBuilder("sql", builder)
-        };
-        journalOptions.Adapters.AddWriteEventAdapter<TestEventTagger>("test-tagger", new[] { typeof(TestEvent) });
-
-        var snapshotOptions = new SqlSnapshotOptions(isDefaultPlugin: true, identifier: "sql")
-        {
-            ConnectionString = _fixture.ConnectionString,
-            ProviderName = _fixture.ProviderName,
-            AutoInitialize = true
-        };
-
-        builder.WithSqlPersistence(journalOptions, snapshotOptions);
+        // 1. First call: Set up global persistence with event adapters (for tagging) using NEW callback API
+        builder.WithSqlPersistence(
+            connectionString: _fixture.ConnectionString,
+            providerName: _fixture.ProviderName,
+            autoInitialize: true,
+            journalBuilder: journal => journal.AddWriteEventAdapter<TestEventTagger>("test-tagger", new[] { typeof(TestEvent) }));
 
         // 2. Second call: Set up separate journal/snapshot options (like sharding does)
         // This is the key issue - does this overwrite the event adapters?
