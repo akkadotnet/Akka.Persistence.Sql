@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Hosting;
 using Akka.Persistence;
+using Akka.Persistence.Hosting;
 using Akka.Persistence.Journal;
 using Akka.Persistence.Query;
 using Akka.Persistence.Sql.Hosting;
@@ -46,12 +47,23 @@ public class RuntimeEventAdapterSpec : Akka.Hosting.TestKit.TestKit, IClassFixtu
     {
         // Mimic the user's scenario from issue #552:
         // 1. First call: Set up global persistence with event adapters (for tagging)
-        builder.WithSqlPersistence(
-            connectionString: _fixture.ConnectionString,
-            providerName: _fixture.ProviderName,
-            journalBuilder: journal => journal
-                .AddWriteEventAdapter<TestEventTagger>("test-tagger",
-                    new[] { typeof(TestEvent) }));
+        var journalOptions = new SqlJournalOptions(isDefaultPlugin: true, identifier: "sql")
+        {
+            ConnectionString = _fixture.ConnectionString,
+            ProviderName = _fixture.ProviderName,
+            AutoInitialize = true,
+            Adapters = new AkkaPersistenceJournalBuilder("sql", builder)
+        };
+        journalOptions.Adapters.AddWriteEventAdapter<TestEventTagger>("test-tagger", new[] { typeof(TestEvent) });
+
+        var snapshotOptions = new SqlSnapshotOptions(isDefaultPlugin: true, identifier: "sql")
+        {
+            ConnectionString = _fixture.ConnectionString,
+            ProviderName = _fixture.ProviderName,
+            AutoInitialize = true
+        };
+
+        builder.WithSqlPersistence(journalOptions, snapshotOptions);
 
         // 2. Second call: Set up separate journal/snapshot options (like sharding does)
         // This is the key issue - does this overwrite the event adapters?
@@ -69,7 +81,7 @@ public class RuntimeEventAdapterSpec : Akka.Hosting.TestKit.TestKit, IClassFixtu
             AutoInitialize = true
         };
 
-        builder.WithSqlPersistence(
+        builder.WithJournalAndSnapshot(
             journalOptions: shardingJournalOptions,
             snapshotOptions: shardingSnapshotOptions);
     }
@@ -87,15 +99,22 @@ public class RuntimeEventAdapterSpec : Akka.Hosting.TestKit.TestKit, IClassFixtu
 
     public sealed class TestEventTagger : IWriteEventAdapter
     {
+        public static int CallCount = 0;
+
         public string Manifest(object evt) => string.Empty;
 
         public object ToJournal(object evt)
         {
-            return evt switch
+            var result = evt switch
             {
                 TestEvent => new Tagged(evt, new[] { TestTag }),
                 _ => evt
             };
+
+            System.Threading.Interlocked.Increment(ref CallCount);
+            System.Console.WriteLine($"[TestEventTagger] ToJournal called {CallCount} times. Event: {evt.GetType().Name}, Result: {result.GetType().Name}");
+
+            return result;
         }
     }
 
@@ -130,9 +149,11 @@ public class RuntimeEventAdapterSpec : Akka.Hosting.TestKit.TestKit, IClassFixtu
 
         private readonly System.Collections.Generic.List<string> _events = new();
 
-        public TestPersistentActor(string persistenceId)
+        public TestPersistentActor(string persistenceId, string? journalPluginId = null)
         {
             PersistenceId = persistenceId;
+            if (journalPluginId != null)
+                JournalPluginId = journalPluginId;
 
             Command<SaveEvent>(cmd =>
             {
@@ -159,15 +180,13 @@ public class RuntimeEventAdapterSpec : Akka.Hosting.TestKit.TestKit, IClassFixtu
     }
 
     [Fact]
-    public async Task EventAdapter_ShouldWork_WhenFollowedByWithSqlPersistence()
+    public async Task EventAdapter_ShouldWork_OnDefaultJournal()
     {
-        // Log the actual HOCON config to see what's being generated
-        var journalConfig = Sys.Settings.Config.GetConfig("akka.persistence.journal.sql");
-        Output.WriteLine("=== Journal Config ===");
-        Output.WriteLine(journalConfig?.ToString() ?? "null");
+        // This test verifies adapters work on the default journal
+        TestEventTagger.CallCount = 0; // Reset counter
 
-        // Arrange
-        var persistentActor = Sys.ActorOf(Props.Create(() => new TestPersistentActor(PersistenceId)));
+        // Arrange - use default journal
+        var persistentActor = Sys.ActorOf(Props.Create(() => new TestPersistentActor(PersistenceId, null)));
 
         // Act - persist some events
         Output.WriteLine("Persisting event-1...");
@@ -180,6 +199,8 @@ public class RuntimeEventAdapterSpec : Akka.Hosting.TestKit.TestKit, IClassFixtu
 
         // Give a moment for async writes to complete
         await Task.Delay(1000);
+
+        Output.WriteLine($"Event adapter was called {TestEventTagger.CallCount} times");
 
         // Query by tag - this should work if event adapters are configured correctly
         Output.WriteLine($"Querying for events with tag: {TestTag}");
@@ -208,5 +229,55 @@ public class RuntimeEventAdapterSpec : Akka.Hosting.TestKit.TestKit, IClassFixtu
         eventData.Should().Contain("event-1");
         eventData.Should().Contain("event-2");
         eventData.Should().Contain("event-3");
+    }
+
+    [Fact]
+    public async Task EventAdapter_ShouldWork_OnShardingJournal_ReproducesUserScenario()
+    {
+        // This test reproduces the user's actual scenario from issue #552:
+        // Adapters configured on default journal, but sharded entities use "sharding" journal
+        TestEventTagger.CallCount = 0; // Reset counter
+
+        // Arrange - use "sharding" journal (like sharded entities do)
+        var persistentActor = Sys.ActorOf(Props.Create(() => new TestPersistentActor($"{PersistenceId}-sharding", "akka.persistence.journal.sharding")));
+
+        // Act - persist some events
+        Output.WriteLine("Persisting to sharding journal...");
+        await persistentActor.Ask<string>(new TestPersistentActor.SaveEvent("event-1"), TimeSpan.FromSeconds(5));
+        await persistentActor.Ask<string>(new TestPersistentActor.SaveEvent("event-2"), TimeSpan.FromSeconds(5));
+        await persistentActor.Ask<string>(new TestPersistentActor.SaveEvent("event-3"), TimeSpan.FromSeconds(5));
+        Output.WriteLine("All events persisted successfully");
+
+        await Task.Delay(1000);
+
+        Output.WriteLine($"Event adapter was called {TestEventTagger.CallCount} times");
+        Output.WriteLine("EXPECTED: 0 times (bug reproduction - adapters not on sharding journal)");
+
+        // Query by tag - this should FAIL because adapters aren't on the sharding journal
+        var readJournal = PersistenceQuery.Get(Sys)
+            .ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
+
+        var source = readJournal.EventsByTag(TestTag, Offset.NoOffset());
+        var materializer = Sys.Materializer();
+
+        var eventsTask = source
+            .Take(3)
+            .RunWith(Sink.Seq<EventEnvelope>(), materializer)
+            .ContinueWith(t => t.Result.ToList());
+
+        // This should timeout because events aren't tagged
+        var timedOut = false;
+        try
+        {
+            await eventsTask.WaitAsync(TimeSpan.FromSeconds(3));
+        }
+        catch (TimeoutException)
+        {
+            timedOut = true;
+        }
+
+        // Assert - this SHOULD fail, demonstrating the bug
+        timedOut.Should().BeTrue("events should not be tagged when using sharding journal without adapters");
+        TestEventTagger.CallCount.Should().Be(0, "adapter should not be called for sharding journal");
     }
 }
