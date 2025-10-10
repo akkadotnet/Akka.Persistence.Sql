@@ -161,27 +161,45 @@ public class RuntimeEventAdapterSpec : Akka.Hosting.TestKit.TestKit, IClassFixtu
     [Fact]
     public async Task EventAdapter_ShouldWork_WhenFollowedByWithSqlPersistence()
     {
+        // Log the actual HOCON config to see what's being generated
+        var journalConfig = Sys.Settings.Config.GetConfig("akka.persistence.journal.sql");
+        Output.WriteLine("=== Journal Config ===");
+        Output.WriteLine(journalConfig?.ToString() ?? "null");
+
         // Arrange
         var persistentActor = Sys.ActorOf(Props.Create(() => new TestPersistentActor(PersistenceId)));
 
         // Act - persist some events
+        Output.WriteLine("Persisting event-1...");
         await persistentActor.Ask<string>(new TestPersistentActor.SaveEvent("event-1"), TimeSpan.FromSeconds(5));
+        Output.WriteLine("Persisting event-2...");
         await persistentActor.Ask<string>(new TestPersistentActor.SaveEvent("event-2"), TimeSpan.FromSeconds(5));
+        Output.WriteLine("Persisting event-3...");
         await persistentActor.Ask<string>(new TestPersistentActor.SaveEvent("event-3"), TimeSpan.FromSeconds(5));
+        Output.WriteLine("All events persisted successfully");
+
+        // Give a moment for async writes to complete
+        await Task.Delay(1000);
 
         // Query by tag - this should work if event adapters are configured correctly
+        Output.WriteLine($"Querying for events with tag: {TestTag}");
         var readJournal = PersistenceQuery.Get(Sys)
             .ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
 
         var source = readJournal.EventsByTag(TestTag, Offset.NoOffset());
         var materializer = Sys.Materializer();
 
+        Output.WriteLine("Starting stream materialization...");
         var eventsTask = source
             .Take(3)
             .RunWith(Sink.Seq<EventEnvelope>(), materializer)
-            .ContinueWith(t => t.Result.ToList());
+            .ContinueWith(t => {
+                Output.WriteLine($"Stream completed with {t.Result.Count} events");
+                return t.Result.ToList();
+            });
 
         var events = await eventsTask.WaitAsync(TimeSpan.FromSeconds(10));
+        Output.WriteLine($"Received {events.Count} events from query");
 
         // Assert - verify that events were tagged (meaning event adapter worked)
         events.Should().HaveCount(3, "all 3 events should be tagged");
