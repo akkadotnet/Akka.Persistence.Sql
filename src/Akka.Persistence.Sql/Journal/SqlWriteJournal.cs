@@ -79,7 +79,8 @@ namespace Akka.Persistence.Sql.Journal
             _useWriterUuid = _journalConfig.TableConfig.EventJournalTable.UseWriterUuidColumn;
             _defaultHealthCheckTags = new Dictionary<string, object>
             {
-                { "journal", Self.Path.Name }
+                { "journal", Self.Path.Name },
+                { "provider", _journalConfig.ProviderName },
             };
         }
 
@@ -252,6 +253,8 @@ namespace Akka.Persistence.Sql.Journal
 
         public override async Task<PersistenceHealthCheckResult> CheckHealthAsync(CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            
             var result = await base.CheckHealthAsync(cancellationToken);
             if(result.Status is not PersistenceHealthStatus.Healthy)
                 return result;

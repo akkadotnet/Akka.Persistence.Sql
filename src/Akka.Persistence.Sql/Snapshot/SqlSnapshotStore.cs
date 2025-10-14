@@ -57,7 +57,8 @@ namespace Akka.Persistence.Sql.Snapshot
                 logger: Context.GetLogger());
             _defaultHealthCheckTags = new Dictionary<string, object>
             {
-                { "snapshot-store", Self.Path.Name }
+                { "snapshot-store", Self.Path.Name },
+                { "provider", _settings.ProviderName },
             };
         }
 
@@ -177,6 +178,8 @@ namespace Akka.Persistence.Sql.Snapshot
         
         public override async Task<PersistenceHealthCheckResult> CheckHealthAsync(CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            
             var result = await base.CheckHealthAsync(cancellationToken);
             if(result.Status is not PersistenceHealthStatus.Healthy)
                 return result;

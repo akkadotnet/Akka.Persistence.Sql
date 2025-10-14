@@ -6,6 +6,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Actor.Setup;
@@ -144,6 +147,83 @@ akka.persistence {
             probe.ExpectNext<EventEnvelope>(p => p.PersistenceId == PId && p.SequenceNr == 1L && p.Event.Equals(1));
             probe.ExpectNext<EventEnvelope>(p => p.PersistenceId == PId && p.SequenceNr == 2L && p.Event.Equals(2));
             await probe.CancelAsync();
+        }
+        
+        [Fact]
+        public async Task Journal_CheckHealthAsync_should_return_healthy_when_database_connection_succeeds()
+        {
+            // Arrange
+            var persistence = Persistence.Instance.Apply(Sys);
+            var journal = persistence.JournalFor(null);
+
+            // Act
+            var result = await journal.Ask<JournalHealthCheckResponse>(new CheckJournalHealth(CancellationToken.None));
+
+            // Assert
+            result.Result.Status.Should().Be(PersistenceHealthStatus.Healthy);
+            result.Result.Description.Should().Be("Ok");
+            result.Result.Data.Should().NotBeNull();
+            result.Result.Data!["journal"].Should().Be(journal.Path.Name);
+            result.Result.Data["provider"].Should().Be(_fixture.ProviderName);
+        }
+
+        [Fact]
+        public async Task SnapshotStore_CheckHealthAsync_should_return_healthy_when_database_connection_succeeds()
+        {
+            // Arrange
+            var persistence = Persistence.Instance.Apply(Sys);
+            var snapshotStore = persistence.SnapshotStoreFor(null);
+
+            // Act
+            var result = await snapshotStore.Ask<SnapshotStoreHealthCheckResponse>(new CheckSnapshotStoreHealth(CancellationToken.None));
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Result.Status.Should().Be(PersistenceHealthStatus.Healthy);
+            result.Result.Description.Should().Be("Ok");
+            result.Result.Data.Should().NotBeNull();
+            result.Result.Data!["snapshot-store"].Should().Be(snapshotStore.Path.Name);
+            result.Result.Data["provider"].Should().Be(_fixture.ProviderName);
+        }
+
+        [Fact]
+        public async Task Health_checks_should_handle_concurrent_requests()
+        {
+            // Arrange
+            var persistence = Persistence.Instance.Apply(Sys);
+            var journal = persistence.JournalFor(null);
+            var snapshotStore = persistence.SnapshotStoreFor(null);
+
+            // Act - perform multiple concurrent health checks
+            var journalTasks = Enumerable.Range(0, 10)
+                .Select(_ => journal.Ask<JournalHealthCheckResponse>(new CheckJournalHealth(CancellationToken.None)))
+                .ToImmutableList();
+            var snapshotTasks = Enumerable.Range(0, 10)
+                .Select(_ => snapshotStore.Ask<SnapshotStoreHealthCheckResponse>(new CheckSnapshotStoreHealth(CancellationToken.None)))
+                .ToImmutableList();
+
+            var journalResults = await Task.WhenAll(journalTasks);
+            var snapshotResults = await Task.WhenAll(snapshotTasks);
+
+            // Assert - all health checks should succeed
+            foreach (var r in journalResults)
+            {
+                r.Should().NotBeNull();
+                r.Result.Status.Should().Be(PersistenceHealthStatus.Healthy);
+                r.Result.Description.Should().Be("Ok");
+            }
+
+            foreach (var r in snapshotResults)
+            {
+                r.Should().NotBeNull();
+                r.Result.Status.Should().Be(PersistenceHealthStatus.Healthy);
+                r.Result.Description.Should().Be("Ok");
+            }
+
+            foreach (var r in journalResults)
+                r.Result.Data["provider"].Should().Be(_fixture.ProviderName);
+            foreach (var r in snapshotResults)
+                r.Result.Data["provider"].Should().Be(_fixture.ProviderName);
         }
 
         private sealed class MyPersistenceActor : ReceivePersistentActor
