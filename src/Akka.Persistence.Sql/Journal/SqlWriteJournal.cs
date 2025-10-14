@@ -53,6 +53,8 @@ namespace Akka.Persistence.Sql.Journal
         private ByteArrayJournalDao? _journal;
 
         private ActorMaterializer? _mat;
+        
+        private readonly IReadOnlyDictionary<string, object> _defaultHealthCheckTags;
 
         public SqlWriteJournal(Configuration.Config journalConfig)
         {
@@ -75,6 +77,10 @@ namespace Akka.Persistence.Sql.Journal
             }
 
             _useWriterUuid = _journalConfig.TableConfig.EventJournalTable.UseWriterUuidColumn;
+            _defaultHealthCheckTags = new Dictionary<string, object>
+            {
+                { "journal", Self.Path.Name }
+            };
         }
 
         // Stash is needed because we need to stash all incoming messages while we're waiting for the
@@ -243,5 +249,23 @@ namespace Akka.Persistence.Sql.Journal
 
         protected override async Task DeleteMessagesToAsync(string persistenceId, long toSequenceNr, CancellationToken cancellationToken)
             => await _journal!.Delete(persistenceId, toSequenceNr, cancellationToken);
+
+        public override async Task<PersistenceHealthCheckResult> CheckHealthAsync(CancellationToken cancellationToken = default)
+        {
+            var result = await base.CheckHealthAsync(cancellationToken);
+            if(result.Status is not PersistenceHealthStatus.Healthy)
+                return result;
+
+            try
+            {
+                await _journal!.CheckDatabaseConnection(cancellationToken);
+            }
+            catch (Exception e)
+            {
+                return new PersistenceHealthCheckResult(PersistenceHealthStatus.Degraded, "Database connection failed", e, _defaultHealthCheckTags);
+            }
+
+            return new PersistenceHealthCheckResult(PersistenceHealthStatus.Healthy, Description: "Ok", Data: _defaultHealthCheckTags);
+        } 
     }
 }

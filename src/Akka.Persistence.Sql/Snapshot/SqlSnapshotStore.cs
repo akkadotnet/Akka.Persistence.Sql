@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
@@ -27,6 +28,7 @@ namespace Akka.Persistence.Sql.Snapshot
         private readonly ByteArraySnapshotDao _dao;
         private readonly ILoggingAdapter _log;
         private readonly SnapshotConfig _settings;
+        private readonly IReadOnlyDictionary<string, object> _defaultHealthCheckTags;
 
         public SqlSnapshotStore(Configuration.Config snapshotConfig)
         {
@@ -53,6 +55,10 @@ namespace Akka.Persistence.Sql.Snapshot
                 serialization: Context.System.Serialization,
                 materializer: Materializer.CreateSystemMaterializer((ExtendedActorSystem)Context.System),
                 logger: Context.GetLogger());
+            _defaultHealthCheckTags = new Dictionary<string, object>
+            {
+                { "snapshot-store", Self.Path.Name }
+            };
         }
 
         public IStash Stash { get; set; } = null!;
@@ -167,6 +173,24 @@ namespace Akka.Persistence.Sql.Snapshot
                     break;
                 }
             }
+        }
+        
+        public override async Task<PersistenceHealthCheckResult> CheckHealthAsync(CancellationToken cancellationToken = default)
+        {
+            var result = await base.CheckHealthAsync(cancellationToken);
+            if(result.Status is not PersistenceHealthStatus.Healthy)
+                return result;
+
+            try
+            {
+                await _dao.CheckDatabaseConnection(cancellationToken);
+            }
+            catch (Exception e)
+            {
+                return new PersistenceHealthCheckResult(PersistenceHealthStatus.Degraded, "Database connection failed", e, _defaultHealthCheckTags);
+            }
+
+            return new PersistenceHealthCheckResult(PersistenceHealthStatus.Healthy, Description: "Ok", Data: _defaultHealthCheckTags);
         }
     }
 }

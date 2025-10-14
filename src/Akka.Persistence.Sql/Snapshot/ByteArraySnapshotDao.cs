@@ -449,5 +449,8 @@ namespace Akka.Persistence.Sql.Snapshot
             _shutdownCts.Cancel();
             _shutdownCts.Dispose();
         }
+        
+        public async Task CheckDatabaseConnection(CancellationToken cancellationToken = default)
+            => await _connectionFactory.GetConnection().CheckDatabaseConnection(cancellationToken);
     }
 }

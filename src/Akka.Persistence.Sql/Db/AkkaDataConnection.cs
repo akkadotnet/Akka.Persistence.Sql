@@ -95,5 +95,12 @@ namespace Akka.Persistence.Sql.Db
         public async Task RollbackTransactionAsync(
             CancellationToken cancellationToken = default)
             => await _connection.RollbackTransactionAsync(cancellationToken);
+
+        public async Task CheckDatabaseConnection(CancellationToken cancellationToken = default)
+        {
+            using var command = _connection.CreateCommand();
+            command.CommandText = "SELECT 1";
+            await command.ExecuteScalarAsync(cancellationToken);
+        }
     }
 }

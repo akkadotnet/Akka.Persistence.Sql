@@ -63,5 +63,7 @@ namespace Akka.Persistence.Sql.Snapshot
             SnapshotMetadata snapshotMetadata,
             object snapshot,
             CancellationToken cancellationToken = default);
+        
+        Task CheckDatabaseConnection(CancellationToken cancellationToken = default);
     }
 }

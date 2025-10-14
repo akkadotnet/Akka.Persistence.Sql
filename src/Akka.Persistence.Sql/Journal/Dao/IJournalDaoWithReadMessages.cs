@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Persistence.Sql.Journal.Types;
@@ -27,5 +28,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
             long toSequenceNr,
             int batchSize,
             Option<(TimeSpan duration, IScheduler scheduler)> refreshInterval);
+        
+        Task CheckDatabaseConnection(CancellationToken cancellationToken = default);
     }
 }

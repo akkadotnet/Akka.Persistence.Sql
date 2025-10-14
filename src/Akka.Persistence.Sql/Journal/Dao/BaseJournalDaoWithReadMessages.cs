@@ -133,5 +133,8 @@ namespace Akka.Persistence.Sql.Journal.Dao
         private static Option<((long, FlowControlEnum), LanguageExt.Seq<Try<ReplayCompletion>>)> InvalidFlowThrowHelper(
             (long, FlowControlEnum) opt)
             => throw new Exception($"Got invalid FlowControl from Queue! Type : {opt.Item2}");
+
+        public async Task CheckDatabaseConnection(CancellationToken cancellationToken = default)
+            => await ConnectionFactory.GetConnection().CheckDatabaseConnection(cancellationToken);
     }
 }
