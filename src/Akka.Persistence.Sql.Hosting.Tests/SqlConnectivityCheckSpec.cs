@@ -16,44 +16,37 @@ using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Hosting.Tests
 {
-    public class SqlConnectivityCheckSpec : IClassFixture<SqliteContainer>, IAsyncLifetime
+    public class SqliteConnectivityCheckSpec : IAsyncLifetime
     {
-        private readonly SqliteContainer _fixture;
+        private readonly SqliteContainer _container;
         private readonly ITestOutputHelper _output;
 
-        public SqlConnectivityCheckSpec(ITestOutputHelper output, SqliteContainer fixture)
+        public SqliteConnectivityCheckSpec(ITestOutputHelper output)
         {
             _output = output;
-            _fixture = fixture;
+            _container = new SqliteContainer();
         }
 
         public async Task InitializeAsync()
         {
-            await _fixture.InitializeAsync();
+            await _container.InitializeAsync();
         }
 
         public async Task DisposeAsync()
         {
-            await _fixture.DisposeAsync();
+            await _container.DisposeAsync();
         }
 
         [Fact]
         public async Task Journal_Connectivity_Check_Should_Return_Healthy_When_Connected()
         {
             // Arrange
-            var journalOptions = new SqlJournalOptions(isDefaultPlugin: true)
-            {
-                ConnectionString = _fixture.ConnectionString,
-                ProviderName = _fixture.ProviderName,
-                Identifier = "sql"
-            };
-
             var check = new SqlJournalConnectivityCheck(
-                journalOptions.ConnectionString,
-                journalOptions.ProviderName,
-                journalOptions.Identifier);
+                _container.ConnectionString,
+                _container.ProviderName,
+                "sql");
 
-            var context = new AkkaHealthCheckContext(null!); // ActorSystem not needed for connectivity check
+            var context = new AkkaHealthCheckContext(null!);
 
             // Act
             var result = await check.CheckHealthAsync(context, CancellationToken.None);
@@ -69,7 +62,7 @@ namespace Akka.Persistence.Sql.Hosting.Tests
             // Arrange
             var check = new SqlJournalConnectivityCheck(
                 "invalid-connection-string",
-                _fixture.ProviderName,
+                _container.ProviderName,
                 "sql");
 
             var context = new AkkaHealthCheckContext(null!);
@@ -86,17 +79,10 @@ namespace Akka.Persistence.Sql.Hosting.Tests
         public async Task Snapshot_Connectivity_Check_Should_Return_Healthy_When_Connected()
         {
             // Arrange
-            var snapshotOptions = new SqlSnapshotOptions(isDefaultPlugin: true)
-            {
-                ConnectionString = _fixture.ConnectionString,
-                ProviderName = _fixture.ProviderName,
-                Identifier = "sql"
-            };
-
             var check = new SqlSnapshotStoreConnectivityCheck(
-                snapshotOptions.ConnectionString,
-                snapshotOptions.ProviderName,
-                snapshotOptions.Identifier);
+                _container.ConnectionString,
+                _container.ProviderName,
+                "sql");
 
             var context = new AkkaHealthCheckContext(null!);
 
@@ -114,7 +100,7 @@ namespace Akka.Persistence.Sql.Hosting.Tests
             // Arrange
             var check = new SqlSnapshotStoreConnectivityCheck(
                 "invalid-connection-string",
-                _fixture.ProviderName,
+                _container.ProviderName,
                 "sql");
 
             var context = new AkkaHealthCheckContext(null!);
@@ -131,7 +117,7 @@ namespace Akka.Persistence.Sql.Hosting.Tests
         public void Journal_Connectivity_Check_Should_Require_ConnectionString()
         {
             // Act & Assert
-            var action = () => new SqlJournalConnectivityCheck(null!, _fixture.ProviderName, "sql");
+            var action = () => new SqlJournalConnectivityCheck(null!, "SQLiteClassic", "sql");
             action.Should().Throw<ArgumentNullException>().Where(ex => ex.ParamName == "connectionString");
         }
 
@@ -139,7 +125,7 @@ namespace Akka.Persistence.Sql.Hosting.Tests
         public void Journal_Connectivity_Check_Should_Require_ProviderName()
         {
             // Act & Assert
-            var action = () => new SqlJournalConnectivityCheck(_fixture.ConnectionString, null!, "sql");
+            var action = () => new SqlJournalConnectivityCheck("valid-connection", null!, "sql");
             action.Should().Throw<ArgumentNullException>().Where(ex => ex.ParamName == "providerName");
         }
 
@@ -147,7 +133,7 @@ namespace Akka.Persistence.Sql.Hosting.Tests
         public void Journal_Connectivity_Check_Should_Require_JournalId()
         {
             // Act & Assert
-            var action = () => new SqlJournalConnectivityCheck(_fixture.ConnectionString, _fixture.ProviderName, null!);
+            var action = () => new SqlJournalConnectivityCheck("valid-connection", "SQLiteClassic", null!);
             action.Should().Throw<ArgumentNullException>().Where(ex => ex.ParamName == "journalId");
         }
 
@@ -155,7 +141,7 @@ namespace Akka.Persistence.Sql.Hosting.Tests
         public void Snapshot_Connectivity_Check_Should_Require_ConnectionString()
         {
             // Act & Assert
-            var action = () => new SqlSnapshotStoreConnectivityCheck(null!, _fixture.ProviderName, "sql");
+            var action = () => new SqlSnapshotStoreConnectivityCheck(null!, "SQLiteClassic", "sql");
             action.Should().Throw<ArgumentNullException>().Where(ex => ex.ParamName == "connectionString");
         }
 
@@ -163,7 +149,7 @@ namespace Akka.Persistence.Sql.Hosting.Tests
         public void Snapshot_Connectivity_Check_Should_Require_ProviderName()
         {
             // Act & Assert
-            var action = () => new SqlSnapshotStoreConnectivityCheck(_fixture.ConnectionString, null!, "sql");
+            var action = () => new SqlSnapshotStoreConnectivityCheck("valid-connection", null!, "sql");
             action.Should().Throw<ArgumentNullException>().Where(ex => ex.ParamName == "providerName");
         }
 
@@ -171,7 +157,7 @@ namespace Akka.Persistence.Sql.Hosting.Tests
         public void Snapshot_Connectivity_Check_Should_Require_SnapshotStoreId()
         {
             // Act & Assert
-            var action = () => new SqlSnapshotStoreConnectivityCheck(_fixture.ConnectionString, _fixture.ProviderName, null!);
+            var action = () => new SqlSnapshotStoreConnectivityCheck("valid-connection", "SQLiteClassic", null!);
             action.Should().Throw<ArgumentNullException>().Where(ex => ex.ParamName == "snapshotStoreId");
         }
     }
