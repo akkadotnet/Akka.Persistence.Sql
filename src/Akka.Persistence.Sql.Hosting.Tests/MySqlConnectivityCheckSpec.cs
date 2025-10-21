@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Akka.Hosting;
 using Akka.Persistence.Sql.Tests.Common.Containers;
+using Akka.Persistence.Sql.Tests.Common.Internal.Xunit;
 using FluentAssertions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Xunit;
@@ -16,6 +17,7 @@ using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Hosting.Tests
 {
+    [SkipWindows]
     public class MySqlConnectivityCheckSpec : IAsyncLifetime
     {
         private readonly MySqlContainer _container;
