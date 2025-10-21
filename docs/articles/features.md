@@ -51,6 +51,11 @@ title: Features/Architecture
 - Configuration
     - Custom provider configurations are supported.
 - Compatibility with existing Akka.Persistence plugins is implemented via `table-mapping` setting.
+- Connectivity Health Checks (Akka.Hosting integration)
+    - Liveness checks that proactively verify database connectivity
+    - Performed via lightweight "SELECT 1" queries
+    - Configurable health status when database is unreachable
+    - Integrated with Microsoft.Extensions.Diagnostics.HealthChecks for ASP.NET Core applications
 
 ## Incomplete
 
