@@ -12,7 +12,7 @@ If you're migrating from legacy `Akka.Persistence.Sql.Common` based plugins, you
 - [Akka.Persistence.Sql](#akkapersistencesql)
 - [Getting Started](#getting-started)
   * [The Easy Way, Using `Akka.Hosting`](#the-easy-way-using-akkahosting)
-    + [Health Checks (Akka.Hosting v1.5.51+)](#health-checks-akkahosting-v1551)
+    + [Health Checks](#health-checks)
   * [The Classic Way, Using HOCON](#the-classic-way-using-hocon)
   * [Supported Database Providers](#supported-database-providers)
     + [Tested Database Providers](#tested-database-providers)
@@ -76,27 +76,22 @@ This includes setting the connection string and provider name again, if necessar
 Please consult the Linq2Db documentation for more details on configuring a valid DataOptions object.
 Note that `MappingSchema` and `RetryPolicy` will always be overridden by Akka.Persistence.Sql.
 
-### Health Checks (Akka.Hosting v1.5.51+)
+### Health Checks
 
-Starting with Akka.Hosting v1.5.51, you can add health checks for your persistence plugins to verify that journals and snapshot stores are properly initialized and accessible. These health checks integrate with `Microsoft.Extensions.Diagnostics.HealthChecks` and can be used with ASP.NET Core health check endpoints.
+Starting with Akka.Persistence.Sql v1.5.51 or later, you can add health checks for your persistence plugins to verify that journals and snapshot stores are properly initialized and accessible. These health checks integrate with `Microsoft.Extensions.Diagnostics.HealthChecks` and can be used with ASP.NET Core health check endpoints.
 
-To configure health checks, use the `.WithHealthCheck()` method when setting up your journal and snapshot store:
+To configure health checks, use the `journalBuilder` and `snapshotBuilder` parameters with the `.WithHealthCheck()` method:
 
 ```csharp
 var host = new HostBuilder()
     .ConfigureServices((context, services) => {
         services.AddAkka("my-system-name", (builder, provider) =>
         {
-            builder
-                .WithSqlPersistence(
-                    connectionString: _myConnectionString,
-                    providerName: ProviderName.SqlServer2019,
-                    journal: j => j.WithHealthCheck(
-                        unHealthyStatus: HealthStatus.Degraded,
-                        name: "sql-journal"),
-                    snapshot: s => s.WithHealthCheck(
-                        unHealthyStatus: HealthStatus.Degraded,
-                        name: "sql-snapshot"));
+            builder.WithSqlPersistence(
+                connectionString: _myConnectionString,
+                providerName: ProviderName.SqlServer2019,
+                journalBuilder: journal => journal.WithHealthCheck(HealthStatus.Degraded),
+                snapshotBuilder: snapshot => snapshot.WithHealthCheck(HealthStatus.Degraded));
         });
     });
 ```
@@ -119,12 +114,11 @@ builder.Services.AddHealthChecks();
 
 builder.Services.AddAkka("my-system-name", (configBuilder, provider) =>
 {
-    configBuilder
-        .WithSqlPersistence(
-            connectionString: _myConnectionString,
-            providerName: ProviderName.SqlServer2019,
-            journal: j => j.WithHealthCheck(),
-            snapshot: s => s.WithHealthCheck());
+    configBuilder.WithSqlPersistence(
+        connectionString: _myConnectionString,
+        providerName: ProviderName.SqlServer2019,
+        journalBuilder: journal => journal.WithHealthCheck(),
+        snapshotBuilder: snapshot => snapshot.WithHealthCheck());
 });
 
 var app = builder.Build();
