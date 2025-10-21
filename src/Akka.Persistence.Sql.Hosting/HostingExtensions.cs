@@ -11,6 +11,7 @@ using Akka.Hosting;
 using Akka.Persistence.Hosting;
 using Akka.Persistence.Sql.Config;
 using LinqToDB;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace Akka.Persistence.Sql.Hosting
 {
@@ -550,6 +551,96 @@ namespace Akka.Persistence.Sql.Hosting
                         .AddHocon(snapshotOptions.DefaultConfig, HoconAddMode.Append)
                         .AddHocon(journalOptions.DefaultQueryConfig, HoconAddMode.Append),
             };
+        }
+    }
+
+    /// <summary>
+    /// Extension methods for SQL persistence connectivity checks
+    /// </summary>
+    public static class SqlConnectivityCheckExtensions
+    {
+        private static readonly System.Reflection.PropertyInfo? JournalBuilderProperty =
+            typeof(AkkaPersistenceJournalBuilder).GetProperty("Builder", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+        private static readonly System.Reflection.PropertyInfo? SnapshotBuilderProperty =
+            typeof(AkkaPersistenceSnapshotBuilder).GetProperty("Builder", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+        /// <summary>
+        /// Adds a connectivity check for the SQL journal.
+        /// This is a liveness check that proactively verifies database connectivity.
+        /// </summary>
+        /// <param name="builder">The journal builder</param>
+        /// <param name="journalOptions">The journal options containing connection details</param>
+        /// <param name="unHealthyStatus">The status to return when check fails. Defaults to Unhealthy.</param>
+        /// <param name="name">Optional name for the health check. Defaults to "Akka.Persistence.Sql.Journal.{id}.Connectivity"</param>
+        /// <returns>The journal builder for chaining</returns>
+        public static AkkaPersistenceJournalBuilder WithConnectivityCheck(
+            this AkkaPersistenceJournalBuilder builder,
+            SqlJournalOptions journalOptions,
+            HealthStatus unHealthyStatus = HealthStatus.Unhealthy,
+            string? name = null)
+        {
+            if (journalOptions is null)
+                throw new ArgumentNullException(nameof(journalOptions));
+
+            if (string.IsNullOrWhiteSpace(journalOptions.ConnectionString))
+                throw new ArgumentException("ConnectionString must be set on SqlJournalOptions", nameof(journalOptions));
+
+            if (string.IsNullOrWhiteSpace(journalOptions.ProviderName))
+                throw new ArgumentException("ProviderName must be set on SqlJournalOptions", nameof(journalOptions));
+
+            var registration = new AkkaHealthCheckRegistration(
+                name ?? $"Akka.Persistence.Sql.Journal.{journalOptions.Identifier}.Connectivity",
+                new SqlJournalConnectivityCheck(journalOptions.ConnectionString!, journalOptions.ProviderName!, journalOptions.Identifier),
+                unHealthyStatus,
+                new[] { "akka", "persistence", "sql", "journal", "connectivity" });
+
+            // Use reflection to access the internal Builder property
+            if (JournalBuilderProperty?.GetValue(builder) is AkkaConfigurationBuilder akkaBuilder)
+            {
+                akkaBuilder.WithHealthCheck(registration);
+            }
+
+            return builder;
+        }
+
+        /// <summary>
+        /// Adds a connectivity check for the SQL snapshot store.
+        /// This is a liveness check that proactively verifies database connectivity.
+        /// </summary>
+        /// <param name="builder">The snapshot builder</param>
+        /// <param name="snapshotOptions">The snapshot options containing connection details</param>
+        /// <param name="unHealthyStatus">The status to return when check fails. Defaults to Unhealthy.</param>
+        /// <param name="name">Optional name for the health check. Defaults to "Akka.Persistence.Sql.SnapshotStore.{id}.Connectivity"</param>
+        /// <returns>The snapshot builder for chaining</returns>
+        public static AkkaPersistenceSnapshotBuilder WithConnectivityCheck(
+            this AkkaPersistenceSnapshotBuilder builder,
+            SqlSnapshotOptions snapshotOptions,
+            HealthStatus unHealthyStatus = HealthStatus.Unhealthy,
+            string? name = null)
+        {
+            if (snapshotOptions is null)
+                throw new ArgumentNullException(nameof(snapshotOptions));
+
+            if (string.IsNullOrWhiteSpace(snapshotOptions.ConnectionString))
+                throw new ArgumentException("ConnectionString must be set on SqlSnapshotOptions", nameof(snapshotOptions));
+
+            if (string.IsNullOrWhiteSpace(snapshotOptions.ProviderName))
+                throw new ArgumentException("ProviderName must be set on SqlSnapshotOptions", nameof(snapshotOptions));
+
+            var registration = new AkkaHealthCheckRegistration(
+                name ?? $"Akka.Persistence.Sql.SnapshotStore.{snapshotOptions.Identifier}.Connectivity",
+                new SqlSnapshotStoreConnectivityCheck(snapshotOptions.ConnectionString!, snapshotOptions.ProviderName!, snapshotOptions.Identifier),
+                unHealthyStatus,
+                new[] { "akka", "persistence", "sql", "snapshot-store", "connectivity" });
+
+            // Use reflection to access the internal Builder property
+            if (SnapshotBuilderProperty?.GetValue(builder) is AkkaConfigurationBuilder akkaBuilder)
+            {
+                akkaBuilder.WithHealthCheck(registration);
+            }
+
+            return builder;
         }
     }
 }
