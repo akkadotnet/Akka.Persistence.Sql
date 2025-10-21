@@ -97,12 +97,14 @@ var host = new HostBuilder()
 ```
 
 The health checks will automatically:
-- Verify the persistence plugin is configured correctly
-- Test connectivity to the underlying storage (database, cloud storage, etc.)
-- Report `Healthy` when the plugin is operational
-- Report `Degraded` or `Unhealthy` (configurable) when issues are detected
+- Verify connectivity to the underlying SQL database
+- Test database responsiveness with a lightweight "SELECT 1" query
+- Report `Healthy` when the database is accessible
+- Report `Degraded` or `Unhealthy` (configurable) when the database is unreachable or unresponsive
 
-Health checks are tagged with `akka`, `persistence`, and either `journal` or `snapshot-store` for filtering purposes.
+Health checks are tagged with `akka`, `persistence`, and either `journal` or `snapshot-store` for filtering and organization purposes.
+
+#### Exposing Health Checks via ASP.NET Core
 
 For ASP.NET Core applications, you can expose these health checks via an endpoint:
 
@@ -128,6 +130,23 @@ app.MapHealthChecks("/healthz");
 
 app.Run();
 ```
+
+#### Customizing Health Check Tags
+
+You can customize the tags applied to health checks by providing an `IEnumerable<string>` to the `WithHealthCheck()` method:
+
+```csharp
+journalBuilder: j => j.WithHealthCheck(
+    unHealthyStatus: HealthStatus.Degraded,
+    name: "sql-journal",
+    tags: new[] { "backend", "database", "sql" }),
+snapshotBuilder: s => s.WithHealthCheck(
+    unHealthyStatus: HealthStatus.Degraded,
+    name: "sql-snapshot",
+    tags: new[] { "backend", "database", "sql" })
+```
+
+When tags are not specified, the default tags are used: `["akka", "persistence", "journal"]` for journals and `["akka", "persistence", "snapshot-store"]` for snapshot stores.
 
 ## The Classic Way, Using HOCON
 
