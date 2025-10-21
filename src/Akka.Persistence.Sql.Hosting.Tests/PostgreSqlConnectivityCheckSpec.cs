@@ -1,0 +1,116 @@
+// -----------------------------------------------------------------------
+//  <copyright file="PostgreSqlConnectivityCheckSpec.cs" company="Akka.NET Project">
+//      Copyright (C) 2013-2025 .NET Foundation <https://github.com/akkadotnet/akka.net>
+//  </copyright>
+// -----------------------------------------------------------------------
+
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Akka.Hosting;
+using Akka.Persistence.Sql.Tests.Common.Containers;
+using FluentAssertions;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Xunit;
+using Xunit.Abstractions;
+
+namespace Akka.Persistence.Sql.Hosting.Tests
+{
+    public class PostgreSqlConnectivityCheckSpec : IAsyncLifetime
+    {
+        private readonly PostgreSqlContainer _container;
+        private readonly ITestOutputHelper _output;
+
+        public PostgreSqlConnectivityCheckSpec(ITestOutputHelper output)
+        {
+            _output = output;
+            _container = new PostgreSqlContainer();
+        }
+
+        public async Task InitializeAsync()
+        {
+            await _container.InitializeAsync();
+        }
+
+        public async Task DisposeAsync()
+        {
+            await _container.DisposeAsync();
+        }
+
+        [Fact]
+        public async Task Journal_Connectivity_Check_Should_Return_Healthy_When_Connected()
+        {
+            // Arrange
+            var check = new SqlJournalConnectivityCheck(
+                _container.ConnectionString,
+                _container.ProviderName,
+                "sql");
+
+            var context = new AkkaHealthCheckContext(null!);
+
+            // Act
+            var result = await check.CheckHealthAsync(context, CancellationToken.None);
+
+            // Assert
+            result.Status.Should().Be(HealthStatus.Healthy);
+            result.Description.Should().Contain("successful");
+        }
+
+        [Fact]
+        public async Task Journal_Connectivity_Check_Should_Return_Unhealthy_When_Disconnected()
+        {
+            // Arrange
+            var check = new SqlJournalConnectivityCheck(
+                "Host=invalid-host;Username=invalid;Password=invalid",
+                _container.ProviderName,
+                "sql");
+
+            var context = new AkkaHealthCheckContext(null!);
+
+            // Act
+            var result = await check.CheckHealthAsync(context, CancellationToken.None);
+
+            // Assert
+            result.Status.Should().Be(HealthStatus.Unhealthy);
+            result.Exception.Should().NotBeNull();
+        }
+
+        [Fact]
+        public async Task Snapshot_Connectivity_Check_Should_Return_Healthy_When_Connected()
+        {
+            // Arrange
+            var check = new SqlSnapshotStoreConnectivityCheck(
+                _container.ConnectionString,
+                _container.ProviderName,
+                "sql");
+
+            var context = new AkkaHealthCheckContext(null!);
+
+            // Act
+            var result = await check.CheckHealthAsync(context, CancellationToken.None);
+
+            // Assert
+            result.Status.Should().Be(HealthStatus.Healthy);
+            result.Description.Should().Contain("successful");
+        }
+
+        [Fact]
+        public async Task Snapshot_Connectivity_Check_Should_Return_Unhealthy_When_Disconnected()
+        {
+            // Arrange
+            var check = new SqlSnapshotStoreConnectivityCheck(
+                "Host=invalid-host;Username=invalid;Password=invalid",
+                _container.ProviderName,
+                "sql");
+
+            var context = new AkkaHealthCheckContext(null!);
+
+            // Act
+            var result = await check.CheckHealthAsync(context, CancellationToken.None);
+
+            // Assert
+            result.Status.Should().Be(HealthStatus.Unhealthy);
+            result.Exception.Should().NotBeNull();
+        }
+    }
+}
