@@ -6,6 +6,7 @@
 
 using System;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
@@ -22,9 +23,10 @@ namespace Akka.Persistence.Sql.Tests.Common.Internal.Xunit
 
         protected override bool IsValidTestClass(ITypeInfo type)
         {
-            var isUnix = Environment.OSVersion.Platform == PlatformID.Unix;
-            var skipLinux = type.GetCustomAttributes(typeof(SkipLinuxAttribute)).Any() && isUnix;
-            var skipWindows = type.GetCustomAttributes(typeof(SkipWindowsAttribute)).Any() && !isUnix;
+            var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+            var isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+            var skipLinux = type.GetCustomAttributes(typeof(SkipLinuxAttribute)).Any() && isLinux;
+            var skipWindows = type.GetCustomAttributes(typeof(SkipWindowsAttribute)).Any() && isWindows;
             return (!type.IsAbstract || type.IsSealed) && !skipLinux && !skipWindows;
         }
 
@@ -34,9 +36,10 @@ namespace Akka.Persistence.Sql.Tests.Common.Internal.Xunit
             IMessageBus messageBus,
             ITestFrameworkDiscoveryOptions discoveryOptions)
         {
-            var isUnix = Environment.OSVersion.Platform == PlatformID.Unix;
-            var skipLinux = testClass.Class.GetCustomAttributes(typeof(SkipLinuxAttribute)).Any() && isUnix;
-            var skipWindows = testClass.Class.GetCustomAttributes(typeof(SkipWindowsAttribute)).Any() && !isUnix;
+            var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+            var isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+            var skipLinux = testClass.Class.GetCustomAttributes(typeof(SkipLinuxAttribute)).Any() && isLinux;
+            var skipWindows = testClass.Class.GetCustomAttributes(typeof(SkipWindowsAttribute)).Any() && isWindows;
 
             return !skipLinux && !skipWindows && base.FindTestsForType(
                 testClass,
