@@ -25,7 +25,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Internal.Xunit
             var isUnix = Environment.OSVersion.Platform == PlatformID.Unix;
             var skipLinux = type.GetCustomAttributes(typeof(SkipLinuxAttribute)).Any() && isUnix;
             var skipWindows = type.GetCustomAttributes(typeof(SkipWindowsAttribute)).Any() && !isUnix;
-            return !type.IsAbstract || type.IsSealed || skipLinux || skipWindows;
+            return (!type.IsAbstract || type.IsSealed) && !skipLinux && !skipWindows;
         }
 
         protected override bool FindTestsForType(
