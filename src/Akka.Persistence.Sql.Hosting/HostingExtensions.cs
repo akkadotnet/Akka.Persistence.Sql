@@ -581,11 +581,6 @@ namespace Akka.Persistence.Sql.Hosting
     /// </summary>
     public static class SqlConnectivityCheckExtensions
     {
-        private static readonly System.Reflection.PropertyInfo? JournalBuilderProperty =
-            typeof(AkkaPersistenceJournalBuilder).GetProperty("Builder", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-
-        private static readonly System.Reflection.PropertyInfo? SnapshotBuilderProperty =
-            typeof(AkkaPersistenceSnapshotBuilder).GetProperty("Builder", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
 
         /// <summary>
         /// Adds a connectivity check for the SQL journal.
@@ -617,13 +612,8 @@ namespace Akka.Persistence.Sql.Hosting
                 unHealthyStatus,
                 new[] { "akka", "persistence", "sql", "journal", "connectivity" });
 
-            // Use reflection to access the internal Builder property
-            if (JournalBuilderProperty?.GetValue(builder) is AkkaConfigurationBuilder akkaBuilder)
-            {
-                akkaBuilder.WithHealthCheck(registration);
-            }
-
-            return builder;
+            // Use the new WithCustomHealthCheck method from Akka.Hosting 1.5.55-beta1
+            return builder.WithCustomHealthCheck(registration);
         }
 
         /// <summary>
@@ -656,13 +646,8 @@ namespace Akka.Persistence.Sql.Hosting
                 unHealthyStatus,
                 new[] { "akka", "persistence", "sql", "snapshot-store", "connectivity" });
 
-            // Use reflection to access the internal Builder property
-            if (SnapshotBuilderProperty?.GetValue(builder) is AkkaConfigurationBuilder akkaBuilder)
-            {
-                akkaBuilder.WithHealthCheck(registration);
-            }
-
-            return builder;
+            // Use the new WithCustomHealthCheck method from Akka.Hosting 1.5.55-beta1
+            return builder.WithCustomHealthCheck(registration);
         }
     }
 }
