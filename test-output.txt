@@ -1,0 +1,179 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Akka.Persistence.Sql -> /home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql/bin/Release/net6.0/Akka.Persistence.Sql.dll
+  Akka.Persistence.Sql.Hosting -> /home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Hosting/bin/Release/net6.0/Akka.Persistence.Sql.Hosting.dll
+/home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Tests.Common/Containers/MsSqliteContainer.cs(28,56): warning CS0067: The event 'MsSqliteContainer.OnStdOut' is never used [/home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Tests.Common/Akka.Persistence.Sql.Tests.Common.csproj]
+/home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Tests.Common/Containers/SqliteContainer.cs(30,56): warning CS0067: The event 'SqliteContainer.OnStdOut' is never used [/home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Tests.Common/Akka.Persistence.Sql.Tests.Common.csproj]
+  Akka.Persistence.Sql.Tests.Common -> /home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Tests.Common/bin/Release/net8.0/Akka.Persistence.Sql.Tests.Common.dll
+/home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Hosting.Tests/Bugfix344Spec.cs(51,17): warning CS0618: 'JournalOptions.Adapters' is obsolete: 'Use the configureBuilder callback parameter in WithJournal() instead. This property will be removed in v1.6.0. See https://github.com/akkadotnet/Akka.Hosting/issues/665' [/home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Hosting.Tests/Akka.Persistence.Sql.Hosting.Tests.csproj]
+/home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Hosting.Tests/Bugfix344Spec.cs(55,13): warning CS0618: 'JournalOptions.Adapters' is obsolete: 'Use the configureBuilder callback parameter in WithJournal() instead. This property will be removed in v1.6.0. See https://github.com/akkadotnet/Akka.Hosting/issues/665' [/home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Hosting.Tests/Akka.Persistence.Sql.Hosting.Tests.csproj]
+/home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Hosting.Tests/RuntimeEventAdapterSpec.cs(180,9): warning CS8602: Dereference of a possibly null reference. [/home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Hosting.Tests/Akka.Persistence.Sql.Hosting.Tests.csproj]
+/home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Hosting.Tests/RuntimeEventAdapterSpec.cs(233,9): warning CS8602: Dereference of a possibly null reference. [/home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Hosting.Tests/Akka.Persistence.Sql.Hosting.Tests.csproj]
+  Akka.Persistence.Sql.Hosting.Tests -> /home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Hosting.Tests/bin/Release/net8.0/Akka.Persistence.Sql.Hosting.Tests.dll
+Test run for /home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Hosting.Tests/bin/Release/net8.0/Akka.Persistence.Sql.Hosting.Tests.dll (.NETCoreApp,Version=v8.0)
+VSTest version 17.14.1 (x64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:06.16]     Akka.Persistence.Sql.Hosting.Tests.Bugfix344Spec.ReadJournal_should_initialize_tables_when_started_before_WriteJournal [FAIL]
+  Failed Akka.Persistence.Sql.Hosting.Tests.Bugfix344Spec.ReadJournal_should_initialize_tables_when_started_before_WriteJournal [1 ms]
+  Error Message:
+   System.AggregateException : One or more errors occurred. (Timeout after 5.00 seconds)
+---- Akka.Actor.AskTimeoutException : Timeout after 5.00 seconds
+  Stack Trace:
+     at System.Threading.Tasks.Task.ThrowIfExceptional(Boolean includeTaskCanceledExceptions)
+   at System.Threading.Tasks.Task`1.GetResultCore(Boolean waitCompletionNotification)
+   at Akka.Persistence.Sql.Query.SqlReadJournal..ctor(ExtendedActorSystem system, Config config) in /home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql/Query/SqlReadJournal.cs:line 74
+   at Akka.Persistence.Sql.Query.SqlReadJournalProvider.GetReadJournal() in /home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql/Query/SqlReadJournalProvider.cs:line 37
+   at Akka.Persistence.Query.PersistenceQuery.ReadJournalFor(Type readJournalType, String readJournalPluginId)
+   at Akka.Persistence.Query.PersistenceQuery.ReadJournalFor[TJournal](String readJournalPluginId)
+   at Akka.Persistence.Query.PersistenceQueryExtensions.ReadJournalFor[TJournal](ActorSystem system, String readJournalPluginId)
+   at Akka.Persistence.Sql.Hosting.Tests.Bugfix344Spec.BeforeTestStart() in /home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Hosting.Tests/Bugfix344Spec.cs:line 40
+   at Akka.Hosting.TestKit.TestKit.InitializeAsync()
+----- Inner Stack Trace -----
+
+  Standard Output Messages:
+ 10/26/2025 3:38:49 PM:INF:Microsoft.Hosting.Lifetime:0 Application started. Press Ctrl+C to shut down.
+ 10/26/2025 3:38:49 PM:INF:Microsoft.Hosting.Lifetime:0 Hosting environment: Production
+ 10/26/2025 3:38:49 PM:INF:Microsoft.Hosting.Lifetime:0 Content root path: /home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Hosting.Tests/bin/Release/net8.0/
+
+
+[xUnit.net 00:00:09.58]     Akka.Persistence.Sql.Hosting.Tests.SqlEndToEndSpec.Should_Start_ActorSystem_wth_Sql_Persistence [FAIL]
+[xUnit.net 00:00:09.59]     Akka.Persistence.Sql.Hosting.Tests.BaselineJournalBuilderSpec.Refactored_hosting_should_support_basic_persistence [FAIL]
+[xUnit.net 00:00:09.60]     Akka.Persistence.Sql.Hosting.Tests.RuntimeEventAdapterSpec.EventAdapter_ShouldWork_OnShardingJournal_ReproducesUserScenario [FAIL]
+  Failed Akka.Persistence.Sql.Hosting.Tests.SqlEndToEndSpec.Should_Start_ActorSystem_wth_Sql_Persistence [3 s]
+  Error Message:
+   Failed: Timeout 00:00:03 while waiting for a message of type System.String 
+  Stack Trace:
+     at Akka.TestKit.Xunit2.XunitAssertions.Fail(String format, Object[] args)
+   at Akka.TestKit.TestKitBase.InternalExpectMsgEnvelopeAsync[T](Nullable`1 timeout, Action`2 assert, String hint, CancellationToken cancellationToken, Boolean shouldLog)
+   at Akka.TestKit.TestKitBase.InternalExpectMsgEnvelopeAsync[T](Nullable`1 timeout, Action`1 msgAssert, Action`1 senderAssert, String hint, CancellationToken cancellationToken)
+   at Akka.TestKit.TestKitBase.InternalExpectMsgAsync[T](Nullable`1 timeout, Action`1 msgAssert, Action`1 senderAssert, String hint, CancellationToken cancellationToken)
+   at Akka.TestKit.TestKitBase.ExpectMsg[T](T message, Nullable`1 timeout, String hint, CancellationToken cancellationToken)
+   at Akka.Persistence.Sql.Hosting.Tests.SqlEndToEndSpecBase.Should_Start_ActorSystem_wth_Sql_Persistence() in /home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Hosting.Tests/SqlEndToEndSpec.cs:line 96
+--- End of stack trace from previous location ---
+  Standard Output Messages:
+ 10/26/2025 3:38:49 PM:INF:Microsoft.Hosting.Lifetime:0 Application started. Press Ctrl+C to shut down.
+ 10/26/2025 3:38:49 PM:INF:Microsoft.Hosting.Lifetime:0 Hosting environment: Production
+ 10/26/2025 3:38:49 PM:INF:Microsoft.Hosting.Lifetime:0 Content root path: /home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Hosting.Tests/bin/Release/net8.0/
+ 10/26/2025 3:38:58 PM:DBG:Akka.Actor.ActorSystem:0 [DEBUG][10/26/2025 20:38:53.548Z][Thread 0023][CoordinatedShutdown (akka://SqlEndToEndSpec)] Performing phase [before-service-unbind] with [0] tasks.
+ 10/26/2025 3:38:58 PM:INF:Microsoft.Hosting.Lifetime:0 Application is shutting down...
+
+
+  Failed Akka.Persistence.Sql.Hosting.Tests.BaselineJournalBuilderSpec.Refactored_hosting_should_support_basic_persistence [3 s]
+  Error Message:
+   Failed: Timeout 00:00:03 while waiting for a message of type System.String 
+  Stack Trace:
+     at Akka.TestKit.Xunit2.XunitAssertions.Fail(String format, Object[] args)
+   at Akka.TestKit.TestKitBase.InternalExpectMsgEnvelopeAsync[T](Nullable`1 timeout, Action`2 assert, String hint, CancellationToken cancellationToken, Boolean shouldLog)
+   at Akka.TestKit.TestKitBase.InternalExpectMsgEnvelopeAsync[T](Nullable`1 timeout, Action`1 msgAssert, Action`1 senderAssert, String hint, CancellationToken cancellationToken)
+   at Akka.TestKit.TestKitBase.InternalExpectMsgAsync[T](Nullable`1 timeout, Action`1 msgAssert, Action`1 senderAssert, String hint, CancellationToken cancellationToken)
+   at Akka.Persistence.Sql.Hosting.Tests.BaselineJournalBuilderSpec.Refactored_hosting_should_support_basic_persistence() in /home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Hosting.Tests/BaselineJournalBuilderSpec.cs:line 64
+--- End of stack trace from previous location ---
+  Standard Output Messages:
+ 10/26/2025 3:38:49 PM:INF:Microsoft.Hosting.Lifetime:0 Application started. Press Ctrl+C to shut down.
+ 10/26/2025 3:38:49 PM:INF:Microsoft.Hosting.Lifetime:0 Hosting environment: Production
+ 10/26/2025 3:38:49 PM:INF:Microsoft.Hosting.Lifetime:0 Content root path: /home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Hosting.Tests/bin/Release/net8.0/
+ 10/26/2025 3:38:58 PM:INF:Microsoft.Hosting.Lifetime:0 Application is shutting down...
+
+
+  Failed Akka.Persistence.Sql.Hosting.Tests.RuntimeEventAdapterSpec.EventAdapter_ShouldWork_OnShardingJournal_ReproducesUserScenario [5 s]
+  Error Message:
+   Akka.Actor.AskTimeoutException : Timeout after 5.00 seconds
+  Stack Trace:
+     at Akka.Persistence.Sql.Hosting.Tests.RuntimeEventAdapterSpec.EventAdapter_ShouldWork_OnShardingJournal_ReproducesUserScenario() in /home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Hosting.Tests/RuntimeEventAdapterSpec.cs:line 234
+--- End of stack trace from previous location ---
+  Standard Output Messages:
+ 10/26/2025 3:38:49 PM:INF:Microsoft.Hosting.Lifetime:0 Application started. Press Ctrl+C to shut down.
+ 10/26/2025 3:38:49 PM:INF:Microsoft.Hosting.Lifetime:0 Hosting environment: Production
+ 10/26/2025 3:38:49 PM:INF:Microsoft.Hosting.Lifetime:0 Content root path: /home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Hosting.Tests/bin/Release/net8.0/
+ Persisting to sharding journal...
+ 10/26/2025 3:38:55 PM:DBG:Akka.Actor.ActorSystem:0 [DEBUG][10/26/2025 20:38:55.042Z][Thread 0064][CoordinatedShutdown (akka://RuntimeEventAdapterSpec)] Performing phase [before-service-unbind] with [0] tasks.
+ 10/26/2025 3:38:58 PM:DBG:Akka.Actor.ActorSystem:0 [DEBUG][10/26/2025 20:38:55.064Z][Thread 0025][CoordinatedShutdown (akka://RuntimeEventAdapterSpec)] Performing phase [service-unbind] with [0] tasks.
+ 10/26/2025 3:38:58 PM:DBG:Akka.Actor.ActorSystem:0 [DEBUG][10/26/2025 20:38:55.064Z][Thread 0025][CoordinatedShutdown (akka://RuntimeEventAdapterSpec)] Performing phase [service-requests-done] with [0] tasks.
+ 10/26/2025 3:38:58 PM:DBG:Akka.Actor.ActorSystem:0 [DEBUG][10/26/2025 20:38:55.064Z][Thread 0025][CoordinatedShutdown (akka://RuntimeEventAdapterSpec)] Performing phase [service-stop] with [0] tasks.
+ 10/26/2025 3:38:58 PM:DBG:Akka.Actor.ActorSystem:0 [DEBUG][10/26/2025 20:38:55.064Z][Thread 0025][CoordinatedShutdown (akka://RuntimeEventAdapterSpec)] Performing phase [before-cluster-shutdown] with [0] tasks.
+ 10/26/2025 3:38:58 PM:DBG:Akka.Actor.ActorSystem:0 [DEBUG][10/26/2025 20:38:55.064Z][Thread 0025][CoordinatedShutdown (akka://RuntimeEventAdapterSpec)] Performing phase [cluster-sharding-shutdown-region] with [0] tasks.
+ 10/26/2025 3:38:58 PM:DBG:Akka.Actor.ActorSystem:0 [DEBUG][10/26/2025 20:38:55.064Z][Thread 0025][CoordinatedShutdown (akka://RuntimeEventAdapterSpec)] Performing phase [cluster-leave] with [0] tasks.
+ 10/26/2025 3:38:58 PM:DBG:Akka.Actor.ActorSystem:0 [DEBUG][10/26/2025 20:38:55.064Z][Thread 0025][CoordinatedShutdown (akka://RuntimeEventAdapterSpec)] Performing phase [cluster-exiting] with [0] tasks.
+ 10/26/2025 3:38:58 PM:DBG:Akka.Actor.ActorSystem:0 [DEBUG][10/26/2025 20:38:55.064Z][Thread 0025][CoordinatedShutdown (akka://RuntimeEventAdapterSpec)] Performing phase [cluster-exiting-done] with [0] tasks.
+ 10/26/2025 3:38:58 PM:DBG:Akka.Actor.ActorSystem:0 [DEBUG][10/26/2025 20:38:55.064Z][Thread 0025][CoordinatedShutdown (akka://RuntimeEventAdapterSpec)] Performing phase [cluster-shutdown] with [0] tasks.
+ 10/26/2025 3:38:58 PM:DBG:Akka.Actor.ActorSystem:0 [DEBUG][10/26/2025 20:38:55.064Z][Thread 0025][CoordinatedShutdown (akka://RuntimeEventAdapterSpec)] Performing phase [before-actor-system-terminate] with [0] tasks.
+ 10/26/2025 3:38:58 PM:DBG:Akka.Actor.ActorSystem:0 [DEBUG][10/26/2025 20:38:55.065Z][Thread 0025][CoordinatedShutdown (akka://RuntimeEventAdapterSpec)] Performing phase [actor-system-terminate] with [1] tasks: [terminate-system]
+ 10/26/2025 3:38:58 PM:DBG:Akka.Actor.ActorSystem:0 [DEBUG][10/26/2025 20:38:55.065Z][Thread 0025][ActorSystem(RuntimeEventAdapterSpec)] System shutdown initiated
+ 10/26/2025 3:38:58 PM:INF:Akka.Actor.ActorSystem:0 [INFO][10/26/2025 20:38:58.069Z][Thread 0025][akka://RuntimeEventAdapterSpec/user/$a] Message [SaveEvent] from [akka://RuntimeEventAdapterSpec/temp/c] to [akka://RuntimeEventAdapterSpec/user/$a#46990093] was not delivered. [1] dead letters encountered. If this is not an expected behavior then [akka://RuntimeEventAdapterSpec/user/$a#46990093] may have terminated unexpectedly. This logging can be turned off or adjusted with configuration settings 'akka.log-dead-letters' and 'akka.log-dead-letters-during-shutdown'. Message content: Akka.Persistence.Sql.Hosting.Tests.RuntimeEventAdapterSpec+TestPersistentActor+SaveEvent
+ 10/26/2025 3:38:58 PM:INF:Microsoft.Hosting.Lifetime:0 Application is shutting down...
+
+
+[xUnit.net 00:00:09.69]     Akka.Persistence.Sql.Hosting.Tests.CustomSqlDataOptionsEndToEndSpec.Should_Start_ActorSystem_wth_Sql_Persistence [FAIL]
+  Failed Akka.Persistence.Sql.Hosting.Tests.CustomSqlDataOptionsEndToEndSpec.Should_Start_ActorSystem_wth_Sql_Persistence [3 s]
+  Error Message:
+   Failed: Timeout 00:00:03 while waiting for a message of type System.String 
+  Stack Trace:
+     at Akka.TestKit.Xunit2.XunitAssertions.Fail(String format, Object[] args)
+   at Akka.TestKit.TestKitBase.InternalExpectMsgEnvelopeAsync[T](Nullable`1 timeout, Action`2 assert, String hint, CancellationToken cancellationToken, Boolean shouldLog)
+   at Akka.TestKit.TestKitBase.InternalExpectMsgEnvelopeAsync[T](Nullable`1 timeout, Action`1 msgAssert, Action`1 senderAssert, String hint, CancellationToken cancellationToken)
+   at Akka.TestKit.TestKitBase.InternalExpectMsgAsync[T](Nullable`1 timeout, Action`1 msgAssert, Action`1 senderAssert, String hint, CancellationToken cancellationToken)
+   at Akka.TestKit.TestKitBase.ExpectMsg[T](T message, Nullable`1 timeout, String hint, CancellationToken cancellationToken)
+   at Akka.Persistence.Sql.Hosting.Tests.CustomSqlDataOptionsEndToEndSpec.Should_Start_ActorSystem_wth_Sql_Persistence() in /home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Hosting.Tests/CustomSqlDataOptionsEndToEndSpec.cs:line 92
+--- End of stack trace from previous location ---
+  Standard Output Messages:
+ 10/26/2025 3:38:49 PM:INF:Microsoft.Hosting.Lifetime:0 Application started. Press Ctrl+C to shut down.
+ 10/26/2025 3:38:49 PM:INF:Microsoft.Hosting.Lifetime:0 Hosting environment: Production
+ 10/26/2025 3:38:49 PM:INF:Microsoft.Hosting.Lifetime:0 Content root path: /home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Hosting.Tests/bin/Release/net8.0/
+ 10/26/2025 3:38:58 PM:INF:Microsoft.Hosting.Lifetime:0 Application is shutting down...
+
+
+[xUnit.net 00:00:19.18]     Akka.Persistence.Sql.Hosting.Tests.CustomSqlEndToEndSpec.Should_Start_ActorSystem_wth_Sql_Persistence [FAIL]
+[xUnit.net 00:00:19.18]     Akka.Persistence.Sql.Hosting.Tests.SqlDataOptionsEndToEndSpec.Should_Start_ActorSystem_wth_Sql_Persistence [FAIL]
+  Failed Akka.Persistence.Sql.Hosting.Tests.CustomSqlEndToEndSpec.Should_Start_ActorSystem_wth_Sql_Persistence [3 s]
+  Error Message:
+   Failed: Timeout 00:00:03 while waiting for a message of type System.String 
+  Stack Trace:
+     at Akka.TestKit.Xunit2.XunitAssertions.Fail(String format, Object[] args)
+   at Akka.TestKit.TestKitBase.InternalExpectMsgEnvelopeAsync[T](Nullable`1 timeout, Action`2 assert, String hint, CancellationToken cancellationToken, Boolean shouldLog)
+   at Akka.TestKit.TestKitBase.InternalExpectMsgEnvelopeAsync[T](Nullable`1 timeout, Action`1 msgAssert, Action`1 senderAssert, String hint, CancellationToken cancellationToken)
+   at Akka.TestKit.TestKitBase.InternalExpectMsgAsync[T](Nullable`1 timeout, Action`1 msgAssert, Action`1 senderAssert, String hint, CancellationToken cancellationToken)
+   at Akka.TestKit.TestKitBase.ExpectMsg[T](T message, Nullable`1 timeout, String hint, CancellationToken cancellationToken)
+   at Akka.Persistence.Sql.Hosting.Tests.CustomSqlEndToEndSpec.Should_Start_ActorSystem_wth_Sql_Persistence() in /home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Hosting.Tests/CustomSqlEndToEndSpec.cs:line 90
+--- End of stack trace from previous location ---
+  Standard Output Messages:
+ 10/26/2025 3:38:49 PM:INF:Microsoft.Hosting.Lifetime:0 Application started. Press Ctrl+C to shut down.
+ 10/26/2025 3:38:49 PM:INF:Microsoft.Hosting.Lifetime:0 Hosting environment: Production
+ 10/26/2025 3:38:49 PM:INF:Microsoft.Hosting.Lifetime:0 Content root path: /home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Hosting.Tests/bin/Release/net8.0/
+ 10/26/2025 3:38:58 PM:INF:Akka.Actor.ActorSystem:0 [INFO][10/26/2025 20:38:58.069Z][Thread 0019][akka://SqlEndToEndSpec/user/default] Message [Int32] from [akka://SqlEndToEndSpec/system/testActor7#1560272384] to [akka://SqlEndToEndSpec/user/default#317792491] was not delivered. [1] dead letters encountered. If this is not an expected behavior then [akka://SqlEndToEndSpec/user/default#317792491] may have terminated unexpectedly. This logging can be turned off or adjusted with configuration settings 'akka.log-dead-letters' and 'akka.log-dead-letters-during-shutdown'. Message content: 1
+ 10/26/2025 3:38:58 PM:INF:Microsoft.Hosting.Lifetime:0 Application is shutting down...
+
+
+  Failed Akka.Persistence.Sql.Hosting.Tests.SqlDataOptionsEndToEndSpec.Should_Start_ActorSystem_wth_Sql_Persistence [3 s]
+  Error Message:
+   Failed: Timeout 00:00:03 while waiting for a message of type System.String 
+  Stack Trace:
+     at Akka.TestKit.Xunit2.XunitAssertions.Fail(String format, Object[] args)
+   at Akka.TestKit.TestKitBase.InternalExpectMsgEnvelopeAsync[T](Nullable`1 timeout, Action`2 assert, String hint, CancellationToken cancellationToken, Boolean shouldLog)
+   at Akka.TestKit.TestKitBase.InternalExpectMsgEnvelopeAsync[T](Nullable`1 timeout, Action`1 msgAssert, Action`1 senderAssert, String hint, CancellationToken cancellationToken)
+   at Akka.TestKit.TestKitBase.InternalExpectMsgAsync[T](Nullable`1 timeout, Action`1 msgAssert, Action`1 senderAssert, String hint, CancellationToken cancellationToken)
+   at Akka.TestKit.TestKitBase.ExpectMsg[T](T message, Nullable`1 timeout, String hint, CancellationToken cancellationToken)
+   at Akka.Persistence.Sql.Hosting.Tests.SqlEndToEndSpecBase.Should_Start_ActorSystem_wth_Sql_Persistence() in /home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Hosting.Tests/SqlEndToEndSpec.cs:line 96
+--- End of stack trace from previous location ---
+  Standard Output Messages:
+ 10/26/2025 3:38:49 PM:INF:Microsoft.Hosting.Lifetime:0 Application started. Press Ctrl+C to shut down.
+ 10/26/2025 3:38:49 PM:INF:Microsoft.Hosting.Lifetime:0 Hosting environment: Production
+ 10/26/2025 3:38:49 PM:INF:Microsoft.Hosting.Lifetime:0 Content root path: /home/aaronontheweb/repositories/olympus/Akka.Persistence.Sql/src/Akka.Persistence.Sql.Hosting.Tests/bin/Release/net8.0/
+ 10/26/2025 3:38:55 PM:DBG:Akka.Actor.ActorSystem:0 [DEBUG][10/26/2025 20:38:53.569Z][Thread 0007][CoordinatedShutdown (akka://SqlDataOptionsEndToEndSpec)] Performing phase [before-service-unbind] with [0] tasks.
+ 10/26/2025 3:38:58 PM:DBG:Akka.Actor.ActorSystem:0 [DEBUG][10/26/2025 20:38:58.048Z][Thread 0060][CoordinatedShutdown (akka://SqlDataOptionsEndToEndSpec)] Performing phase [service-unbind] with [0] tasks.
+ 10/26/2025 3:38:58 PM:DBG:Akka.Actor.ActorSystem:0 [DEBUG][10/26/2025 20:38:58.048Z][Thread 0060][CoordinatedShutdown (akka://SqlDataOptionsEndToEndSpec)] Performing phase [service-requests-done] with [0] tasks.
+ 10/26/2025 3:38:58 PM:DBG:Akka.Actor.ActorSystem:0 [DEBUG][10/26/2025 20:38:58.048Z][Thread 0060][CoordinatedShutdown (akka://SqlDataOptionsEndToEndSpec)] Performing phase [service-stop] with [0] tasks.
+ 10/26/2025 3:38:58 PM:DBG:Akka.Actor.ActorSystem:0 [DEBUG][10/26/2025 20:38:58.048Z][Thread 0060][CoordinatedShutdown (akka://SqlDataOptionsEndToEndSpec)] Performing phase [before-cluster-shutdown] with [0] tasks.
+ 10/26/2025 3:38:58 PM:DBG:Akka.Actor.ActorSystem:0 [DEBUG][10/26/2025 20:38:58.048Z][Thread 0060][CoordinatedShutdown (akka://SqlDataOptionsEndToEndSpec)] Performing phase [cluster-sharding-shutdown-region] with [0] tasks.
+ 10/26/2025 3:38:58 PM:DBG:Akka.Actor.ActorSystem:0 [DEBUG][10/26/2025 20:38:58.048Z][Thread 0060][CoordinatedShutdown (akka://SqlDataOptionsEndToEndSpec)] Performing phase [cluster-leave] with [0] tasks.
+ 10/26/2025 3:38:58 PM:DBG:Akka.Actor.ActorSystem:0 [DEBUG][10/26/2025 20:38:58.048Z][Thread 0060][CoordinatedShutdown (akka://SqlDataOptionsEndToEndSpec)] Performing phase [cluster-exiting] with [0] tasks.
+ 10/26/2025 3:38:58 PM:DBG:Akka.Actor.ActorSystem:0 [DEBUG][10/26/2025 20:38:58.048Z][Thread 0060][CoordinatedShutdown (akka://SqlDataOptionsEndToEndSpec)] Performing phase [cluster-exiting-done] with [0] tasks.
+ 10/26/2025 3:38:58 PM:DBG:Akka.Actor.ActorSystem:0 [DEBUG][10/26/2025 20:38:58.048Z][Thread 0060][CoordinatedShutdown (akka://SqlDataOptionsEndToEndSpec)] Performing phase [cluster-shutdown] with [0] tasks.
+ 10/26/2025 3:38:58 PM:DBG:Akka.Actor.ActorSystem:0 [DEBUG][10/26/2025 20:38:58.048Z][Thread 0060][CoordinatedShutdown (akka://SqlDataOptionsEndToEndSpec)] Performing phase [before-actor-system-terminate] with [0] tasks.
+ 10/26/2025 3:38:58 PM:DBG:Akka.Actor.ActorSystem:0 [DEBUG][10/26/2025 20:38:58.048Z][Thread 0060][CoordinatedShutdown (akka://SqlDataOptionsEndToEndSpec)] Performing phase [actor-system-terminate] with [1] tasks: [terminate-system]
+ 10/26/2025 3:38:58 PM:INF:Microsoft.Hosting.Lifetime:0 Application is shutting down...
+
+
+
+Failed!  - Failed:     7, Passed:    28, Skipped:     0, Total:    35, Duration: 1 m 56 s - Akka.Persistence.Sql.Hosting.Tests.dll (net8.0)
