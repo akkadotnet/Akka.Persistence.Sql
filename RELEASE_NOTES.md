@@ -1,3 +1,11 @@
+#### 1.5.55 October 26th 2025 ####
+
+* [Bump AkkaVersion and AkkaHostingVersion to 1.5.55](https://github.com/akkadotnet/akka.net/releases/tag/1.5.55)
+* [Add SQL connectivity health checks for all database providers](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/558)
+* [Add customizable tags parameter to health check methods](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/559)
+
+Adds new `WithConnectivityCheck()` methods for proactive database connectivity verification with customizable tags. Supports all database providers (SQL Server, PostgreSQL, MySQL, SQLite).
+
 #### 1.5.53 October 14th 2025 ####
 
 **Critical Bug Fix**
