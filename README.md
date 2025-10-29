@@ -78,9 +78,13 @@ Note that `MappingSchema` and `RetryPolicy` will always be overridden by Akka.Pe
 
 ### Health Checks
 
-Starting with Akka.Persistence.Sql v1.5.51 or later, you can add health checks for your persistence plugins to verify that journals and snapshot stores are properly initialized and accessible. These health checks integrate with `Microsoft.Extensions.Diagnostics.HealthChecks` and can be used with ASP.NET Core health check endpoints.
+Starting with Akka.Persistence.Sql v1.5.51 or later, you can add health checks for your persistence plugins. Akka.Persistence.Sql supports two types of health checks that integrate with `Microsoft.Extensions.Diagnostics.HealthChecks` and can be used with ASP.NET Core health check endpoints.
 
-To configure health checks, use the `journalBuilder` and `snapshotBuilder` parameters with the `.WithHealthCheck()` method:
+#### Standard Health Checks
+
+Standard health checks monitor the persistence plugins themselves and verify that journals and snapshot stores are properly initialized and accessible.
+
+To configure standard health checks, use the `journalBuilder` and `snapshotBuilder` parameters with the `.WithHealthCheck()` method:
 
 ```csharp
 var host = new HostBuilder()
@@ -96,13 +100,40 @@ var host = new HostBuilder()
     });
 ```
 
-The health checks will automatically:
+Standard health checks are tagged with `akka`, `persistence`, and either `journal` or `snapshot-store` for filtering and organization purposes.
+
+#### Connectivity Health Checks (Akka.Persistence.Sql.Hosting v1.5.X+)
+
+Connectivity health checks proactively verify database connectivity regardless of recent operation activity. This helps detect database outages during idle periods when the standard health checks might not catch issues.
+
+**Using Akka.Hosting 1.5.55.1 or later (Simplified API):**
+
+```csharp
+services.AddAkka("my-system-name", (builder, provider) =>
+{
+    builder.WithSqlPersistence(
+        connectionString: connectionString,
+        providerName: ProviderName.SqlServer2022,
+        journalBuilder: journal =>
+        {
+            journal.WithHealthCheck();           // Monitor plugin status
+            journal.WithConnectivityCheck();     // Verify database connectivity
+        },
+        snapshotBuilder: snapshot =>
+        {
+            snapshot.WithHealthCheck();          // Monitor plugin status
+            snapshot.WithConnectivityCheck();    // Verify database connectivity
+        });
+});
+```
+
+The connectivity checks will automatically:
 - Verify connectivity to the underlying SQL database
 - Test database responsiveness with a lightweight "SELECT 1" query
 - Report `Healthy` when the database is accessible
-- Report `Degraded` or `Unhealthy` (configurable) when the database is unreachable or unresponsive
+- Report `Unhealthy` (configurable) when the database is unreachable or unresponsive
 
-Health checks are tagged with `akka`, `persistence`, and either `journal` or `snapshot-store` for filtering and organization purposes.
+Connectivity checks are tagged with `akka`, `persistence`, `sql`, and either `journal` or `snapshot-store` for filtering and organization purposes.
 
 #### Exposing Health Checks via ASP.NET Core
 
@@ -131,22 +162,50 @@ app.MapHealthChecks("/healthz");
 app.Run();
 ```
 
-#### Customizing Health Check Tags
+#### Customizing Health Check Configuration
 
-You can customize the tags applied to health checks by providing an `IEnumerable<string>` to the `WithHealthCheck()` method:
+You can customize the names, tags, and unhealthy status for both standard and connectivity health checks:
 
 ```csharp
-journalBuilder: j => j.WithHealthCheck(
-    unHealthyStatus: HealthStatus.Degraded,
-    name: "sql-journal",
-    tags: new[] { "backend", "database", "sql" }),
-snapshotBuilder: s => s.WithHealthCheck(
-    unHealthyStatus: HealthStatus.Degraded,
-    name: "sql-snapshot",
-    tags: new[] { "backend", "database", "sql" })
+services.AddAkka("my-system-name", (builder, provider) =>
+{
+    builder.WithSqlPersistence(
+        connectionString: connectionString,
+        providerName: ProviderName.SqlServer2022,
+        journalBuilder: journal =>
+        {
+            // Customize standard health check
+            journal.WithHealthCheck(
+                unHealthyStatus: HealthStatus.Degraded,
+                name: "sql-journal",
+                tags: new[] { "backend", "database", "sql" });
+
+            // Customize connectivity health check
+            journal.WithConnectivityCheck(
+                unHealthyStatus: HealthStatus.Unhealthy,
+                name: "sql-journal-connectivity",
+                tags: new[] { "backend", "database", "sql", "connectivity" });
+        },
+        snapshotBuilder: snapshot =>
+        {
+            // Customize standard health check
+            snapshot.WithHealthCheck(
+                unHealthyStatus: HealthStatus.Degraded,
+                name: "sql-snapshot",
+                tags: new[] { "backend", "database", "sql" });
+
+            // Customize connectivity health check
+            snapshot.WithConnectivityCheck(
+                unHealthyStatus: HealthStatus.Unhealthy,
+                name: "sql-snapshot-connectivity",
+                tags: new[] { "backend", "database", "sql", "connectivity" });
+        });
+});
 ```
 
-When tags are not specified, the default tags are used: `["akka", "persistence", "journal"]` for journals and `["akka", "persistence", "snapshot-store"]` for snapshot stores.
+**Default tags when not specified:**
+- Standard health checks: `["akka", "persistence", "journal"]` or `["akka", "persistence", "snapshot-store"]`
+- Connectivity health checks: `["akka", "persistence", "sql", "journal", "connectivity"]` or `["akka", "persistence", "sql", "snapshot-store", "connectivity"]`
 
 ## The Classic Way, Using HOCON
 

@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Akka.Actor;
 using Akka.Hosting;
@@ -581,9 +582,44 @@ namespace Akka.Persistence.Sql.Hosting
     /// </summary>
     public static class SqlConnectivityCheckExtensions
     {
+        /// <summary>
+        /// Adds a connectivity check for the SQL journal using the simplified Akka.Hosting 1.5.55.1+ API.
+        /// This is a liveness check that proactively verifies database connectivity.
+        /// Options are automatically accessed from the builder.
+        /// </summary>
+        /// <param name="builder">The journal builder</param>
+        /// <param name="unHealthyStatus">The status to return when check fails. Defaults to Unhealthy.</param>
+        /// <param name="name">Optional name for the health check. Defaults to "Akka.Persistence.Sql.Journal.{id}.Connectivity"</param>
+        /// <param name="tags">Optional tags for the health check. Defaults to ["akka", "persistence", "sql", "journal", "connectivity"]</param>
+        /// <returns>The journal builder for chaining</returns>
+        public static AkkaPersistenceJournalBuilder WithConnectivityCheck(
+            this AkkaPersistenceJournalBuilder builder,
+            HealthStatus unHealthyStatus = HealthStatus.Unhealthy,
+            string? name = null,
+            IEnumerable<string>? tags = null)
+        {
+            // Get options from builder - this is the Akka.Hosting 1.5.55.1 simplified API
+            var journalOptions = builder.Options as SqlJournalOptions
+                ?? throw new InvalidOperationException(
+                    $"Options must be {nameof(SqlJournalOptions)}");
+
+            if (string.IsNullOrWhiteSpace(journalOptions.ConnectionString))
+                throw new ArgumentException("ConnectionString must be set on SqlJournalOptions");
+
+            if (string.IsNullOrWhiteSpace(journalOptions.ProviderName))
+                throw new ArgumentException("ProviderName must be set on SqlJournalOptions");
+
+            var registration = new AkkaHealthCheckRegistration(
+                name ?? $"Akka.Persistence.Sql.Journal.{journalOptions.Identifier}.Connectivity",
+                new SqlJournalConnectivityCheck(journalOptions.ConnectionString!, journalOptions.ProviderName!, journalOptions.Identifier),
+                unHealthyStatus,
+                tags ?? new[] { "akka", "persistence", "sql", "journal", "connectivity" });
+
+            return builder.WithCustomHealthCheck(registration);
+        }
 
         /// <summary>
-        /// Adds a connectivity check for the SQL journal.
+        /// Adds a connectivity check for the SQL journal (legacy API for backward compatibility).
         /// This is a liveness check that proactively verifies database connectivity.
         /// </summary>
         /// <param name="builder">The journal builder</param>
@@ -592,6 +628,7 @@ namespace Akka.Persistence.Sql.Hosting
         /// <param name="name">Optional name for the health check. Defaults to "Akka.Persistence.Sql.Journal.{id}.Connectivity"</param>
         /// <param name="tags">Optional tags for the health check. Defaults to ["akka", "persistence", "sql", "journal", "connectivity"]</param>
         /// <returns>The journal builder for chaining</returns>
+        [Obsolete("Use the simplified API without passing journalOptions. Options are now automatically accessed from builder.Options. This overload will be removed in a future version.")]
         public static AkkaPersistenceJournalBuilder WithConnectivityCheck(
             this AkkaPersistenceJournalBuilder builder,
             SqlJournalOptions journalOptions,
@@ -614,12 +651,47 @@ namespace Akka.Persistence.Sql.Hosting
                 unHealthyStatus,
                 tags ?? new[] { "akka", "persistence", "sql", "journal", "connectivity" });
 
-            // Use the new WithCustomHealthCheck method from Akka.Hosting 1.5.55-beta1
             return builder.WithCustomHealthCheck(registration);
         }
 
         /// <summary>
-        /// Adds a connectivity check for the SQL snapshot store.
+        /// Adds a connectivity check for the SQL snapshot store using the simplified Akka.Hosting 1.5.55.1+ API.
+        /// This is a liveness check that proactively verifies database connectivity.
+        /// Options are automatically accessed from the builder.
+        /// </summary>
+        /// <param name="builder">The snapshot builder</param>
+        /// <param name="unHealthyStatus">The status to return when check fails. Defaults to Unhealthy.</param>
+        /// <param name="name">Optional name for the health check. Defaults to "Akka.Persistence.Sql.SnapshotStore.{id}.Connectivity"</param>
+        /// <param name="tags">Optional tags for the health check. Defaults to ["akka", "persistence", "sql", "snapshot-store", "connectivity"]</param>
+        /// <returns>The snapshot builder for chaining</returns>
+        public static AkkaPersistenceSnapshotBuilder WithConnectivityCheck(
+            this AkkaPersistenceSnapshotBuilder builder,
+            HealthStatus unHealthyStatus = HealthStatus.Unhealthy,
+            string? name = null,
+            IEnumerable<string>? tags = null)
+        {
+            // Get options from builder - this is the Akka.Hosting 1.5.55.1 simplified API
+            var snapshotOptions = builder.Options as SqlSnapshotOptions
+                ?? throw new InvalidOperationException(
+                    $"Options must be {nameof(SqlSnapshotOptions)}");
+
+            if (string.IsNullOrWhiteSpace(snapshotOptions.ConnectionString))
+                throw new ArgumentException("ConnectionString must be set on SqlSnapshotOptions");
+
+            if (string.IsNullOrWhiteSpace(snapshotOptions.ProviderName))
+                throw new ArgumentException("ProviderName must be set on SqlSnapshotOptions");
+
+            var registration = new AkkaHealthCheckRegistration(
+                name ?? $"Akka.Persistence.Sql.SnapshotStore.{snapshotOptions.Identifier}.Connectivity",
+                new SqlSnapshotStoreConnectivityCheck(snapshotOptions.ConnectionString!, snapshotOptions.ProviderName!, snapshotOptions.Identifier),
+                unHealthyStatus,
+                tags ?? new[] { "akka", "persistence", "sql", "snapshot-store", "connectivity" });
+
+            return builder.WithCustomHealthCheck(registration);
+        }
+
+        /// <summary>
+        /// Adds a connectivity check for the SQL snapshot store (legacy API for backward compatibility).
         /// This is a liveness check that proactively verifies database connectivity.
         /// </summary>
         /// <param name="builder">The snapshot builder</param>
@@ -628,6 +700,7 @@ namespace Akka.Persistence.Sql.Hosting
         /// <param name="name">Optional name for the health check. Defaults to "Akka.Persistence.Sql.SnapshotStore.{id}.Connectivity"</param>
         /// <param name="tags">Optional tags for the health check. Defaults to ["akka", "persistence", "sql", "snapshot-store", "connectivity"]</param>
         /// <returns>The snapshot builder for chaining</returns>
+        [Obsolete("Use the simplified API without passing snapshotOptions. Options are now automatically accessed from builder.Options. This overload will be removed in a future version.")]
         public static AkkaPersistenceSnapshotBuilder WithConnectivityCheck(
             this AkkaPersistenceSnapshotBuilder builder,
             SqlSnapshotOptions snapshotOptions,
@@ -650,7 +723,6 @@ namespace Akka.Persistence.Sql.Hosting
                 unHealthyStatus,
                 tags ?? new[] { "akka", "persistence", "sql", "snapshot-store", "connectivity" });
 
-            // Use the new WithCustomHealthCheck method from Akka.Hosting 1.5.55-beta1
             return builder.WithCustomHealthCheck(registration);
         }
     }
