@@ -32,6 +32,7 @@ If you're migrating from legacy `Akka.Persistence.Sql.Common` based plugins, you
 - [Configuration](./docs/articles/configuration.md)
   * [Journal](./docs/articles/configuration.md#journal)
   * [Snapshot Store](./docs/articles/configuration.md#snapshot-store)
+- [Tuning Akka.Persistence.Query for Low-Latency Projections](#tuning-akkapersistencequery-for-low-latency-projections)
 - [Building this solution](#building-this-solution)
   + [Conventions](#conventions)
   + [Release Notes, Version Numbers, Etc](#release-notes-version-numbers-etc)
@@ -273,6 +274,34 @@ akka.persistence {
   - Table compatibility mode adds an additional InsertOrUpdate and Delete
 - **This all happens in a transaction**
   - In SQL Server this can cause issues because of page locks/etc.
+
+# Tuning Akka.Persistence.Query for Low-Latency Projections
+
+Default polling intervals cause 500-1200ms projection latency. For low-latency CQRS, tune **BOTH** settings together:
+
+```hocon
+akka.persistence.query.journal.sql {
+    refresh-interval = 10ms          # Query stream polling
+    max-buffer-size = 50
+    journal-sequence-retrieval {
+        query-delay = 10ms           # Sequence actor polling - CRITICAL!
+    }
+}
+```
+
+**Important**: Tuning only `refresh-interval` does NOT work. The sequence actor polls independently via `query-delay`.
+
+## Performance Guide
+
+| Configuration | Latency | Database Load |
+|--------------|---------|---------------|
+| Default (1s/1s) | 500-1200ms | Low |
+| Balanced (50ms/50ms) | 50-200ms | Medium |
+| Low latency (10ms/10ms) | 20-100ms | High |
+
+**Trade-off**: Lower = faster but higher DB load. In clusters, each node polls independently.
+
+See [persistence.conf](https://github.com/akkadotnet/Akka.Persistence.Sql/blob/dev/src/Akka.Persistence.Sql/persistence.conf#L352-L398) for detailed settings documentation.
 
 # Building this solution
 
