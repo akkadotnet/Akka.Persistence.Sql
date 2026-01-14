@@ -85,8 +85,16 @@ akka.persistence {
             _persistenceActor = Sys.ActorOf(Props.Create(() => new MyPersistenceActor(PId)), "persistence-actor-1");
         }
 
-        public Task DisposeAsync()
-            => Task.CompletedTask;
+        public async Task DisposeAsync()
+        {
+            // Properly shut down the actor system to ensure all streams, actors, and materializers
+            // are terminated before the SQLite in-memory database connection is closed.
+            // Without this, there's a race condition where:
+            // 1. xUnit disposes SqliteContainer, closing the in-memory database
+            // 2. Actor system continues running, streams try to query
+            // 3. "no such table" or "Materializer has been shut down" errors occur
+            await Sys.Terminate();
+        }
 
         /// <summary>
         /// Initializes a new <see cref="TestOutputLogger"/> used to log messages.
