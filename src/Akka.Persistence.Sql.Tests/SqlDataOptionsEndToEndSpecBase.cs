@@ -45,6 +45,7 @@ akka.persistence {
         plugin = "akka.persistence.snapshot-store.sql"
     }
 }
+akka.test.single-expect-default = 10s
 """)
             .WithFallback(SqlPersistence.DefaultConfiguration);
 
@@ -89,7 +90,8 @@ akka.persistence {
         public async Task DisposeAsync()
         {
             await Sys.Terminate();
-            await _fixture.DisposeAsync();
+            // Do NOT call _fixture.DisposeAsync() here - xUnit manages the collection fixture lifecycle.
+            // Disposing the shared fixture destroys in-memory databases for all other test classes in the collection.
         }
 
         /// <summary>

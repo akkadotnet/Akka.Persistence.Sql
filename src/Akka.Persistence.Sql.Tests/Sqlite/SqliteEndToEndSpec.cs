@@ -10,7 +10,7 @@ using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Tests.Sqlite
 {
-    [CollectionDefinition(nameof(SqlitePersistenceSpec), DisableParallelization = true)]
+    [Collection(nameof(SqlitePersistenceSpec))]
     public class SqliteEndToEndSpec: SqlEndToEndSpecBase<SqliteContainer>
     {
         public SqliteEndToEndSpec(ITestOutputHelper output, SqliteContainer fixture) : base(output, fixture) { }

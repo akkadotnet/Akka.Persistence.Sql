@@ -57,6 +57,7 @@ akka.persistence {
         }
     }
 }
+akka.test.single-expect-default = 10s
 """;
 
         private const string GetAll = "getAll";

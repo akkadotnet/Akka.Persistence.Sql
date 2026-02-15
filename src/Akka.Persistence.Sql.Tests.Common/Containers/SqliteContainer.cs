@@ -46,10 +46,11 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
         {
             GenerateDatabaseName();
 
+            _heldConnection ??= new List<SQLiteConnection>();
             var conn = new SQLiteConnection(ConnectionString);
             await conn.OpenAsync();
 
-            _heldConnection!.Add(conn);
+            _heldConnection.Add(conn);
         }
 
         public async Task DisposeAsync()
