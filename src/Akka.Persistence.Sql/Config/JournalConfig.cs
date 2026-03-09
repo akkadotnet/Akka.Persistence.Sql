@@ -4,6 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Data;
 using Akka.Persistence.Sql.Extensions;
 using LinqToDB;
@@ -35,6 +36,11 @@ namespace Akka.Persistence.Sql.Config
             ReadIsolationLevel = config.GetIsolationLevel("read-isolation-level");
             WriteIsolationLevel = config.GetIsolationLevel("write-isolation-level");
 
+            var commandTimeoutStr = config.GetString("command-timeout");
+            CommandTimeout = !string.IsNullOrWhiteSpace(commandTimeoutStr) && !commandTimeoutStr.Equals("null", StringComparison.OrdinalIgnoreCase)
+                ? config.GetInt("command-timeout")
+                : null;
+
             DataOptions = null;
         }
 
@@ -52,6 +58,7 @@ namespace Akka.Persistence.Sql.Config
             bool warnOnAutoInitializeFail,
             IsolationLevel writeIsolationLevel,
             IsolationLevel readIsolationLevel,
+            int? commandTimeout,
             DataOptions? dataOptions)
         {
             MaterializerDispatcher = materializerDispatcher;
@@ -67,6 +74,7 @@ namespace Akka.Persistence.Sql.Config
             WarnOnAutoInitializeFail = warnOnAutoInitializeFail;
             WriteIsolationLevel = writeIsolationLevel;
             ReadIsolationLevel = readIsolationLevel;
+            CommandTimeout = commandTimeout;
             DataOptions = dataOptions;
         }
         
@@ -103,6 +111,8 @@ namespace Akka.Persistence.Sql.Config
 
         public IsolationLevel ReadIsolationLevel { get; }
 
+        public int? CommandTimeout { get; }
+
         public DataOptions? DataOptions { get; }
 
         public JournalConfig WithDataOptions(DataOptions dataOptions)
@@ -122,6 +132,7 @@ namespace Akka.Persistence.Sql.Config
             bool? warnOnAutoInitializeFail = null,
             IsolationLevel? writeIsolationLevel = null,
             IsolationLevel? readIsolationLevel = null,
+            int? commandTimeout = null,
             DataOptions? dataOptions = null)
             => new(
                 materializerDispatcher ?? MaterializerDispatcher,
@@ -137,6 +148,7 @@ namespace Akka.Persistence.Sql.Config
                 warnOnAutoInitializeFail ?? WarnOnAutoInitializeFail,
                 writeIsolationLevel ?? WriteIsolationLevel,
                 readIsolationLevel ?? ReadIsolationLevel,
+                commandTimeout ?? CommandTimeout,
                 dataOptions ?? DataOptions);
     }
 
@@ -162,6 +174,12 @@ namespace Akka.Persistence.Sql.Config
         bool UseCloneConnection { get; }
 
         string DefaultSerializer { get; }
+
+        /// <summary>
+        ///     The ADO.NET command timeout for all database operations, in seconds.
+        ///     When null, the provider default is used (typically 30s for SQL Server).
+        /// </summary>
+        int? CommandTimeout { get; }
 
         DataOptions? DataOptions { get; }
     }

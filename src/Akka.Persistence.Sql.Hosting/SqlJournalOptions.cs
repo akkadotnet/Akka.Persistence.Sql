@@ -158,6 +158,20 @@ namespace Akka.Persistence.Sql.Hosting
         /// </summary>
         public TimeSpan? QueryThrottleTimeout { get; set; }
 
+        /// <summary>
+        ///     <para>
+        ///         The ADO.NET command timeout for all journal database operations, in seconds.
+        ///         This controls how long each SQL command is allowed to execute before timing out.
+        ///     </para>
+        ///     <para>
+        ///         NOTE: This is different from the Akka.Persistence circuit breaker call-timeout (default 10s).
+        ///         If you are experiencing TimeoutException from AtomicState.CallThrough, consider
+        ///         also increasing circuit-breaker.call-timeout to be higher than this value.
+        ///     </para>
+        ///     <b>Default</b>: <c>null</c> (uses the ADO.NET provider default, typically 30s for SQL Server)
+        /// </summary>
+        public int? CommandTimeout { get; set; }
+
         protected override Configuration.Config InternalDefaultConfig => Default;
 
         public Configuration.Config DefaultQueryConfig => DefaultQuery.MoveTo(QueryPluginId);
@@ -200,6 +214,9 @@ namespace Akka.Persistence.Sql.Hosting
 
             if (WriteIsolationLevel is not null)
                 sb.AppendLine($"write-isolation-level = {WriteIsolationLevel.ToHocon()}");
+
+            if (CommandTimeout is not null)
+                sb.AppendLine($"command-timeout = {CommandTimeout.Value}");
 
             DatabaseOptions?.Build(sb);
 
@@ -246,7 +263,10 @@ namespace Akka.Persistence.Sql.Hosting
             
             if(QueryThrottleTimeout is not null)
                 sb.AppendLine($"query-throttle-timeout = {QueryThrottleTimeout.Value.ToHocon()}");
-            
+
+            if (CommandTimeout is not null)
+                sb.AppendLine($"command-timeout = {CommandTimeout.Value}");
+
             sb.AppendLine($"serializer = {Serializer.ToHocon()}");
             
             DatabaseOptions?.Build(sb);

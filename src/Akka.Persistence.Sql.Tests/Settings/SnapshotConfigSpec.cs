@@ -45,6 +45,7 @@ namespace Akka.Persistence.Sql.Tests.Settings
             snapshot.GetBoolean("warn-on-auto-init-fail").Should().BeTrue();
             snapshot.GetIsolationLevel("read-isolation-level").Should().Be(IsolationLevel.Unspecified);
             snapshot.GetIsolationLevel("write-isolation-level").Should().Be(IsolationLevel.Unspecified);
+            snapshot.GetString("command-timeout").Should().Be("null");
 
             var snapshotConfig = snapshot.GetConfig("default");
             snapshotConfig.Should().NotBeNull();
@@ -197,6 +198,30 @@ namespace Akka.Persistence.Sql.Tests.Settings
             snapshotColumns.SerializerId.Should().Be("serializer_id");
         }
 
+        [Fact(DisplayName = "Snapshot config should parse command-timeout as integer seconds")]
+        public void SnapshotCommandTimeoutConfigTest()
+        {
+            var snapshotHocon = ConfigurationFactory
+                .ParseString("akka.persistence.snapshot-store.sql.command-timeout = 60")
+                .WithFallback(_defaultConfig)
+                .GetConfig("akka.persistence.snapshot-store.sql");
+
+            var snapshot = new SnapshotConfig(snapshotHocon);
+            snapshot.CommandTimeout.Should().Be(60);
+        }
+
+        [Fact(DisplayName = "Snapshot config should parse command-timeout = 0 as zero")]
+        public void SnapshotCommandTimeoutZeroConfigTest()
+        {
+            var snapshotHocon = ConfigurationFactory
+                .ParseString("akka.persistence.snapshot-store.sql.command-timeout = 0")
+                .WithFallback(_defaultConfig)
+                .GetConfig("akka.persistence.snapshot-store.sql");
+
+            var snapshot = new SnapshotConfig(snapshotHocon);
+            snapshot.CommandTimeout.Should().Be(0);
+        }
+
         private static void AssertDefaultSnapshotConfig(SnapshotConfig snapshot)
         {
             snapshot.ConnectionString.Should().BeNullOrEmpty();
@@ -206,6 +231,7 @@ namespace Akka.Persistence.Sql.Tests.Settings
             snapshot.UseSharedDb.Should().BeNullOrEmpty();
             snapshot.ReadIsolationLevel.Should().Be(IsolationLevel.Unspecified);
             snapshot.WriteIsolationLevel.Should().Be(IsolationLevel.Unspecified);
+            snapshot.CommandTimeout.Should().BeNull();
 
             var pluginConfig = snapshot.PluginConfig;
             var daoType = Type.GetType(pluginConfig.Dao);
