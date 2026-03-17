@@ -6,6 +6,8 @@
 
 using System;
 using System.Data;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Persistence.Sql.Journal.Types;
@@ -62,7 +64,8 @@ namespace Akka.Persistence.Sql.Db
             => _connection.Dispose();
 
         public AkkaDataConnection Clone()
-            => new(_providerName, (DataConnection)_connection.Clone());
+            => throw new NotImplementedException();
+        // TODO FIX: new(_providerName, (DataConnection)_connection.Clone());
 
         internal IRetryPolicy? DetachRetryPolicy()
         {
@@ -88,6 +91,9 @@ namespace Akka.Persistence.Sql.Db
 
         public ITable<T> GetTable<T>() where T : class
             => _connection.GetTable<T>();
+
+        public IQueryable<T> SelectQuery<T>(Expression<Func<T>> expr) where T : class
+            => _connection.SelectQuery(expr);
 
         public async Task<DataConnectionTransaction> BeginTransactionAsync(
             IsolationLevel isolationLevel,
