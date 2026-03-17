@@ -346,17 +346,20 @@ namespace Akka.Persistence.Sql.Journal.Dao
                         {
                             await RunFastInsert(connection, xs, JournalConfig.DaoConfig, token);
                         }
-                        var config = JournalConfig.DaoConfig;
-                        var tail = xs;
-                        while (tail.Count > 0)
+                        else
                         {
-                            (var noTags, tail) = tail.Span(r => r.TagArray.Length == 0);
-                            if (noTags.Count > 0)
-                                await BulkInsertNoTagTableTags(connection, noTags, config, token);
+                            var config = JournalConfig.DaoConfig;
+                            var tail = xs;
+                            while (tail.Count > 0)
+                            {
+                                (var noTags, tail) = tail.Span(r => r.TagArray.Length == 0);
+                                if (noTags.Count > 0)
+                                    await BulkInsertNoTagTableTags(connection, noTags, config, token);
 
-                            (var hasTags, tail) = tail.Span(r => r.TagArray.Length > 0);
-                            if (hasTags.Count > 0)
-                                await InsertWithOrderingAndBulkInsertTags(connection, hasTags, config, token);
+                                (var hasTags, tail) = tail.Span(r => r.TagArray.Length > 0);
+                                if (hasTags.Count > 0)
+                                    await InsertWithOrderingAndBulkInsertTags(connection, hasTags, config, token);
+                            }
                         }
                     }
                 });
