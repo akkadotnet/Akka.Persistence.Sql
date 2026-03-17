@@ -23,6 +23,7 @@ using Akka.Streams.Dsl;
 using Akka.Streams.Supervision;
 using LanguageExt;
 using LinqToDB;
+using LinqToDB.Async;
 using LinqToDB.Data;
 using static LanguageExt.Prelude;
 
@@ -341,6 +342,10 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     }
                     else
                     {
+                        if (JournalConfig.ProviderName.Contains("SqlServer") || JournalConfig.ProviderName.Contains("PostgreSQL") || JournalConfig.ProviderName.Contains("Sqlite"))
+                        {
+                            await RunFastInsert(connection, xs, JournalConfig.DaoConfig, token);
+                        }
                         var config = JournalConfig.DaoConfig;
                         var tail = xs;
                         while (tail.Count > 0)
@@ -355,6 +360,110 @@ namespace Akka.Persistence.Sql.Journal.Dao
                         }
                     }
                 });
+        }
+
+        private async Task RunFastInsert(AkkaDataConnection connection, Seq<JournalRow> xs, BaseByteArrayJournalDaoConfig journalConfigDaoConfig, CancellationToken token)
+        {
+            var roundTripByteLimit = 10_000_000;
+            var roundTripParamLimit = 999; // should be set based on provider tho.
+            var rowLimit = 10; // IDK
+            var currRows = 0;
+            var currParams = 0;
+            var currBytes = 0;
+            IQueryable<JournalRow> query = default;
+            Dictionary<(string PersistenceId, long SequenceNumber), string[]> tagDict = new Dictionary<(string persistenceId, long sequenceNumber), string[]>();
+            foreach (var journalRow in xs)
+            {
+                if (journalRow.Message.Length + currBytes > roundTripByteLimit || journalRow.TagArray.Length + currParams > roundTripParamLimit || currRows >= rowLimit)
+                {
+                    (query, currRows, currParams, currBytes) = await InsertJournalEntriesWithTags(connection, journalConfigDaoConfig, token, tagDict, query);
+                }
+                
+                {
+                    tagDict.Add((journalRow.PersistenceId, journalRow.SequenceNumber), journalRow.TagArray);
+                    currRows++;
+                    currBytes += journalRow.Message.Length;
+                    currParams++;
+                    var newQuery = connection.SelectQuery<JournalRow>(() => new JournalRow()
+                    {
+                        PersistenceId = journalRow.PersistenceId,
+                        SequenceNumber = journalRow.SequenceNumber,
+                        Message = LinqToDB.Sql.Parameter(journalRow.Message),
+                        Deleted = journalRow.Deleted,
+                        Manifest = journalRow.Manifest,
+                        Timestamp = journalRow.Timestamp,
+                        Identifier = journalRow.Identifier,
+                        WriterUuid = journalRow.WriterUuid,
+                        EventManifest = journalRow.EventManifest
+                    });
+                    if (query is null)
+                    {
+                        query = newQuery;
+                    }
+                    else
+                    {
+                        query = query.UnionAll(newQuery);
+                    }
+                }
+            }
+            if ( currBytes > 0 || currParams > 0 || currRows > 0)
+            {
+                _ = await InsertJournalEntriesWithTags(connection, journalConfigDaoConfig, token, tagDict, query);
+            }
+        }
+
+        private static async Task<(IQueryable<JournalRow>? query, int currRows, int currParams, int currBytes)> InsertJournalEntriesWithTags(
+            AkkaDataConnection connection,
+            BaseByteArrayJournalDaoConfig journalConfigDaoConfig,
+            CancellationToken token,
+            Dictionary<(string PersistenceId, long SequenceNumber), string[]> tagDict,
+            IQueryable<JournalRow>? query)
+        {
+            int currRows;
+            int currParams;
+            int currBytes;
+            var inserted =  await query.InsertWithOutputAsync(
+                    connection.GetTable<JournalRow>(),
+                    (input) =>
+                        new JournalRow()
+                        {
+                            PersistenceId = input.PersistenceId,
+                            SequenceNumber = input.SequenceNumber,
+                            Message = input.Message,
+                            Deleted = input.Deleted,
+                            Manifest = input.Manifest,
+                            Timestamp = input.Timestamp,
+                            Identifier = input.Identifier,
+                            WriterUuid = input.WriterUuid,
+                            EventManifest = input.EventManifest
+                        },
+                    (inserted) => new { inserted.Ordering, inserted.PersistenceId, inserted.SequenceNumber })
+                .ToListAsync(token);
+            var tagsToInsert = inserted.Join(
+                    tagDict,
+                    i => (i.PersistenceId, i.SequenceNumber),
+                    d => d.Key,
+                    (i, d) =>
+                        d.Value.Select(t => new JournalTagRow()
+                                { OrderingId = i.Ordering, PersistenceId = i.PersistenceId, SequenceNumber = i.SequenceNumber, TagValue = t })
+                            .ToList()
+                )
+                .ToList();
+                    
+            await connection.GetTable<JournalTagRow>()
+                .BulkCopyAsync(
+                    new BulkCopyOptions()
+                        .WithBulkCopyType(BulkCopyType.MultipleRows)
+                        .WithUseParameters(journalConfigDaoConfig.PreferParametersOnMultiRowInsert)
+                        .WithMaxBatchSize(journalConfigDaoConfig.DbRoundTripTagBatchSize),
+                    tagsToInsert.SelectMany(t => t),
+                    token);
+            tagDict.Clear();
+            currRows = 0;
+            currParams = 0;
+            currBytes = 0;
+            query = null;
+            return (query, currRows, currParams, currBytes);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
