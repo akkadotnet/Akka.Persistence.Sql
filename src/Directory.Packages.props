@@ -24,6 +24,7 @@
     <PackageVersion Include="Akka.Serialization.V2" Version="$(AkkaVersion)" />
     <PackageVersion Include="Akka.Streams" Version="$(AkkaVersion)" />
     <PackageVersion Include="MathNet.Numerics" Version="5.0.0" />
+    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" />
   </ItemGroup>
   <!-- App dependencies -->
   <ItemGroup>
