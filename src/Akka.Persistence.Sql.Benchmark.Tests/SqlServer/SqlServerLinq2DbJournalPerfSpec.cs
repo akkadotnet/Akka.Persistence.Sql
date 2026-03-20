@@ -28,7 +28,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
     public class SqlServerLinq2DbTagTableJournalPerfSpec : BaseSqlServerLinq2DbJournalPerfSpec
     {
         public SqlServerLinq2DbTagTableJournalPerfSpec(ITestOutputHelper output, SqlServerContainer fixture)
-            : base(TagMode.Csv, nameof(SqlServerLinq2DbTagTableJournalPerfSpec), output, fixture)
+            : base(TagMode.TagTable, nameof(SqlServerLinq2DbTagTableJournalPerfSpec), output, fixture)
         {
         }
     }

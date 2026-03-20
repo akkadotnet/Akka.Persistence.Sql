@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
@@ -65,6 +66,12 @@ namespace Akka.Persistence.Sql.Db
 
         public ITable<T> GetTable<T>() where T : class
             => _connection.GetTable<T>();
+        
+        public IQueryable<T> AsParameterized<T>(IEnumerable<T> set) where T : class
+            => set.AsParameterized(_connection);
+        
+        public IQueryable<T> AsParameterized<T>(IEnumerable<T> set, Expression<Func<T,object>> paramExpr) where T : class
+            => set.AsParameterized(_connection, paramExpr);
 
         public IQueryable<T> SelectQuery<T>(Expression<Func<T>> expr) where T : class
             => _connection.SelectQuery(expr);
