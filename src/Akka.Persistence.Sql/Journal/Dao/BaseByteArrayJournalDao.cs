@@ -379,6 +379,9 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
         protected async Task RunFastInsert2(AkkaDataConnection connection, Seq<JournalRow> xs, BaseByteArrayJournalDaoConfig journalConfigDaoConfig, CancellationToken token)
         {
+            // TODO: Should this be Configurable (including but not limited to 
+            // This version is also based on using roundTripByteLimit with a lazy heuristic to keep calculation logic simple.
+            
             var roundTripByteLimit = 10_000_000;
             var roundTripParamLimit = 999; // should be set based on provider tho.
             var rowLimit = 200; // IDK
@@ -392,7 +395,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
             {
                 if (journalRow.Message.Length + currBytes > roundTripByteLimit || journalRow.TagArray.Length + currParams > roundTripParamLimit || currRows >= rowLimit)
                 {
-                    var query = connection.AsParameterized(
+                    var query = connection.AsQueryable(
                         insertList.Select(jr => new JournalRowIns
                         {
                             PersistenceId = jr.PersistenceId,
@@ -403,7 +406,8 @@ namespace Akka.Persistence.Sql.Journal.Dao
                             Timestamp = jr.Timestamp,
                             Identifier = jr.Identifier,
                             WriterUuid = jr.WriterUuid
-                        }), a=> new { a.Message });
+                        }));
+                        //, a=> new { a.Message });
                     await InsertJournalEntriesWithTags(connection, journalConfigDaoConfig, token, tagDict, query);
                     insertList.Clear();
                     tagDict.Clear();
@@ -415,14 +419,18 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 {
                     tagDict[(journalRow.PersistenceId, journalRow.SequenceNumber)] = journalRow.TagArray;
                     currRows++;
-                    currBytes += journalRow.Message.Length;
+                    currBytes += 
+                        (journalRow.Message.Length * 2 // SqlText cost
+                            +
+                            256 // overparanoid cost for other fields on row.
+                            );
                     currParams++;
                     insertList.Add(journalRow);
                 }
             }
             if ( currBytes > 0 || currParams > 0 || currRows > 0)
             {
-                var query = connection.AsParameterized(
+                var query = connection.AsQueryable(
                     insertList.Select(jr => new JournalRowIns
                     {
                         PersistenceId = jr.PersistenceId,
@@ -433,66 +441,12 @@ namespace Akka.Persistence.Sql.Journal.Dao
                         Timestamp = jr.Timestamp,
                         Identifier = jr.Identifier,
                         WriterUuid = jr.WriterUuid
-                    }), a=> new { a.Message });
-                await InsertJournalEntriesWithTags(connection, journalConfigDaoConfig, token, tagDict, query);
-            }
-
-        }
-
-        protected async Task RunFastInsert(AkkaDataConnection connection, Seq<JournalRow> xs, BaseByteArrayJournalDaoConfig journalConfigDaoConfig, CancellationToken token)
-        {
-            var roundTripByteLimit = 10_000_000;
-            var roundTripParamLimit = 999; // should be set based on provider tho.
-            var rowLimit = 20; // IDK
-            var currRows = 0;
-            var currParams = 0;
-            var currBytes = 0;
-            IQueryable<JournalRowIns> query = default;
-            Dictionary<(string PersistenceId, long SequenceNumber), string[]> tagDict = new Dictionary<(string persistenceId, long sequenceNumber), string[]>();
-            foreach (var journalRow in xs)
-            {
-                if (journalRow.Message.Length + currBytes > roundTripByteLimit || journalRow.TagArray.Length + currParams > roundTripParamLimit || currRows >= rowLimit)
-                {
-                    await InsertJournalEntriesWithTags(connection, journalConfigDaoConfig, token, tagDict, query);
-                    query = default;
-                    tagDict.Clear();
-                    currRows = 0;
-                    currParams = 0;
-                    currBytes = 0;
-                }
-                
-                {
-                    tagDict.Add((journalRow.PersistenceId, journalRow.SequenceNumber), journalRow.TagArray);
-                    currRows++;
-                    currBytes += journalRow.Message.Length;
-                    currParams++;
-                    var newQuery = connection.SelectQuery(() => new JournalRowIns
-                    {
-                        PersistenceId = journalRow.PersistenceId,
-                        SequenceNumber = journalRow.SequenceNumber,
-                        Message = LinqToDB.Sql.Parameter(journalRow.Message),
-                        Deleted = journalRow.Deleted,
-                        Manifest = journalRow.Manifest,
-                        Timestamp = journalRow.Timestamp,
-                        Identifier = journalRow.Identifier,
-                        WriterUuid = journalRow.WriterUuid,
-                        //EventManifest = journalRow.EventManifest
-                    });
-                    if (query is null)
-                    {
-                        query = newQuery;
-                    }
-                    else
-                    {
-                        query = query.UnionAll(newQuery);
-                    }
-                }
-            }
-            if ( currBytes > 0 || currParams > 0 || currRows > 0)
-            {
+                    }));
+                    //, a=> new { a.Message });
                 await InsertJournalEntriesWithTags(connection, journalConfigDaoConfig, token, tagDict, query);
             }
         }
+
 
         private static async Task InsertJournalEntriesWithTags(
             AkkaDataConnection connection,
