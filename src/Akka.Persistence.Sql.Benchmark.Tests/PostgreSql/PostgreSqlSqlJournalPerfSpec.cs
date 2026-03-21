@@ -23,7 +23,24 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
         {
         }
     }
-    
+
+    /// <summary>
+    ///     CSV perf spec with forced event tagging (2 tags per event).
+    /// </summary>
+    [Collection(nameof(PostgreSqlPersistenceBenchmark))]
+    public class PostgreSqlSqlCsvTaggedJournalPerfSpec : BasePostgreSqlSqlJournalPerfSpec
+    {
+        public PostgreSqlSqlCsvTaggedJournalPerfSpec(ITestOutputHelper output, PostgreSqlContainer fixture)
+            : base(
+                TagMode.Csv,
+                nameof(PostgreSqlSqlCsvTaggedJournalPerfSpec),
+                output,
+                fixture,
+                forceTagging: true)
+        {
+        }
+    }
+
     [Collection(nameof(PostgreSqlPersistenceBenchmark))]
     public class PostgreSqlSqlTagTableJournalPerfSpec : BasePostgreSqlSqlJournalPerfSpec
     {
@@ -90,19 +107,28 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
 
     public abstract class BasePostgreSqlSqlJournalPerfSpec : SqlJournalPerfSpec<PostgreSqlContainer>
     {
+        /// <summary>
+        ///     Base constructor for PostgreSQL journal perf specs~ uwu 🐘✨
+        ///     <para>
+        ///         <paramref name="payloadSizeBytes"/> lets you attach a random <c>byte[]</c>
+        ///         blob to every persisted <see cref="Cmd"/> so we can measure realistic I/O.
+        ///     </para>
+        /// </summary>
         protected BasePostgreSqlSqlJournalPerfSpec(
             TagMode tagMode,
             string name,
             ITestOutputHelper output,
             PostgreSqlContainer fixture,
             bool useAsQueryableLiteralInsert = false,
-            bool forceTagging = false)
+            bool forceTagging = false,
+            int payloadSizeBytes = 0)
             : base(
                 Configuration(fixture, tagMode, useAsQueryableLiteralInsert, forceTagging),
                 name,
                 output,
                 40,
-                eventsCount: TestConstants.DockerNumMessages) { }
+                eventsCount: TestConstants.DockerNumMessages,
+                payloadSizeBytes: payloadSizeBytes) { }
 
         private static Configuration.Config Configuration(
             PostgreSqlContainer fixture,
@@ -150,5 +176,76 @@ akka.persistence {
         [Fact]
         public async Task PersistenceActor_Must_measure_PersistGroup1000()
             => await RunGroupBenchmarkAsync(1000, 10);
+    }
+
+    /// <summary>
+    ///     CSV perf spec with a 1 KB <c>byte[]</c> payload on every event.
+    /// </summary>
+    [Collection(nameof(PostgreSqlPersistenceBenchmark))]
+    public class PostgreSqlSqlCsvLargePayloadJournalPerfSpec : BasePostgreSqlSqlJournalPerfSpec
+    {
+        public PostgreSqlSqlCsvLargePayloadJournalPerfSpec(ITestOutputHelper output, PostgreSqlContainer fixture)
+            : base(
+                TagMode.Csv,
+                nameof(PostgreSqlSqlCsvLargePayloadJournalPerfSpec),
+                output,
+                fixture,
+                payloadSizeBytes: TestConstants.LargePayloadSizeBytes)
+        {
+        }
+    }
+
+    /// <summary>
+    ///     TagTable perf spec with a 1 KB <c>byte[]</c> payload on every event.
+    /// </summary>
+    [Collection(nameof(PostgreSqlPersistenceBenchmark))]
+    public class PostgreSqlSqlTagTableLargePayloadJournalPerfSpec : BasePostgreSqlSqlJournalPerfSpec
+    {
+        public PostgreSqlSqlTagTableLargePayloadJournalPerfSpec(ITestOutputHelper output, PostgreSqlContainer fixture)
+            : base(
+                TagMode.TagTable,
+                nameof(PostgreSqlSqlTagTableLargePayloadJournalPerfSpec),
+                output,
+                fixture,
+                payloadSizeBytes: TestConstants.LargePayloadSizeBytes)
+        {
+        }
+    }
+
+    /// <summary>
+    ///     TagTable perf spec with a 1 KB <c>byte[]</c> payload AND forced tagging (2 tags per event).
+    /// </summary>
+    [Collection(nameof(PostgreSqlPersistenceBenchmark))]
+    public class PostgreSqlSqlTagTableLargePayloadTaggedJournalPerfSpec : BasePostgreSqlSqlJournalPerfSpec
+    {
+        public PostgreSqlSqlTagTableLargePayloadTaggedJournalPerfSpec(ITestOutputHelper output, PostgreSqlContainer fixture)
+            : base(
+                TagMode.TagTable,
+                nameof(PostgreSqlSqlTagTableLargePayloadTaggedJournalPerfSpec),
+                output,
+                fixture,
+                forceTagging: true,
+                payloadSizeBytes: TestConstants.LargePayloadSizeBytes)
+        {
+        }
+    }
+    
+    // <summary>
+    ///     TagTable perf spec with a 1 KB <c>byte[]</c> payload AND forced tagging (2 tags per event).
+    /// </summary>
+    [Collection(nameof(PostgreSqlPersistenceBenchmark))]
+    public class PostgreSqlSqlTagTableAsQueryableLargePayloadTaggedJournalPerfSpec : BasePostgreSqlSqlJournalPerfSpec
+    {
+        public PostgreSqlSqlTagTableAsQueryableLargePayloadTaggedJournalPerfSpec(ITestOutputHelper output, PostgreSqlContainer fixture)
+            : base(
+                TagMode.TagTable,
+                nameof(PostgreSqlSqlTagTableLargePayloadTaggedJournalPerfSpec),
+                output,
+                fixture,
+                forceTagging: true,
+                payloadSizeBytes: TestConstants.LargePayloadSizeBytes,
+                useAsQueryableLiteralInsert: true)
+        {
+        }
     }
 }

@@ -23,7 +23,24 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
         {
         }
     }
-        
+
+    /// <summary>
+    ///     CSV perf spec with forced event tagging (2 tags per event).
+    /// </summary>
+    [Collection(nameof(SqlServerPersistenceBenchmark))]
+    public class SqlServerLinq2DbCsvTaggedJournalPerfSpec : BaseSqlServerLinq2DbJournalPerfSpec
+    {
+        public SqlServerLinq2DbCsvTaggedJournalPerfSpec(ITestOutputHelper output, SqlServerContainer fixture)
+            : base(
+                TagMode.Csv,
+                nameof(SqlServerLinq2DbCsvTaggedJournalPerfSpec),
+                output,
+                fixture,
+                forceTagging: true)
+        {
+        }
+    }
+
     [Collection(nameof(SqlServerPersistenceBenchmark))]
     public class SqlServerLinq2DbTagTableJournalPerfSpec : BaseSqlServerLinq2DbJournalPerfSpec
     {
@@ -90,19 +107,28 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
 
     public abstract class BaseSqlServerLinq2DbJournalPerfSpec : SqlJournalPerfSpec<SqlServerContainer>
     {
+        /// <summary>
+        ///     Base constructor for SQL Server journal perf specs~ uwu 🖥️✨
+        ///     <para>
+        ///         <paramref name="payloadSizeBytes"/> lets you attach a random <c>byte[]</c>
+        ///         blob to every persisted <see cref="Cmd"/> so we can measure realistic I/O.
+        ///     </para>
+        /// </summary>
         protected BaseSqlServerLinq2DbJournalPerfSpec(
             TagMode tagMode,
             string name,
             ITestOutputHelper output,
             SqlServerContainer fixture,
             bool useAsQueryableLiteralInsert = false,
-            bool forceTagging = false)
+            bool forceTagging = false,
+            int payloadSizeBytes = 0)
             : base(
                 Configure(fixture, tagMode, useAsQueryableLiteralInsert, forceTagging),
                 name,
                 output,
                 40,
-                eventsCount: TestConstants.DockerNumMessages)
+                eventsCount: TestConstants.DockerNumMessages,
+                payloadSizeBytes: payloadSizeBytes)
         {
         }
 
@@ -158,5 +184,63 @@ akka.persistence {
         [Fact]
         public async Task PersistenceActor_Must_measure_PersistGroup1000()
             => await RunGroupBenchmarkAsync(1000, 10);
+    }
+
+    // ── Large-payload specs ────────────────────────────────────────────
+    // CopilotNotes: These specs attach a 1 KB random byte[] blob to every
+    //               persisted Cmd so we can measure realistic serialisation
+    //               + I/O overhead. 🖥️📦
+
+    /// <summary>
+    ///     CSV perf spec with a 1 KB <c>byte[]</c> payload on every event.
+    /// </summary>
+    [Collection(nameof(SqlServerPersistenceBenchmark))]
+    public class SqlServerLinq2DbCsvLargePayloadJournalPerfSpec : BaseSqlServerLinq2DbJournalPerfSpec
+    {
+        public SqlServerLinq2DbCsvLargePayloadJournalPerfSpec(ITestOutputHelper output, SqlServerContainer fixture)
+            : base(
+                TagMode.Csv,
+                nameof(SqlServerLinq2DbCsvLargePayloadJournalPerfSpec),
+                output,
+                fixture,
+                payloadSizeBytes: TestConstants.LargePayloadSizeBytes)
+        {
+        }
+    }
+
+    /// <summary>
+    ///     TagTable perf spec with a 1 KB <c>byte[]</c> payload on every event.
+    /// </summary>
+    [Collection(nameof(SqlServerPersistenceBenchmark))]
+    public class SqlServerLinq2DbTagTableLargePayloadJournalPerfSpec : BaseSqlServerLinq2DbJournalPerfSpec
+    {
+        public SqlServerLinq2DbTagTableLargePayloadJournalPerfSpec(ITestOutputHelper output, SqlServerContainer fixture)
+            : base(
+                TagMode.TagTable,
+                nameof(SqlServerLinq2DbTagTableLargePayloadJournalPerfSpec),
+                output,
+                fixture,
+                payloadSizeBytes: TestConstants.LargePayloadSizeBytes)
+        {
+        }
+    }
+
+    /// <summary>
+    ///     TagTable perf spec with a 1 KB <c>byte[]</c> payload AND forced tagging (2 tags per event).
+    ///     Maximum realistic overhead scenario. 💪✨
+    /// </summary>
+    [Collection(nameof(SqlServerPersistenceBenchmark))]
+    public class SqlServerLinq2DbTagTableLargePayloadTaggedJournalPerfSpec : BaseSqlServerLinq2DbJournalPerfSpec
+    {
+        public SqlServerLinq2DbTagTableLargePayloadTaggedJournalPerfSpec(ITestOutputHelper output, SqlServerContainer fixture)
+            : base(
+                TagMode.TagTable,
+                nameof(SqlServerLinq2DbTagTableLargePayloadTaggedJournalPerfSpec),
+                output,
+                fixture,
+                forceTagging: true,
+                payloadSizeBytes: TestConstants.LargePayloadSizeBytes)
+        {
+        }
     }
 }

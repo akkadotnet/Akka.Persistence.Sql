@@ -37,12 +37,19 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
         private readonly TimeSpan _expectDuration;
         private readonly TestProbe _testProbe;
 
+        /// <summary>
+        ///     Optional data blob attached to every <see cref="Cmd"/> to simulate realistic payload sizes.
+        ///     Generated once and shared across all commands to avoid allocation noise in benchmarks. ✨
+        /// </summary>
+        private readonly byte[]? _payload;
+
         protected SqlJournalPerfSpec(
             Configuration.Config? config,
             string actorSystem,
             ITestOutputHelper output,
             int timeoutDurationSeconds = 30,
-            int eventsCount = 10000)
+            int eventsCount = 10000,
+            int payloadSizeBytes = 0)
             : base(config ?? Configuration.Config.Empty, actorSystem, output)
         {
             ThreadPool.SetMinThreads(12, 12);
@@ -50,6 +57,12 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             _expectDuration = TimeSpan.FromSeconds(timeoutDurationSeconds);
             _testProbe = CreateTestProbe();
             _commands = Enumerable.Range(1, _eventsCount).ToArray();
+
+            if (payloadSizeBytes > 0)
+            {
+                _payload = new byte[payloadSizeBytes];
+                Random.Shared.NextBytes(_payload);
+            }
         }
 
         private readonly IReadOnlyList<int> _commands; 
@@ -78,7 +91,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             IReadOnlyList<int> commands,
             int numExpect)
         {
-            commands.ForEach(c => autSet.actor.Tell(new Broadcast(new Cmd(mode, c))));
+            commands.ForEach(c => autSet.actor.Tell(new Broadcast(new Cmd(mode, c, _payload))));
 
             for (var i = 0; i < numExpect; i++)
                 await autSet.probe.ExpectMsgAsync(commands[^1], _expectDuration);
@@ -86,7 +99,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
 
         internal async Task FeedAndExpectLastAsync(IActorRef actor, string mode, IReadOnlyList<int> commands)
         {
-            commands.ForEach(c => actor.Tell(new Cmd(mode, c)));
+            commands.ForEach(c => actor.Tell(new Cmd(mode, c, _payload)));
             await _testProbe.ExpectMsgAsync(commands[^1], _expectDuration);
         }
 
@@ -96,7 +109,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             IReadOnlyList<int> commands)
         {
             foreach (var (actor, _) in autSet)
-                commands.ForEach(c => actor.Tell(new Cmd(mode, c)));
+                commands.ForEach(c => actor.Tell(new Cmd(mode, c, _payload)));
 
             foreach (var (_, probe) in autSet)
                 await probe.ExpectMsgAsync(commands[^1], _expectDuration);
@@ -107,7 +120,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             string mode,
             IReadOnlyList<int> commands)
         {
-            commands.ForEach(c => aut.actor.Tell(new Cmd(mode, c)));
+            commands.ForEach(c => aut.actor.Tell(new Cmd(mode, c, _payload)));
 
             await aut.probe.ExpectMsgAsync(commands[^1], _expectDuration);
         }
@@ -709,15 +722,22 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
 
     public class Cmd
     {
-        public Cmd(string mode, int payload)
+        public Cmd(string mode, int payload, byte[]? data = null)
         {
             Mode = mode;
             Payload = payload;
+            Data = data;
         }
 
         public string Mode { get; }
 
         public int Payload { get; }
+
+        /// <summary>
+        ///     Optional data blob to simulate realistic message sizes.
+        ///     When <c>null</c>, the serialized event is tiny (just the int payload). ✨
+        /// </summary>
+        public byte[]? Data { get; }
     }
 
     internal class BenchActor : UntypedPersistentActor
