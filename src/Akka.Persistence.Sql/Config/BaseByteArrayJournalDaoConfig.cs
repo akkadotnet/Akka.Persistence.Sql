@@ -21,6 +21,8 @@ namespace Akka.Persistence.Sql.Config
             Parallelism = config.GetInt("parallelism", 2);
             MaxRowByRowSize = config.GetInt("max-row-by-row-size", 100);
             SqlCommonCompatibilityMode = config.GetBoolean("delete-compatibility-mode");
+            UseTagTableAsQueryableLiteralInsert = config.GetBoolean("use-tagtable-asqueryable-literal-insert", false);
+            AsQueryableInsertSqlLengthLimit = config.GetInt("tagtable-asqueryable-insert-sql-length-limit", 5_000_000);
         }
 
         public bool PreferParametersOnMultiRowInsert { get; }
@@ -45,5 +47,9 @@ namespace Akka.Persistence.Sql.Config
         public int Parallelism { get; }
 
         public bool SqlCommonCompatibilityMode { get; }
+        
+        public int AsQueryableInsertSqlLengthLimit { get; }
+        
+        public bool UseTagTableAsQueryableLiteralInsert { get; }
     }
 }

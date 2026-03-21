@@ -25,6 +25,10 @@ using LanguageExt;
 using LinqToDB;
 using LinqToDB.Async;
 using LinqToDB.Data;
+using LinqToDB.Internal.DataProvider.Oracle;
+using LinqToDB.Internal.DataProvider.PostgreSQL;
+using LinqToDB.Internal.DataProvider.SQLite;
+using LinqToDB.Internal.DataProvider.SqlServer;
 using static LanguageExt.Prelude;
 
 namespace Akka.Persistence.Sql.Journal.Dao
@@ -343,9 +347,9 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     else
                     {
                         if 
-                            (
-                                true && // Change to True to see performance impact of using fast insert on supported DBs.
-                            (JournalConfig.ProviderName.Contains("SqlServer") || JournalConfig.ProviderName.Contains("PostgreSQL") || JournalConfig.ProviderName.Contains("Sqlite"))
+                            (JournalConfig.DaoConfig.UseTagTableAsQueryableLiteralInsert 
+                             && 
+                             (JournalConfig.ProviderName.Contains("SqlServer") || JournalConfig.ProviderName.Contains("PostgreSQL") || JournalConfig.ProviderName.Contains("Sqlite"))
                             )
                         {
                             await RunFastInsertNoEventParams(connection, xs, JournalConfig.DaoConfig, token);
@@ -383,21 +387,18 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
         protected async Task RunFastInsertNoEventParams(AkkaDataConnection connection, Seq<JournalRow> xs, BaseByteArrayJournalDaoConfig journalConfigDaoConfig, CancellationToken token)
         {
-            // TODO: Should this be Configurable (including but not limited to 
-            // This version is also based on using roundTripByteLimit with a lazy heuristic to keep calculation logic simple.
             
-            var roundTripByteLimit = 10_000_000;
-            var roundTripParamLimit = 999; // should be set based on provider tho.
-            var rowLimit = 200; // IDK
-            var currRows = 00;
-            var currParams = 0;
+            var roundTripByteLimit = JournalConfig.DaoConfig.AsQueryableInsertSqlLengthLimit;
+            var rowLimit = JournalConfig.DaoConfig.BatchSize; // IDK
+            var currRows = 0;
             var currBytes = 0;
             Dictionary<(string PersistenceId, long SequenceNumber), string[]> tagDict 
                 = new Dictionary<(string persistenceId, long sequenceNumber), string[]>();
             var insertList = new List<JournalRow>(rowLimit);
             foreach (var journalRow in xs)
             {
-                if (journalRow.Message.Length + currBytes > roundTripByteLimit || journalRow.TagArray.Length + currParams > roundTripParamLimit || currRows >= rowLimit)
+                // We don't worry about adding 1024 on this check cause it's overparanoid padding anyway.
+                if (journalRow.Message.Length + currBytes * 2 > roundTripByteLimit || currRows >= rowLimit)
                 {
                     var query = connection.AsQueryable(
                         insertList.Select(jr => new JournalRowIns
@@ -411,12 +412,10 @@ namespace Akka.Persistence.Sql.Journal.Dao
                             Identifier = jr.Identifier,
                             WriterUuid = jr.WriterUuid
                         }));
-                        //, a=> new { a.Message });
                     await InsertJournalEntriesWithTags(connection, journalConfigDaoConfig, token, tagDict, query);
                     insertList.Clear();
                     tagDict.Clear();
                     currRows = 0;
-                    currParams = 0;
                     currBytes = 0;
                 }
                 else
@@ -426,13 +425,12 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     currBytes += 
                         (journalRow.Message.Length * 2 // SqlText cost
                             +
-                            256 // overparanoid cost for other fields on row.
+                            1024 // overparanoid cost for other fields on row.
                             );
-                    currParams++;
                     insertList.Add(journalRow);
                 }
             }
-            if ( currBytes > 0 || currParams > 0 || currRows > 0)
+            if ( currBytes > 0 || currRows > 0)
             {
                 var query = connection.AsQueryable(
                     insertList.Select(jr => new JournalRowIns
