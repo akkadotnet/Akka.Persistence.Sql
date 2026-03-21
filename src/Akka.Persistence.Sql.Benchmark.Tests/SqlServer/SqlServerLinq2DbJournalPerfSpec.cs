@@ -36,7 +36,6 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
     /// <summary>
     ///     TagTable perf spec with <c>use-tagtable-asqueryable-literal-insert</c> enabled.
     ///     Uses <c>AsQueryable()</c> + <c>InsertWithOutputAsync()</c> for tag inserts
-    ///     to measure the throughput improvement over standard tag table inserts. ✨
     /// </summary>
     [Collection(nameof(SqlServerPersistenceBenchmark))]
     public class SqlServerLinq2DbTagTableAsQueryableJournalPerfSpec : BaseSqlServerLinq2DbJournalPerfSpec
