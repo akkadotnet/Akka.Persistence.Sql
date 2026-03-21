@@ -33,21 +33,39 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
         }
     }
     
+    [Collection(nameof(PostgreSqlPersistenceBenchmark))]
+    public class PostgreSqlSqlTagTableAsQueryableJournalPerfSpec : BasePostgreSqlSqlJournalPerfSpec
+    {
+        public PostgreSqlSqlTagTableAsQueryableJournalPerfSpec(ITestOutputHelper output, PostgreSqlContainer fixture)
+            : base(
+                TagMode.TagTable,
+                nameof(PostgreSqlSqlTagTableAsQueryableJournalPerfSpec),
+                output,
+                fixture,
+                useAsQueryableLiteralInsert: true)
+        {
+        }
+    }
+
     public abstract class BasePostgreSqlSqlJournalPerfSpec : SqlJournalPerfSpec<PostgreSqlContainer>
     {
         protected BasePostgreSqlSqlJournalPerfSpec(
             TagMode tagMode,
             string name,
             ITestOutputHelper output,
-            PostgreSqlContainer fixture)
+            PostgreSqlContainer fixture,
+            bool useAsQueryableLiteralInsert = false)
             : base(
-                Configuration(fixture, tagMode),
+                Configuration(fixture, tagMode, useAsQueryableLiteralInsert),
                 name,
                 output,
                 40,
                 eventsCount: TestConstants.DockerNumMessages) { }
 
-        private static Configuration.Config Configuration(PostgreSqlContainer fixture, TagMode tagMode)
+        private static Configuration.Config Configuration(
+            PostgreSqlContainer fixture,
+            TagMode tagMode,
+            bool useAsQueryableLiteralInsert = false)
         {
             if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
                 throw new Exception("Failed to clean up database in 10 seconds");
@@ -64,6 +82,7 @@ akka.persistence {
             tag-write-mode = {{tagMode}}
             use-clone-connection = true
             auto-initialize = true
+            use-tagtable-asqueryable-literal-insert = {{useAsQueryableLiteralInsert.ToString().ToLowerInvariant()}}
         }
     }
 }

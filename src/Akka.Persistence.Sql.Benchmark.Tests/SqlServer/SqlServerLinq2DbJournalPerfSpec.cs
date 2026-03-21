@@ -32,12 +32,36 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
         {
         }
     }
-    
+
+    /// <summary>
+    ///     TagTable perf spec with <c>use-tagtable-asqueryable-literal-insert</c> enabled.
+    ///     Uses <c>AsQueryable()</c> + <c>InsertWithOutputAsync()</c> for tag inserts
+    ///     to measure the throughput improvement over standard tag table inserts. ✨
+    /// </summary>
+    [Collection(nameof(SqlServerPersistenceBenchmark))]
+    public class SqlServerLinq2DbTagTableAsQueryableJournalPerfSpec : BaseSqlServerLinq2DbJournalPerfSpec
+    {
+        public SqlServerLinq2DbTagTableAsQueryableJournalPerfSpec(ITestOutputHelper output, SqlServerContainer fixture)
+            : base(
+                TagMode.TagTable,
+                nameof(SqlServerLinq2DbTagTableAsQueryableJournalPerfSpec),
+                output,
+                fixture,
+                useAsQueryableLiteralInsert: true)
+        {
+        }
+    }
+
     public abstract class BaseSqlServerLinq2DbJournalPerfSpec : SqlJournalPerfSpec<SqlServerContainer>
     {
-        protected BaseSqlServerLinq2DbJournalPerfSpec(TagMode tagMode, string name, ITestOutputHelper output, SqlServerContainer fixture)
+        protected BaseSqlServerLinq2DbJournalPerfSpec(
+            TagMode tagMode,
+            string name,
+            ITestOutputHelper output,
+            SqlServerContainer fixture,
+            bool useAsQueryableLiteralInsert = false)
             : base(
-                Configure(fixture, tagMode),
+                Configure(fixture, tagMode, useAsQueryableLiteralInsert),
                 name,
                 output,
                 40,
@@ -45,7 +69,10 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
         {
         }
 
-        private static Configuration.Config Configure(SqlServerContainer fixture, TagMode tagMode)
+        private static Configuration.Config Configure(
+            SqlServerContainer fixture,
+            TagMode tagMode,
+            bool useAsQueryableLiteralInsert = false)
         {
             if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
                 throw new Exception("Failed to clean up database in 10 seconds");
@@ -62,6 +89,7 @@ akka.persistence {
             tag-write-mode = {{tagMode}}
             use-clone-connection = true
             auto-initialize = true
+            use-tagtable-asqueryable-literal-insert = {{useAsQueryableLiteralInsert.ToString().ToLowerInvariant()}}
             default {
                 journal {
                     table-name = testPerfTable
