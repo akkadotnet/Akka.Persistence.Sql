@@ -51,6 +51,43 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
         }
     }
 
+    /// <summary>
+    ///     TagTable perf spec with forced event tagging (2 tags per event).
+    ///     AsQueryable optimization is disabled.
+    /// </summary>
+    [Collection(nameof(SqlServerPersistenceBenchmark))]
+    public class SqlServerLinq2DbTagTableTaggedJournalPerfSpec : BaseSqlServerLinq2DbJournalPerfSpec
+    {
+        public SqlServerLinq2DbTagTableTaggedJournalPerfSpec(ITestOutputHelper output, SqlServerContainer fixture)
+            : base(
+                TagMode.TagTable,
+                nameof(SqlServerLinq2DbTagTableTaggedJournalPerfSpec),
+                output,
+                fixture,
+                forceTagging: true)
+        {
+        }
+    }
+
+    /// <summary>
+    ///     TagTable perf spec with forced event tagging (2 tags per event) AND
+    ///     <c>use-tagtable-asqueryable-literal-insert</c> is enabled.
+    /// </summary>
+    [Collection(nameof(SqlServerPersistenceBenchmark))]
+    public class SqlServerLinq2DbTagTableAsQueryableTaggedJournalPerfSpec : BaseSqlServerLinq2DbJournalPerfSpec
+    {
+        public SqlServerLinq2DbTagTableAsQueryableTaggedJournalPerfSpec(ITestOutputHelper output, SqlServerContainer fixture)
+            : base(
+                TagMode.TagTable,
+                nameof(SqlServerLinq2DbTagTableAsQueryableTaggedJournalPerfSpec),
+                output,
+                fixture,
+                useAsQueryableLiteralInsert: true,
+                forceTagging: true)
+        {
+        }
+    }
+
     public abstract class BaseSqlServerLinq2DbJournalPerfSpec : SqlJournalPerfSpec<SqlServerContainer>
     {
         protected BaseSqlServerLinq2DbJournalPerfSpec(
@@ -58,9 +95,10 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
             string name,
             ITestOutputHelper output,
             SqlServerContainer fixture,
-            bool useAsQueryableLiteralInsert = false)
+            bool useAsQueryableLiteralInsert = false,
+            bool forceTagging = false)
             : base(
-                Configure(fixture, tagMode, useAsQueryableLiteralInsert),
+                Configure(fixture, tagMode, useAsQueryableLiteralInsert, forceTagging),
                 name,
                 output,
                 40,
@@ -71,10 +109,24 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
         private static Configuration.Config Configure(
             SqlServerContainer fixture,
             TagMode tagMode,
-            bool useAsQueryableLiteralInsert = false)
+            bool useAsQueryableLiteralInsert = false,
+            bool forceTagging = false)
         {
             if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
                 throw new Exception("Failed to clean up database in 10 seconds");
+
+            var taggingConfig = forceTagging
+                ? """
+                  akka.persistence.journal.sql {
+                      event-adapter-bindings {
+                          "Akka.Persistence.Sql.Benchmark.Tests.Cmd, Akka.Persistence.Sql.Benchmark.Tests" = perf-tagger
+                      }
+                      event-adapters {
+                          perf-tagger = "Akka.Persistence.Sql.Benchmark.Tests.CmdEventTagger, Akka.Persistence.Sql.Benchmark.Tests"
+                      }
+                  }
+                  """
+                : "";
 
             return ConfigurationFactory.ParseString(
                     $$"""
@@ -98,6 +150,7 @@ akka.persistence {
     }
 }
 """)
+                .WithFallback(ConfigurationFactory.ParseString(taggingConfig))
                 .WithFallback(Persistence.DefaultConfig())
                 .WithFallback(SqlPersistence.DefaultConfiguration);
         }
