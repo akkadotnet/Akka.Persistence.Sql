@@ -105,8 +105,8 @@ namespace Akka.Persistence.Sql.Serialization
 
                  // I'm a sloppy mechanic so this is the other part of demonstrating the pathological case, i.e. every event has tags.
                 
-                // _ => Serialize(persistentRepresentation, ImmutableHashSet<string>.Empty, timeStamp),
-                _ => Serialize(persistentRepresentation, ImmutableHashSet.Create("perf-test"), timeStamp),
+                 _ => Serialize(persistentRepresentation, ImmutableHashSet<string>.Empty, timeStamp),
+                //_ => Serialize(persistentRepresentation, ImmutableHashSet.Create("perf-test"), timeStamp),
             };
 
         protected abstract Try<T> Serialize(
