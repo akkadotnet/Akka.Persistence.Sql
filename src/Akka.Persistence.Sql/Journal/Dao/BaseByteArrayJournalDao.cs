@@ -37,6 +37,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
     {
         private readonly Flow<JournalRow, Util.Try<ReplayCompletion>, NotUsed> _deserializeFlowMapped;
         private readonly TagMode _tagWriteMode;
+        private readonly bool _useTagTableAsQueryable;
         protected readonly JournalConfig JournalConfig;
 
         protected readonly ILoggingAdapter Logger;
@@ -60,7 +61,10 @@ namespace Akka.Persistence.Sql.Journal.Dao
             Serializer = new ByteArrayJournalSerializer(config, serializer, config.PluginConfig.TagSeparator, selfUuid);
             _deserializeFlowMapped = Serializer.DeserializeFlow().Select(MessageWithBatchMapper());
             _tagWriteMode = JournalConfig.PluginConfig.TagMode;
-
+            _useTagTableAsQueryable = (JournalConfig.DaoConfig.UseTagTableAsQueryableLiteralInsert
+                                       &&
+                                       (JournalConfig.ProviderName.Contains("SqlServer") || JournalConfig.ProviderName.Contains("PostgreSQL") ||
+                                        JournalConfig.ProviderName.Contains("Sqlite")));
             // Due to C# rules we have to initialize WriteQueue here
             // Keeping it here vs init function prevents accidental moving of init
             // to where variables aren't set yet.
@@ -346,11 +350,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     }
                     else
                     {
-                        if 
-                            (JournalConfig.DaoConfig.UseTagTableAsQueryableLiteralInsert 
-                             && 
-                             (JournalConfig.ProviderName.Contains("SqlServer") || JournalConfig.ProviderName.Contains("PostgreSQL") || JournalConfig.ProviderName.Contains("Sqlite"))
-                            )
+                        if (_useTagTableAsQueryable)
                         {
                             await RunFastInsertNoEventParams(connection, xs, JournalConfig.DaoConfig, token);
                         }
@@ -420,17 +420,18 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 }
                 else
                 {
-                    tagDict[(journalRow.PersistenceId, journalRow.SequenceNumber)] = journalRow.TagArray;
+                    tagDict[(journalRow.PersistenceId, journalRow.SequenceNumber)] 
+                        = journalRow.TagArray;
                     currRows++;
-                    currBytes += 
-                        (journalRow.Message.Length * 2 // SqlText cost
-                            +
-                            1024 // overparanoid cost for other fields on row.
-                            );
+                    // ByteLength *2
+                    //  + 2048 for padding
+                    // (i.e. Serializer manifests, persistence IDs, sequence numbers etc.)
+                    currBytes +=  
+                        (journalRow.Message.Length * 2 + 2048);
                     insertList.Add(journalRow);
                 }
             }
-            if ( currBytes > 0 || currRows > 0)
+            if (currBytes > 0 || currRows > 0)
             {
                 var query = connection.AsQueryable(
                     insertList.Select(jr => new JournalRowIns
@@ -444,7 +445,6 @@ namespace Akka.Persistence.Sql.Journal.Dao
                         Identifier = jr.Identifier,
                         WriterUuid = jr.WriterUuid
                     }));
-                    //, a=> new { a.Message });
                 await InsertJournalEntriesWithTags(connection, journalConfigDaoConfig, token, tagDict, query);
             }
         }
@@ -455,7 +455,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
             BaseByteArrayJournalDaoConfig journalConfigDaoConfig,
             CancellationToken token,
             Dictionary<(string PersistenceId, long SequenceNumber), string[]> tagDict,
-            IQueryable<JournalRowIns>? query)
+            IQueryable<JournalRowIns> query)
         {
             var inserted = await (this.JournalConfig.TableConfig.EventJournalTable.UseWriterUuidColumn
                 ? query.InsertWithOutputAsync(

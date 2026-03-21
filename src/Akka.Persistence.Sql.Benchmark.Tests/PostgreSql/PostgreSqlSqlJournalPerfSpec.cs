@@ -33,6 +33,10 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
         }
     }
     
+    /// <summary>
+    ///     TagTable perf spec with <c>use-tagtable-asqueryable-literal-insert</c> enabled.
+    ///     Uses <c>AsQueryable()</c> + <c>InsertWithOutputAsync()</c> for tag inserts
+    /// </summary>
     [Collection(nameof(PostgreSqlPersistenceBenchmark))]
     public class PostgreSqlSqlTagTableAsQueryableJournalPerfSpec : BasePostgreSqlSqlJournalPerfSpec
     {
@@ -47,6 +51,43 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
         }
     }
 
+    /// <summary>
+    ///     TagTable perf spec with forced event tagging (2 tags per event).
+    ///     AsQueryable optimization is disabled.
+    /// </summary>
+    [Collection(nameof(PostgreSqlPersistenceBenchmark))]
+    public class PostgreSqlSqlTagTableTaggedJournalPerfSpec : BasePostgreSqlSqlJournalPerfSpec
+    {
+        public PostgreSqlSqlTagTableTaggedJournalPerfSpec(ITestOutputHelper output, PostgreSqlContainer fixture)
+            : base(
+                TagMode.TagTable,
+                nameof(PostgreSqlSqlTagTableTaggedJournalPerfSpec),
+                output,
+                fixture,
+                forceTagging: true)
+        {
+        }
+    }
+
+    /// <summary>
+    ///     TagTable perf spec with forced event tagging (2 tags per event) AND
+    ///     <c>use-tagtable-asqueryable-literal-insert</c> enabled.
+    /// </summary>
+    [Collection(nameof(PostgreSqlPersistenceBenchmark))]
+    public class PostgreSqlSqlTagTableAsQueryableTaggedJournalPerfSpec : BasePostgreSqlSqlJournalPerfSpec
+    {
+        public PostgreSqlSqlTagTableAsQueryableTaggedJournalPerfSpec(ITestOutputHelper output, PostgreSqlContainer fixture)
+            : base(
+                TagMode.TagTable,
+                nameof(PostgreSqlSqlTagTableAsQueryableTaggedJournalPerfSpec),
+                output,
+                fixture,
+                useAsQueryableLiteralInsert: true,
+                forceTagging: true)
+        {
+        }
+    }
+
     public abstract class BasePostgreSqlSqlJournalPerfSpec : SqlJournalPerfSpec<PostgreSqlContainer>
     {
         protected BasePostgreSqlSqlJournalPerfSpec(
@@ -54,9 +95,10 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
             string name,
             ITestOutputHelper output,
             PostgreSqlContainer fixture,
-            bool useAsQueryableLiteralInsert = false)
+            bool useAsQueryableLiteralInsert = false,
+            bool forceTagging = false)
             : base(
-                Configuration(fixture, tagMode, useAsQueryableLiteralInsert),
+                Configuration(fixture, tagMode, useAsQueryableLiteralInsert, forceTagging),
                 name,
                 output,
                 40,
@@ -65,10 +107,24 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
         private static Configuration.Config Configuration(
             PostgreSqlContainer fixture,
             TagMode tagMode,
-            bool useAsQueryableLiteralInsert = false)
+            bool useAsQueryableLiteralInsert = false,
+            bool forceTagging = false)
         {
             if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
                 throw new Exception("Failed to clean up database in 10 seconds");
+
+            var taggingConfig = forceTagging
+                ? """
+                  akka.persistence.journal.sql {
+                      event-adapter-bindings {
+                          "Akka.Persistence.Sql.Benchmark.Tests.Cmd, Akka.Persistence.Sql.Benchmark.Tests" = perf-tagger
+                      }
+                      event-adapters {
+                          perf-tagger = "Akka.Persistence.Sql.Benchmark.Tests.CmdEventTagger, Akka.Persistence.Sql.Benchmark.Tests"
+                      }
+                  }
+                  """
+                : "";
 
             return ConfigurationFactory.ParseString(
                     $$"""
@@ -87,6 +143,7 @@ akka.persistence {
     }
 }
 """)
+                .WithFallback(ConfigurationFactory.ParseString(taggingConfig))
                 .WithFallback(SqlPersistence.DefaultConfiguration);
         }
 
