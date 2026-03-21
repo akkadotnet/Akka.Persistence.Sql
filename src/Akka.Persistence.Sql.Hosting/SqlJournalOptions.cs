@@ -96,6 +96,30 @@ namespace Akka.Persistence.Sql.Hosting
 
         /// <summary>
         ///     <para>
+        ///         When <c>true</c> and <see cref="TagStorageMode"/> is set to <see cref="TagMode.TagTable"/>,
+        ///         uses <c>AsQueryable()</c> + <c>InsertWithOutputAsync()</c> for tag inserts instead of
+        ///         individual round-trips per event if provider supports it. This can significantly improve write throughput for
+        ///         tagged events on supported databases (SQL Server, PostgreSQL, SQLite).
+        ///     </para>
+        ///     <b>Default</b>: <c>false</c>
+        /// </summary>
+        public bool? UseTagTableAsQueryableLiteralInsert { get; set; }
+
+        /// <summary>
+        ///     <para>
+        ///         Maximum SQL string length (in characters) for a single AsQueryable literal insert batch.
+        ///         When the accumulated SQL exceeds this limit, the batch is flushed to the database.
+        ///         Only effective when <see cref="UseTagTableAsQueryableLiteralInsert"/> is <c>true</c>.
+        ///     </para>
+        ///     <b>Default</b>: <c>5000000</c>
+        /// </summary>
+        /// <remarks>
+        /// You may want a smaller size depending on your database and your event payload size.
+        /// </remarks>
+        public int? AsQueryableInsertSqlLengthLimit { get; set; }
+
+        /// <summary>
+        ///     <para>
         ///         The isolation level of all database read query.
         ///     </para>
         ///     <para>
@@ -200,6 +224,12 @@ namespace Akka.Persistence.Sql.Hosting
 
             if (WriteIsolationLevel is not null)
                 sb.AppendLine($"write-isolation-level = {WriteIsolationLevel.ToHocon()}");
+
+            if (UseTagTableAsQueryableLiteralInsert is not null)
+                sb.AppendLine($"use-tagtable-asqueryable-literal-insert = {UseTagTableAsQueryableLiteralInsert.ToHocon()}");
+
+            if (AsQueryableInsertSqlLengthLimit is not null)
+                sb.AppendLine($"tagtable-asqueryable-insert-sql-length-limit = {AsQueryableInsertSqlLengthLimit.ToHocon()}");
 
             DatabaseOptions?.Build(sb);
 
