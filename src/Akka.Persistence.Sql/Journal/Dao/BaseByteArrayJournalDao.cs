@@ -452,29 +452,46 @@ namespace Akka.Persistence.Sql.Journal.Dao
         }
 
 
-        private static async Task InsertJournalEntriesWithTags(
+        private async Task InsertJournalEntriesWithTags(
             AkkaDataConnection connection,
             BaseByteArrayJournalDaoConfig journalConfigDaoConfig,
             CancellationToken token,
             Dictionary<(string PersistenceId, long SequenceNumber), string[]> tagDict,
             IQueryable<JournalRowIns>? query)
         {
-            var inserted =  await query.InsertWithOutputAsync(
-                    connection.GetTable<JournalRow>(),
-                    (input) =>
-                        new JournalRow()
-                        {
-                            PersistenceId = input.PersistenceId,
-                            SequenceNumber = input.SequenceNumber,
-                            Message = input.Message,
-                            Deleted = input.Deleted,
-                            Manifest = input.Manifest,
-                            Timestamp = input.Timestamp,
-                            Identifier = input.Identifier,
-                            WriterUuid = input.WriterUuid,
-                        },
-                    (inserted) => new { inserted.Ordering, inserted.PersistenceId, inserted.SequenceNumber })
-                .ToListAsync(token);
+            var inserted = await (this.JournalConfig.TableConfig.EventJournalTable.UseWriterUuidColumn
+                ? query.InsertWithOutputAsync(
+                        connection.GetTable<JournalRow>(),
+                        (input) =>
+                            new JournalRow()
+                            {
+                                PersistenceId = input.PersistenceId,
+                                SequenceNumber = input.SequenceNumber,
+                                Message = input.Message,
+                                Deleted = input.Deleted,
+                                Manifest = input.Manifest,
+                                Timestamp = input.Timestamp,
+                                Identifier = input.Identifier,
+                                WriterUuid = input.WriterUuid,
+                            },
+                        (inserted) => new { inserted.Ordering, inserted.PersistenceId, inserted.SequenceNumber })
+                    .ToListAsync(token)
+                : query.InsertWithOutputAsync(
+                        connection.GetTable<JournalRow>(),
+                        (input) =>
+                            new JournalRow()
+                            {
+                                PersistenceId = input.PersistenceId,
+                                SequenceNumber = input.SequenceNumber,
+                                Message = input.Message,
+                                Deleted = input.Deleted,
+                                Manifest = input.Manifest,
+                                Timestamp = input.Timestamp,
+                                Identifier = input.Identifier,
+                            },
+                        (inserted) => new { inserted.Ordering, inserted.PersistenceId, inserted.SequenceNumber })
+                    .ToListAsync(token));
+            
             var tagsToInsert = inserted.Join(
                     tagDict,
                     i => (i.PersistenceId, i.SequenceNumber),
