@@ -41,15 +41,4 @@
     <ProjectReference Include="..\Akka.Persistence.Sql\Akka.Persistence.Sql.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="linq2db">
-      <HintPath>..\..\..\linq2db\.build\bin\LinqToDB\release\netstandard2.0\linq2db.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\..\..\linq2db\.build\bin\LinqToDB\release\netstandard2.0\linq2db.dll" CopyToOutputDirectory="Always" />
-  </ItemGroup>
-
 </Project>

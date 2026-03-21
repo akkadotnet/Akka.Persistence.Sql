@@ -342,9 +342,13 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     }
                     else
                     {
-                        if (JournalConfig.ProviderName.Contains("SqlServer") || JournalConfig.ProviderName.Contains("PostgreSQL") || JournalConfig.ProviderName.Contains("Sqlite"))
+                        if 
+                            (
+                                true && // Change to True to see performance impact of using fast insert on supported DBs.
+                            (JournalConfig.ProviderName.Contains("SqlServer") || JournalConfig.ProviderName.Contains("PostgreSQL") || JournalConfig.ProviderName.Contains("Sqlite"))
+                            )
                         {
-                            await RunFastInsert2(connection, xs, JournalConfig.DaoConfig, token);
+                            await RunFastInsertNoEventParams(connection, xs, JournalConfig.DaoConfig, token);
                         }
                         else
                         {
@@ -377,7 +381,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
             public string? WriterUuid { get; set; }
         }
 
-        protected async Task RunFastInsert2(AkkaDataConnection connection, Seq<JournalRow> xs, BaseByteArrayJournalDaoConfig journalConfigDaoConfig, CancellationToken token)
+        protected async Task RunFastInsertNoEventParams(AkkaDataConnection connection, Seq<JournalRow> xs, BaseByteArrayJournalDaoConfig journalConfigDaoConfig, CancellationToken token)
         {
             // TODO: Should this be Configurable (including but not limited to 
             // This version is also based on using roundTripByteLimit with a lazy heuristic to keep calculation logic simple.
