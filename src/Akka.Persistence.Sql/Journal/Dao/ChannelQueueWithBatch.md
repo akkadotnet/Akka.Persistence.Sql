@@ -2,17 +2,19 @@
 
 ## Summary
 
-A standalone, generic abstraction backed by `System.Threading.Channels` that merges:
+A `ChannelReader<TBatch>` that wraps a `ChannelReader<TInput>` and performs eager
+weighted batching on read. No background tasks, no output channels — the batching logic
+lives directly in the `TryRead` and `WaitToReadAsync` overrides.
 
-1. **Bounded queue input** — like `Source.Queue<T>(capacity, OverflowStrategy)`, but using
-   `BoundedChannel<TInput>` with `BoundedChannelFullMode.Wait` for natural backpressure.
-2. **Eager weighted batching** — like `BatchWeighted` / our custom `EagerBatchStage<TIn, TOut>`,
-   but implemented as an internal consumer loop that eagerly drains available items from the
-   `ChannelReader` and aggregates them via user-supplied `seed`/`aggregate`/`costFunction`.
+1. **Bounded queue input** — the caller creates and owns a `BoundedChannel<TInput>` with
+   `BoundedChannelFullMode.Wait` for natural backpressure, and passes its `.Reader` here.
+2. **Eager weighted batching** — each `TryRead` call eagerly drains available items from
+   the input reader, aggregating them via user-supplied `seed`/`aggregate`/`costFunction`
+   up to a per-batch weight budget. Overflow items are parked as `_pending` for the next read.
 
-The output is a `ChannelReader<TBatch>` — keeping the abstraction generic and composable.
-Consumers decide how to process batches: Akka Streams can use `Source.ChannelReader(reader)`
-piped into `.SelectAsync(parallelism, ...)`, or plain async consumers can use `await foreach`.
+Because this class **is** a `ChannelReader<TBatch>`, it plugs directly into anything that
+accepts a channel reader: `Source.ChannelReader(batcher).SelectAsync(parallelism, ...)`,
+`await foreach`, `ReadAsync`, etc.
 
 > **Scope:** This is a *new file* abstraction only. It does NOT replace the existing
 > `Source.Queue` + `BatchWeighted` pipeline in `BaseByteArrayJournalDao` — that swap
@@ -68,173 +70,171 @@ batch is actually full or downstream explicitly pulls.
 The downstream `SelectAsync(Parallelism, handler)` processes each `WriteQueueSet` batch,
 resolving all `TaskCompletionSource` promises on success or failure. The `RestartingDecider`
 ensures the stream survives exceptions. **These stages are NOT part of this abstraction** —
-our `ChannelQueueWithBatch` only covers ① + ②, exposing a `ChannelReader<TBatch>` that
-the caller (or Akka Streams) can consume however it wants.
+our `ChannelQueueWithBatch` only covers ② (batching), while ① (input channel) is
+caller-owned. The output is just `this` — a `ChannelReader<TBatch>` that the caller
+(or Akka Streams) can consume however it wants.
 
 ### Config Values That Map to This Abstraction
 
 From `BaseByteArrayJournalDaoConfig`:
 
-| Config Key     | Default | Maps To                         |
-|---------------|---------|----------------------------------|
-| `buffer-size` | 5000    | `capacity` (BoundedChannel size) |
-| `batch-size`  | 100     | `maxWeight` (cost budget)        |
+| Config Key     | Default | Maps To                                              |
+|---------------|---------|-------------------------------------------------------|
+| `buffer-size` | 5000    | Caller's `BoundedChannelOptions.Capacity`             |
+| `batch-size`  | 100     | `maxWeight` (cost budget, constructor param)          |
 
 The `parallelism` config value maps to the *downstream* `SelectAsync` — outside our scope.
+The `buffer-size` is also outside this class — it's the caller's responsibility when
+creating the `BoundedChannel<TInput>`.
 
 ---
 
 ## Proposed Design
 
-### Class: `ChannelQueueWithBatch<TInput, TBatch>`
+### Class: `ChannelQueueWithBatch<TInput, TBatch> : ChannelReader<TBatch>`
 
-A single sealed class in a new file (e.g. `Utility/ChannelQueueWithBatch.cs` or
-`Streams/ChannelQueueWithBatch.cs`). Implements `IDisposable` for cleanup.
+A sealed class that **extends** `ChannelReader<TBatch>`, overriding `TryRead` and
+`WaitToReadAsync`. No background tasks. No output channels. No `IDisposable`.
 
 ### Constructor Parameters
 
 ```csharp
 public ChannelQueueWithBatch(
-    int capacity,                         // BoundedChannel size (maps to buffer-size)
+    ChannelReader<TInput> inputReader,    // Reader side of caller-owned input channel
     long maxWeight,                       // Cost budget per batch (maps to batch-size)
     Func<TInput, long> costFunction,      // Cost of a single input element
     Func<TInput, TBatch> seed,            // Create initial aggregate from first element
-    Func<TBatch, TInput, TBatch> aggregate, // Fold subsequent elements into aggregate
-    CancellationToken shutdownToken = default)
+    Func<TBatch, TInput, TBatch> aggregate) // Fold subsequent elements into aggregate
 ```
+
+The caller creates and owns the input `BoundedChannel<TInput>` externally,
+retaining the `ChannelWriter<TInput>` for producing items (via `TryWrite`,
+`WriteAsync`, etc.). Only the `ChannelReader<TInput>` is passed here.
 
 ### Internal State
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                   ChannelQueueWithBatch                      │
-│                                                             │
-│  ┌──────────────────┐    ┌──────────────┐    ┌───────────┐  │
-│  │  BoundedChannel   │───▶│ Batch Loop   │───▶│ Unbounded │  │
-│  │  <TInput>         │    │ (Task)       │    │ Channel   │  │
-│  │  capacity=N       │    │              │    │ <TBatch>  │  │
-│  │  FullMode=Wait    │    │ seed/agg/    │    │           │  │
-│  │                   │    │ costFunc     │    │           │  │
-│  └──────────────────┘    └──────────────┘    └───────────┘  │
-│        ▲ WriteAsync()                          │ .Reader    │
-│        │                                       ▼            │
-│    [Producers]                           [Consumers]        │
-│                                   (SelectAsync, foreach,    │
-│                                    Source.ChannelReader)     │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────┐          ┌──────────────────────────────────────────┐
+│  BoundedChannel   │          │ ChannelQueueWithBatch                    │
+│  <TInput>         │          │ (IS a ChannelReader<TBatch>)             │
+│  capacity=N       │─Reader──▶│                                          │
+│  FullMode=Wait    │          │  _inputReader   (wraps the input)        │
+│  (caller-owned)   │          │  _pending       (overflow item)          │
+└──────────────────┘          │  _seed / _aggregate / _costFunction      │
+      ▲ TryWrite /             │                                          │
+      │ WriteAsync             │  TryRead()     → drains + batches        │
+  [Producers]                  │  WaitToReadAsync() → pending or input    │
+  (caller code)                │  Completion    → forwards from input     │
+                              └──────────────────────────────────────────┘
+                                       │ (this IS the ChannelReader)
+                                       ▼
+                                 [Consumers]
+                          (SelectAsync, foreach,
+                           Source.ChannelReader)
 ```
 
-- **Input channel:** `Channel.CreateBounded<TInput>(new BoundedChannelOptions(capacity) 
-  { FullMode = BoundedChannelFullMode.Wait, SingleReader = true })`.
-  `SingleReader = true` because only our internal batch loop reads from it.
-- **Output channel:** `Channel.CreateUnbounded<TBatch>(new UnboundedChannelOptions
-  { SingleWriter = true })`.
-  `SingleWriter = true` because only our internal batch loop writes to it.
-  Unbounded is safe here because the input channel already bounds inflow — the batch
-  loop can only produce batches as fast as input arrives, and each batch *reduces* count.
-- **Batch loop:** A long-running `Task` started in the constructor via
-  `Task.Factory.StartNew(..., TaskCreationOptions.LongRunning)` to avoid threadpool
-  starvation for this always-on loop.
+- **No output channel.** The class itself is the `ChannelReader<TBatch>`.
+- **No background task.** Batching happens on-demand inside `TryRead`.
+- **`_pending`:** A single overflow item, like `EagerBatchStage._pending`. When an
+  item doesn't fit the current batch, it's parked here and becomes the seed of the
+  next batch on the next `TryRead` call.
+- **`Completion`:** Forwards directly from the input reader — completes when the
+  caller completes the input channel.
 
-### Write Side (Producer API)
+### Write Side (Caller-Owned)
+
+The producer API lives on the caller's `ChannelWriter<TInput>` — **not** on this class.
+The caller creates the `BoundedChannel<TInput>` and writes to it directly:
 
 ```csharp
-/// Writes an item to the input channel, waiting if the channel is full.
-/// This is the replacement for ISourceQueueWithComplete.OfferAsync().
-/// Instead of returning QueueOfferResult, it naturally backpressures via await.
-public ValueTask WriteAsync(TInput item, CancellationToken cancellationToken = default)
+// Caller creates the input channel:
+var inputChannel = Channel.CreateBounded<TInput>(new BoundedChannelOptions(bufferSize)
+{
+    FullMode = BoundedChannelFullMode.Wait,
+    SingleReader = true,
+});
 
-/// Tries to write synchronously without waiting. Returns false if full,
-/// completed, or faulted. Check Completion to distinguish the reason.
-public bool TryWrite(TInput item)
+// Caller writes items via the ChannelWriter:
+inputChannel.Writer.TryWrite(item);          // Non-blocking, returns false if full
+await inputChannel.Writer.WriteAsync(item);  // Async, backpressures when full
+inputChannel.Writer.TryComplete();           // Signals no more items
+inputChannel.Writer.TryComplete(exception);  // Signals error
 
-/// Signals that no more items will be written. The batch loop will flush
-/// any partial aggregate and complete the output Reader.
-public void Complete()
-
-/// Signals completion with an error. The output Reader will fault.
-public void Complete(Exception error)
-
-/// A Task that completes when the batch loop finishes and the output channel
-/// closes. If the loop faulted, this Task's Exception carries the cause.
-/// Callers can inspect this after TryWrite returns false to distinguish
-/// "full" from "faulted" from "closed".
-public Task Completion { get; }
+// The batcher wraps the Reader side — and IS a ChannelReader<TBatch>:
+var batcher = new ChannelQueueWithBatch<TInput, TBatch>(
+    inputChannel.Reader, maxWeight, costFunc, seed, aggregate);
 ```
 
-**Key behavioral difference from `Source.Queue`:** Instead of `DropNew` + checking a
-`QueueOfferResult`, `WriteAsync` simply `await`s until there's room. This gives natural
-backpressure — the caller slows down instead of losing data. For the persistence use case
-this is strictly better: we never want to *drop* journal writes.
+**Key behavioral difference from `Source.Queue`:** With `BoundedChannelFullMode.Wait`,
+`TryWrite` returns `false` when full (non-blocking), while `WriteAsync` awaits until
+space is available. This replaces `OverflowStrategy.DropNew` + `QueueOfferResult` with
+simpler, more natural channel semantics.
 
-### Read Side (Consumer API)
+### Read Side (This Class IS the ChannelReader)
+
+Since `ChannelQueueWithBatch` **extends** `ChannelReader<TBatch>`, the consumer API is
+just the standard `ChannelReader<T>` surface:
 
 ```csharp
-/// The output channel reader. Each read yields one aggregated TBatch.
-/// Consumers can use this with:
-///   - Source.ChannelReader(queue.Reader).SelectAsync(parallelism, handler)
-///   - await foreach (var batch in queue.Reader.ReadAllAsync(ct))
-///   - await queue.Reader.ReadAsync(ct)
-public ChannelReader<TBatch> Reader { get; }
+batcher.TryRead(out TBatch batch);             // Non-blocking batched read
+await batcher.WaitToReadAsync(ct);             // Wait for data availability
+await batcher.ReadAsync(ct);                   // Async read (default impl)
+await foreach (var b in batcher.ReadAllAsync(ct)) // Async enumeration (default impl)
+batcher.Completion                             // Task — forwards from input reader
 ```
 
-No processing logic — the consumer decides what to do with batches.
+Consumers get `ReadAsync` and `ReadAllAsync` for free from the `ChannelReader<T>` base
+class — they're built on our `WaitToReadAsync` + `TryRead` overrides.
 
-### Batching Loop (Internal)
+### TryRead Logic
 
-The loop mirrors the semantics of `EagerBatchStage` but uses `ChannelReader` draining
-instead of Akka Streams push/pull:
+`TryRead` mirrors `EagerBatchStage` semantics — eager drain with a pending overflow slot:
 
 ```
-LOOP:
-  1. await inputReader.WaitToReadAsync(shutdownToken)
-     → if returns false (channel completed), goto DONE
+TryRead(out TBatch batch):
+  1. Get first item:
+     - If _pending has a value → use it, clear _pending
+     - Else inputReader.TryRead(out firstItem)
+     - If neither → return false (no data available)
 
-  2. inputReader.TryRead(out firstItem)
-     → must succeed since WaitToReadAsync returned true
-     batch = seed(firstItem)
+  2. batch = seed(firstItem)
      remaining = maxWeight - costFunction(firstItem)
 
-  3. DRAIN loop (eager aggregation):
-     while remaining > 0 AND inputReader.TryRead(out nextItem):
+  3. Eager drain loop:
+     while inputReader.TryRead(out nextItem):
        cost = costFunction(nextItem)
        if cost > remaining:
-         // This item won't fit — we need to emit current batch
-         // then start a new batch with this item as the seed
-         outputWriter.TryWrite(batch)
-         batch = seed(nextItem)
-         remaining = maxWeight - cost
-       else:
-         batch = aggregate(batch, nextItem)
-         remaining -= cost
+         _pending = nextItem   ← park overflow for next call
+         break
+       batch = aggregate(batch, nextItem)
+       remaining -= cost
 
-  4. outputWriter.TryWrite(batch)
-     → TryWrite on unbounded channel always succeeds
-
-  5. goto LOOP
-
-DONE:
-  // Input channel completed — output channel completes too
-  outputWriter.Complete()
+  4. return true (batch contains the aggregated result)
 ```
+
+### WaitToReadAsync Logic
+
+```
+WaitToReadAsync(ct):
+  - If _pending has a value → return true immediately
+  - Else → return inputReader.WaitToReadAsync(ct)
+```
+
+**Why this is simpler than a background loop:**
+- No `Task.Factory.StartNew` / `TaskCreationOptions.LongRunning`
+- No `UnboundedChannel<TBatch>` output buffer
+- No `IDisposable` / cleanup concerns
+- No `outputWriter.TryWrite` / `outputWriter.TryComplete` plumbing
+- Batching is demand-driven (happens when consumer pulls) not supply-driven
+- The `_pending` field handles overflow identically to `EagerBatchStage`
 
 **Why this matches `EagerBatchStage` semantics:**
 - `EagerBatchStage.OnPush()` keeps pulling upstream while there's budget (lines 112-114).
-  Our drain loop does the same via `TryRead` — it greedily takes everything available.
-- `EagerBatchStage.OnPull()` flushes whatever has accumulated so far (line 158).
-  Our loop writes to the output channel after draining, so the consumer sees complete batches.
-- When the batch is full (`_left < cost`), `EagerBatchStage` parks the element as `_pending`
-  and flushes (lines 88-92, 107-110). Our loop emits the batch and seeds a new one with
-  the overflow item — same result, no parking needed because we control the loop.
-
-**Why `TryRead` after `WaitToReadAsync` is the right pattern:**
-- `WaitToReadAsync` blocks (async) until at least one item is available — this is the
-  "wait for work" part, equivalent to the initial `Pull` in a graph stage.
-- `TryRead` in a loop is non-blocking and drains everything currently queued — this is
-  the "eager batch" part. When `TryRead` returns false, we've consumed all *currently
-  available* items, so we emit the batch and go back to waiting.
-- This naturally adapts to load: under low load, batches are small (1 item); under high
-  load, batches fill up to `maxWeight` because items accumulate while we're processing.
+  Our `TryRead` does the same via the drain loop — it greedily takes everything available.
+- When the batch is full (`_left < cost`), `EagerBatchStage` parks the element as
+  `_pending` (lines 88-92). Our `TryRead` does exactly the same.
+- `EagerBatchStage.OnPull()` flushes whatever has accumulated (line 158).
+  Our `TryRead` returns the accumulated batch — same result.
 
 ---
 
@@ -242,9 +242,8 @@ DONE:
 
 The key integration point: downstream Akka Streams consumption via `Source.ChannelReader`.
 
-In Akka.NET 1.5.x, `Source.ChannelReader<T>(channelReader)` wraps a
-`System.Threading.Channels.ChannelReader<T>` into an Akka Streams `Source<T, NotUsed>`.
-This means the future migration path in `BaseByteArrayJournalDao` would look like:
+Since `ChannelQueueWithBatch` **is** a `ChannelReader<TBatch>`, it passes directly to
+`Source.ChannelReader()`. The future migration path in `BaseByteArrayJournalDao`:
 
 ```csharp
 // Before (current):
@@ -257,16 +256,21 @@ WriteQueue = Source
     .Run(Materializer);
 
 // After (future, using this abstraction):
-_channelQueue = new ChannelQueueWithBatch<WriteQueueEntry, WriteQueueSet>(
-    capacity: BufferSize,
+_inputChannel = Channel.CreateBounded<WriteQueueEntry>(new BoundedChannelOptions(BufferSize)
+{
+    FullMode = BoundedChannelFullMode.Wait,
+    SingleReader = true,
+});
+
+_batcher = new ChannelQueueWithBatch<WriteQueueEntry, WriteQueueSet>(
+    _inputChannel.Reader,
     maxWeight: BatchSize,
     costFunction: entry => entry.Rows.Count,
     seed: entry => new WriteQueueSet(...),
-    aggregate: (set, entry) => ...,
-    shutdownToken: shutdownToken);
+    aggregate: (set, entry) => ...,);
 
-// The batched output feeds into SelectAsync for processing
-Source.ChannelReader(_channelQueue.Reader)
+// The batcher IS a ChannelReader — pass it directly to Source.ChannelReader
+Source.ChannelReader(_batcher)
     .SelectAsync(Parallelism, handler)
     .AddAttributes(RestartingDecider)
     .ToMaterialized(Sink.Ignore, Keep.None)
@@ -281,14 +285,14 @@ var result = await WriteQueue.OfferAsync(new WriteQueueEntry(promise, xs, ct));
 switch (result) { /* 4 cases of Enqueued/Dropped/Failure/QueueClosed handling */ }
 
 // After:
-if (!_channelQueue.TryWrite(new WriteQueueEntry(promise, xs, ct)))
+if (!_inputChannel.Writer.TryWrite(new WriteQueueEntry(promise, xs, ct)))
 {
-    // Check whether the channel faulted/closed vs simply being full.
+    // Check whether the batcher faulted/closed vs the input channel simply being full.
     // This mirrors the original Dropped vs Failure vs QueueClosed distinction.
-    var ex = _channelQueue.Completion.Exception;
+    var ex = _batcher.Completion.Exception;
     if (ex is not null)
         promise.TrySetException(new Exception("Failed to write journal row batch", ex));
-    else if (_channelQueue.Completion.IsCompleted)
+    else if (_batcher.Completion.IsCompleted)
         promise.TrySetException(new Exception(
             "Failed to enqueue journal row batch write, the queue was closed."));
     else
@@ -297,7 +301,8 @@ if (!_channelQueue.TryWrite(new WriteQueueEntry(promise, xs, ct)))
 }
 ```
 
-`TryWrite` returns `false` for three reasons — matching the original `QueueOfferResult` cases:
+`TryWrite` on the caller's `ChannelWriter` returns `false` for three reasons —
+matching the original `QueueOfferResult` cases:
 
 | `TryWrite` = false because…         | Original equivalent        | How we detect it                         |
 |--------------------------------------|----------------------------|------------------------------------------|
@@ -305,57 +310,88 @@ if (!_channelQueue.TryWrite(new WriteQueueEntry(promise, xs, ct)))
 | Channel was completed with an error  | `QueueOfferResult.Failure` | `Completion.Exception` is non-null       |
 | Channel was completed normally       | `QueueOfferResult.QueueClosed` | `Completion.IsCompleted` and no exception |
 
-To support this, `ChannelQueueWithBatch` should expose a `Task Completion` property
-(forwarding the output channel's `Reader.Completion`) so callers can inspect the reason.
+The `Completion` property (forwarded from the input reader) lets callers inspect
+the reason when `TryWrite` fails.
 
 ---
 
 ## Error Handling
 
-- **`costFunction` / `seed` / `aggregate` exceptions:** The batch loop should catch
-  exceptions from user-supplied delegates. For the initial implementation, let them
-  propagate to fault the output channel — the consumer (e.g. `RestartingDecider` in Akka
-  Streams) handles recovery. We can add a configurable error callback later if needed.
-- **Cancellation:** The `shutdownToken` cancels the `WaitToReadAsync`, causing the loop
-  to exit gracefully. Any partial aggregate is flushed before completing the output channel.
-- **Disposal:** `Dispose()` calls `Complete()` on the input channel if not already done,
-  and suppresses the batch loop task.
+- **`costFunction` / `seed` / `aggregate` exceptions:** These propagate naturally out
+  of `TryRead` to the consumer. The consumer (e.g. `RestartingDecider` in Akka Streams,
+  or a `try/catch` in `await foreach`) handles recovery.
+- **Input channel completion:** `Completion` forwards from the input reader. When the
+  caller completes the input channel, `WaitToReadAsync` returns `false` (after any
+  pending item is consumed), and consumers see a completed reader.
+- **Input channel error:** If the caller completes the input channel with an exception,
+  `Completion` faults accordingly, and `WaitToReadAsync` / `TryRead` surface the error
+  per standard `ChannelReader` semantics.
 
 ---
 
 ## Test Plan
 
-Unit tests for `ChannelQueueWithBatch` should be standalone (no Akka dependency needed):
+Unit tests for `ChannelQueueWithBatch` should be standalone (no Akka dependency needed).
+Tests create a `BoundedChannel<TInput>`, pass its `.Reader` to the batcher, write via
+the `.Writer`, and read batched output from the batcher (which IS the `ChannelReader`):
 
 | Test Case | What It Verifies |
 |-----------|-----------------|
-| **Single item passthrough** | One `WriteAsync` → one `ReadAsync` yields a batch seeded from that single item |
+| **Single item passthrough** | One write → one `TryRead` yields a batch seeded from that single item |
 | **Multiple items within weight budget** | N items where `sum(cost) ≤ maxWeight` → aggregated into a single batch |
 | **Items exceeding weight budget** | Items with `sum(cost) > maxWeight` → split across multiple batches at the right boundaries |
 | **Weighted cost function** | Items with varying costs respect the weight budget, not just count |
-| **Backpressure when full** | `capacity=1`, write 2 items — second `WriteAsync` blocks until the first is consumed |
-| **TryWrite when full** | `capacity=1`, `TryWrite` returns false when channel is at capacity |
-| **Complete flushes partial batch** | Write items, call `Complete()` — partial aggregate is emitted, then `Reader` completes |
-| **Complete with error** | `Complete(exception)` → `Reader` faults with that exception |
-| **Cancellation stops loop** | Cancel the `shutdownToken` — loop exits, output channel completes |
-| **Empty complete** | Call `Complete()` with no items written → `Reader` completes immediately, no batches emitted |
+| **Backpressure when full** | `capacity=1`, write 2 items — second `WriteAsync` on the channel blocks until the first is consumed |
+| **TryWrite when full** | `capacity=1`, `TryWrite` on the channel returns false when at capacity |
+| **Complete flushes partial batch** | Write items, call `writer.TryComplete()` — partial aggregate is available via `TryRead`, then `WaitToReadAsync` returns false |
+| **Complete with error** | `writer.TryComplete(exception)` → `Completion` faults with that exception |
+| **Cancellation stops WaitToReadAsync** | Cancel the token passed to `WaitToReadAsync` — throws `OperationCanceledException` |
+| **Empty complete** | Call `writer.TryComplete()` with no items written → `WaitToReadAsync` returns false immediately |
 | **Overflow item seeds next batch** | An item that doesn't fit the current batch becomes the seed of the next batch (not lost) |
 
 ---
 
 ## Open Questions / Future Considerations
 
-1. **Output channel bounded vs unbounded?** Currently proposed as unbounded. The input
-   channel already bounds inflow, and the batch loop *reduces* item count (N inputs → 1
-   batch), so unbounded output shouldn't grow without bound in practice. If downstream
-   consumption is very slow we could revisit — but that same problem exists today with
-   the Akka Streams pipeline.
+1. **Output channel bounded vs unbounded?** No longer applicable — there is no output
+   channel. The class IS the `ChannelReader<TBatch>`.
 
 2. **Relationship to `EagerBatchStage`?** This abstraction replicates the eager-drain
    semantics of `EagerBatchStage` but outside of Akka Streams. Long term, if we move fully
    to channels, `EagerBatchStage` could remain for Akka Streams-only use cases while
-   `ChannelQueueWithBatch` covers the "I just need a batched queue" case.
+   `ChannelQueueWithBatch` covers the "I just need a batched channel reader" case.
 
-3. **File location?** Proposed: `Akka.Persistence.Sql/Utility/ChannelQueueWithBatch.cs`
-   (alongside `EagerBatch.cs`), with tests in
-   `Akka.Persistence.Sql.Tests/Internal/ChannelQueueWithBatchSpec.cs`.
+---
+
+## Implementation Checklist
+
+### New Files
+
+- [x] `src/Akka.Persistence.Sql/Utility/ChannelQueueWithBatch.cs`
+  - [x] Sealed class extending `ChannelReader<TBatch>`
+  - [x] Constructor: `inputReader`, `maxWeight`, `costFunction`, `seed`, `aggregate`
+  - [x] `_pending` overflow field (mirrors `EagerBatchStage._pending`)
+  - [x] `override TryRead` — eager drain + aggregate + overflow parking
+  - [x] `override WaitToReadAsync` — pending check + delegate to input
+  - [x] `override Completion` — forwards from input reader
+  - [x] Xmldoc on all public members
+
+- [ ] `src/Akka.Persistence.Sql.Tests/Internal/ChannelQueueWithBatchSpec.cs`
+  - [ ] Single item passthrough
+  - [ ] Multiple items within weight budget → single batch
+  - [ ] Items exceeding weight budget → split across batches
+  - [ ] Weighted cost function respected
+  - [ ] Backpressure when full (`capacity=1`, `WriteAsync` blocks on input channel)
+  - [ ] `TryWrite` returns false when input channel full
+  - [ ] `writer.TryComplete()` flushes partial batch then reader completes
+  - [ ] `writer.TryComplete(exception)` faults reader
+  - [ ] Cancellation stops `WaitToReadAsync`
+  - [ ] Empty complete → `WaitToReadAsync` returns false, no batches
+  - [ ] Overflow item seeds next batch (not lost)
+
+### Validation
+
+- [ ] `dotnet build` succeeds for both projects
+- [ ] All new tests pass via `dotnet test`
+- [ ] No existing tests broken
+
