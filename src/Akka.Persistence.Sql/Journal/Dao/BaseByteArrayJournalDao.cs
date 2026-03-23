@@ -418,19 +418,19 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     currRows = 0;
                     currBytes = 0;
                 }
-                else
-                {
-                    tagDict[(journalRow.PersistenceId, journalRow.SequenceNumber)] 
-                        = journalRow.TagArray;
-                    currRows++;
-                    // ByteLength *2
-                    //  + 2048 for padding
-                    // (i.e. Serializer manifests, persistence IDs, sequence numbers etc.)
-                    currBytes +=  
-                        (journalRow.Message.Length * 2 + 2048);
-                    insertList.Add(journalRow);
-                }
+
+                tagDict[(journalRow.PersistenceId, journalRow.SequenceNumber)]
+                    = journalRow.TagArray;
+                currRows++;
+                // ByteLength *2
+                //  + 2048 for padding
+                // (i.e. Serializer manifests, persistence IDs, sequence numbers etc.)
+                currBytes +=
+                    (journalRow.Message.Length * 2 + 2048);
+                insertList.Add(journalRow);
+
             }
+
             if (currBytes > 0 || currRows > 0)
             {
                 var query = connection.AsQueryable(
