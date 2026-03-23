@@ -365,14 +365,15 @@ the `.Writer`, and read batched output from the batcher (which IS the `ChannelRe
 
 ## Implementation Checklist
 
-### New Files
+### Phase 1: Abstraction (new files only, no existing code changes)
 
 - [x] `src/Akka.Persistence.Sql/Utility/ChannelQueueWithBatch.cs`
   - [x] Sealed class extending `ChannelReader<TBatch>`
   - [x] Constructor: `inputReader`, `maxWeight`, `costFunction`, `seed`, `aggregate`
+  - [x] `_gate` lock object for thread-safe `_pending` access
   - [x] `_pending` overflow field (mirrors `EagerBatchStage._pending`)
-  - [x] `override TryRead` — eager drain + aggregate + overflow parking
-  - [x] `override WaitToReadAsync` — pending check + delegate to input
+  - [x] `override TryRead` — eager drain + aggregate + overflow parking (under lock)
+  - [x] `override WaitToReadAsync` — pending check (under lock) + delegate to input
   - [x] `override Completion` — forwards from input reader
   - [x] Xmldoc on all public members
 
@@ -389,9 +390,31 @@ the `.Writer`, and read batched output from the batcher (which IS the `ChannelRe
   - [ ] Empty complete → `WaitToReadAsync` returns false, no batches
   - [ ] Overflow item seeds next batch (not lost)
 
+### Phase 2: Integration (swap into `BaseByteArrayJournalDao`)
+
+- [ ] `BaseByteArrayJournalDao` — replace `Source.Queue` + `BatchWeighted` pipeline
+  - [ ] Add field: `Channel<WriteQueueEntry> _inputChannel` (BoundedChannel, FullMode=Wait, SingleReader=true)
+  - [ ] Add field: `ChannelQueueWithBatch<WriteQueueEntry, WriteQueueSet> _batcher`
+  - [ ] Replace `WriteQueue` initialization (lines ~71–103) with:
+    - [ ] Create `_inputChannel = Channel.CreateBounded<WriteQueueEntry>(...)`
+    - [ ] Create `_batcher = new ChannelQueueWithBatch<>(_inputChannel.Reader, ...)`
+    - [ ] Wire `Source.ChannelReader(_batcher).SelectAsync(Parallelism, handler)...`
+  - [ ] Replace `ISourceQueueWithComplete<WriteQueueEntry> WriteQueue` field with `_inputChannel` + `_batcher`
+  - [ ] Update `QueueWriteJournalRows()`:
+    - [ ] Replace `WriteQueue.OfferAsync(entry)` + `QueueOfferResult` switch with `_inputChannel.Writer.TryWrite(entry)`
+    - [ ] On `TryWrite` failure: check `_batcher.Completion` to distinguish full/faulted/closed
+  - [ ] Verify `RestartingDecider` supervision still applies via `.AddAttributes()` on the stream
+
+- [ ] `ByteArrayJournalDao` — confirm no changes needed (inherits from `BaseByteArrayJournalDao`)
+
+- [ ] Remove or deprecate unused types (if no longer needed after swap):
+  - [ ] Evaluate whether `WriteQueueEntry` / `WriteQueueSet` need changes
+  - [ ] Evaluate whether `EagerBatchStage` is still used elsewhere
+
 ### Validation
 
 - [ ] `dotnet build` succeeds for both projects
-- [ ] All new tests pass via `dotnet test`
+- [ ] All new unit tests pass via `dotnet test`
+- [ ] Existing `JournalSpec` / `JournalPerfSpec` tests pass for all providers
 - [ ] No existing tests broken
 
