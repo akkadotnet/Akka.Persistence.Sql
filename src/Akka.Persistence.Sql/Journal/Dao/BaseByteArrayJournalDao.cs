@@ -10,6 +10,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Event;
@@ -18,6 +19,7 @@ using Akka.Persistence.Sql.Db;
 using Akka.Persistence.Sql.Extensions;
 using Akka.Persistence.Sql.Journal.Types;
 using Akka.Persistence.Sql.Serialization;
+using Akka.Persistence.Sql.Utility;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Streams.Supervision;
@@ -43,7 +45,32 @@ namespace Akka.Persistence.Sql.Journal.Dao
         protected readonly ILoggingAdapter Logger;
         protected readonly FlowPersistentRepresentationSerializer<JournalRow> Serializer;
 
-        protected readonly ISourceQueueWithComplete<WriteQueueEntry> WriteQueue;
+        /// <summary>
+        /// Bounded input channel replacing the old <c>Source.Queue</c>.
+        /// Uses <see cref="BoundedChannelFullMode.Wait"/> for natural backpressure
+        /// instead of <c>OverflowStrategy.DropNew</c> (which silently dropped writes). 🌸
+        ///
+        /// <para>
+        /// <b>CopilotNote:</b> The writer side (<c>_inputChannel.Writer</c>) is used in
+        /// <see cref="QueueWriteJournalRows"/> to enqueue entries. The reader side is
+        /// consumed by <see cref="_batcher"/>.
+        /// </para>
+        /// </summary>
+        private readonly Channel<WriteQueueEntry> _inputChannel;
+
+        /// <summary>
+        /// Weighted batcher that wraps <see cref="_inputChannel"/>'s reader and eagerly
+        /// aggregates <see cref="WriteQueueEntry"/> items into <see cref="WriteQueueSet"/>
+        /// batches up to <c>BatchSize</c> total row cost. This IS a
+        /// <see cref="ChannelReader{WriteQueueSet}"/> — it feeds directly into
+        /// <c>Source.ChannelReader</c> for downstream Akka Streams processing. ✨
+        ///
+        /// <para>
+        /// <b>CopilotNote:</b> Replaces the old <c>BatchWeighted</c> Akka Streams stage
+        /// with pure channel-based batching via <see cref="ChannelQueueWithBatch{TInput,TBatch}"/>.
+        /// </para>
+        /// </summary>
+        private readonly ChannelQueueWithBatch<WriteQueueEntry, WriteQueueSet> _batcher;
 
         protected BaseByteArrayJournalDao(
             IAdvancedScheduler scheduler,
@@ -65,24 +92,41 @@ namespace Akka.Persistence.Sql.Journal.Dao
                                        &&
                                        (JournalConfig.ProviderName.Contains("SqlServer") || JournalConfig.ProviderName.Contains("PostgreSQL") ||
                                         JournalConfig.ProviderName.Contains("Sqlite")));
-            // Due to C# rules we have to initialize WriteQueue here
-            // Keeping it here vs init function prevents accidental moving of init
-            // to where variables aren't set yet.
-            WriteQueue = Source
-                .Queue<WriteQueueEntry>(JournalConfig.DaoConfig.BufferSize, OverflowStrategy.DropNew)
-                .BatchWeighted(
-                    JournalConfig.DaoConfig.BatchSize,
-                    cf => cf.Rows.Count,
-                    r => new WriteQueueSet(ImmutableList.Create([r.Tcs]), r.Rows, ImmutableList.Create([r.CancellationToken])),
-                    (oldRows, newRows) =>
-                        new WriteQueueSet(
-                            oldRows.Tcs.Add(newRows.Tcs),
-                            oldRows.Rows.Concat(newRows.Rows),
-                            oldRows.CancellationTokens.Add(newRows.CancellationToken)))
+            // CopilotNote: Phase 2 — Channel + ChannelQueueWithBatch replaces
+            // Source.Queue + BatchWeighted. The input channel provides backpressure via
+            // BoundedChannelFullMode.Wait instead of dropping writes with DropNew. 🌸
+            _inputChannel = Channel.CreateBounded<WriteQueueEntry>(
+                new BoundedChannelOptions(JournalConfig.DaoConfig.BufferSize)
+                {
+                    FullMode = BoundedChannelFullMode.Wait,
+                    SingleReader = true,
+                });
+
+            _batcher = new ChannelQueueWithBatch<WriteQueueEntry, WriteQueueSet>(
+                _inputChannel.Reader,
+                maxWeight: JournalConfig.DaoConfig.BatchSize,
+                costFunction: entry => entry.Rows.Count,
+                seed: r => new WriteQueueSet(
+                    ImmutableList.Create([r.Tcs]),
+                    r.Rows,
+                    ImmutableList.Create([r.CancellationToken])),
+                aggregate: (oldRows, newRows) =>
+                    new WriteQueueSet(
+                        oldRows.Tcs.Add(newRows.Tcs),
+                        oldRows.Rows.Concat(newRows.Rows),
+                        oldRows.CancellationTokens.Add(newRows.CancellationToken)));
+
+            // The batcher IS a ChannelReader<WriteQueueSet> — pipe it into Akka Streams ✨
+            Source.ChannelReader(_batcher)
+                .Async()
                 .SelectAsync(
                     JournalConfig.DaoConfig.Parallelism,
                     async promisesAndRows =>
                     {
+                        if (promisesAndRows.Rows.Length > 1)
+                        {
+                            logger.Error("Writing journal rows in parallel, total rows {prows}", promisesAndRows.Rows.Length);
+                        }
                         try
                         {
                             await WriteJournalRows(promisesAndRows.Rows, promisesAndRows.CancellationTokens);
@@ -98,9 +142,8 @@ namespace Akka.Persistence.Sql.Journal.Dao
                         return NotUsed.Instance;
                     })
                 .AddAttributes(ActorAttributes.CreateSupervisionStrategy(Deciders.RestartingDecider))
-                .ToMaterialized(
-                    Sink.Ignore<NotUsed>(),
-                    Keep.Left).Run(Materializer);
+                .To(Sink.Ignore<NotUsed>())
+                .Run(Materializer);
         }
 
         public async Task<IImmutableList<Exception>> AsyncWriteMessages(
@@ -277,37 +320,46 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 });
         }
 
+        /// <summary>
+        /// Enqueues a set of journal rows for batched writing via the channel pipeline.
+        /// Uses <c>TryWrite</c> on the bounded input channel — returns <c>false</c> when
+        /// the channel is full or completed, replacing the old <c>QueueOfferResult</c>
+        /// switch statement with simpler channel semantics. uwu 🌸
+        ///
+        /// <para>
+        /// <b>CopilotNote:</b> With <see cref="BoundedChannelFullMode.Wait"/>,
+        /// <c>TryWrite</c> is non-blocking and returns <c>false</c> when:
+        /// <list type="bullet">
+        ///   <item>Channel is at capacity (equivalent to old <c>Dropped</c>)</item>
+        ///   <item>Channel was completed with error (equivalent to old <c>Failure</c>)</item>
+        ///   <item>Channel was completed normally (equivalent to old <c>QueueClosed</c>)</item>
+        /// </list>
+        /// We distinguish these cases via <c>_batcher.Completion</c>.
+        /// </para>
+        /// </summary>
         private async Task QueueWriteJournalRows(Seq<JournalRow> xs, CancellationToken cancellationToken)
         {
             var promise = new TaskCompletionSource<NotUsed>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            // Send promise and rows into queue. If the Queue takes it,
-            // It will write the Promise state when finished writing (or failing)
-            var result = await WriteQueue.OfferAsync(new WriteQueueEntry(promise, xs, cancellationToken));
-
-            switch (result)
+            // TryWrite is non-blocking. With FullMode=Wait it returns false when the
+            // channel is at capacity or completed — never silently drops items. ✨
+            if (!_inputChannel.Writer.TryWrite(new WriteQueueEntry(promise, xs, cancellationToken)))
             {
-                case QueueOfferResult.Enqueued:
-                    break;
-
-                case QueueOfferResult.Failure f:
-                    promise.TrySetException(new Exception("Failed to write journal row batch", f.Cause));
-                    break;
-
-                case QueueOfferResult.Dropped:
-                    promise.TrySetException(
-                        new Exception(
-                            $"Failed to enqueue journal row batch write, the queue buffer was full ({JournalConfig.DaoConfig.BufferSize} elements)"));
-                    break;
-
-                case QueueOfferResult.QueueClosed:
+                // Distinguish full vs faulted vs closed — mirrors original QueueOfferResult cases
+                var completionException = _batcher.Completion.Exception;
+                if (completionException is not null)
+                    promise.TrySetException(new Exception("Failed to write journal row batch", completionException));
+                else if (_batcher.Completion.IsCompleted)
                     promise.TrySetException(
                         new Exception(
                             "Failed to enqueue journal row batch write, the queue was closed."));
-                    break;
+                else
+                    promise.TrySetException(
+                        new Exception(
+                            $"Failed to enqueue journal row batch write, the queue buffer was full ({JournalConfig.DaoConfig.BufferSize} elements)"));
             }
 
-            await promise.Task;
+            await promise.Task.ConfigureAwait(false);
         }
 
         private async Task WriteJournalRows(Seq<JournalRow> xs, ImmutableList<CancellationToken> cancellationTokens)

@@ -120,11 +120,12 @@ retaining the `ChannelWriter<TInput>` for producing items (via `TryWrite`,
 │  capacity=N       │─Reader──▶│                                          │
 │  FullMode=Wait    │          │  _inputReader   (wraps the input)        │
 │  (caller-owned)   │          │  _pending       (overflow item)          │
-└──────────────────┘          │  _seed / _aggregate / _costFunction      │
-      ▲ TryWrite /             │                                          │
-      │ WriteAsync             │  TryRead()     → drains + batches        │
-  [Producers]                  │  WaitToReadAsync() → pending or input    │
-  (caller code)                │  Completion    → forwards from input     │
+└──────────────────┘          │  _gate          (lock for _pending)      │
+      ▲ TryWrite /             │  _seed / _aggregate / _costFunction      │
+      │ WriteAsync             │                                          │
+  [Producers]                  │  TryRead()     → drains + batches        │
+  (caller code)                │  WaitToReadAsync() → pending or input    │
+                              │  Completion    → forwards from input     │
                               └──────────────────────────────────────────┘
                                        │ (this IS the ChannelReader)
                                        ▼
@@ -138,6 +139,9 @@ retaining the `ChannelWriter<TInput>` for producing items (via `TryWrite`,
 - **`_pending`:** A single overflow item, like `EagerBatchStage._pending`. When an
   item doesn't fit the current batch, it's parked here and becomes the seed of the
   next batch on the next `TryRead` call.
+- **`_gate`:** A `lock` object guarding `_pending` access across `TryRead` and
+  `WaitToReadAsync`. Both critical sections are fully synchronous (no async calls
+  inside the lock), so a simple `lock` is safe and cheap.
 - **`Completion`:** Forwards directly from the input reader — completes when the
   caller completes the input channel.
 
@@ -192,32 +196,35 @@ class — they're built on our `WaitToReadAsync` + `TryRead` overrides.
 
 ```
 TryRead(out TBatch batch):
-  1. Get first item:
-     - If _pending has a value → use it, clear _pending
-     - Else inputReader.TryRead(out firstItem)
-     - If neither → return false (no data available)
+  lock (_gate):
+    1. Get first item:
+       - If _pending has a value → use it, clear _pending
+       - Else inputReader.TryRead(out firstItem)
+       - If neither → return false (no data available)
 
-  2. batch = seed(firstItem)
-     remaining = maxWeight - costFunction(firstItem)
+    2. batch = seed(firstItem)
+       remaining = maxWeight - costFunction(firstItem)
 
-  3. Eager drain loop:
-     while inputReader.TryRead(out nextItem):
-       cost = costFunction(nextItem)
-       if cost > remaining:
-         _pending = nextItem   ← park overflow for next call
-         break
-       batch = aggregate(batch, nextItem)
-       remaining -= cost
+    3. Eager drain loop:
+       while inputReader.TryRead(out nextItem):
+         cost = costFunction(nextItem)
+         if cost > remaining:
+           _pending = nextItem   ← park overflow for next call
+           break
+         batch = aggregate(batch, nextItem)
+         remaining -= cost
 
-  4. return true (batch contains the aggregated result)
+    4. return true (batch contains the aggregated result)
 ```
 
 ### WaitToReadAsync Logic
 
 ```
 WaitToReadAsync(ct):
-  - If _pending has a value → return true immediately
+  lock (_gate):
+    - If _pending has a value → return true immediately
   - Else → return inputReader.WaitToReadAsync(ct)
+    (note: the async call is OUTSIDE the lock)
 ```
 
 **Why this is simpler than a background loop:**
@@ -227,6 +234,8 @@ WaitToReadAsync(ct):
 - No `outputWriter.TryWrite` / `outputWriter.TryComplete` plumbing
 - Batching is demand-driven (happens when consumer pulls) not supply-driven
 - The `_pending` field handles overflow identically to `EagerBatchStage`
+- Thread safety via a simple `lock(_gate)` over fully synchronous critical sections
+  (no async inside the lock) — uncontended lock cost is ~20ns
 
 **Why this matches `EagerBatchStage` semantics:**
 - `EagerBatchStage.OnPush()` keeps pulling upstream while there's budget (lines 112-114).
@@ -392,28 +401,24 @@ the `.Writer`, and read batched output from the batcher (which IS the `ChannelRe
 
 ### Phase 2: Integration (swap into `BaseByteArrayJournalDao`)
 
-- [ ] `BaseByteArrayJournalDao` — replace `Source.Queue` + `BatchWeighted` pipeline
-  - [ ] Add field: `Channel<WriteQueueEntry> _inputChannel` (BoundedChannel, FullMode=Wait, SingleReader=true)
-  - [ ] Add field: `ChannelQueueWithBatch<WriteQueueEntry, WriteQueueSet> _batcher`
-  - [ ] Replace `WriteQueue` initialization (lines ~71–103) with:
-    - [ ] Create `_inputChannel = Channel.CreateBounded<WriteQueueEntry>(...)`
-    - [ ] Create `_batcher = new ChannelQueueWithBatch<>(_inputChannel.Reader, ...)`
-    - [ ] Wire `Source.ChannelReader(_batcher).SelectAsync(Parallelism, handler)...`
-  - [ ] Replace `ISourceQueueWithComplete<WriteQueueEntry> WriteQueue` field with `_inputChannel` + `_batcher`
-  - [ ] Update `QueueWriteJournalRows()`:
-    - [ ] Replace `WriteQueue.OfferAsync(entry)` + `QueueOfferResult` switch with `_inputChannel.Writer.TryWrite(entry)`
-    - [ ] On `TryWrite` failure: check `_batcher.Completion` to distinguish full/faulted/closed
-  - [ ] Verify `RestartingDecider` supervision still applies via `.AddAttributes()` on the stream
+- [x] `BaseByteArrayJournalDao` — replace `Source.Queue` + `BatchWeighted` pipeline
+  - [x] Add field: `Channel<WriteQueueEntry> _inputChannel` (BoundedChannel, FullMode=Wait, SingleReader=true)
+  - [x] Add field: `ChannelQueueWithBatch<WriteQueueEntry, WriteQueueSet> _batcher`
+  - [x] Replace `WriteQueue` initialization (lines ~71–103) with:
+    - [x] Create `_inputChannel = Channel.CreateBounded<WriteQueueEntry>(...)`
+    - [x] Create `_batcher = new ChannelQueueWithBatch<>(_inputChannel.Reader, ...)`
+    - [x] Wire `Source.ChannelReader(_batcher).SelectAsync(Parallelism, handler)...`
+  - [x] Replace `ISourceQueueWithComplete<WriteQueueEntry> WriteQueue` field with `_inputChannel` + `_batcher`
+  - [x] Update `QueueWriteJournalRows()`:
+    - [x] Replace `WriteQueue.OfferAsync(entry)` + `QueueOfferResult` switch with `_inputChannel.Writer.TryWrite(entry)`
+    - [x] On `TryWrite` failure: check `_batcher.Completion` to distinguish full/faulted/closed
+  - [x] Verify `RestartingDecider` supervision still applies via `.AddAttributes()` on the stream
 
-- [ ] `ByteArrayJournalDao` — confirm no changes needed (inherits from `BaseByteArrayJournalDao`)
-
-- [ ] Remove or deprecate unused types (if no longer needed after swap):
-  - [ ] Evaluate whether `WriteQueueEntry` / `WriteQueueSet` need changes
-  - [ ] Evaluate whether `EagerBatchStage` is still used elsewhere
+- [x] `ByteArrayJournalDao` — confirm no changes needed (inherits from `BaseByteArrayJournalDao`)
 
 ### Validation
 
-- [ ] `dotnet build` succeeds for both projects
+- [x] `dotnet build` succeeds for both projects
 - [ ] All new unit tests pass via `dotnet test`
 - [ ] Existing `JournalSpec` / `JournalPerfSpec` tests pass for all providers
 - [ ] No existing tests broken
