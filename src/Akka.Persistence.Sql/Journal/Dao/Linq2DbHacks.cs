@@ -54,6 +54,26 @@ namespace Akka.Persistence.Sql.Journal.Dao
             if (argument is null)
                 throw new ArgumentNullException(paramName);
         }
+
+        /// <summary>
+        /// Inserts data from a source queryable into a target table and retrieves a list of output projections.
+        /// </summary>
+        /// <typeparam name="TSource">The type of elements in the source queryable.</typeparam>
+        /// <typeparam name="TTarget">The type of the target table where data is inserted.</typeparam>
+        /// <typeparam name="TOutput">The type of elements in the output result list.</typeparam>
+        /// <param name="source">The source queryable containing the data to insert into the target table.</param>
+        /// <param name="target">The target database table where data is inserted.</param>
+        /// <param name="setter">
+        /// An expression that maps source entities to target entities for the insert operation.
+        /// </param>
+        /// <param name="outputExpression">
+        /// An expression that specifies the projection for the output result list.
+        /// </param>
+        /// <returns>A task representing the asynchronous operation. The task result is a list of output projections.</returns>
+        /// <remarks>
+        /// Yeah so weird thing the existing Linq2Db InsertWithOutput only returns IAsyncEnumerable<T> but does weird syncish jank.
+        /// This runs better in general.
+        /// </remarks>
         public static async Task<List<TOutput>> InsertWithOutputListAsync<TSource, TTarget, TOutput>(
             this IQueryable<TSource> source,
             ITable<TTarget> target,
@@ -61,7 +81,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
             Expression<Func<TTarget, TOutput>> outputExpression)
             where TTarget : notnull
         {
-            #if NET6_0_OR_GREATER
+#if NET6_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(source);
             ArgumentNullException.ThrowIfNull(target);
             ArgumentNullException.ThrowIfNull(setter);
