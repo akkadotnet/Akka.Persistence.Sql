@@ -10,6 +10,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using LinqToDB;
 using LinqToDB.Async;
@@ -78,7 +79,8 @@ namespace Akka.Persistence.Sql.Journal.Dao
             this IQueryable<TSource> source,
             ITable<TTarget> target,
             [InstantHandle] Expression<Func<TSource, TTarget>> setter,
-            Expression<Func<TTarget, TOutput>> outputExpression)
+            Expression<Func<TTarget, TOutput>> outputExpression,
+            CancellationToken token = default)
             where TTarget : notnull
         {
 #if NET6_0_OR_GREATER
@@ -103,7 +105,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 Expression.Quote(setter),
                 Expression.Quote(outputExpression));
 
-            return await currentSource.CreateQuery<TOutput>(expr).ToListAsync();
+            return await currentSource.CreateQuery<TOutput>(expr).ToListAsync(token);
         }
     }
 }
