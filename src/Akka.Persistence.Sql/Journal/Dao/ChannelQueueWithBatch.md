@@ -16,16 +16,16 @@ Because this class **is** a `ChannelReader<TBatch>`, it plugs directly into anyt
 accepts a channel reader: `Source.ChannelReader(batcher).SelectAsync(parallelism, ...)`,
 `await foreach`, `ReadAsync`, etc.
 
-> **Scope:** This is a *new file* abstraction only. It does NOT replace the existing
-> `Source.Queue` + `BatchWeighted` pipeline in `BaseByteArrayJournalDao` — that swap
-> is a separate future step.
+> **Status:** Phase 1 (abstraction) and Phase 2 (integration) are complete.
+> `BaseByteArrayJournalDao` now uses `ChannelQueueWithBatch` + `Channel.CreateBounded`
+> in place of the old `Source.Queue` + `BatchWeighted` pipeline.
 
 ---
 
-## Current Architecture (What We're Modeling)
+## Previous Architecture (What Was Replaced)
 
-In `BaseByteArrayJournalDao`, the write pipeline is built as an Akka Streams graph
-that is materialized once during construction:
+In `BaseByteArrayJournalDao`, the write pipeline was **previously** built as an Akka Streams graph
+that was materialized once during construction:
 
 ```
 Source.Queue<WriteQueueEntry>(BufferSize, OverflowStrategy.DropNew)   // ① Input
@@ -36,43 +36,43 @@ Source.Queue<WriteQueueEntry>(BufferSize, OverflowStrategy.DropNew)   // ① Inp
   .Run(Materializer)                                                  // → ISourceQueueWithComplete<T>
 ```
 
-### ① Source.Queue — The Input Side
+### ① Source.Queue — The Input Side (Replaced)
 
-- Creates a bounded buffer of `BufferSize` (default 5000) elements.
-- Returns an `ISourceQueueWithComplete<WriteQueueEntry>` materialized value.
-- Callers use `OfferAsync(entry)` which returns a `QueueOfferResult` discriminated union:
+- Created a bounded buffer of `BufferSize` (default 5000) elements.
+- Returned an `ISourceQueueWithComplete<WriteQueueEntry>` materialized value.
+- Callers used `OfferAsync(entry)` which returned a `QueueOfferResult` discriminated union:
   `Enqueued`, `Dropped`, `Failure`, or `QueueClosed`.
-- Uses `OverflowStrategy.DropNew` — when the buffer is full, the newest offer is **dropped**
-  (not backpressured), and the caller must handle the `Dropped` result.
-- See `QueueWriteJournalRows()` (line ~280) for the offer + error-handling boilerplate.
+- Used `OverflowStrategy.DropNew` — when the buffer was full, the newest offer was **dropped**
+  (not backpressured), and the caller had to handle the `Dropped` result.
+- See the old `QueueWriteJournalRows()` for the offer + error-handling boilerplate.
 
-**Pain point:** The `DropNew` + `QueueOfferResult` pattern requires a verbose `switch`
-statement at every call site, and dropping writes silently is risky for persistence.
+**Pain point:** The `DropNew` + `QueueOfferResult` pattern required a verbose `switch`
+statement at every call site, and dropping writes silently was risky for persistence.
 
-### ② BatchWeighted — The Batching Stage
+### ② BatchWeighted — The Batching Stage (Replaced)
 
-- Accumulates `WriteQueueEntry` items into a `WriteQueueSet` aggregate.
-- Uses `costFunc: entry => entry.Rows.Count` — each entry's cost is its row count.
-- `seed`: wraps the first entry into a new `WriteQueueSet` with single-element
+- Accumulated `WriteQueueEntry` items into a `WriteQueueSet` aggregate.
+- Used `costFunc: entry => entry.Rows.Count` — each entry's cost was its row count.
+- `seed`: wrapped the first entry into a new `WriteQueueSet` with single-element
   `ImmutableList`s for `Tcs` and `CancellationTokens`.
-- `aggregate`: folds subsequent entries by `.Add()`-ing to the immutable lists and
+- `aggregate`: folded subsequent entries by `.Add()`-ing to the immutable lists and
   `.Concat()`-ing the `Seq<JournalRow>` rows.
-- `maxWeight` = `BatchSize` (default 100) — the batch emits once total row count hits this.
+- `maxWeight` = `BatchSize` (default 100) — the batch emitted once total row count hit this.
 
-**Pain point:** Standard `BatchWeighted` flushes partial batches eagerly when downstream
-is available (during `OnPush`). This means when `SelectAsync(Parallelism)` pulls fast,
-we often get single-element "batches" — defeating the purpose of batching. This is exactly
+**Pain point:** Standard `BatchWeighted` flushed partial batches eagerly when downstream
+was available (during `OnPush`). This meant when `SelectAsync(Parallelism)` pulled fast,
+we often got single-element "batches" — defeating the purpose of batching. This is exactly
 why we built `EagerBatchStage` in `Utility/EagerBatch.cs`, which only flushes when the
 batch is actually full or downstream explicitly pulls.
 
-### ③–⑤ SelectAsync + Supervision + Sink (NOT in scope)
+### ③–⑤ SelectAsync + Supervision + Sink (Preserved)
 
 The downstream `SelectAsync(Parallelism, handler)` processes each `WriteQueueSet` batch,
 resolving all `TaskCompletionSource` promises on success or failure. The `RestartingDecider`
-ensures the stream survives exceptions. **These stages are NOT part of this abstraction** —
-our `ChannelQueueWithBatch` only covers ② (batching), while ① (input channel) is
-caller-owned. The output is just `this` — a `ChannelReader<TBatch>` that the caller
-(or Akka Streams) can consume however it wants.
+ensures the stream survives exceptions. **These stages are preserved identically in the
+new pipeline** — our `ChannelQueueWithBatch` only replaces ② (batching), while ①
+(input channel) is caller-owned. The output is just `this` — a `ChannelReader<TBatch>`
+that feeds into `Source.ChannelReader(_batcher)` and then into the same `SelectAsync` chain.
 
 ### Config Values That Map to This Abstraction
 
@@ -89,9 +89,107 @@ creating the `BoundedChannel<TInput>`.
 
 ---
 
-## Proposed Design
+## Current Architecture (Post Phase 2)
 
-### Class: `ChannelQueueWithBatch<TInput, TBatch> : ChannelReader<TBatch>`
+The write pipeline in `BaseByteArrayJournalDao` is now built using
+`System.Threading.Channels` + `ChannelQueueWithBatch` + `Source.ChannelReader`:
+
+```
+Channel.CreateBounded<WriteQueueEntry>(BufferSize, FullMode=Wait)     // ① Input (channel)
+  → ChannelQueueWithBatch(_inputChannel.Reader, BatchSize, ...)       // ② Batching (eager drain)
+  → Source.ChannelReader(_batcher)                                    // ③ Bridge to Akka Streams
+      .SelectAsync(Parallelism, handler)                              // ④ Processing (preserved)
+      .AddAttributes(RestartingDecider)                               // ⑤ Supervision (preserved)
+      .To(Sink.Ignore<NotUsed>())                                     // ⑥ Materialize
+      .Run(Materializer)
+```
+
+### Fields
+
+```csharp
+// Bounded input channel — replaces Source.Queue
+private readonly Channel<WriteQueueEntry> _inputChannel;
+
+// Weighted batcher — replaces BatchWeighted, IS a ChannelReader<WriteQueueSet>
+private readonly ChannelQueueWithBatch<WriteQueueEntry, WriteQueueSet> _batcher;
+```
+
+### Constructor Initialization
+
+```csharp
+_inputChannel = Channel.CreateBounded<WriteQueueEntry>(
+    new BoundedChannelOptions(JournalConfig.DaoConfig.BufferSize)
+    {
+        FullMode = BoundedChannelFullMode.Wait,
+        SingleReader = true,
+    });
+
+_batcher = new ChannelQueueWithBatch<WriteQueueEntry, WriteQueueSet>(
+    _inputChannel.Reader,
+    maxWeight: JournalConfig.DaoConfig.BatchSize,
+    costFunction: entry => entry.Rows.Count,
+    seed: r => new WriteQueueSet(
+        ImmutableList.Create([r.Tcs]),
+        r.Rows,
+        ImmutableList.Create([r.CancellationToken])),
+    aggregate: (oldRows, newRows) =>
+        new WriteQueueSet(
+            oldRows.Tcs.Add(newRows.Tcs),
+            oldRows.Rows.Concat(newRows.Rows),
+            oldRows.CancellationTokens.Add(newRows.CancellationToken)));
+
+Source.ChannelReader(_batcher)
+    .SelectAsync(
+        JournalConfig.DaoConfig.Parallelism,
+        async promisesAndRows =>
+        {
+            try
+            {
+                await WriteJournalRows(promisesAndRows.Rows, promisesAndRows.CancellationTokens);
+                foreach (var tcs in promisesAndRows.Tcs)
+                    tcs.TrySetResult(NotUsed.Instance);
+            }
+            catch (Exception e)
+            {
+                foreach (var tcs in promisesAndRows.Tcs)
+                    tcs.TrySetException(e);
+            }
+            return NotUsed.Instance;
+        })
+    .AddAttributes(ActorAttributes.CreateSupervisionStrategy(Deciders.RestartingDecider))
+    .To(Sink.Ignore<NotUsed>())
+    .Run(Materializer);
+```
+
+### QueueWriteJournalRows (Current)
+
+```csharp
+private async Task QueueWriteJournalRows(Seq<JournalRow> xs, CancellationToken cancellationToken)
+{
+    var promise = new TaskCompletionSource<NotUsed>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    if (!_inputChannel.Writer.TryWrite(new WriteQueueEntry(promise, xs, cancellationToken)))
+    {
+        var completionException = _batcher.Completion.Exception;
+        if (completionException is not null)
+            promise.TrySetException(new Exception("Failed to write journal row batch", completionException));
+        else if (_batcher.Completion.IsCompleted)
+            promise.TrySetException(new Exception(
+                "Failed to enqueue journal row batch write, the queue was closed."));
+        else
+            promise.TrySetException(new Exception(
+                $"Failed to enqueue journal row batch write, the queue buffer was full ({JournalConfig.DaoConfig.BufferSize} elements)"));
+    }
+
+    await promise.Task;
+}
+```
+
+---
+
+## Class Design
+
+### `ChannelQueueWithBatch<TInput, TBatch> : ChannelReader<TBatch>`
 
 A sealed class that **extends** `ChannelReader<TBatch>`, overriding `TryRead` and
 `WaitToReadAsync`. No background tasks. No output channels. No `IDisposable`.
@@ -115,16 +213,16 @@ retaining the `ChannelWriter<TInput>` for producing items (via `TryWrite`,
 
 ```
 ┌──────────────────┐          ┌──────────────────────────────────────────┐
-│  BoundedChannel   │          │ ChannelQueueWithBatch                    │
-│  <TInput>         │          │ (IS a ChannelReader<TBatch>)             │
-│  capacity=N       │─Reader──▶│                                          │
-│  FullMode=Wait    │          │  _inputReader   (wraps the input)        │
-│  (caller-owned)   │          │  _pending       (overflow item)          │
+│  BoundedChannel  │          │ ChannelQueueWithBatch                    │
+│  <TInput>        │          │ (IS a ChannelReader<TBatch>)             │
+│  capacity=N      │─Reader─> │                                          │
+│  FullMode=Wait   │          │  _inputReader   (wraps the input)        │
+│  (caller-owned)  │          │  _pending       (overflow item)          │
 └──────────────────┘          │  _gate          (lock for _pending)      │
-      ▲ TryWrite /             │  _seed / _aggregate / _costFunction      │
-      │ WriteAsync             │                                          │
-  [Producers]                  │  TryRead()     → drains + batches        │
-  (caller code)                │  WaitToReadAsync() → pending or input    │
+      ▲ TryWrite /            │  _seed / _aggregate / _costFunction      │
+      │ WriteAsync            │                                          │
+  [Producers]                 │  TryRead()     → drains + batches        │
+  (caller code)               │  WaitToReadAsync() → pending or input    │
                               │  Completion    → forwards from input     │
                               └──────────────────────────────────────────┘
                                        │ (this IS the ChannelReader)
@@ -252,10 +350,10 @@ WaitToReadAsync(ct):
 The key integration point: downstream Akka Streams consumption via `Source.ChannelReader`.
 
 Since `ChannelQueueWithBatch` **is** a `ChannelReader<TBatch>`, it passes directly to
-`Source.ChannelReader()`. The future migration path in `BaseByteArrayJournalDao`:
+`Source.ChannelReader()`. Here's how `BaseByteArrayJournalDao` was migrated:
 
 ```csharp
-// Before (current):
+// Previous (replaced):
 WriteQueue = Source
     .Queue<WriteQueueEntry>(BufferSize, OverflowStrategy.DropNew)
     .BatchWeighted(BatchSize, costFunc, seed, aggregate)
@@ -264,7 +362,7 @@ WriteQueue = Source
     .ToMaterialized(Sink.Ignore, Keep.Left)
     .Run(Materializer);
 
-// After (future, using this abstraction):
+// Current (using this abstraction):
 _inputChannel = Channel.CreateBounded<WriteQueueEntry>(new BoundedChannelOptions(BufferSize)
 {
     FullMode = BoundedChannelFullMode.Wait,
@@ -282,18 +380,18 @@ _batcher = new ChannelQueueWithBatch<WriteQueueEntry, WriteQueueSet>(
 Source.ChannelReader(_batcher)
     .SelectAsync(Parallelism, handler)
     .AddAttributes(RestartingDecider)
-    .ToMaterialized(Sink.Ignore, Keep.None)
+    .To(Sink.Ignore<NotUsed>())
     .Run(Materializer);
 ```
 
-The `QueueWriteJournalRows` method also simplifies — no more `QueueOfferResult` switch:
+The `QueueWriteJournalRows` method also simplified — no more `QueueOfferResult` switch:
 
 ```csharp
-// Before:
+// Previous (replaced):
 var result = await WriteQueue.OfferAsync(new WriteQueueEntry(promise, xs, ct));
 switch (result) { /* 4 cases of Enqueued/Dropped/Failure/QueueClosed handling */ }
 
-// After:
+// Current:
 if (!_inputChannel.Writer.TryWrite(new WriteQueueEntry(promise, xs, ct)))
 {
     // Check whether the batcher faulted/closed vs the input channel simply being full.
