@@ -306,6 +306,21 @@ namespace Akka.Persistence.Sql.Query.Dao
 
         private static async Task<List<JournalRow>> AddTagDataFromTagTableAsync(IQueryable<JournalRow> rowQuery, AkkaDataConnection connection, CancellationToken token)
         {
+            if (connection.SupportsStringAggregate)
+                return await AddTagDataFromTagTableWithStringAggregateAsync(rowQuery, connection, token);
+
+            return await AddTagDataFromTagTableClientSideAsync(rowQuery, connection, token);
+        }
+
+        /// <summary>
+        /// Uses SQL-level STRING_AGG (or GROUP_CONCAT) to aggregate tags in a single query.
+        /// Supported by SQL Server 2017+, PostgreSQL 9.0+, MySQL, and SQLite.
+        /// </summary>
+        private static async Task<List<JournalRow>> AddTagDataFromTagTableWithStringAggregateAsync(
+            IQueryable<JournalRow> rowQuery,
+            AkkaDataConnection connection,
+            CancellationToken token)
+        {
             var tagTable = connection.GetTable<JournalTagRow>();
 
             var rowsAndTags = await rowQuery
@@ -328,6 +343,45 @@ namespace Akka.Persistence.Sql.Query.Dao
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Fallback implementation for providers that do not support STRING_AGG (e.g., SQL Server &lt; 2017).
+        /// Fetches journal rows first, then queries tags separately and joins them client-side.
+        /// </summary>
+        private static async Task<List<JournalRow>> AddTagDataFromTagTableClientSideAsync(
+            IQueryable<JournalRow> rowQuery,
+            AkkaDataConnection connection,
+            CancellationToken token)
+        {
+            var rows = await rowQuery.ToListAsync(token);
+            if (rows.Count == 0)
+                return rows;
+
+            var orderings = rows.Select(r => r.Ordering).ToList();
+
+            var tagRows = await connection
+                .GetTable<JournalTagRow>()
+                .Where(t => orderings.Contains(t.OrderingId))
+                .ToListAsync(token);
+
+            var tagsByOrdering = new Dictionary<long, List<string>>();
+            foreach (var tagRow in tagRows)
+            {
+                if (!tagsByOrdering.TryGetValue(tagRow.OrderingId, out var list))
+                {
+                    list = [];
+                    tagsByOrdering[tagRow.OrderingId] = list;
+                }
+                list.Add(tagRow.TagValue);
+            }
+
+            foreach (var row in rows)
+            {
+                row.TagArray = tagsByOrdering.TryGetValue(row.Ordering, out var tags) ? tags.ToArray() : [];
+            }
+
+            return rows;
         }
     }
 }
