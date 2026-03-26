@@ -41,6 +41,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
         private readonly Flow<JournalRow, Util.Try<ReplayCompletion>, NotUsed> _deserializeFlowMapped;
         private readonly TagMode _tagWriteMode;
         private readonly bool _useTagTableAsQueryable;
+        private readonly ArrayPool<JournalRow> JournalRowPool = ArrayPool<JournalRow>.Shared;
         protected readonly JournalConfig JournalConfig;
 
         protected readonly ILoggingAdapter Logger;
@@ -49,10 +50,10 @@ namespace Akka.Persistence.Sql.Journal.Dao
         /// <summary>
         /// Bounded input channel replacing the old <c>Source.Queue</c>.
         /// Uses <see cref="BoundedChannelFullMode.Wait"/> for natural backpressure
-        /// instead of <c>OverflowStrategy.DropNew</c> (which silently dropped writes). 🌸
+        /// instead of <c>OverflowStrategy.DropNew</c> (which silently dropped writes).
         ///
         /// <para>
-        /// <b>CopilotNote:</b> The writer side (<c>_inputChannel.Writer</c>) is used in
+        /// The writer side (<c>_inputChannel.Writer</c>) is used in
         /// <see cref="QueueWriteJournalRows"/> to enqueue entries. The reader side is
         /// consumed by <see cref="_batcher"/>.
         /// </para>
@@ -62,14 +63,8 @@ namespace Akka.Persistence.Sql.Journal.Dao
         /// <summary>
         /// Weighted batcher that wraps <see cref="_inputChannel"/>'s reader and eagerly
         /// aggregates <see cref="WriteQueueEntry"/> items into <see cref="WriteQueueSet"/>
-        /// batches up to <c>BatchSize</c> total row cost. This IS a
-        /// <see cref="ChannelReader{WriteQueueSet}"/> — it feeds directly into
-        /// <c>Source.ChannelReader</c> for downstream Akka Streams processing. ✨
-        ///
-        /// <para>
-        /// <b>CopilotNote:</b> Replaces the old <c>BatchWeighted</c> Akka Streams stage
-        /// with pure channel-based batching via <see cref="ChannelQueueWithBatch{TInput,TBatch}"/>.
-        /// </para>
+        /// batches up to <c>BatchSize</c> total row cost. it feeds directly into
+        /// <c>Source.ChannelReader</c> for downstream Akka Streams processing. 
         /// </summary>
         private readonly ChannelQueueWithBatch<WriteQueueEntry, WriteQueueSet> _batcher;
 
@@ -102,14 +97,13 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 {
                     FullMode = BoundedChannelFullMode.Wait,
                     SingleReader = true,
+                    AllowSynchronousContinuations = false,
                 });
 
             _batcher = new ChannelQueueWithBatch<WriteQueueEntry, WriteQueueSet>(
                 _inputChannel.Reader,
                 maxWeight: 
-                // Sub 100 MaxWeight improves throughput for most cases
-                //10,
-                // or
+                // Sub 100 MaxWeight improves throughput for most cases...
                 JournalConfig.DaoConfig.BatchSize,
                 costFunction: entry => entry.Rows.Count,
                 seed: r => new WriteQueueSet(
@@ -122,23 +116,11 @@ namespace Akka.Persistence.Sql.Journal.Dao
                         oldRows.Rows.Concat(newRows.Rows),
                         oldRows.CancellationTokens.Add(newRows.CancellationToken)));
 
-            // The batcher IS a ChannelReader<WriteQueueSet> — pipe it into Akka Streams ✨
             Source.ChannelReader(_batcher)
-                //.Async()
-                //.Buffer(JournalConfig.DaoConfig.Parallelism, OverflowStrategy.Backpressure)
-                //.Async()
                 .SelectAsync(
                     JournalConfig.DaoConfig.Parallelism,
                     async promisesAndRows =>
                     {
-                        // if (promisesAndRows.Rows.Length > 1)
-                        // {
-                        //     logger.Error("Writing journal rows in parallel, total rows {prows}", promisesAndRows.Rows.Length);
-                        // }
-                        // else
-                        // {
-                        //     logger.Error("Writing single row");
-                        // }
                         try
                         {
                             await WriteJournalRows(promisesAndRows.Rows, promisesAndRows.CancellationTokens);
@@ -352,12 +334,10 @@ namespace Akka.Persistence.Sql.Journal.Dao
         private async Task QueueWriteJournalRows(Seq<JournalRow> xs, CancellationToken cancellationToken)
         {
             var promise = new TaskCompletionSource<NotUsed>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-            // TryWrite is non-blocking. With FullMode=Wait it returns false when the
-            // channel is at capacity or completed — never silently drops items. ✨
+            
             if (!_inputChannel.Writer.TryWrite(new WriteQueueEntry(promise, xs, cancellationToken)))
             {
-                // Distinguish full vs faulted vs closed — mirrors original QueueOfferResult cases
+                // Distinguish full vs faulted vs closed
                 var completionException = _batcher.Completion.Exception;
                 if (completionException is not null)
                     promise.TrySetException(new Exception("Failed to write journal row batch", completionException));
@@ -416,12 +396,10 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     {
                         if (_useTagTableAsQueryable)
                         {
-                            //Logger.Error("TagTable");
                             await RunFastInsertNoEventParams(connection, xs, JournalConfig.DaoConfig, token);
                         }
                         else
                         {
-                            //Logger.Error("Striding");
                             var config = JournalConfig.DaoConfig;
                             var tail = xs;
                             while (tail.Count > 0)
@@ -441,7 +419,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 });
         }
 
-        public class JournalRowIns
+        public sealed class JournalRowIns
         {
             public string PersistenceId { get; set; }
             public long SequenceNumber { get; set; }
@@ -452,38 +430,72 @@ namespace Akka.Persistence.Sql.Journal.Dao
             public int? Identifier { get; set; }
             public string? WriterUuid { get; set; }
         }
-        
-        private readonly ArrayPool<JournalRow> _journalRowPool = ArrayPool<JournalRow>.Shared;
 
         protected async Task RunFastInsertNoEventParams(AkkaDataConnection connection, Seq<JournalRow> xs, BaseByteArrayJournalDaoConfig journalConfigDaoConfig, CancellationToken token)
         {
-            //await Task.Yield();
             var roundTripByteLimit = JournalConfig.DaoConfig.AsQueryableInsertSqlLengthLimit;
-            var rowLimit = xs.Length > JournalConfig.DaoConfig.BatchSize ? xs.Length : 
-            //    10; 
-            JournalConfig.DaoConfig.BatchSize; // IDK
+            var rowLimit =
+                xs.Length > JournalConfig.DaoConfig.BatchSize
+                    ? xs.Length
+                    : JournalConfig.DaoConfig.BatchSize;
             var currRows = 0;
             var currBytes = 0;
             var thisInsTagSize = 0;
             Dictionary<(string PersistenceId, long SequenceNumber), string[]> tagDict 
                 = new Dictionary<(string persistenceId, long sequenceNumber), string[]>();
-            var insertList = _journalRowPool.Rent(rowLimit);
-            //var insertList = new List<JournalRow>(rowLimit);
-            foreach (var journalRow in xs)
+            JournalRow[]? insertList = null;
+            try
             {
-                // We don't worry about adding 1024 on this check cause it's overparanoid padding anyway.
-                if (journalRow.Message.Length + currBytes * 2 > roundTripByteLimit || currRows >= rowLimit)
+                insertList = JournalRowPool.Rent(rowLimit);
+                foreach (var journalRow in xs)
                 {
-                    // if (journalRow.Message.Length + currBytes * 2 > roundTripByteLimit)
-                    // {
-                    //     Logger.Error("Hit RT Byte limit, bytes in batch {currBytes}, incoming message size {msgSize}, tags size {tagSize}, total {totalSize}, row {row}",
-                    //         currBytes, journalRow.Message.Length * 2, thisInsTagSize, journalRow.Message.Length * 2 + thisInsTagSize, currRows);
-                    // }
-                    // else if (currRows >= rowLimit)
-                    // {
-                    //     Logger.Error("Hit Row limit, bytes in batch {currBytes}, incoming message size {msgSize}, tags size {tagSize}, total {totalSize}, row {row}",
-                    //         currBytes, journalRow.Message.Length * 2, thisInsTagSize, journalRow.Message.Length * 2 + thisInsTagSize, currRows);
-                    // }
+                    // We don't worry about adding other columns on this check cause we are overparanoid on row padding anyway.
+                    if ((journalRow.Message.Length *2) + currBytes > roundTripByteLimit || currRows >= rowLimit)
+                    {
+                        // if (journalRow.Message.Length + currBytes * 2 > roundTripByteLimit)
+                        // {
+                        //     Logger.Error("Hit RT Byte limit, bytes in batch {currBytes}, incoming message size {msgSize}, tags size {tagSize}, total {totalSize}, row {row}",
+                        //         currBytes, journalRow.Message.Length * 2, thisInsTagSize, journalRow.Message.Length * 2 + thisInsTagSize, currRows);
+                        // }
+                        // else if (currRows >= rowLimit)
+                        // {
+                        //     Logger.Error("Hit Row limit, bytes in batch {currBytes}, incoming message size {msgSize}, tags size {tagSize}, total {totalSize}, row {row}",
+                        //         currBytes, journalRow.Message.Length * 2, thisInsTagSize, journalRow.Message.Length * 2 + thisInsTagSize, currRows);
+                        // }
+                        var query = connection.AsQueryable(
+                            insertList.Take(currRows).Select(jr => new JournalRowIns
+                            {
+                                PersistenceId = jr.PersistenceId,
+                                SequenceNumber = jr.SequenceNumber,
+                                Message = jr.Message,
+                                Deleted = jr.Deleted,
+                                Manifest = jr.Manifest,
+                                Timestamp = jr.Timestamp,
+                                Identifier = jr.Identifier,
+                                WriterUuid = jr.WriterUuid
+                            }));
+                        await InsertJournalEntriesWithTags(connection, journalConfigDaoConfig, token, tagDict, query, thisInsTagSize);
+                        tagDict.Clear();
+                        currRows = 0;
+                        currBytes = 0;
+                        thisInsTagSize = 0;
+                    }
+
+                    tagDict[(journalRow.PersistenceId, journalRow.SequenceNumber)]
+                        = journalRow.TagArray;
+                    thisInsTagSize = thisInsTagSize + journalRow.TagArray.Length;
+                    currRows++;
+                    // ByteLength *2
+                    //  + 2048 for padding
+                    // (i.e. Serializer manifests, persistence IDs, sequence numbers etc.)
+                    currBytes +=
+                        (journalRow.Message.Length * 2 + 2048);
+                    insertList[currRows - 1] = (journalRow);
+
+                }
+
+                if (currBytes > 0 || currRows > 0)
+                {
                     var query = connection.AsQueryable(
                         insertList.Take(currRows).Select(jr => new JournalRowIns
                         {
@@ -497,49 +509,20 @@ namespace Akka.Persistence.Sql.Journal.Dao
                             WriterUuid = jr.WriterUuid
                         }));
                     await InsertJournalEntriesWithTags(connection, journalConfigDaoConfig, token, tagDict, query, thisInsTagSize);
-                    //System.Array.Clear(insertList);
-                    //insertList.Clear();
-                    tagDict.Clear();
-                    currRows = 0;
-                    currBytes = 0;
-                    thisInsTagSize = 0;
                 }
-
-                tagDict[(journalRow.PersistenceId, journalRow.SequenceNumber)]
-                    = journalRow.TagArray;
-                thisInsTagSize = thisInsTagSize + journalRow.TagArray.Length;
-                currRows++;
-                // ByteLength *2
-                //  + 2048 for padding
-                // (i.e. Serializer manifests, persistence IDs, sequence numbers etc.)
-                currBytes +=
-                    (journalRow.Message.Length * 2 + 2048);
-                insertList[currRows-1] = (journalRow);
-
             }
-
-            if (currBytes > 0 || currRows > 0)
+            finally
             {
-                var query = connection.AsQueryable(
-                    insertList.Take(currRows).Select(jr => new JournalRowIns
-                    {
-                        PersistenceId = jr.PersistenceId,
-                        SequenceNumber = jr.SequenceNumber,
-                        Message = jr.Message,
-                        Deleted = jr.Deleted,
-                        Manifest = jr.Manifest,
-                        Timestamp = jr.Timestamp,
-                        Identifier = jr.Identifier,
-                        WriterUuid = jr.WriterUuid
-                    }));
-                await InsertJournalEntriesWithTags(connection, journalConfigDaoConfig, token, tagDict, query, thisInsTagSize);
-            }
+                if (insertList is not null)
+                {
 #if NET6_0_OR_GREATER
-            System.Array.Clear(insertList);
+                    System.Array.Clear(insertList);
 #else
-            System.Array.Clear(insertList, 0, insertList.Length);
+                    System.Array.Clear(insertList, 0, insertList.Length);
 #endif
-            _journalRowPool.Return(insertList);
+                    JournalRowPool.Return(insertList);
+                }
+            }
         }
 
 
@@ -552,8 +535,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
             int thisInsTagSize)
         {
             var inserted = await (this.JournalConfig.TableConfig.EventJournalTable.UseWriterUuidColumn
-                ? //query.InsertWithOutputAsync(
-                    query.InsertWithOutputListAsync(    
+                ? query.InsertWithOutputListAsync(    
                         connection.GetTable<JournalRow>(),
                         (input) =>
                             new JournalRow()
@@ -567,10 +549,9 @@ namespace Akka.Persistence.Sql.Journal.Dao
                                 Identifier = input.Identifier,
                                 WriterUuid = input.WriterUuid,
                             },
-                        (inserted) => new { inserted.Ordering, inserted.PersistenceId, inserted.SequenceNumber })
-                    //.ToListAsync(token)
-                
-                : //query.InsertWithOutputAsync(
+                        (inserted) => new { inserted.Ordering, inserted.PersistenceId, inserted.SequenceNumber },
+                        token)
+                : 
                 query.InsertWithOutputListAsync(
                         connection.GetTable<JournalRow>(),
                         (input) =>
@@ -584,8 +565,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                                 Timestamp = input.Timestamp,
                                 Identifier = input.Identifier,
                             },
-                        (inserted) => new { inserted.Ordering, inserted.PersistenceId, inserted.SequenceNumber })
-                    // .ToListAsync(token)
+                        (inserted) => new { inserted.Ordering, inserted.PersistenceId, inserted.SequenceNumber }, token)
                 );
             var insertList = new List<JournalTagRow>(thisInsTagSize);
             foreach (var ir in inserted)
@@ -604,16 +584,6 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
             var tagsToInsert =
                 insertList;
-                // inserted.Join(
-                //     tagDict,
-                //     i => (i.PersistenceId, i.SequenceNumber),
-                //     d => d.Key,
-                //     (i, d) =>
-                //         d.Value.Select(t => new JournalTagRow()
-                //                 { OrderingId = i.Ordering, PersistenceId = i.PersistenceId, SequenceNumber = i.SequenceNumber, TagValue = t })
-                //             //.ToList()
-                // )
-                // .ToList();
                     
             await connection.GetTable<JournalTagRow>()
                 .BulkCopyAsync(
