@@ -117,6 +117,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                         oldRows.CancellationTokens.Add(newRows.CancellationToken)));
 
             Source.ChannelReader(_batcher)
+                .Buffer(JournalConfig.DaoConfig.Parallelism, OverflowStrategy.Backpressure)
                 .SelectAsync(
                     JournalConfig.DaoConfig.Parallelism,
                     async promisesAndRows =>
