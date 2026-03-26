@@ -585,9 +585,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                         .WithBulkCopyType(BulkCopyType.MultipleRows)
                         .WithUseParameters(journalConfigDaoConfig.PreferParametersOnMultiRowInsert)
                         .WithMaxBatchSize(journalConfigDaoConfig.DbRoundTripTagBatchSize),
-                    tagsToInsert
-                    ,
-                        //.SelectMany(t => t),
+                    tagsToInsert,
                     token);
         }
 
