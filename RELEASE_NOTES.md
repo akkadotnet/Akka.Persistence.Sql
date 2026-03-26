@@ -1,3 +1,9 @@
+#### 1.5.62 March 26th 2026 ####
+
+* [Bump Akka.NET to 1.5.62](https://github.com/akkadotnet/akka.net/releases/tag/1.5.62)
+* [Bump Akka.Hosting to 1.5.62](https://github.com/akkadotnet/Akka.Hosting/releases/tag/1.5.62)
+* [Fix SQL Server 2016 tag table compatibility bug](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/581) - Fix `StringAggregate()` Linq2DB bug on SQLServer 2016 and below.
+
 #### 1.5.60.1 February 14th 2026 ####
 
 * [Bump Akka.NET to 1.5.60](https://github.com/akkadotnet/akka.net/releases/tag/1.5.60)
