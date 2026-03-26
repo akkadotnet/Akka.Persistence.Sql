@@ -453,16 +453,6 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     // We don't worry about adding other columns on this check cause we are overparanoid on row padding anyway.
                     if ((journalRow.Message.Length *2) + currBytes > roundTripByteLimit || currRows >= rowLimit)
                     {
-                        // if (journalRow.Message.Length + currBytes * 2 > roundTripByteLimit)
-                        // {
-                        //     Logger.Error("Hit RT Byte limit, bytes in batch {currBytes}, incoming message size {msgSize}, tags size {tagSize}, total {totalSize}, row {row}",
-                        //         currBytes, journalRow.Message.Length * 2, thisInsTagSize, journalRow.Message.Length * 2 + thisInsTagSize, currRows);
-                        // }
-                        // else if (currRows >= rowLimit)
-                        // {
-                        //     Logger.Error("Hit Row limit, bytes in batch {currBytes}, incoming message size {msgSize}, tags size {tagSize}, total {totalSize}, row {row}",
-                        //         currBytes, journalRow.Message.Length * 2, thisInsTagSize, journalRow.Message.Length * 2 + thisInsTagSize, currRows);
-                        // }
                         var query = connection.AsQueryable(
                             insertList.Take(currRows).Select(jr => new JournalRowIns
                             {
