@@ -53,3 +53,4 @@ namespace Akka.Persistence.Sql.Tests
         }
     }
 }
+
