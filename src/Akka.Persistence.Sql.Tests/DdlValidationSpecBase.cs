@@ -21,12 +21,12 @@ using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Streams;
 using Akka.Streams.TestKit;
 using Akka.TestKit;
-using Akka.TestKit.Xunit2;
-using Akka.TestKit.Xunit2.Internals;
+using Akka.TestKit.Xunit;
+using Akka.TestKit.Xunit.Internals;
 using FluentAssertions;
 using FluentAssertions.Extensions;
 using LinqToDB.Data;
-using Xunit.Abstractions;
+using Xunit;
 
 #nullable enable
 namespace Akka.Persistence.Sql.Tests
@@ -155,7 +155,7 @@ namespace Akka.Persistence.Sql.Tests
 
             InitializeLogger(sys);
 
-            var testKit = new Akka.TestKit.Xunit2.TestKit(sys);
+            var testKit = new Akka.TestKit.Xunit.TestKit(sys);
 
             try
             {

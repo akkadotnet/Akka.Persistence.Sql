@@ -21,7 +21,6 @@ using Akka.Streams;
 using FluentAssertions;
 using LanguageExt.UnitsOfMeasure;
 using Xunit;
-using Xunit.Abstractions;
 using Xunit.Sdk;
 
 namespace Akka.Persistence.Sql.Data.Compatibility.Tests
@@ -54,7 +53,7 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests
 
         protected abstract TestSettings Settings { get; }
 
-        public async Task InitializeAsync()
+        public async ValueTask InitializeAsync()
         {
             await Fixture.InitializeAsync();
             await InitializeTestAsync();
@@ -62,7 +61,7 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests
             await TestCluster.StartAsync();
         }
 
-        public async Task DisposeAsync()
+        public async ValueTask DisposeAsync()
         {
             if (TestCluster is not null)
                 await TestCluster.DisposeAsync();

@@ -17,7 +17,6 @@ using Akka.Persistence.TCK;
 using FluentAssertions;
 using LanguageExt.UnitsOfMeasure;
 using Xunit;
-using Xunit.Abstractions;
 using static FluentAssertions.FluentActions;
 
 namespace Akka.Persistence.Sql.Tests;

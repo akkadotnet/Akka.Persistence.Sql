@@ -11,11 +11,10 @@ using Akka.Persistence.Sql.Query;
 using FluentAssertions;
 using FluentAssertions.Extensions;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Tests.Query;
 
-public class QueryThrottlerSpecs: Akka.TestKit.Xunit2.TestKit
+public class QueryThrottlerSpecs: Akka.TestKit.Xunit.TestKit
 {
     public QueryThrottlerSpecs(ITestOutputHelper output) : base("{}", output)
     {

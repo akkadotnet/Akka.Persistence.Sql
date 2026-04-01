@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Configuration;
 using Akka.Persistence.Query;
@@ -17,29 +16,22 @@ using Akka.Persistence.TCK.Query;
 using Akka.TestKit.Extensions;
 using FluentAssertions.Extensions;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Tests.Common.Query
 {
-    public abstract class BaseCurrentEventsByTagSpec<T> : CurrentEventsByTagSpec, IAsyncLifetime where T : ITestContainer
+    public abstract class BaseCurrentEventsByTagSpec<T> : CurrentEventsByTagSpec where T : ITestContainer
     {
         protected BaseCurrentEventsByTagSpec(TagMode tagMode, ITestOutputHelper output, string name, T fixture)
             : base(Config(tagMode, fixture), name, output)
-            => ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
-
-        protected override bool SupportsTagsInEventEnvelope => true;
-
-        public async Task InitializeAsync()
         {
-            // Force start read journal
-            var journal = Persistence.Instance.Apply(Sys).JournalFor(null);
+            ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
 
-            // Wait until journal is ready
-            var _ = await journal.Ask<Initialized>(IsInitialized.Instance).ShouldCompleteWithin(3.Seconds());
+            // Force start read journal and wait until it is ready
+            var journal = Persistence.Instance.Apply(Sys).JournalFor(null);
+            journal.Ask<Initialized>(IsInitialized.Instance).Wait(3.Seconds());
         }
 
-        public Task DisposeAsync()
-            => Task.CompletedTask;
+        protected override bool SupportsTagsInEventEnvelope => true;
 
         private static Configuration.Config Config(TagMode tagMode, T fixture)
         {

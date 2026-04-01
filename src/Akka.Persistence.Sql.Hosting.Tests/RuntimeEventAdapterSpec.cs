@@ -15,7 +15,6 @@ using Akka.Streams.Dsl;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Hosting.Tests;
 

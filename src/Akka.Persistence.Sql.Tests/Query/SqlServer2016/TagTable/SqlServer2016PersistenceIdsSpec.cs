@@ -9,7 +9,6 @@ using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.Sql.Tests.Common.Query;
 using Akka.Persistence.Sql.Tests.SqlServer;
 using Xunit;
-using Xunit.Abstractions;
 #if !DEBUG
 using Akka.Persistence.Sql.Tests.Common.Internal.Xunit;
 #endif

@@ -15,7 +15,6 @@ using Akka.Streams.TestKit;
 using FluentAssertions;
 using LanguageExt.UnitsOfMeasure;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Hosting.Tests
 {

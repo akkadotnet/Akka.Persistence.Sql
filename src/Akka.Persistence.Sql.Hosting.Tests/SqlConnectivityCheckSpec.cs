@@ -12,7 +12,6 @@ using Akka.Persistence.Sql.Tests.Common.Containers;
 using FluentAssertions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Hosting.Tests
 {
@@ -27,12 +26,12 @@ namespace Akka.Persistence.Sql.Hosting.Tests
             _container = new SqliteContainer();
         }
 
-        public async Task InitializeAsync()
+        public async ValueTask InitializeAsync()
         {
             await _container.InitializeAsync();
         }
 
-        public async Task DisposeAsync()
+        public async ValueTask DisposeAsync()
         {
             await _container.DisposeAsync();
         }

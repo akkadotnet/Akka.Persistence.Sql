@@ -22,6 +22,6 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
 
         public event EventHandler<OutputReceivedArgs> OnStdOut;
 
-        public Task InitializeAsync();
+        public ValueTask InitializeAsync();
     }
 }

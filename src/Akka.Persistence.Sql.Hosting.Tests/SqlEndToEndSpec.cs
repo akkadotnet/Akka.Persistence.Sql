@@ -16,7 +16,6 @@ using LanguageExt.UnitsOfMeasure;
 using LinqToDB;
 using Microsoft.Extensions.Logging;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Hosting.Tests
 {

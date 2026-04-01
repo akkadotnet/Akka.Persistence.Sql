@@ -4,16 +4,14 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
-using Xunit.Abstractions;
-using Xunit.Sdk;
+using System.Reflection;
+using Xunit.v3;
 
 namespace Akka.Persistence.Sql.Tests.Common.Internal.Xunit
 {
     public class SqlTestFramework : XunitTestFramework
     {
-        public SqlTestFramework(IMessageSink messageSink) : base(messageSink) { }
-
-        protected override ITestFrameworkDiscoverer CreateDiscoverer(IAssemblyInfo assemblyInfo)
-            => new SqlFrameworkDiscoverer(assemblyInfo, SourceInformationProvider, DiagnosticMessageSink);
+        protected override ITestFrameworkDiscoverer CreateDiscoverer(Assembly assembly)
+            => new SqlFrameworkDiscoverer(new XunitTestAssembly(assembly, version: assembly.GetName().Version));
     }
 }

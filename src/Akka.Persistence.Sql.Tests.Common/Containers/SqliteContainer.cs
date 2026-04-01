@@ -33,7 +33,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
 
         public bool Initialized => _heldConnection is not null;
 
-        public async Task InitializeAsync()
+        public async ValueTask InitializeAsync()
         {
             if (Initialized)
                 return;
@@ -53,7 +53,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
             _heldConnection.Add(conn);
         }
 
-        public async Task DisposeAsync()
+        public async ValueTask DisposeAsync()
         {
             if (_heldConnection is null)
                 return;
