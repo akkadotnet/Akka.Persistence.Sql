@@ -2,6 +2,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>$(NetCoreTestVersion)</TargetFramework>
+    <StartupObject>Akka.Persistence.Sql.IndexHelperApp.Program</StartupObject>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
