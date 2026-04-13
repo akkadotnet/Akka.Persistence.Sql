@@ -18,13 +18,12 @@ using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Streams;
 using Akka.Streams.TestKit;
 using Akka.TestKit;
-using Akka.TestKit.Xunit2;
-using Akka.TestKit.Xunit2.Internals;
+using Akka.TestKit.Xunit;
+using Akka.TestKit.Xunit.Internals;
 using FluentAssertions;
 using LanguageExt.UnitsOfMeasure;
 using LinqToDB;
 using Xunit;
-using Xunit.Abstractions;
 
 #nullable enable
 namespace Akka.Persistence.Sql.Tests
@@ -69,7 +68,7 @@ akka.test.single-expect-default = 10s
             _output = output;
         }
 
-        public async Task InitializeAsync()
+        public async ValueTask InitializeAsync()
         {
             await _fixture.InitializeAsync();
             
@@ -87,7 +86,7 @@ akka.test.single-expect-default = 10s
             _persistenceActor = Sys.ActorOf(Props.Create(() => new MyPersistenceActor(PId)), "persistence-actor-1");
         }
 
-        public async Task DisposeAsync()
+        public async ValueTask DisposeAsync()
         {
             await Sys.Terminate();
             // Do NOT call _fixture.DisposeAsync() here - xUnit manages the collection fixture lifecycle.

@@ -13,7 +13,6 @@ using Akka.Persistence.TCK.Query;
 using Akka.Streams;
 using Akka.Streams.TestKit;
 using Xunit;
-using Xunit.Abstractions;
 using Xunit.Sdk;
 using Akka.Persistence.Sql.Query;
 using FluentAssertions.Extensions;

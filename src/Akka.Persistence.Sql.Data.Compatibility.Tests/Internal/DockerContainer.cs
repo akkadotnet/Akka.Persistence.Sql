@@ -58,7 +58,7 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
 
         public event EventHandler<OutputReceivedArgs> OnStdOut;
 
-        public async Task InitializeAsync()
+        public async ValueTask InitializeAsync()
         {
             var images = await Client.Images.ListImagesAsync(
                 new ImagesListParameters

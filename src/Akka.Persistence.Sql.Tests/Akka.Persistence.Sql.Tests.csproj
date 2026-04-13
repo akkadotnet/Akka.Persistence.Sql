@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>$(NetCoreTestVersion)</TargetFramework>
+    <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
@@ -16,6 +17,7 @@
     <PackageReference Include="Akka.Serialization.Hyperion" />
 
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
 
     <PackageReference Include="System.Data.SQLite.Core" />
   </ItemGroup>

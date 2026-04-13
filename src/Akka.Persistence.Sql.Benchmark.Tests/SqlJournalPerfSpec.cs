@@ -21,11 +21,10 @@ using JetBrains.dotMemoryUnit;
 using JetBrains.dotMemoryUnit.Kernel;
 using MathNet.Numerics.Statistics;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Benchmark.Tests
 {
-    public abstract class SqlJournalPerfSpec<T> : Akka.TestKit.Xunit2.TestKit where T : ITestContainer
+    public abstract class SqlJournalPerfSpec<T> : Akka.TestKit.Xunit.TestKit where T : ITestContainer
     {
         // Number of measurement iterations each test will be run.
         private const int MeasurementIterations = 101;

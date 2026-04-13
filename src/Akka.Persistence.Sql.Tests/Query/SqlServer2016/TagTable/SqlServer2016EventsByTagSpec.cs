@@ -19,7 +19,6 @@ using LinqToDB.Data;
 using LinqToDB.DataProvider.SqlServer;
 using LinqToDB.Internal.DataProvider.SqlServer;
 using Xunit;
-using Xunit.Abstractions;
 #if !DEBUG
 using Akka.Persistence.Sql.Tests.Common.Internal.Xunit;
 #endif

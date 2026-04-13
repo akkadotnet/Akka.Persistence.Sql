@@ -16,7 +16,6 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using FluentAssertions;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Data.Compatibility.Tests
 {

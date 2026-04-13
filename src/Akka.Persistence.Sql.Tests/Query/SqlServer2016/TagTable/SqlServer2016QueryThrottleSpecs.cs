@@ -8,10 +8,15 @@ using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.Sql.Tests.SqlServer;
 using Xunit;
-using Xunit.Abstractions;
+#if !DEBUG
+using Akka.Persistence.Sql.Tests.Common.Internal.Xunit;
+#endif
 
 namespace Akka.Persistence.Sql.Tests.Query.SqlServer2016.TagTable;
 
+#if !DEBUG
+[SkipWindows]
+#endif
 [Collection(nameof(SqlServer2016PersistenceSpec))]
 public class SqlServer2016QueryThrottleSpecs : QueryThrottleSpecsBase<SqlServer2016Container>
 {

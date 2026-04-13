@@ -18,7 +18,6 @@ using FluentAssertions;
 using FluentAssertions.Extensions;
 using LinqToDB;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Hosting.Tests
 {

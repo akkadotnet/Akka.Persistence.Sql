@@ -11,7 +11,6 @@ using Akka.Persistence.TCK.Snapshot;
 using FluentAssertions;
 using FluentAssertions.Extensions;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Tests
 {

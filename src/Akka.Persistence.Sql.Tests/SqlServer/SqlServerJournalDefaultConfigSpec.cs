@@ -17,7 +17,6 @@ using FluentAssertions;
 using FluentAssertions.Extensions;
 using LinqToDB.SchemaProvider;
 using Xunit;
-using Xunit.Abstractions;
 using Xunit.Sdk;
 #if !DEBUG
 using Akka.Persistence.Sql.Tests.Common.Internal.Xunit;
@@ -85,7 +84,7 @@ namespace Akka.Persistence.Sql.Tests.SqlServer
             var journal = Persistence.Instance.Apply(Sys).JournalFor(null);
 
             // wait until journal is initialized
-            var _ = await journal.Ask<ActorIdentity>(new Identify(null)).ShouldCompleteWithin(3.Seconds());
+            var _ = await journal.Ask<ActorIdentity>(new Identify(null)).WaitAsync(3.Seconds());
 
             var config = GetConfig();
             var schema = GetSchema(config);

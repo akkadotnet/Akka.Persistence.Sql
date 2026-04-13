@@ -6,7 +6,7 @@
 
 using System;
 using Microsoft.Extensions.Logging;
-using Xunit.Abstractions;
+using Xunit;
 
 namespace Akka.Persistence.Sql.Tests.Common.Internal
 {

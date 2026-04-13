@@ -25,7 +25,7 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Sqlite
 
         public DockerClient? Client => null;
 
-        public Task InitializeAsync()
+        public ValueTask InitializeAsync()
         {
             if (File.Exists("database.db"))
                 File.Delete("database.db");
@@ -36,7 +36,7 @@ namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Sqlite
 
             Console.WriteLine($"Connection string: [{ConnectionString}]");
 
-            return Task.CompletedTask;
+            return default;
         }
 
         // no-op

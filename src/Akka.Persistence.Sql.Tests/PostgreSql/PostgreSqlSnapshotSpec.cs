@@ -10,7 +10,6 @@ using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.TCK.Snapshot;
 using FluentAssertions.Extensions;
 using Xunit;
-using Xunit.Abstractions;
 #if !DEBUG
 using Akka.Persistence.Sql.Tests.Common.Internal.Xunit;
 #endif

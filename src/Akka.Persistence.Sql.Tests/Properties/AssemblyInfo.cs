@@ -4,9 +4,8 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using Akka.Persistence.Sql.Tests.Common.Internal.Xunit;
 using Xunit;
 
 [assembly:
-    TestFramework(
-        "Akka.Persistence.Sql.Tests.Common.Internal.Xunit.SqlTestFramework",
-        "Akka.Persistence.Sql.Tests.Common")]
+    TestFramework(typeof(SqlTestFramework))]

@@ -14,7 +14,6 @@ using Akka.Persistence.Sql.Tests.Internal.Events;
 using Akka.TestKit;
 using FluentAssertions.Extensions;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Tests
 {
