@@ -15,27 +15,20 @@ using Akka.Streams;
 using Akka.Streams.TestKit;
 using FluentAssertions.Extensions;
 using Xunit;
-using Xunit.Abstractions;
 using Xunit.Sdk;
 
 namespace Akka.Persistence.Sql.Tests.Common.Query
 {
-    public abstract class Bugfix344Spec<T> : Akka.TestKit.Xunit2.TestKit, IAsyncLifetime where T : ITestContainer
+    public abstract class Bugfix344Spec<T> : Akka.TestKit.Xunit.TestKit where T : ITestContainer
     {
         protected Bugfix344Spec(ITestOutputHelper output, T fixture) : base(config:Config(TagMode.TagTable, fixture), output:output)
         {
             ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
             Materializer = Sys.Materializer();
-        } 
-        
+        }
+
         protected ActorMaterializer Materializer { get; }
         protected IReadJournal? ReadJournal { get; set; }
-
-        public Task InitializeAsync()
-            => Task.CompletedTask;
-
-        public Task DisposeAsync()
-            => Task.CompletedTask;
 
         [Fact]
         public async Task ReadJournal_should_initialize_tables_when_started_before_WriteJournal()

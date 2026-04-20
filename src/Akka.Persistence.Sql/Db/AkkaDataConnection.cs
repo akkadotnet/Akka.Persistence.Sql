@@ -13,6 +13,7 @@ using Akka.Persistence.Sql.Snapshot;
 using LinqToDB;
 using LinqToDB.Data;
 using LinqToDB.DataProvider;
+using LinqToDB.DataProvider.SqlServer;
 using LinqToDB.SchemaProvider;
 
 namespace Akka.Persistence.Sql.Db
@@ -35,6 +36,23 @@ namespace Akka.Persistence.Sql.Db
         public bool UseDateTime { get; }
 
         public IDataProvider DataProvider => _connection.DataProvider;
+
+        /// <summary>
+        /// Checks whether the resolved data provider supports SQL-level string aggregation
+        /// (STRING_AGG for SQL Server 2017+, GROUP_CONCAT for MySQL/SQLite).
+        /// Uses LinqToDB's auto-detected <see cref="SqlServerVersion"/> when available.
+        /// </summary>
+        internal bool SupportsStringAggregate
+        {
+            get
+            {
+                if (_connection.DataProvider is SqlServerDataProvider sqlServerProvider)
+                    return sqlServerProvider.Version >= SqlServerVersion.v2017;
+
+                // All non-SQL Server providers (PostgreSQL, MySQL, SQLite) support StringAggregate
+                return true;
+            }
+        }
 
         public ValueTask DisposeAsync()
             => _connection.DisposeAsync();

@@ -6,7 +6,6 @@
 
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Tests.Sqlite
 {

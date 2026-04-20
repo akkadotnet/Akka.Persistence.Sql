@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Configuration;
 using Akka.Persistence.Query;
@@ -17,27 +16,20 @@ using Akka.Persistence.TCK.Query;
 using Akka.TestKit.Extensions;
 using FluentAssertions.Extensions;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Tests.Common.Query
 {
-    public abstract class BaseEventsByPersistenceIdSpec<T> : EventsByPersistenceIdSpec, IAsyncLifetime where T : ITestContainer
+    public abstract class BaseEventsByPersistenceIdSpec<T> : EventsByPersistenceIdSpec where T : ITestContainer
     {
         protected BaseEventsByPersistenceIdSpec(TagMode tagMode, ITestOutputHelper output, string name, T fixture)
             : base(Config(tagMode, fixture), name, output)
-            => ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
-
-        public async Task InitializeAsync()
         {
-            // Force start read journal
+            ReadJournal = Sys.ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
+
+            // Force start read journal and wait until it is ready
             var journal = Persistence.Instance.Apply(Sys).JournalFor(null);
-
-            // Wait until journal is ready
-            var _ = await journal.Ask<Initialized>(IsInitialized.Instance).ShouldCompleteWithin(3.Seconds());
+            journal.Ask<Initialized>(IsInitialized.Instance).Wait(3.Seconds());
         }
-
-        public Task DisposeAsync()
-            => Task.CompletedTask;
 
         private static Configuration.Config Config(TagMode tagMode, T fixture)
         {

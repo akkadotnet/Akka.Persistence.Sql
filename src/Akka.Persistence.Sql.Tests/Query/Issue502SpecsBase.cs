@@ -28,7 +28,6 @@ using Akka.Util;
 using FluentAssertions;
 using FluentAssertions.Extensions;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Tests.Query
 {
@@ -121,7 +120,7 @@ namespace Akka.Persistence.Sql.Tests.Query
             var probe = reader.CurrentAllEvents(Offset.NoOffset())
                 .RunWith(this.SinkProbe<EventEnvelope>(), _materializer);
 
-            await probe.ExpectSubscriptionAsync().ShouldCompleteWithin(1.Seconds());
+            await probe.ExpectSubscriptionAsync().WaitAsync(1.Seconds());
             await probe.RequestAsync(10);
         
             await ValidateRepresentation(probe, "a", 1L, "hello");
@@ -161,7 +160,7 @@ namespace Akka.Persistence.Sql.Tests.Query
             var probe = reader.CurrentAllEvents(Offset.NoOffset())
                 .RunWith(this.SinkProbe<EventEnvelope>(), _materializer);
 
-            await probe.ExpectSubscriptionAsync().ShouldCompleteWithin(1.Seconds());
+            await probe.ExpectSubscriptionAsync().WaitAsync(1.Seconds());
             await probe.RequestAsync(10);
         
             await ValidateRepresentation(probe, "a", 1L, "hello");

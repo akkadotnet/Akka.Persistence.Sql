@@ -5,44 +5,42 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Linq;
-using Xunit.Abstractions;
+using System.Reflection;
+using System.Threading.Tasks;
 using Xunit.Sdk;
+using Xunit.v3;
 
 namespace Akka.Persistence.Sql.Tests.Common.Internal.Xunit
 {
     public class SqlFrameworkDiscoverer : XunitTestFrameworkDiscoverer
     {
         public SqlFrameworkDiscoverer(
-            IAssemblyInfo assemblyInfo,
-            ISourceInformationProvider sourceProvider,
-            IMessageSink diagnosticMessageSink,
+            IXunitTestAssembly testAssembly,
             IXunitTestCollectionFactory? collectionFactory = null)
-            : base(assemblyInfo, sourceProvider, diagnosticMessageSink, collectionFactory) { }
+            : base(testAssembly, collectionFactory) { }
 
-        protected override bool IsValidTestClass(ITypeInfo type)
+        protected override bool IsValidTestClass(Type type)
         {
             var isUnix = Environment.OSVersion.Platform == PlatformID.Unix;
-            var skipLinux = type.GetCustomAttributes(typeof(SkipLinuxAttribute)).Any() && isUnix;
-            var skipWindows = type.GetCustomAttributes(typeof(SkipWindowsAttribute)).Any() && !isUnix;
-            return !type.IsAbstract || type.IsSealed || skipLinux || skipWindows;
+            var skipLinux = type.GetCustomAttribute<SkipLinuxAttribute>() is not null && isUnix;
+            var skipWindows = type.GetCustomAttribute<SkipWindowsAttribute>() is not null && !isUnix;
+            return (!type.IsAbstract || type.IsSealed) && !skipLinux && !skipWindows;
         }
 
-        protected override bool FindTestsForType(
-            ITestClass testClass,
-            bool includeSourceInformation,
-            IMessageBus messageBus,
-            ITestFrameworkDiscoveryOptions discoveryOptions)
+        protected override async ValueTask<bool> FindTestsForType(
+            IXunitTestClass testClass,
+            ITestFrameworkDiscoveryOptions discoveryOptions,
+            Func<ITestCase, ValueTask<bool>> discoveryCallback)
         {
+            var type = testClass.Class;
             var isUnix = Environment.OSVersion.Platform == PlatformID.Unix;
-            var skipLinux = testClass.Class.GetCustomAttributes(typeof(SkipLinuxAttribute)).Any() && isUnix;
-            var skipWindows = testClass.Class.GetCustomAttributes(typeof(SkipWindowsAttribute)).Any() && !isUnix;
+            var skipLinux = type.GetCustomAttribute<SkipLinuxAttribute>() is not null && isUnix;
+            var skipWindows = type.GetCustomAttribute<SkipWindowsAttribute>() is not null && !isUnix;
 
-            return !skipLinux && !skipWindows && base.FindTestsForType(
-                testClass,
-                includeSourceInformation,
-                messageBus,
-                discoveryOptions);
+            if (skipLinux || skipWindows)
+                return true; // skip this class but continue discovery
+
+            return await base.FindTestsForType(testClass, discoveryOptions, discoveryCallback);
         }
     }
 }

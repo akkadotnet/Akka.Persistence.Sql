@@ -63,7 +63,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
 
         public event EventHandler<OutputReceivedArgs> OnStdOut;
 
-        public async Task InitializeAsync()
+        public async ValueTask InitializeAsync()
         {
             if (Initialized || _initializing)
                 return;
@@ -162,7 +162,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
             await InitializeDbAsync();
         }
 
-        public async Task DisposeAsync()
+        public async ValueTask DisposeAsync()
         {
             // Perform async cleanup.
             await DisposeAsyncCore().ConfigureAwait(false);

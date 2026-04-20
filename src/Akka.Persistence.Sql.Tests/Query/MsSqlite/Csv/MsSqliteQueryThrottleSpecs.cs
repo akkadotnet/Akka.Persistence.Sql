@@ -8,7 +8,6 @@ using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.Sql.Tests.Sqlite;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Tests.Query.MsSqlite.Csv;
 

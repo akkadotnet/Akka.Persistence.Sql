@@ -9,7 +9,6 @@ using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.Sql.Tests.Common.Query;
 using Akka.Persistence.Sql.Tests.Sqlite;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Tests.Query.Sqlite.TagTable
 {

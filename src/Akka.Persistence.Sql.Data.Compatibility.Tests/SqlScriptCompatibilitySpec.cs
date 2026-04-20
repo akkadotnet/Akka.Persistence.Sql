@@ -9,7 +9,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Akka.Hosting;
 using Akka.Persistence.Sql.Data.Compatibility.Tests.Internal;
-using Xunit.Abstractions;
+using Xunit;
 
 namespace Akka.Persistence.Sql.Data.Compatibility.Tests
 {

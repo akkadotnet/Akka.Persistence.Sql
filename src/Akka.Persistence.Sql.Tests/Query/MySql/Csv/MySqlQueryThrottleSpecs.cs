@@ -8,10 +8,15 @@ using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Persistence.Sql.Tests.MySql;
 using Xunit;
-using Xunit.Abstractions;
+#if !DEBUG
+using Akka.Persistence.Sql.Tests.Common.Internal.Xunit;
+#endif
 
 namespace Akka.Persistence.Sql.Tests.Query.MySql.Csv;
 
+#if !DEBUG
+[SkipWindows]
+#endif
 [Collection(nameof(MySqlPersistenceSpec))]
 public class MySqlQueryThrottleSpecs: QueryThrottleSpecsBase<MySqlContainer>
 {

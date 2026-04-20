@@ -28,7 +28,6 @@ using Akka.Util;
 using FluentAssertions;
 using FluentAssertions.Extensions;
 using Xunit;
-using Xunit.Abstractions;
 
 using static FluentAssertions.FluentActions;
 
@@ -77,7 +76,7 @@ public abstract class QueryThrottleSpecsBase<T> : PluginSpec where T : ITestCont
 
     protected override bool SupportsSerialization => true;
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public ValueTask DisposeAsync() => default;
 
     private static Configuration.Config Config(TagMode tagMode, T fixture)
     {
@@ -152,7 +151,7 @@ akka.test.single-expect-default = 10s
         var probe = dao.AllPersistenceIdsSource(long.MaxValue)
             .RunWith(this.SinkProbe<string>(), _materializer);
 
-        await probe.ExpectSubscriptionAsync().ShouldCompleteWithin(1.Seconds());
+        await probe.ExpectSubscriptionAsync().WaitAsync(1.Seconds());
         await probe.RequestAsync(100);
         await _throttlerProbe.ExpectMsgAsync<RequestQueryStart>();
         var streamActor = _throttlerProbe.LastSender;
@@ -187,7 +186,7 @@ akka.test.single-expect-default = 10s
         var probe = dao.EventsByTag("green", 0, long.MaxValue, long.MaxValue)
             .RunWith(this.SinkProbe<Try<(IPersistentRepresentation, string[], long)>>(), _materializer);
 
-        await probe.ExpectSubscriptionAsync().ShouldCompleteWithin(1.Seconds());
+        await probe.ExpectSubscriptionAsync().WaitAsync(1.Seconds());
         await probe.RequestAsync(10);
         await _throttlerProbe.ExpectMsgAsync<RequestQueryStart>();
         var streamActor = _throttlerProbe.LastSender;
@@ -222,7 +221,7 @@ akka.test.single-expect-default = 10s
         var probe = dao.Events(0, long.MaxValue, long.MaxValue)
             .RunWith(this.SinkProbe<Try<(IPersistentRepresentation, string[], long)>>(), _materializer);
 
-        await probe.ExpectSubscriptionAsync().ShouldCompleteWithin(1.Seconds());
+        await probe.ExpectSubscriptionAsync().WaitAsync(1.Seconds());
         await probe.RequestAsync(10);
         await _throttlerProbe.ExpectMsgAsync<RequestQueryStart>();
         var streamActor = _throttlerProbe.LastSender;
@@ -260,7 +259,7 @@ akka.test.single-expect-default = 10s
         var probe = source
             .RunWith(this.SinkProbe<Try<ReplayCompletion>>(), _materializer);
 
-        await probe.ExpectSubscriptionAsync().ShouldCompleteWithin(1.Seconds());
+        await probe.ExpectSubscriptionAsync().WaitAsync(1.Seconds());
         await probe.RequestAsync(10);
         await _throttlerProbe.ExpectMsgAsync<RequestQueryStart>();
         var streamActor = _throttlerProbe.LastSender;
@@ -297,7 +296,7 @@ akka.test.single-expect-default = 10s
         var probe = dao.JournalSequence(0, long.MaxValue)
             .RunWith(this.SinkProbe<long>(), _materializer);
 
-        await probe.ExpectSubscriptionAsync().ShouldCompleteWithin(1.Seconds());
+        await probe.ExpectSubscriptionAsync().WaitAsync(1.Seconds());
         await probe.RequestAsync(10);
         await _throttlerProbe.ExpectMsgAsync<RequestQueryStart>();
         var streamActor = _throttlerProbe.LastSender;

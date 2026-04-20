@@ -15,7 +15,6 @@ using Akka.Streams.Dsl;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Hosting.Tests;
 
@@ -236,6 +235,7 @@ public class RuntimeEventAdapterSpec : Akka.Hosting.TestKit.TestKit, IClassFixtu
         await persistentActor.Ask<string>(new TestPersistentActor.SaveEvent("event-3"), TimeSpan.FromSeconds(5));
         Output.WriteLine("All events persisted successfully");
 
+        // Wait for events to be fully written and available for querying
         await Task.Delay(1000);
 
         Output.WriteLine($"Event adapter was called {TestEventTagger.CallCount} times");
@@ -245,27 +245,19 @@ public class RuntimeEventAdapterSpec : Akka.Hosting.TestKit.TestKit, IClassFixtu
         var readJournal = PersistenceQuery.Get(Sys)
             .ReadJournalFor<SqlReadJournal>(SqlReadJournal.Identifier);
 
-        var source = readJournal.EventsByTag(TestTag, Offset.NoOffset());
+        // Use CurrentEventsByTag (point-in-time) to avoid picking up tagged events
+        // from the other test method that shares the same database
         var materializer = Sys.Materializer();
+        var taggedEvents = await readJournal.CurrentEventsByTag(TestTag, Offset.NoOffset())
+            .RunWith(Sink.Seq<EventEnvelope>(), materializer);
 
-        var eventsTask = source
-            .Take(3)
-            .RunWith(Sink.Seq<EventEnvelope>(), materializer)
-            .ContinueWith(t => t.Result.ToList());
+        // Filter to only events from the sharding persistence ID
+        var shardingTaggedEvents = taggedEvents
+            .Where(e => e.PersistenceId == $"{PersistenceId}-sharding")
+            .ToList();
 
-        // This should timeout because events aren't tagged
-        var timedOut = false;
-        try
-        {
-            await eventsTask.WaitAsync(TimeSpan.FromSeconds(3));
-        }
-        catch (TimeoutException)
-        {
-            timedOut = true;
-        }
-
-        // Assert - this SHOULD fail, demonstrating the bug
-        timedOut.Should().BeTrue("events should not be tagged when using sharding journal without adapters");
+        // Assert - events persisted through sharding journal should NOT be tagged
+        shardingTaggedEvents.Should().BeEmpty("events should not be tagged when using sharding journal without adapters");
         TestEventTagger.CallCount.Should().Be(0, "adapter should not be called for sharding journal");
     }
 }

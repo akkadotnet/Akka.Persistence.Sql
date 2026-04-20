@@ -6,7 +6,7 @@
 
 using System.Diagnostics;
 using LinqToDB.Data;
-using Xunit.Abstractions;
+using Xunit;
 
 namespace Akka.Persistence.Sql.Data.Compatibility.Tests.Internal
 {

@@ -6,7 +6,6 @@
 
 using MySql.Data.MySqlClient;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Data.Compatibility.Tests.MySql
 {

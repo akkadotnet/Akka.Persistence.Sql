@@ -6,7 +6,6 @@
 
 using Npgsql;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Akka.Persistence.Sql.Data.Compatibility.Tests.PostgreSql
 {
