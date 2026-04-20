@@ -62,7 +62,7 @@ namespace Akka.Persistence.Sql.Utility
         /// <summary>
         /// Overflow item that didn't fit in the previous batch, parked for the next
         /// <see cref="TryRead"/>. This mirrors the <c>_pending</c> field in
-        /// <see cref="Akka.Streams.Dsl.EagerBatchStage{TIn,TOut}"/>. 🌸
+        /// <see cref="Akka.Streams.Dsl.EagerBatchStage{TIn,TOut}"/>.
         /// </summary>
         private (bool HasValue, TInput Value) _pending;
 
@@ -79,7 +79,7 @@ namespace Akka.Persistence.Sql.Utility
         /// Maximum total cost budget for a single batch. Once accumulated cost reaches
         /// this limit, the batch is emitted and the overflow item is parked for the
         /// next read. Maps to the <c>batch-size</c> config value in
-        /// <c>BaseByteArrayJournalDaoConfig</c>. 🌸
+        /// <c>BaseByteArrayJournalDaoConfig</c>.
         /// </param>
         /// <param name="costFunction">
         /// Computes the cost/weight of a single <typeparamref name="TInput"/> element.
@@ -112,7 +112,7 @@ namespace Akka.Persistence.Sql.Utility
 
         /// <summary>
         /// Forwards completion from the underlying input channel reader.
-        /// Completes when the input channel is closed (normally or with an error). ✨
+        /// Completes when the input channel is closed (normally or with an error).
         /// </summary>
         public override Task Completion => _inputReader.Completion;
 
@@ -146,7 +146,7 @@ namespace Akka.Persistence.Sql.Utility
         /// <para>
         /// If an item exceeds the remaining budget, it is parked as a pending overflow
         /// item (like <c>EagerBatchStage._pending</c>) and the current batch is returned.
-        /// The overflow item becomes the seed of the next batch on the next call. uwu
+        /// The overflow item becomes the seed of the next batch on the next call.
         /// </para>
         /// </summary>
         /// <param name="item">The aggregated batch, if successful.</param>

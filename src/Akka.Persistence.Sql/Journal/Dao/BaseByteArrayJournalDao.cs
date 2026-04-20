@@ -319,7 +319,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
         /// Enqueues a set of journal rows for batched writing via the channel pipeline.
         /// Uses <c>TryWrite</c> on the bounded input channel — returns <c>false</c> when
         /// the channel is full or completed, replacing the old <c>QueueOfferResult</c>
-        /// switch statement with simpler channel semantics. uwu 🌸
+        /// switch statement with simpler channel semantics.
         ///
         /// <para>
         /// <b>CopilotNote:</b> With <see cref="BoundedChannelFullMode.Wait"/>,

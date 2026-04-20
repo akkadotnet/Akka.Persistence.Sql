@@ -107,7 +107,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
     public abstract class BasePostgreSqlSqlJournalPerfSpec : SqlJournalPerfSpec<PostgreSqlContainer>
     {
         /// <summary>
-        ///     Base constructor for PostgreSQL journal perf specs~ uwu 🐘✨
+        ///     Base constructor for PostgreSQL journal perf specs~
         ///     <para>
         ///         <paramref name="payloadSizeBytes"/> lets you attach a random <c>byte[]</c>
         ///         blob to every persisted <see cref="Cmd"/> so we can measure realistic I/O.
