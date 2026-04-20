@@ -38,7 +38,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
 
         /// <summary>
         ///     Optional data blob attached to every <see cref="Cmd"/> to simulate realistic payload sizes.
-        ///     Generated once and shared across all commands to avoid allocation noise in benchmarks. ✨
+        ///     Generated once and shared across all commands to avoid allocation noise in benchmarks.
         /// </summary>
         private readonly byte[]? _payload;
 
@@ -734,7 +734,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
 
         /// <summary>
         ///     Optional data blob to simulate realistic message sizes.
-        ///     When <c>null</c>, the serialized event is tiny (just the int payload). ✨
+        ///     When <c>null</c>, the serialized event is tiny (just the int payload). 
         /// </summary>
         public byte[]? Data { get; }
     }

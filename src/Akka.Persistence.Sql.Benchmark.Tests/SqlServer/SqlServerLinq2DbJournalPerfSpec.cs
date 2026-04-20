@@ -107,7 +107,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
     public abstract class BaseSqlServerLinq2DbJournalPerfSpec : SqlJournalPerfSpec<SqlServerContainer>
     {
         /// <summary>
-        ///     Base constructor for SQL Server journal perf specs~ uwu 🖥️✨
+        ///     Base constructor for SQL Server journal perf specs~
         ///     <para>
         ///         <paramref name="payloadSizeBytes"/> lets you attach a random <c>byte[]</c>
         ///         blob to every persisted <see cref="Cmd"/> so we can measure realistic I/O.
@@ -188,7 +188,7 @@ akka.persistence {
     // ── Large-payload specs ────────────────────────────────────────────
     // CopilotNotes: These specs attach a 1 KB random byte[] blob to every
     //               persisted Cmd so we can measure realistic serialisation
-    //               + I/O overhead. 🖥️📦
+    //               + I/O overhead. 
 
     /// <summary>
     ///     CSV perf spec with a 1 KB <c>byte[]</c> payload on every event.
@@ -226,7 +226,7 @@ akka.persistence {
 
     /// <summary>
     ///     TagTable perf spec with a 1 KB <c>byte[]</c> payload AND forced tagging (2 tags per event).
-    ///     Maximum realistic overhead scenario. 💪✨
+    ///     Maximum realistic overhead scenario.
     /// </summary>
     [Collection(nameof(SqlServerPersistenceBenchmark))]
     public class SqlServerLinq2DbTagTableLargePayloadTaggedJournalPerfSpec : BaseSqlServerLinq2DbJournalPerfSpec

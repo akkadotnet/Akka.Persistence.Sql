@@ -10,6 +10,7 @@ using System.Data.Common;
 using System.Threading.Tasks;
 using Akka.Util;
 using Docker.DotNet.Models;
+using LinqToDB.Internal.DataProvider.MySql;
 using MySql.Data.MySqlClient;
 
 namespace Akka.Persistence.Sql.Tests.Common.Containers
@@ -37,8 +38,13 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
             };
 
         public override string ConnectionString => _connectionStringBuilder.ToString();
-
-        public override string ProviderName => LinqToDB.ProviderName.MySql80;
+        
+        // CopilotNotes: Must use the driver-specific MySql80MySqlData constant, not the generic MySql80.
+        // In LinqToDB 6.x, "MySql.8.0" (MySql80) is only a mapping-schema configuration name and is
+        // NOT a registered DataProvider — LinqToDB needs to know which ADO.NET driver is in use to
+        // look up the right provider. This project uses MySql.Data (Oracle connector), so we use
+        // MySql80MySqlData which resolves to the "MySql.8.0.MySqlData" registered provider.
+        public override string ProviderName => LinqToDB.ProviderName.MySql80MySqlData;
 
         private int Port { get; } = ThreadLocalRandom.Current.Next(9000, 10000);
 
