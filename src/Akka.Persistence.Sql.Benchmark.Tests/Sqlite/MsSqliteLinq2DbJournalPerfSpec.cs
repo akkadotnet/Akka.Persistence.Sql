@@ -15,7 +15,7 @@ using Xunit;
 namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
 {
     // -----------------------------------------------------------------------
-    // 🐾 CSV variants
+    // CSV variants
     // -----------------------------------------------------------------------
 
     /// <summary>CSV tag-mode perf spec - no forced tagging.</summary>
@@ -27,7 +27,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
     }
 
     /// <summary>
-    ///     CSV perf spec with forced event tagging (2 tags per event). UwU~
+    ///     CSV perf spec with forced event tagging (2 tags per event). 
     /// </summary>
     [Collection(nameof(MsSqlitePersistenceBenchmark))]
     public class MsSqliteLinq2DbCsvTaggedJournalPerfSpec : BaseMsSqliteLinq2DbJournalPerfSpec
@@ -42,7 +42,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
     }
 
     // -----------------------------------------------------------------------
-    // 🐾 TagTable variants
+    // TagTable variants
     // -----------------------------------------------------------------------
 
     /// <summary>TagTable perf spec - no extra options.</summary>
@@ -55,7 +55,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
 
     /// <summary>
     ///     TagTable perf spec with <c>use-tagtable-asqueryable-literal-insert</c> enabled.
-    ///     Uses <c>AsQueryable()</c> + <c>InsertWithOutputAsync()</c> for tag inserts~ ✨
+    ///     Uses <c>AsQueryable()</c> + <c>InsertWithOutputAsync()</c> for tag inserts~ 
     /// </summary>
     [Collection(nameof(MsSqlitePersistenceBenchmark))]
     public class MsSqliteLinq2DbTagTableAsQueryableJournalPerfSpec : BaseMsSqliteLinq2DbJournalPerfSpec
@@ -87,7 +87,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
 
     /// <summary>
     ///     TagTable perf spec with forced event tagging (2 tags per event) AND
-    ///     <c>use-tagtable-asqueryable-literal-insert</c> enabled. Double combo~ UwU
+    ///     <c>use-tagtable-asqueryable-literal-insert</c> enabled.
     /// </summary>
     [Collection(nameof(MsSqlitePersistenceBenchmark))]
     public class MsSqliteLinq2DbTagTableAsQueryableTaggedJournalPerfSpec : BaseMsSqliteLinq2DbJournalPerfSpec
@@ -103,7 +103,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
     }
 
     // -----------------------------------------------------------------------
-    // 🐾 Large-payload variants (1 KB byte[] blob per event)
+    // Large-payload variants (1 KB byte[] blob per event)
     // -----------------------------------------------------------------------
 
     /// <summary>CSV perf spec with a 1 KB <c>byte[]</c> payload on every event.</summary>
@@ -133,7 +133,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
     }
 
     /// <summary>
-    ///     TagTable perf spec with a 1 KB <c>byte[]</c> payload AND forced tagging (2 tags per event). 🐾
+    ///     TagTable perf spec with a 1 KB <c>byte[]</c> payload AND forced tagging (2 tags per event).
     /// </summary>
     [Collection(nameof(MsSqlitePersistenceBenchmark))]
     public class MsSqliteLinq2DbTagTableLargePayloadTaggedJournalPerfSpec : BaseMsSqliteLinq2DbJournalPerfSpec
@@ -150,7 +150,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
 
     /// <summary>
     ///     TagTable perf spec with a 1 KB <c>byte[]</c> payload, forced tagging (2 tags per event),
-    ///     AND <c>use-tagtable-asqueryable-literal-insert</c> enabled. Maximum combo~ ✨UwU✨
+    ///     AND <c>use-tagtable-asqueryable-literal-insert</c> enabled.
     /// </summary>
     [Collection(nameof(MsSqlitePersistenceBenchmark))]
     public class MsSqliteLinq2DbTagTableAsQueryableLargePayloadTaggedJournalPerfSpec : BaseMsSqliteLinq2DbJournalPerfSpec
@@ -167,14 +167,14 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
     }
 
     // -----------------------------------------------------------------------
-    // 🐾 Base class - mirrors BasePostgreSqlSqlJournalPerfSpec
+    // Base class - mirrors BasePostgreSqlSqlJournalPerfSpec
     // -----------------------------------------------------------------------
 
     /// <summary>
     ///     Base class for all MsSqlite Linq2Db journal perf specs.
     ///     Builds the HOCON config dynamically based on the chosen tag mode,
     ///     <c>useAsQueryableLiteralInsert</c>, <c>forceTagging</c>,
-    ///     and an optional payload blob size. UwU~
+    ///     and an optional payload blob size. 
     /// </summary>
     public abstract class BaseMsSqliteLinq2DbJournalPerfSpec : SqlJournalPerfSpec<MsSqliteContainer>
     {
@@ -188,7 +188,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
         /// <param name="forceTagging">Attach 2 tags to every event via <see cref="CmdEventTagger"/>.</param>
         /// <param name="payloadSizeBytes">
         ///     When &gt; 0, a random <c>byte[]</c> blob of this size is attached to every event
-        ///     so we can measure realistic I/O. 🐾
+        ///     so we can measure realistic I/O.
         /// </param>
         protected BaseMsSqliteLinq2DbJournalPerfSpec(
             TagMode tagMode,
@@ -209,7 +209,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
         ///     Builds HOCON config for the SQLite journal with the given options.
         ///     <para>
         ///         CopilotNote: each spec variant gets a fresh in-memory DB via
-        ///         <see cref="MsSqliteContainer.InitializeDbAsync"/> to avoid state bleed. 🐾
+        ///         <see cref="MsSqliteContainer.InitializeDbAsync"/> to avoid state bleed.
         ///     </para>
         /// </summary>
         private static Configuration.Config Configuration(
@@ -221,7 +221,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
             if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
                 throw new Exception("Failed to initialize SQLite in-memory database in 10 seconds");
 
-            // 🐾 Optionally wire up the CmdEventTagger to stamp 2 tags on every persisted event.
+            // Optionally wire up the CmdEventTagger to stamp 2 tags on every persisted event.
             var taggingConfig = forceTagging
                 ? """
                   akka.persistence.journal.sql {
@@ -256,7 +256,7 @@ akka.persistence {
                 .WithFallback(SqlPersistence.DefaultConfiguration);
         }
 
-        /// <summary>Group benchmark with 1000 actors × 10 messages each. ✨</summary>
+        /// <summary>Group benchmark with 1000 actors × 10 messages each.</summary>
         [Fact]
         public async Task PersistenceActor_Must_measure_PersistGroup1000()
             => await RunGroupBenchmarkAsync(1000, 10);
