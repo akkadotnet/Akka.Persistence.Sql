@@ -41,7 +41,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
     {
         private readonly Flow<JournalRow, Util.Try<ReplayCompletion>, NotUsed> _deserializeFlowMapped;
         private readonly TagMode _tagWriteMode;
-        private readonly bool _useTagTableAsQueryable;
+        private readonly TagTableQueryableInsertMode _tagTableQueryableInsertMode;
         private static readonly ArrayPool<JournalRow> JournalRowPool = 
              ArrayPool<JournalRow>.Shared;
         protected readonly JournalConfig JournalConfig;
@@ -92,10 +92,14 @@ namespace Akka.Persistence.Sql.Journal.Dao
             Serializer = new ByteArrayJournalSerializer(config, serializer, config.PluginConfig.TagSeparator, selfUuid);
             _deserializeFlowMapped = Serializer.DeserializeFlow().Select(MessageWithBatchMapper());
             _tagWriteMode = JournalConfig.PluginConfig.TagMode;
-            _useTagTableAsQueryable = (JournalConfig.DaoConfig.UseTagTableAsQueryableLiteralInsert
-                                       &&
-                                       (JournalConfig.ProviderName.Contains("SqlServer") || JournalConfig.ProviderName.Contains("PostgreSQL") ||
-                                        JournalConfig.ProviderName.Contains("SQLite")));
+            // Use the new tri-state mode; only applies when tag-write-mode is TagTable
+            // and the provider supports INSERT ... OUTPUT (SqlServer, PostgreSQL, SQLite). ✨
+            _tagTableQueryableInsertMode =
+                JournalConfig.ProviderName.Contains("SqlServer") ||
+                JournalConfig.ProviderName.Contains("PostgreSQL") ||
+                JournalConfig.ProviderName.Contains("SQLite")
+                    ? JournalConfig.DaoConfig.TagTableQueryableInsertMode
+                    : TagTableQueryableInsertMode.Off;
             
             // Channel + ChannelQueueWithBatch replaces
             // Source.Queue + BatchWeighted. The input channel provides backpressure via
@@ -400,10 +404,11 @@ namespace Akka.Persistence.Sql.Journal.Dao
             }
         }
 
-        private async Task InsertMultiple(Seq<JournalRow> xs, List<CancellationToken> cancellationTokens)
+        private async Task InsertMultiple(Seq<JournalRow> xs, IReadOnlyList<CancellationToken> cancellationTokens)
         {
-            cancellationTokens.Add(ShutdownToken);
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationTokens.ToArray());
+            // Append ShutdownToken without mutating the caller's list (MutableWriteQueueBatch owns it).
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(
+                cancellationTokens.Append(ShutdownToken).ToArray());
             await ConnectionFactory.ExecuteWithTransactionAsync(
                 WriteIsolationLevel,
                 cts.Token,
@@ -415,26 +420,31 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     }
                     else
                     {
-                        if (_useTagTableAsQueryable)
+                        switch (_tagTableQueryableInsertMode)
                         {
-                            await RunFastInsertEventParams(connection, xs, token);
-                            //await RunFastInsertNoEventParams(connection, xs, JournalConfig.DaoConfig, token);
-                        }
-                        else
-                        {
-                            var config = JournalConfig.DaoConfig;
-                            var tail = xs;
-                            while (tail.Count > 0)
-                            {
-                                (var noTags, tail) = tail.Span(r => r.TagArray.Length == 0);
-                                if (noTags.Count > 0)
-                                    await BulkInsertNoTagTableTags(connection, noTags, config, token);
+                            case TagTableQueryableInsertMode.Parameterized:
+                                await RunFastInsertEventParams(connection, xs, token);
+                                break;
 
-                                (var hasTags, tail) = tail.Span(r => r.TagArray.Length > 0);
-                                if (hasTags.Count > 0)
+                            case TagTableQueryableInsertMode.Inline:
+                                await RunFastInsertEventParams(connection, xs, token);
+                                break;
+
+                            default: // Off
+                            {
+                                var config = JournalConfig.DaoConfig;
+                                var tail = xs;
+                                while (tail.Count > 0)
                                 {
-                                    await InsertWithOrderingAndBulkInsertTags(connection, hasTags, config, token);
+                                    (var noTags, tail) = tail.Span(r => r.TagArray.Length == 0);
+                                    if (noTags.Count > 0)
+                                        await BulkInsertNoTagTableTags(connection, noTags, config, token);
+
+                                    (var hasTags, tail) = tail.Span(r => r.TagArray.Length > 0);
+                                    if (hasTags.Count > 0)
+                                        await InsertWithOrderingAndBulkInsertTags(connection, hasTags, config, token);
                                 }
+                                break;
                             }
                         }
                     }
@@ -452,14 +462,13 @@ namespace Akka.Persistence.Sql.Journal.Dao
             public string? WriterUuid { get; set; }
         }
 
-                protected async Task RunFastInsertEventParams(AkkaDataConnection connection, Seq<JournalRow> xs, CancellationToken token)
+        protected async Task RunFastInsertEventParams(AkkaDataConnection connection, Seq<JournalRow> xs, CancellationToken token)
         {
             var roundTripByteLimit = JournalConfig.DaoConfig.AsQueryableInsertSqlLengthLimit;
             var rowLimit =
                 xs.Length > JournalConfig.DaoConfig.BatchSize
                     ? xs.Length
                     : JournalConfig.DaoConfig.BatchSize;
-            // var rowLimit = 25;
             var currRows = 0;
             var currBytes = 0;
             Dictionary<(string PersistenceId, long SequenceNumber), string[]> tagDict 
@@ -473,7 +482,8 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     // We don't worry about adding other columns on this check cause we are overparanoid on row padding anyway.
                     if ((journalRow.Message.Length *2) + currBytes > roundTripByteLimit || currRows >= rowLimit)
                     {
-                        var query = connection.AsQueryable(
+                        var query = BuildAsQueryable(
+                            connection,
                             insertList.Take(currRows).Select(static jr => new JournalRowIns
                             {
                                 PersistenceId = jr.PersistenceId,
@@ -483,10 +493,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                                 Timestamp = jr.Timestamp,
                                 Identifier = jr.Identifier,
                                 WriterUuid = jr.WriterUuid
-                            }),
-                            static b => 
-                                b.Parameterize()
-                        );
+                            }));
                         
                         await InsertJournalEntriesWithTags(connection, JournalConfig.DaoConfig, token, tagDict, query);
                         tagDict.Clear();
@@ -508,7 +515,8 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
                 if (currBytes > 0 || currRows > 0)
                 {
-                    var query = connection.AsQueryable(
+                    var query = BuildAsQueryable(
+                        connection,
                         insertList.Take(currRows).Select(static jr => new JournalRowIns
                         {
                             PersistenceId = jr.PersistenceId,
@@ -519,13 +527,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                             Timestamp = jr.Timestamp,
                             Identifier = jr.Identifier,
                             WriterUuid = jr.WriterUuid
-                        }),
-                        static b => b.Inline().Except(
-                            a => a.Message,
-                            a => a.Manifest,
-                            a => a.WriterUuid,
-                            a => a.PersistenceId)
-                    );
+                        }));
                     await InsertJournalEntriesWithTags(connection, JournalConfig.DaoConfig, token, tagDict, query);
                 }
             }
@@ -542,6 +544,37 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 }
             }
         }
+
+        /// <summary>
+        /// Builds an <see cref="IQueryable{T}"/> for tag-table fast-path inserts using the
+        /// correct LinqToDB <c>AsQueryable</c> overload for the configured
+        /// <see cref="TagTableQueryableInsertMode"/>. UwU~ ✨
+        /// <list type="bullet">
+        ///   <item><see cref="TagTableQueryableInsertMode.Parameterized"/> — all values as SQL parameters (safest)</item>
+        ///   <item><see cref="TagTableQueryableInsertMode.Inline"/> — scalar values as SQL literals,
+        ///     byte-heavy columns (<c>Message</c>, <c>Manifest</c>, <c>WriterUuid</c>, <c>PersistenceId</c>)
+        ///     excluded from inlining via <c>Except()</c></item>
+        /// </list>
+        /// </summary>
+        private IQueryable<JournalRowIns> BuildAsQueryable(
+            AkkaDataConnection connection,
+            IEnumerable<JournalRowIns> rows)
+            => _tagTableQueryableInsertMode switch
+            {
+                TagTableQueryableInsertMode.Parameterized =>
+                    connection.AsQueryable(rows, static b => b.Parameterize()),
+
+                // Inline: exclude byte-heavy columns from SQL literal embedding to stay within
+                // the tagtable-asqueryable-insert-sql-length-limit budget. (≧◡≦)
+                _ =>
+                    connection.AsQueryable(
+                        rows,
+                        static b => b.Inline().Except(
+                            a => a.Message,
+                            a => a.Manifest,
+                            a => a.WriterUuid,
+                            a => a.PersistenceId)),
+            };
         
         protected async Task RunFastInsertNoEventParams(AkkaDataConnection connection, Seq<JournalRow> xs, BaseByteArrayJournalDaoConfig journalConfigDaoConfig, CancellationToken token)
         {

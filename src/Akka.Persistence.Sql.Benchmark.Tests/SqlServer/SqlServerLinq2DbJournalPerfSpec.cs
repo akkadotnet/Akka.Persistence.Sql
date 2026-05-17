@@ -50,7 +50,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
     }
 
     /// <summary>
-    ///     TagTable perf spec with <c>use-tagtable-asqueryable-literal-insert</c> enabled.
+    ///     TagTable perf spec with <c>tagtable-asqueryable-insert-mode = inline</c> enabled.
     ///     Uses <c>AsQueryable()</c> + <c>InsertWithOutputAsync()</c> for tag inserts
     /// </summary>
     [Collection(nameof(SqlServerPersistenceBenchmark))]
@@ -62,7 +62,25 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
                 nameof(SqlServerLinq2DbTagTableAsQueryableJournalPerfSpec),
                 output,
                 fixture,
-                useAsQueryableLiteralInsert: true)
+                tagTableQueryableInsertMode: TagTableQueryableInsertMode.Inline)
+        {
+        }
+    }
+
+    /// <summary>
+    ///     TagTable perf spec with <c>tagtable-asqueryable-insert-mode = parameterized</c> enabled.
+    ///     Uses <c>AsQueryable().Parameterize()</c> for tag inserts — all values as SQL parameters.
+    /// </summary>
+    [Collection(nameof(SqlServerPersistenceBenchmark))]
+    public class SqlServerLinq2DbTagTableAsQueryableParameterizedJournalPerfSpec : BaseSqlServerLinq2DbJournalPerfSpec
+    {
+        public SqlServerLinq2DbTagTableAsQueryableParameterizedJournalPerfSpec(ITestOutputHelper output, SqlServerContainer fixture)
+            : base(
+                TagMode.TagTable,
+                nameof(SqlServerLinq2DbTagTableAsQueryableParameterizedJournalPerfSpec),
+                output,
+                fixture,
+                tagTableQueryableInsertMode: TagTableQueryableInsertMode.Parameterized)
         {
         }
     }
@@ -87,7 +105,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
 
     /// <summary>
     ///     TagTable perf spec with forced event tagging (2 tags per event) AND
-    ///     <c>use-tagtable-asqueryable-literal-insert</c> is enabled.
+    ///     <c>tagtable-asqueryable-insert-mode = inline</c> is enabled.
     /// </summary>
     [Collection(nameof(SqlServerPersistenceBenchmark))]
     public class SqlServerLinq2DbTagTableAsQueryableTaggedJournalPerfSpec : BaseSqlServerLinq2DbJournalPerfSpec
@@ -98,7 +116,26 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
                 nameof(SqlServerLinq2DbTagTableAsQueryableTaggedJournalPerfSpec),
                 output,
                 fixture,
-                useAsQueryableLiteralInsert: true,
+                tagTableQueryableInsertMode: TagTableQueryableInsertMode.Inline,
+                forceTagging: true)
+        {
+        }
+    }
+
+    /// <summary>
+    ///     TagTable perf spec with forced event tagging (2 tags per event) AND
+    ///     <c>tagtable-asqueryable-insert-mode = parameterized</c> is enabled.
+    /// </summary>
+    [Collection(nameof(SqlServerPersistenceBenchmark))]
+    public class SqlServerLinq2DbTagTableAsQueryableParameterizedTaggedJournalPerfSpec : BaseSqlServerLinq2DbJournalPerfSpec
+    {
+        public SqlServerLinq2DbTagTableAsQueryableParameterizedTaggedJournalPerfSpec(ITestOutputHelper output, SqlServerContainer fixture)
+            : base(
+                TagMode.TagTable,
+                nameof(SqlServerLinq2DbTagTableAsQueryableParameterizedTaggedJournalPerfSpec),
+                output,
+                fixture,
+                tagTableQueryableInsertMode: TagTableQueryableInsertMode.Parameterized,
                 forceTagging: true)
         {
         }
@@ -118,11 +155,11 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
             string name,
             ITestOutputHelper output,
             SqlServerContainer fixture,
-            bool useAsQueryableLiteralInsert = false,
+            TagTableQueryableInsertMode tagTableQueryableInsertMode = TagTableQueryableInsertMode.Off,
             bool forceTagging = false,
             int payloadSizeBytes = 0)
             : base(
-                Configure(fixture, tagMode, useAsQueryableLiteralInsert, forceTagging),
+                Configure(fixture, tagMode, tagTableQueryableInsertMode, forceTagging),
                 name,
                 output,
                 40,
@@ -134,7 +171,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.SqlServer
         private static Configuration.Config Configure(
             SqlServerContainer fixture,
             TagMode tagMode,
-            bool useAsQueryableLiteralInsert = false,
+            TagTableQueryableInsertMode tagTableQueryableInsertMode = TagTableQueryableInsertMode.Off,
             bool forceTagging = false)
         {
             if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
@@ -165,7 +202,7 @@ akka.persistence {
             tag-write-mode = {{tagMode}}
             use-clone-connection = true
             auto-initialize = true
-            use-tagtable-asqueryable-literal-insert = {{useAsQueryableLiteralInsert.ToString().ToLowerInvariant()}}
+            tagtable-asqueryable-insert-mode = "{{tagTableQueryableInsertMode.ToString().ToLowerInvariant()}}"
             default {
                 journal {
                     table-name = testPerfTable

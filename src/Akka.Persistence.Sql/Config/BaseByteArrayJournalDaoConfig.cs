@@ -21,8 +21,23 @@ namespace Akka.Persistence.Sql.Config
             Parallelism = config.GetInt("parallelism", 2);
             MaxRowByRowSize = config.GetInt("max-row-by-row-size", 100);
             SqlCommonCompatibilityMode = config.GetBoolean("delete-compatibility-mode");
-            UseTagTableAsQueryableLiteralInsert = config.GetBoolean("use-tagtable-asqueryable-literal-insert", false);
             AsQueryableInsertSqlLengthLimit = config.GetInt("tagtable-asqueryable-insert-sql-length-limit", 5_000_000);
+
+            // CopilotNote: Parse new enum-style key first, then fall back to the legacy bool key
+            // for backward compatibility (true → Inline, false → Off). UwU~
+            var modeStr = config.GetString("tagtable-asqueryable-insert-mode", null);
+            if (modeStr is not null && System.Enum.TryParse<TagTableQueryableInsertMode>(modeStr, true, out var parsedMode))
+            {
+                TagTableQueryableInsertMode = parsedMode;
+            }
+            else
+            {
+                // Backward compat: if the new key is absent, check the old bool key.
+                // true → Inline (was the original "literal insert" intent), false → Off.
+                TagTableQueryableInsertMode = config.GetBoolean("use-tagtable-asqueryable-literal-insert", false)
+                    ? TagTableQueryableInsertMode.Inline
+                    : TagTableQueryableInsertMode.Off;
+            }
         }
 
         public bool PreferParametersOnMultiRowInsert { get; }
@@ -50,6 +65,10 @@ namespace Akka.Persistence.Sql.Config
         
         public int AsQueryableInsertSqlLengthLimit { get; }
         
-        public bool UseTagTableAsQueryableLiteralInsert { get; }
+        /// <summary>
+        /// Controls which LinqToDB <c>AsQueryable()</c> strategy is used for the tag-table
+        /// fast-path insert. See <see cref="TagTableQueryableInsertMode"/> for options.
+        /// </summary>
+        public TagTableQueryableInsertMode TagTableQueryableInsertMode { get; }
     }
 }

@@ -54,7 +54,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
     }
 
     /// <summary>
-    ///     TagTable perf spec with <c>use-tagtable-asqueryable-literal-insert</c> enabled.
+    ///     TagTable perf spec with <c>tagtable-asqueryable-insert-mode = inline</c> enabled.
     ///     Uses <c>AsQueryable()</c> + <c>InsertWithOutputAsync()</c> for tag inserts~ 
     /// </summary>
     [Collection(nameof(MsSqlitePersistenceBenchmark))]
@@ -66,7 +66,23 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
                 nameof(MsSqliteLinq2DbTagTableAsQueryableJournalPerfSpec),
                 output,
                 fixture,
-                useAsQueryableLiteralInsert: true) { }
+                tagTableQueryableInsertMode: TagTableQueryableInsertMode.Inline) { }
+    }
+
+    /// <summary>
+    ///     TagTable perf spec with <c>tagtable-asqueryable-insert-mode = parameterized</c> enabled.
+    ///     Uses <c>AsQueryable().Parameterize()</c> — all values as SQL parameters.
+    /// </summary>
+    [Collection(nameof(MsSqlitePersistenceBenchmark))]
+    public class MsSqliteLinq2DbTagTableAsQueryableParameterizedJournalPerfSpec : BaseMsSqliteLinq2DbJournalPerfSpec
+    {
+        public MsSqliteLinq2DbTagTableAsQueryableParameterizedJournalPerfSpec(ITestOutputHelper output, MsSqliteContainer fixture)
+            : base(
+                TagMode.TagTable,
+                nameof(MsSqliteLinq2DbTagTableAsQueryableParameterizedJournalPerfSpec),
+                output,
+                fixture,
+                tagTableQueryableInsertMode: TagTableQueryableInsertMode.Parameterized) { }
     }
 
     /// <summary>
@@ -87,7 +103,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
 
     /// <summary>
     ///     TagTable perf spec with forced event tagging (2 tags per event) AND
-    ///     <c>use-tagtable-asqueryable-literal-insert</c> enabled.
+    ///     <c>tagtable-asqueryable-insert-mode = inline</c> enabled.
     /// </summary>
     [Collection(nameof(MsSqlitePersistenceBenchmark))]
     public class MsSqliteLinq2DbTagTableAsQueryableTaggedJournalPerfSpec : BaseMsSqliteLinq2DbJournalPerfSpec
@@ -98,7 +114,24 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
                 nameof(MsSqliteLinq2DbTagTableAsQueryableTaggedJournalPerfSpec),
                 output,
                 fixture,
-                useAsQueryableLiteralInsert: true,
+                tagTableQueryableInsertMode: TagTableQueryableInsertMode.Inline,
+                forceTagging: true) { }
+    }
+
+    /// <summary>
+    ///     TagTable perf spec with forced event tagging (2 tags per event) AND
+    ///     <c>tagtable-asqueryable-insert-mode = parameterized</c> enabled.
+    /// </summary>
+    [Collection(nameof(MsSqlitePersistenceBenchmark))]
+    public class MsSqliteLinq2DbTagTableAsQueryableParameterizedTaggedJournalPerfSpec : BaseMsSqliteLinq2DbJournalPerfSpec
+    {
+        public MsSqliteLinq2DbTagTableAsQueryableParameterizedTaggedJournalPerfSpec(ITestOutputHelper output, MsSqliteContainer fixture)
+            : base(
+                TagMode.TagTable,
+                nameof(MsSqliteLinq2DbTagTableAsQueryableParameterizedTaggedJournalPerfSpec),
+                output,
+                fixture,
+                tagTableQueryableInsertMode: TagTableQueryableInsertMode.Parameterized,
                 forceTagging: true) { }
     }
 
@@ -150,7 +183,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
 
     /// <summary>
     ///     TagTable perf spec with a 1 KB <c>byte[]</c> payload, forced tagging (2 tags per event),
-    ///     AND <c>use-tagtable-asqueryable-literal-insert</c> enabled.
+    ///     AND <c>tagtable-asqueryable-insert-mode = inline</c> enabled.
     /// </summary>
     [Collection(nameof(MsSqlitePersistenceBenchmark))]
     public class MsSqliteLinq2DbTagTableAsQueryableLargePayloadTaggedJournalPerfSpec : BaseMsSqliteLinq2DbJournalPerfSpec
@@ -161,7 +194,25 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
                 nameof(MsSqliteLinq2DbTagTableAsQueryableLargePayloadTaggedJournalPerfSpec),
                 output,
                 fixture,
-                useAsQueryableLiteralInsert: true,
+                tagTableQueryableInsertMode: TagTableQueryableInsertMode.Inline,
+                forceTagging: true,
+                payloadSizeBytes: TestConstants.LargePayloadSizeBytes) { }
+    }
+
+    /// <summary>
+    ///     TagTable perf spec with a 1 KB <c>byte[]</c> payload, forced tagging (2 tags per event),
+    ///     AND <c>tagtable-asqueryable-insert-mode = parameterized</c> enabled.
+    /// </summary>
+    [Collection(nameof(MsSqlitePersistenceBenchmark))]
+    public class MsSqliteLinq2DbTagTableAsQueryableParameterizedLargePayloadTaggedJournalPerfSpec : BaseMsSqliteLinq2DbJournalPerfSpec
+    {
+        public MsSqliteLinq2DbTagTableAsQueryableParameterizedLargePayloadTaggedJournalPerfSpec(ITestOutputHelper output, MsSqliteContainer fixture)
+            : base(
+                TagMode.TagTable,
+                nameof(MsSqliteLinq2DbTagTableAsQueryableParameterizedLargePayloadTaggedJournalPerfSpec),
+                output,
+                fixture,
+                tagTableQueryableInsertMode: TagTableQueryableInsertMode.Parameterized,
                 forceTagging: true,
                 payloadSizeBytes: TestConstants.LargePayloadSizeBytes) { }
     }
@@ -173,7 +224,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
     /// <summary>
     ///     Base class for all MsSqlite Linq2Db journal perf specs.
     ///     Builds the HOCON config dynamically based on the chosen tag mode,
-    ///     <c>useAsQueryableLiteralInsert</c>, <c>forceTagging</c>,
+    ///     <c>tagTableQueryableInsertMode</c>, <c>forceTagging</c>,
     ///     and an optional payload blob size. 
     /// </summary>
     public abstract class BaseMsSqliteLinq2DbJournalPerfSpec : SqlJournalPerfSpec<MsSqliteContainer>
@@ -182,8 +233,8 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
         /// <param name="name">Actor system / test name.</param>
         /// <param name="output">xUnit output helper.</param>
         /// <param name="fixture">The in-memory SQLite container fixture.</param>
-        /// <param name="useAsQueryableLiteralInsert">
-        ///     Enables <c>use-tagtable-asqueryable-literal-insert</c> for AsQueryable tag inserts.
+        /// <param name="tagTableQueryableInsertMode">
+        ///     Controls which <c>tagtable-asqueryable-insert-mode</c> strategy to use for AsQueryable tag inserts.
         /// </param>
         /// <param name="forceTagging">Attach 2 tags to every event via <see cref="CmdEventTagger"/>.</param>
         /// <param name="payloadSizeBytes">
@@ -195,11 +246,11 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
             string name,
             ITestOutputHelper output,
             MsSqliteContainer fixture,
-            bool useAsQueryableLiteralInsert = false,
+            TagTableQueryableInsertMode tagTableQueryableInsertMode = TagTableQueryableInsertMode.Off,
             bool forceTagging = false,
             int payloadSizeBytes = 0)
             : base(
-                Configuration(fixture, tagMode, useAsQueryableLiteralInsert, forceTagging),
+                Configuration(fixture, tagMode, tagTableQueryableInsertMode, forceTagging),
                 name,
                 output,
                 eventsCount: TestConstants.NumMessages,
@@ -215,7 +266,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
         private static Configuration.Config Configuration(
             MsSqliteContainer fixture,
             TagMode tagMode,
-            bool useAsQueryableLiteralInsert,
+            TagTableQueryableInsertMode tagTableQueryableInsertMode,
             bool forceTagging)
         {
             if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
@@ -247,7 +298,7 @@ akka.persistence {
             tag-write-mode = {{tagMode}}
             use-clone-connection = true
             auto-initialize = true
-            use-tagtable-asqueryable-literal-insert = {{useAsQueryableLiteralInsert.ToString().ToLowerInvariant()}}
+            tagtable-asqueryable-insert-mode = "{{tagTableQueryableInsertMode.ToString().ToLowerInvariant()}}"
         }
     }
 }
