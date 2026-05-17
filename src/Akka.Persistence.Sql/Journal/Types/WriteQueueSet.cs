@@ -4,6 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Immutable;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,6 +12,7 @@ using LanguageExt;
 
 namespace Akka.Persistence.Sql.Journal.Types
 {
+    [Obsolete("This has been replaced by MultiWriteQueueSet and will be removed in a future version.")]
     public sealed class WriteQueueSet
     {
         public WriteQueueSet(ImmutableList<TaskCompletionSource<NotUsed>> tcs, Seq<JournalRow> rows, ImmutableList<CancellationToken> cancellationTokens)

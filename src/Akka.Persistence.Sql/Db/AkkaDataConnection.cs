@@ -19,6 +19,7 @@ using LinqToDB.DataProvider;
 using LinqToDB.DataProvider.SqlServer;
 using LinqToDB.Data.RetryPolicy;
 using LinqToDB.Internal.DataProvider.SqlServer;
+using LinqToDB.Linq;
 using LinqToDB.SchemaProvider;
 
 namespace Akka.Persistence.Sql.Db
@@ -95,6 +96,12 @@ namespace Akka.Persistence.Sql.Db
         
         public IQueryable<T> AsQueryable<T>(IEnumerable<T> set) where T : class
             => set.AsQueryable(_connection);
+
+        public IQueryable<T> AsQueryable<T>(
+            IEnumerable<T> set,
+            Expression<Func<IAsQueryableBuilder<T>, IAsQueryableExceptBuilder<T>>> inlineOpts) 
+            where T : class
+            => set.AsQueryable(_connection, inlineOpts);
 
         public IQueryable<T> SelectQuery<T>(Expression<Func<T>> expr) where T : class
             => _connection.SelectQuery(expr);
