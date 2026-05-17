@@ -65,7 +65,7 @@ namespace Akka.Persistence.Sql.Hosting.Tests
             actualConfig.AssertInt(defaultConfig, "batch-size", 100);
             actualConfig.AssertInt(defaultConfig, "db-round-trip-max-batch-size", 1000);
             actualConfig.AssertBool(defaultConfig, "prefer-parameters-on-multirow-insert", false);
-            actualConfig.AssertBool(defaultConfig, "use-tagtable-asqueryable-literal-insert", false);
+            actualConfig.AssertString(defaultConfig, "tagtable-asqueryable-insert-mode", "off");
             actualConfig.AssertInt(defaultConfig, "tagtable-asqueryable-insert-sql-length-limit", 5_000_000);
             actualConfig.AssertInt(defaultConfig, "replay-batch-size", 1000);
             actualConfig.AssertInt(defaultConfig, "parallelism", 3);
@@ -135,7 +135,7 @@ namespace Akka.Persistence.Sql.Hosting.Tests
                 TagStorageMode = TagMode.Csv,
                 TagSeparator = ":",
                 DeleteCompatibilityMode = true,
-                UseTagTableAsQueryableLiteralInsert = true,
+                TagTableQueryableInsertMode = TagTableQueryableInsertMode.Inline,
                 AsQueryableInsertSqlLengthLimit = 1_000_000,
                 DatabaseOptions = new JournalDatabaseOptions(DatabaseMapping.SqlServer)
                 {
@@ -193,7 +193,7 @@ namespace Akka.Persistence.Sql.Hosting.Tests
             journalConfig.PluginConfig.TagMode.Should().Be(TagMode.Csv);
 
             journalConfig.DaoConfig.SqlCommonCompatibilityMode.Should().BeTrue();
-            journalConfig.DaoConfig.UseTagTableAsQueryableLiteralInsert.Should().BeTrue();
+            journalConfig.DaoConfig.TagTableQueryableInsertMode.Should().Be(TagTableQueryableInsertMode.Inline);
             journalConfig.DaoConfig.AsQueryableInsertSqlLengthLimit.Should().Be(1_000_000);
 
             journalConfig.TableConfig.SchemaName.Should().Be("schema");

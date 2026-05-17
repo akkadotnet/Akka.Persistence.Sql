@@ -50,7 +50,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
     }
     
     /// <summary>
-    ///     TagTable perf spec with <c>use-tagtable-asqueryable-literal-insert</c> enabled.
+    ///     TagTable perf spec with <c>tagtable-asqueryable-insert-mode = inline</c> enabled.
     ///     Uses <c>AsQueryable()</c> + <c>InsertWithOutputAsync()</c> for tag inserts
     /// </summary>
     [Collection(nameof(PostgreSqlPersistenceBenchmark))]
@@ -62,7 +62,25 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
                 nameof(PostgreSqlSqlTagTableAsQueryableJournalPerfSpec),
                 output,
                 fixture,
-                useAsQueryableLiteralInsert: true)
+                tagTableQueryableInsertMode: TagTableQueryableInsertMode.Inline)
+        {
+        }
+    }
+
+    /// <summary>
+    ///     TagTable perf spec with <c>tagtable-asqueryable-insert-mode = parameterized</c> enabled.
+    ///     Uses <c>AsQueryable().Parameterize()</c> for tag inserts — all values as SQL parameters.
+    /// </summary>
+    [Collection(nameof(PostgreSqlPersistenceBenchmark))]
+    public class PostgreSqlSqlTagTableAsQueryableParameterizedJournalPerfSpec : BasePostgreSqlSqlJournalPerfSpec
+    {
+        public PostgreSqlSqlTagTableAsQueryableParameterizedJournalPerfSpec(ITestOutputHelper output, PostgreSqlContainer fixture)
+            : base(
+                TagMode.TagTable,
+                nameof(PostgreSqlSqlTagTableAsQueryableParameterizedJournalPerfSpec),
+                output,
+                fixture,
+                tagTableQueryableInsertMode: TagTableQueryableInsertMode.Parameterized)
         {
         }
     }
@@ -87,7 +105,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
 
     /// <summary>
     ///     TagTable perf spec with forced event tagging (2 tags per event) AND
-    ///     <c>use-tagtable-asqueryable-literal-insert</c> enabled.
+    ///     <c>tagtable-asqueryable-insert-mode = inline</c> enabled.
     /// </summary>
     [Collection(nameof(PostgreSqlPersistenceBenchmark))]
     public class PostgreSqlSqlTagTableAsQueryableTaggedJournalPerfSpec : BasePostgreSqlSqlJournalPerfSpec
@@ -98,7 +116,26 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
                 nameof(PostgreSqlSqlTagTableAsQueryableTaggedJournalPerfSpec),
                 output,
                 fixture,
-                useAsQueryableLiteralInsert: true,
+                tagTableQueryableInsertMode: TagTableQueryableInsertMode.Inline,
+                forceTagging: true)
+        {
+        }
+    }
+
+    /// <summary>
+    ///     TagTable perf spec with forced event tagging (2 tags per event) AND
+    ///     <c>tagtable-asqueryable-insert-mode = parameterized</c> enabled.
+    /// </summary>
+    [Collection(nameof(PostgreSqlPersistenceBenchmark))]
+    public class PostgreSqlSqlTagTableAsQueryableParameterizedTaggedJournalPerfSpec : BasePostgreSqlSqlJournalPerfSpec
+    {
+        public PostgreSqlSqlTagTableAsQueryableParameterizedTaggedJournalPerfSpec(ITestOutputHelper output, PostgreSqlContainer fixture)
+            : base(
+                TagMode.TagTable,
+                nameof(PostgreSqlSqlTagTableAsQueryableParameterizedTaggedJournalPerfSpec),
+                output,
+                fixture,
+                tagTableQueryableInsertMode: TagTableQueryableInsertMode.Parameterized,
                 forceTagging: true)
         {
         }
@@ -118,11 +155,11 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
             string name,
             ITestOutputHelper output,
             PostgreSqlContainer fixture,
-            bool useAsQueryableLiteralInsert = false,
+            TagTableQueryableInsertMode tagTableQueryableInsertMode = TagTableQueryableInsertMode.Off,
             bool forceTagging = false,
             int payloadSizeBytes = 0)
             : base(
-                Configuration(fixture, tagMode, useAsQueryableLiteralInsert, forceTagging),
+                Configuration(fixture, tagMode, tagTableQueryableInsertMode, forceTagging),
                 name,
                 output,
                 40,
@@ -132,7 +169,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
         private static Configuration.Config Configuration(
             PostgreSqlContainer fixture,
             TagMode tagMode,
-            bool useAsQueryableLiteralInsert = false,
+            TagTableQueryableInsertMode tagTableQueryableInsertMode = TagTableQueryableInsertMode.Off,
             bool forceTagging = false)
         {
             if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
@@ -163,7 +200,7 @@ akka.persistence {
             tag-write-mode = {{tagMode}}
             use-clone-connection = true
             auto-initialize = true
-            use-tagtable-asqueryable-literal-insert = {{useAsQueryableLiteralInsert.ToString().ToLowerInvariant()}}
+            tagtable-asqueryable-insert-mode = "{{tagTableQueryableInsertMode.ToString().ToLowerInvariant()}}"
         }
     }
 }
@@ -229,8 +266,9 @@ akka.persistence {
         }
     }
     
-    // <summary>
-    ///     TagTable perf spec with a 1 KB <c>byte[]</c> payload AND forced tagging (2 tags per event).
+    /// <summary>
+    ///     TagTable perf spec with a 1 KB <c>byte[]</c> payload AND forced tagging (2 tags per event),
+    ///     with <c>tagtable-asqueryable-insert-mode = inline</c> enabled.
     /// </summary>
     [Collection(nameof(PostgreSqlPersistenceBenchmark))]
     public class PostgreSqlSqlTagTableAsQueryableLargePayloadTaggedJournalPerfSpec : BasePostgreSqlSqlJournalPerfSpec
@@ -243,7 +281,27 @@ akka.persistence {
                 fixture,
                 forceTagging: true,
                 payloadSizeBytes: TestConstants.LargePayloadSizeBytes,
-                useAsQueryableLiteralInsert: true)
+                tagTableQueryableInsertMode: TagTableQueryableInsertMode.Inline)
+        {
+        }
+    }
+
+    /// <summary>
+    ///     TagTable perf spec with a 1 KB <c>byte[]</c> payload AND forced tagging (2 tags per event),
+    ///     with <c>tagtable-asqueryable-insert-mode = parameterized</c> enabled.
+    /// </summary>
+    [Collection(nameof(PostgreSqlPersistenceBenchmark))]
+    public class PostgreSqlSqlTagTableAsQueryableParameterizedLargePayloadTaggedJournalPerfSpec : BasePostgreSqlSqlJournalPerfSpec
+    {
+        public PostgreSqlSqlTagTableAsQueryableParameterizedLargePayloadTaggedJournalPerfSpec(ITestOutputHelper output, PostgreSqlContainer fixture)
+            : base(
+                TagMode.TagTable,
+                nameof(PostgreSqlSqlTagTableAsQueryableParameterizedLargePayloadTaggedJournalPerfSpec),
+                output,
+                fixture,
+                forceTagging: true,
+                payloadSizeBytes: TestConstants.LargePayloadSizeBytes,
+                tagTableQueryableInsertMode: TagTableQueryableInsertMode.Parameterized)
         {
         }
     }

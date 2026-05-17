@@ -103,7 +103,34 @@ namespace Akka.Persistence.Sql.Hosting
         ///     </para>
         ///     <b>Default</b>: <c>false</c>
         /// </summary>
-        public bool? UseTagTableAsQueryableLiteralInsert { get; set; }
+        [Obsolete("Use TagTableQueryableInsertMode instead. true maps to Inline, false maps to Off. UwU~")]
+        public bool? UseTagTableAsQueryableLiteralInsert
+        {
+            get => TagTableQueryableInsertMode switch
+            {
+                Config.TagTableQueryableInsertMode.Inline => true,
+                Config.TagTableQueryableInsertMode.Parameterized => true,
+                _ => false,
+            };
+            set => TagTableQueryableInsertMode = value is true
+                ? Config.TagTableQueryableInsertMode.Inline
+                : Config.TagTableQueryableInsertMode.Off;
+        }
+
+        /// <summary>
+        ///     <para>
+        ///         Controls which LinqToDB <c>AsQueryable()</c> strategy to use for the tag-table
+        ///         fast-path insert when <see cref="TagStorageMode"/> is <see cref="TagMode.TagTable"/>
+        ///         and the provider is SQL Server, PostgreSQL, or SQLite.
+        ///     </para>
+        ///     <list type="bullet">
+        ///         <item><see cref="TagTableQueryableInsertMode.Off"/> — disabled; standard BulkCopy path (default)</item>
+        ///         <item><see cref="TagTableQueryableInsertMode.Parameterized"/> — all values as SQL parameters; safe for large payloads</item>
+        ///         <item><see cref="TagTableQueryableInsertMode.Inline"/> — scalar values as SQL literals, byte-heavy columns parameterized via <c>Except()</c></item>
+        ///     </list>
+        ///     <b>Default</b>: <see cref="TagTableQueryableInsertMode.Off"/>
+        /// </summary>
+        public TagTableQueryableInsertMode? TagTableQueryableInsertMode { get; set; }
 
         /// <summary>
         ///     <para>
@@ -225,8 +252,8 @@ namespace Akka.Persistence.Sql.Hosting
             if (WriteIsolationLevel is not null)
                 sb.AppendLine($"write-isolation-level = {WriteIsolationLevel.ToHocon()}");
 
-            if (UseTagTableAsQueryableLiteralInsert is not null)
-                sb.AppendLine($"use-tagtable-asqueryable-literal-insert = {UseTagTableAsQueryableLiteralInsert.ToHocon()}");
+            if (TagTableQueryableInsertMode is not null)
+                sb.AppendLine($"tagtable-asqueryable-insert-mode = {TagTableQueryableInsertMode.ToString()!.ToLowerInvariant().ToHocon()}");
 
             if (AsQueryableInsertSqlLengthLimit is not null)
                 sb.AppendLine($"tagtable-asqueryable-insert-sql-length-limit = {AsQueryableInsertSqlLengthLimit.ToHocon()}");
