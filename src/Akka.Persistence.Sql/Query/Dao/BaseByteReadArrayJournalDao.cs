@@ -225,6 +225,58 @@ namespace Akka.Persistence.Sql.Query.Dao
                 });
         }
 
+        public async Task<long> FromEndStartOffsetAsync(string tag, int count)
+        {
+            if (count <= 0)
+                return 0;
+
+            var mode = _readJournalConfig.PluginConfig.TagMode;
+            var separator = _readJournalConfig.PluginConfig.TagSeparator;
+
+            // Find the Ordering of the Nth-from-last matching event by reading the top-N in descending order
+            // and taking the oldest of them. The query stays forward/exclusive (Ordering > start), so the
+            // exclusive start offset is that Ordering minus one.
+            var nthFromEnd = await ConnectionFactory.ExecuteQueryWithTransactionAsync(
+                _dbStateHolder,
+                async (connection, token) =>
+                {
+                    IQueryable<long> orderings;
+                    if (tag is null)
+                    {
+                        orderings = connection
+                            .GetTable<JournalRow>()
+                            .Where(r => !r.Deleted)
+                            .OrderByDescending(r => r.Ordering)
+                            .Select(r => r.Ordering);
+                    }
+                    else if (mode == TagMode.Csv)
+                    {
+                        var tagValue = $"{separator}{tag}{separator}";
+                        orderings = connection
+                            .GetTable<JournalRow>()
+                            .Where(r => r.Tags != null && r.Tags.Contains(tagValue) && !r.Deleted)
+                            .OrderByDescending(r => r.Ordering)
+                            .Select(r => r.Ordering);
+                    }
+                    else
+                    {
+                        orderings =
+                            from r in connection.GetTable<JournalRow>()
+                            from lp in connection.GetTable<JournalTagRow>()
+                                .Where(jtr => jtr.OrderingId == r.Ordering)
+                            where !r.Deleted && lp.TagValue == tag
+                            orderby r.Ordering descending
+                            select r.Ordering;
+                    }
+
+                    var list = await orderings.Skip(count - 1).Take(1).ToListAsync(token);
+                    return list.Count == 0 ? (long?)null : list[0];
+                });
+
+            // fewer than `count` matching events -> start from the beginning
+            return nthFromEnd.HasValue ? nthFromEnd.Value - 1 : 0;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int MaxTake(long max)
             => max > int.MaxValue
