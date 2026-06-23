@@ -114,24 +114,28 @@ namespace Akka.Persistence.Sql.Query
         public static string Identifier => "akka.persistence.query.journal.sql";
 
         public Source<EventEnvelope, NotUsed> AllEvents(Offset offset)
-            => Events(
-                offset is Sequence s
-                    ? s.Value
-                    : 0,
-                null);
+            => offset is FromEnd fe
+                ? ResolveFromEnd(null, fe.Count, start => Events(start, null))
+                : Events(
+                    offset is Sequence s
+                        ? s.Value
+                        : 0,
+                    null);
 
         public Source<EventEnvelope, NotUsed> CurrentAllEvents(Offset offset)
+            => offset is FromEnd fe
+                ? ResolveFromEnd(null, fe.Count, CurrentAllEventsFrom)
+                : CurrentAllEventsFrom(
+                    offset is Sequence s
+                        ? s.Value
+                        : 0);
+
+        private Source<EventEnvelope, NotUsed> CurrentAllEventsFrom(long offset)
             => AsyncSource<long>
                 .FromEnumerable(
                     state: _readJournalDao,
                     func: async input => new[] { await input.MaxJournalSequenceAsync() })
-                .ConcatMany(
-                    maxInDb =>
-                        Events(
-                            offset is Sequence s
-                                ? s.Value
-                                : 0,
-                            maxInDb));
+                .ConcatMany(maxInDb => Events(offset, maxInDb));
 
         public Source<EventEnvelope, NotUsed> CurrentEventsByPersistenceId(
             string persistenceId,
@@ -144,7 +148,9 @@ namespace Akka.Persistence.Sql.Query
                 refreshInterval: Option<(TimeSpan, IScheduler)>.None);
 
         public Source<EventEnvelope, NotUsed> CurrentEventsByTag(string tag, Offset offset)
-            => CurrentEventsByTag(tag, (offset as Sequence)?.Value ?? 0);
+            => offset is FromEnd fe
+                ? ResolveFromEnd(tag, fe.Count, start => CurrentEventsByTag(tag, start))
+                : CurrentEventsByTag(tag, (offset as Sequence)?.Value ?? 0);
 
         public Source<string, NotUsed> CurrentPersistenceIds()
             => _readJournalDao.AllPersistenceIdsSource(long.MaxValue);
@@ -161,12 +167,26 @@ namespace Akka.Persistence.Sql.Query
                     (_readJournalConfig.RefreshInterval, _system.Scheduler)));
 
         public Source<EventEnvelope, NotUsed> EventsByTag(string tag, Offset offset)
-            => EventsByTag(
-                tag,
-                offset is Sequence s
-                    ? s.Value
-                    : 0,
-                null);
+            => offset is FromEnd fe
+                ? ResolveFromEnd(tag, fe.Count, start => EventsByTag(tag, start, null))
+                : EventsByTag(
+                    tag,
+                    offset is Sequence s
+                        ? s.Value
+                        : 0,
+                    null);
+
+        // Resolves a FromEnd(N) offset into a concrete exclusive start offset, then defers to the normal
+        // forward-streaming query. Mirrors the existing async MaxJournalSequence resolution pattern.
+        private Source<EventEnvelope, NotUsed> ResolveFromEnd(
+            string tag,
+            int count,
+            Func<long, Source<EventEnvelope, NotUsed>> continuation)
+            => AsyncSource<long>
+                .FromEnumerable(
+                    state: new { dao = _readJournalDao, tag, count },
+                    func: async input => new[] { await input.dao.FromEndStartOffsetAsync(input.tag, input.count) })
+                .ConcatMany(continuation);
 
         public Source<string, NotUsed> PersistenceIds()
             => Source

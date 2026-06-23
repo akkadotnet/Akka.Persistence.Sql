@@ -28,5 +28,12 @@ namespace Akka.Persistence.Sql.Query
             long limit);
 
         Task<long> MaxJournalSequenceAsync();
+
+        /// <summary>
+        /// Resolves a "from the end" (last <paramref name="count"/> events) query into a concrete exclusive
+        /// start offset, so the normal forward streaming path returns the last <paramref name="count"/> events.
+        /// Pass <paramref name="tag"/> = <c>null</c> to resolve against all events.
+        /// </summary>
+        Task<long> FromEndStartOffsetAsync(string tag, int count);
     }
 }
