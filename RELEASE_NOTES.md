@@ -1,3 +1,24 @@
+#### 1.5.70-beta1 June 24th 2026 ####
+
+**New Feature — FromEnd Query Offset**
+
+Query the *last N events* by tag using a new `Offset.FromEnd(count)` offset type. Instead of streaming from a known forward offset, you specify how many recent events to return — useful for "get me the last 10 events tagged X" scenarios without knowing the current offset upfront.
+
+```csharp
+// Get the last 3 events tagged "green"
+var lastThree = ReadJournal
+    .CurrentEventsByTag("green", Offset.FromEnd(3))
+    .RunWith(Sink.Seq<EventEnvelope>(), materializer);
+
+// If fewer than 3 events exist, returns all of them
+var allEvents = ReadJournal
+    .CurrentEventsByTag("green", Offset.FromEnd(100))
+    .RunWith(Sink.Seq<EventEnvelope>(), materializer);
+```
+
+* [Add FromEnd (last-N) query offset support](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/589) - New `Offset.FromEnd(count)` query offset that resolves to the correct concrete start offset by looking up the max journal sequence. Implemented across all database providers (SQL Server, PostgreSQL, MySQL, SQLite).
+* [Bump Akka.NET to 1.5.70-beta1](https://github.com/akkadotnet/akka.net/releases/tag/1.5.70-beta1)
+
 #### 1.5.67 April 28th 2026 ####
 
 * [Bump Akka.NET to 1.5.67](https://github.com/akkadotnet/akka.net/releases/tag/1.5.67)
