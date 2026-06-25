@@ -24,6 +24,7 @@
     <PackageVersion Include="Akka.Serialization.Hyperion" Version="$(AkkaVersion)" />
     <PackageVersion Include="Akka.Streams" Version="$(AkkaVersion)" />
     <PackageVersion Include="MathNet.Numerics" Version="5.0.0" />
+    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" />
   </ItemGroup>
   <!-- App dependencies -->
   <ItemGroup>
@@ -34,7 +35,7 @@
     <PackageVersion Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
     <PackageVersion Include="CommandLineParser" Version="2.9.1" />
     <PackageVersion Include="LanguageExt.Core" Version="4.4.9" />
-    <PackageVersion Include="linq2db" Version="5.4.1.9" />
+    <PackageVersion Include="linq2db" Version="6.3.0" />
     <PackageVersion Include="FluentMigrator" Version="$(FluentMigratorVersion)" />
     <PackageVersion Include="FluentMigrator.Runner" Version="$(FluentMigratorVersion)" />
   </ItemGroup>

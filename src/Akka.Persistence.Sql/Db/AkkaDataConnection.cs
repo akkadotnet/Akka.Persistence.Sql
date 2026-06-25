@@ -5,7 +5,10 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Data;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Persistence.Sql.Journal.Types;
@@ -14,6 +17,8 @@ using LinqToDB;
 using LinqToDB.Data;
 using LinqToDB.DataProvider;
 using LinqToDB.DataProvider.SqlServer;
+using LinqToDB.Internal.DataProvider.SqlServer;
+using LinqToDB.Linq;
 using LinqToDB.SchemaProvider;
 
 namespace Akka.Persistence.Sql.Db
@@ -61,7 +66,7 @@ namespace Akka.Persistence.Sql.Db
             => _connection.Dispose();
 
         public AkkaDataConnection Clone()
-            => new(_providerName, (DataConnection)_connection.Clone());
+            => new AkkaDataConnection(_providerName, new DataConnection(_connection.Options));
 
         public DatabaseSchema GetSchema()
             => _connection.DataProvider.GetSchemaProvider().GetSchema(_connection);
@@ -80,6 +85,18 @@ namespace Akka.Persistence.Sql.Db
 
         public ITable<T> GetTable<T>() where T : class
             => _connection.GetTable<T>();
+        
+        public IQueryable<T> AsQueryable<T>(IEnumerable<T> set) where T : class
+            => set.AsQueryable(_connection);
+
+        public IQueryable<T> AsQueryable<T>(
+            IEnumerable<T> set,
+            Expression<Func<IAsQueryableBuilder<T>, IAsQueryableExceptBuilder<T>>> inlineOpts) 
+            where T : class
+            => set.AsQueryable(_connection, inlineOpts);
+
+        public IQueryable<T> SelectQuery<T>(Expression<Func<T>> expr) where T : class
+            => _connection.SelectQuery(expr);
 
         public async Task<DataConnectionTransaction> BeginTransactionAsync(
             IsolationLevel isolationLevel,

@@ -16,6 +16,7 @@ using Akka.Persistence.Sql.Extensions;
 using Akka.Streams;
 using Akka.Util;
 using LinqToDB;
+using LinqToDB.Async;
 
 namespace Akka.Persistence.Sql.Snapshot
 {
