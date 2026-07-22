@@ -184,7 +184,8 @@ namespace Akka.Persistence.Sql.Journal.Dao
                                     r.PersistenceId == persistenceId)
                             .DeleteAsync(token);
                     }
-                });
+                },
+                Logger);
         }
 
         public async Task<Done> Update(string persistenceId, long sequenceNr, object payload)

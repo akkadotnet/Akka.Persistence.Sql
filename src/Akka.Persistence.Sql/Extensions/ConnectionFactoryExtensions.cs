@@ -18,7 +18,15 @@ namespace Akka.Persistence.Sql.Extensions
 {
     public static class ConnectionFactoryExtensions
     {
-        private const string CleanupExceptionDataKey = "Akka.Persistence.Sql.TransactionCleanupException";
+        /// <summary>
+        /// <see cref="Exception.Data"/> key under which cleanup failures (transaction rollback/dispose,
+        /// connection dispose) encountered during a replay-safe transaction retry attempt are attached to
+        /// the primary operation exception. The value is either a single <see cref="Exception"/> or an
+        /// <see cref="AggregateException"/> when more than one cleanup failure was recorded. Cleanup
+        /// failures are never allowed to replace or mask the primary exception, since the configured retry
+        /// policy relies on that exception to decide whether to attempt another transaction.
+        /// </summary>
+        public const string CleanupExceptionDataKey = "Akka.Persistence.Sql.TransactionCleanupException";
 
         public static async Task ExecuteWithTransactionAsync(
             this AkkaPersistenceDataConnectionFactory factory,
@@ -150,7 +158,8 @@ namespace Akka.Persistence.Sql.Extensions
             this AkkaPersistenceDataConnectionFactory factory,
             IsolationLevel level,
             CancellationToken token,
-            Func<AkkaDataConnection, CancellationToken, Task> handler)
+            Func<AkkaDataConnection, CancellationToken, Task> handler,
+            ILoggingAdapter? logger = null)
         {
             if (!factory.HasRetryPolicy)
             {
@@ -158,17 +167,16 @@ namespace Akka.Persistence.Sql.Extensions
                 return;
             }
 
-            AkkaDataConnection? firstConnection = factory.GetRetryScopeConnection(out var retryPolicy);
+            var retryPolicy = factory.TakeReplayRetryPolicy();
 
             async Task ExecuteAttempt(CancellationToken cancellationToken)
             {
-                var connection = Interlocked.Exchange(ref firstConnection, null)
-                    ?? factory.GetRetryScopeConnection(out _);
+                var connection = factory.GetConnectionWithoutRetryPolicy();
                 Exception? operationException = null;
 
                 try
                 {
-                    await ExecuteTransactionAttemptAsync(connection, level, cancellationToken, handler);
+                    await ExecuteTransactionAttemptAsync(connection, level, cancellationToken, handler, logger);
                 }
                 catch (Exception exception)
                 {
@@ -177,36 +185,22 @@ namespace Akka.Persistence.Sql.Extensions
                 }
                 finally
                 {
-                    await DisposeConnectionAsync(connection, operationException);
+                    await DisposeConnectionAsync(connection, operationException, logger);
                 }
             }
 
-            Exception? retryException = null;
-            try
-            {
-                if (retryPolicy is null)
-                    await ExecuteAttempt(token);
-                else
-                    await retryPolicy.ExecuteAsync(ExecuteAttempt, token);
-            }
-            catch (Exception exception)
-            {
-                retryException = exception;
-                throw;
-            }
-            finally
-            {
-                var unusedConnection = Interlocked.Exchange(ref firstConnection, null);
-                if (unusedConnection is not null)
-                    await DisposeConnectionAsync(unusedConnection, retryException);
-            }
+            if (retryPolicy is null)
+                await ExecuteAttempt(token);
+            else
+                await retryPolicy.ExecuteAsync(ExecuteAttempt, token);
         }
 
         private static async Task ExecuteTransactionAttemptAsync(
             AkkaDataConnection connection,
             IsolationLevel level,
             CancellationToken token,
-            Func<AkkaDataConnection, CancellationToken, Task> handler)
+            Func<AkkaDataConnection, CancellationToken, Task> handler,
+            ILoggingAdapter? logger)
         {
             var tx = await connection.BeginTransactionAsync(level, token);
 
@@ -226,6 +220,9 @@ namespace Akka.Persistence.Sql.Extensions
                     // Cleanup failures must not hide the exception the configured policy uses to
                     // decide whether to run a new transaction attempt.
                     AttachCleanupException(operationException, rollbackException);
+                    logger?.Warning(
+                        rollbackException,
+                        "Transaction cleanup failed after a journal operation error; the original operation exception is preserved and remains the primary error.");
                 }
 
                 try
@@ -235,6 +232,9 @@ namespace Akka.Persistence.Sql.Extensions
                 catch (Exception disposeException)
                 {
                     AttachCleanupException(operationException, disposeException);
+                    logger?.Warning(
+                        disposeException,
+                        "Transaction cleanup failed after a journal operation error; the original operation exception is preserved and remains the primary error.");
                 }
 
                 throw;
@@ -245,7 +245,8 @@ namespace Akka.Persistence.Sql.Extensions
 
         private static async Task DisposeConnectionAsync(
             AkkaDataConnection connection,
-            Exception? operationException)
+            Exception? operationException,
+            ILoggingAdapter? logger)
         {
             try
             {
@@ -254,6 +255,9 @@ namespace Akka.Persistence.Sql.Extensions
             catch (Exception cleanupException) when (operationException is not null)
             {
                 AttachCleanupException(operationException, cleanupException);
+                logger?.Warning(
+                    cleanupException,
+                    "Transaction cleanup failed after a journal operation error; the original operation exception is preserved and remains the primary error.");
             }
         }
 

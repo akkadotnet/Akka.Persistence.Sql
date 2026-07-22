@@ -11,7 +11,6 @@ using Akka.Persistence.Sql.Snapshot;
 using LinqToDB;
 using LinqToDB.Data;
 using LinqToDB.Data.RetryPolicy;
-using LinqToDB.DataProvider.SqlServer;
 using LinqToDB.Mapping;
 
 namespace Akka.Persistence.Sql.Db
@@ -44,7 +43,7 @@ namespace Akka.Persistence.Sql.Db
             _useCloneDataConnection = config.UseCloneConnection;
 
             if (_opts.RetryPolicyOptions.RetryPolicy is null && _opts.RetryPolicyOptions.Factory is null && _opts.ConnectionOptions.ProviderName!.ToLowerInvariant().StartsWith("sqlserver"))
-                _opts = _opts.WithOptions(_opts.RetryPolicyOptions with { Factory = _ => new SqlServerRetryPolicy() });
+                _opts = _opts.WithOptions(_opts.RetryPolicyOptions with { Factory = _ => new AkkaSqlServerRetryPolicy() });
             
             _cloneConnection = new Lazy<AkkaDataConnection>(
                 () => new AkkaDataConnection(
@@ -409,22 +408,32 @@ namespace Akka.Persistence.Sql.Db
             => _opts.RetryPolicyOptions.RetryPolicy is not null ||
                _opts.RetryPolicyOptions.Factory is not null;
 
-        internal AkkaDataConnection GetRetryScopeConnection(out IRetryPolicy? retryPolicy)
+        /// <summary>
+        /// Materializes the configured retry policy. LinqToDB can only produce a policy through
+        /// RetryPolicyOptions (instance or factory) applied to a DataConnection, so we construct a
+        /// throwaway connection — never opened — and detach its policy.
+        /// </summary>
+        internal IRetryPolicy? TakeReplayRetryPolicy()
         {
-            if (!HasRetryPolicy)
-            {
-                retryPolicy = null;
-                return GetConnection();
-            }
-
             // Do not clone here. DataConnection.Clone copies the current retry-policy instance,
             // while a replay-safe operation needs one independent policy to own all of its attempts.
+            using var connection = new AkkaDataConnection(
+                _opts.ConnectionOptions.ProviderName!,
+                new DataConnection(_opts));
+            return connection.DetachRetryPolicy();
+        }
+
+        /// <summary>
+        /// Creates a fresh connection with no attached retry policy, so commands inside an explicit
+        /// transaction are never retried by LinqToDB against a doomed transaction.
+        /// </summary>
+        internal AkkaDataConnection GetConnectionWithoutRetryPolicy()
+        {
             var connection = new AkkaDataConnection(
                 _opts.ConnectionOptions.ProviderName!,
                 new DataConnection(_opts));
-            retryPolicy = connection.DetachRetryPolicy();
+            connection.DetachRetryPolicy();
             return connection;
         }
-
     }
 }
