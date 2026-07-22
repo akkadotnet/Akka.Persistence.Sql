@@ -10,6 +10,7 @@ using Akka.Persistence.Sql.Journal.Types;
 using Akka.Persistence.Sql.Snapshot;
 using LinqToDB;
 using LinqToDB.Data;
+using LinqToDB.Data.RetryPolicy;
 using LinqToDB.DataProvider.SqlServer;
 using LinqToDB.Mapping;
 
@@ -43,7 +44,7 @@ namespace Akka.Persistence.Sql.Db
             _useCloneDataConnection = config.UseCloneConnection;
 
             if (_opts.RetryPolicyOptions.RetryPolicy is null && _opts.RetryPolicyOptions.Factory is null && _opts.ConnectionOptions.ProviderName!.ToLowerInvariant().StartsWith("sqlserver"))
-                _opts = _opts.WithOptions( _opts.RetryPolicyOptions with { RetryPolicy = new SqlServerRetryPolicy() } );
+                _opts = _opts.WithOptions(_opts.RetryPolicyOptions with { Factory = _ => new SqlServerRetryPolicy() });
             
             _cloneConnection = new Lazy<AkkaDataConnection>(
                 () => new AkkaDataConnection(
@@ -403,5 +404,27 @@ namespace Akka.Persistence.Sql.Db
 
             return _cloneConnection.Value.Clone();
         }
+
+        internal bool HasRetryPolicy
+            => _opts.RetryPolicyOptions.RetryPolicy is not null ||
+               _opts.RetryPolicyOptions.Factory is not null;
+
+        internal AkkaDataConnection GetRetryScopeConnection(out IRetryPolicy? retryPolicy)
+        {
+            if (!HasRetryPolicy)
+            {
+                retryPolicy = null;
+                return GetConnection();
+            }
+
+            // Do not clone here. DataConnection.Clone copies the current retry-policy instance,
+            // while a replay-safe operation needs one independent policy to own all of its attempts.
+            var connection = new AkkaDataConnection(
+                _opts.ConnectionOptions.ProviderName!,
+                new DataConnection(_opts));
+            retryPolicy = connection.DetachRetryPolicy();
+            return connection;
+        }
+
     }
 }

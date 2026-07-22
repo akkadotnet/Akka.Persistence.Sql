@@ -126,7 +126,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
             if (maxMarkedDeletion is 0)
                 return;
             
-            await ConnectionFactory.ExecuteWithTransactionAsync(
+            await ConnectionFactory.ExecuteReplaySafeWithTransactionRetryAsync(
                 WriteIsolationLevel,
                 cts.Token,
                 async (connection, token) =>
