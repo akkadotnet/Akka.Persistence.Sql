@@ -14,6 +14,7 @@ using LinqToDB;
 using LinqToDB.Data;
 using LinqToDB.DataProvider;
 using LinqToDB.DataProvider.SqlServer;
+using LinqToDB.Data.RetryPolicy;
 using LinqToDB.SchemaProvider;
 
 namespace Akka.Persistence.Sql.Db
@@ -62,6 +63,13 @@ namespace Akka.Persistence.Sql.Db
 
         public AkkaDataConnection Clone()
             => new(_providerName, (DataConnection)_connection.Clone());
+
+        internal IRetryPolicy? DetachRetryPolicy()
+        {
+            var retryPolicy = _connection.RetryPolicy;
+            _connection.RetryPolicy = null;
+            return retryPolicy;
+        }
 
         public DatabaseSchema GetSchema()
             => _connection.DataProvider.GetSchemaProvider().GetSchema(_connection);

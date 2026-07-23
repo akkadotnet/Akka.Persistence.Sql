@@ -126,7 +126,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
             if (maxMarkedDeletion is 0)
                 return;
             
-            await ConnectionFactory.ExecuteWithTransactionAsync(
+            await ConnectionFactory.ExecuteReplaySafeWithTransactionRetryAsync(
                 WriteIsolationLevel,
                 cts.Token,
                 async (connection, token) =>
@@ -184,7 +184,8 @@ namespace Akka.Persistence.Sql.Journal.Dao
                                     r.PersistenceId == persistenceId)
                             .DeleteAsync(token);
                     }
-                });
+                },
+                Logger);
         }
 
         public async Task<Done> Update(string persistenceId, long sequenceNr, object payload)
