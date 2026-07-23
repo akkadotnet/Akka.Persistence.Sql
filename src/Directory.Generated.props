@@ -1,8 +1,25 @@
 <Project>
   <PropertyGroup>
-    <VersionPrefix>1.5.60.1</VersionPrefix>
-    <PackageReleaseNotes>* [Bump Akka.NET to 1.5.60](https://github.com/akkadotnet/akka.net/releases/tag/1.5.60)
-* [Bump Akka.Hosting to 1.5.60](https://github.com/akkadotnet/Akka.Hosting/releases/tag/1.5.60)
-* [Fix linq2db assembly binding conflict](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/572) - bumped `linq2db` from 5.4.1 to 5.4.1.9 to resolve assembly version mismatch that prevented projects from building when NuGet resolved the newer package version.</PackageReleaseNotes>
+    <VersionPrefix>1.5.70</VersionPrefix>
+    <PackageReleaseNotes>**New Feature — FromEnd Query Offset**
+
+Query the *last N events* by tag using a new `Offset.FromEnd(count)` offset type. Instead of streaming from a known forward offset, you specify how many recent events to return — useful for "get me the last 10 events tagged X" scenarios without knowing the current offset upfront.
+
+```csharp
+// Get the last 3 events tagged "green"
+var lastThree = ReadJournal
+    .CurrentEventsByTag("green", Offset.FromEnd(3))
+    .RunWith(Sink.Seq&lt;EventEnvelope&gt;(), materializer);
+
+// If fewer than 3 events exist, returns all of them
+var allEvents = ReadJournal
+    .CurrentEventsByTag("green", Offset.FromEnd(100))
+    .RunWith(Sink.Seq&lt;EventEnvelope&gt;(), materializer);
+```
+
+* [Add FromEnd (last-N) query offset support](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/589) - New `Offset.FromEnd(count)` query offset that resolves to the correct concrete start offset by looking up the max journal sequence. Implemented across all database providers (SQL Server, PostgreSQL, MySQL, SQLite).
+* [Fix journal delete transaction retry scope](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/592) - Move the configured retry policy outside the journal delete transaction so every retry uses a fresh connection and transaction. Prevents `Task.Delay` from throwing on negative delays and aborting the whole-transaction retry loop.
+* [Bump Akka.NET to 1.5.70](https://github.com/akkadotnet/akka.net/releases/tag/1.5.70)
+* [Bump Akka.Hosting to 1.5.70](https://github.com/akkadotnet/Akka.Hosting/releases/tag/1.5.70)</PackageReleaseNotes>
   </PropertyGroup>
 </Project>

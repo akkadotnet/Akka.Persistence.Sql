@@ -1,4 +1,4 @@
-#### 1.5.70-beta1 June 24th 2026 ####
+#### 1.5.70 July 23rd 2026 ####
 
 **New Feature — FromEnd Query Offset**
 
@@ -17,7 +17,9 @@ var allEvents = ReadJournal
 ```
 
 * [Add FromEnd (last-N) query offset support](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/589) - New `Offset.FromEnd(count)` query offset that resolves to the correct concrete start offset by looking up the max journal sequence. Implemented across all database providers (SQL Server, PostgreSQL, MySQL, SQLite).
-* [Bump Akka.NET to 1.5.70-beta1](https://github.com/akkadotnet/akka.net/releases/tag/1.5.70-beta1)
+* [Fix journal delete transaction retry scope](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/592) - Move the configured retry policy outside the journal delete transaction so every retry uses a fresh connection and transaction. Prevents `Task.Delay` from throwing on negative delays and aborting the whole-transaction retry loop.
+* [Bump Akka.NET to 1.5.70](https://github.com/akkadotnet/akka.net/releases/tag/1.5.70)
+* [Bump Akka.Hosting to 1.5.70](https://github.com/akkadotnet/Akka.Hosting/releases/tag/1.5.70)
 
 #### 1.5.67 April 28th 2026 ####
 
