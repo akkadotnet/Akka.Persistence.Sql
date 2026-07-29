@@ -1,3 +1,10 @@
+#### 1.5.70.1 July 29th 2026 ####
+
+**Dependency Correction**
+
+* Correct the prerelease Akka.NET package dependencies in `1.5.70` to stable `1.5.70`.
+* Upgrade Akka.Hosting package dependencies from `1.5.67` to stable `1.5.70`.
+
 #### 1.5.70 July 23rd 2026 ####
 
 **New Feature — FromEnd Query Offset**
