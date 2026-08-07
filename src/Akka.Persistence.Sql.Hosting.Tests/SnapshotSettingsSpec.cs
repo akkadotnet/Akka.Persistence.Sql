@@ -99,6 +99,7 @@ akka.persistence.snapshot-store.sql {
             config.DefaultSerializer.Should().Be("hyperion");
             config.ReadIsolationLevel.Should().Be(IsolationLevel.Snapshot);
             config.WriteIsolationLevel.Should().Be(IsolationLevel.Snapshot);
+            config.CommandTimeout.Should().BeNull();
 
             config.TableConfig.SchemaName.Should().Be("schema");
 
@@ -110,6 +111,44 @@ akka.persistence.snapshot-store.sql {
             snapshotTable.ColumnNames.Snapshot.Should().Be("d");
             snapshotTable.ColumnNames.Manifest.Should().Be("e");
             snapshotTable.ColumnNames.SerializerId.Should().Be("f");
+        }
+
+        [Fact(DisplayName = "CommandTimeout option should propagate to snapshot config")]
+        public void CommandTimeoutOptionsTest()
+        {
+            var opt = new SqlSnapshotOptions(false, "custom")
+            {
+                ConnectionString = "a",
+                ProviderName = "b",
+                CommandTimeout = 60,
+            };
+
+            var fullConfig = opt.ToConfig();
+            var snapshotConfig = fullConfig
+                .GetConfig("akka.persistence.snapshot-store.custom")
+                .WithFallback(SqlPersistence.DefaultSnapshotConfiguration);
+            var config = new SnapshotConfig(snapshotConfig);
+
+            config.CommandTimeout.Should().Be(60);
+        }
+
+        [Fact(DisplayName = "Null CommandTimeout option should result in null config")]
+        public void NullCommandTimeoutOptionsTest()
+        {
+            var opt = new SqlSnapshotOptions(false, "custom")
+            {
+                ConnectionString = "a",
+                ProviderName = "b",
+                CommandTimeout = null,
+            };
+
+            var fullConfig = opt.ToConfig();
+            var snapshotConfig = fullConfig
+                .GetConfig("akka.persistence.snapshot-store.custom")
+                .WithFallback(SqlPersistence.DefaultSnapshotConfiguration);
+            var config = new SnapshotConfig(snapshotConfig);
+
+            config.CommandTimeout.Should().BeNull();
         }
     }
 }
