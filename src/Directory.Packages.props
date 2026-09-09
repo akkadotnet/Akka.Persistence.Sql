@@ -4,7 +4,7 @@
     <AkkaVersion>1.5.70-beta1</AkkaVersion>
     <AkkaHostingVersion>1.5.67</AkkaHostingVersion>
     <FluentMigratorVersion>5.2.0</FluentMigratorVersion>
-    <SqliteVersion>1.0.118</SqliteVersion>
+    <SqliteVersion>1.0.119</SqliteVersion>
     <MicrosoftSqliteVersion>8.0.7</MicrosoftSqliteVersion>
     <MicrosoftExtensionsVersion>[6.0.0, )</MicrosoftExtensionsVersion>
     <Xunit3Version>3.2.2</Xunit3Version>
