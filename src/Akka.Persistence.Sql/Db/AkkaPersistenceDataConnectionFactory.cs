@@ -391,7 +391,15 @@ namespace Akka.Persistence.Sql.Db
             // just override the connection string or the provider name. If data options are set, we assume that a valid
             // connection can be created.
             var options = config.DataOptions ?? new DataOptions().UseConnectionString(config.ProviderName, config.ConnectionString);
-            return options.UseMappingSchema(mappingSchema);
+            options = options.UseMappingSchema(mappingSchema);
+
+            if (config.CommandTimeout.HasValue)
+            {
+                options = options.WithOptions(
+                    options.DataContextOptions with { CommandTimeout = config.CommandTimeout.Value });
+            }
+
+            return options;
         }
 
         public AkkaDataConnection GetConnection()

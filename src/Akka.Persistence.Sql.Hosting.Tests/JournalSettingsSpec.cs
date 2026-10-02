@@ -184,6 +184,7 @@ namespace Akka.Persistence.Sql.Hosting.Tests
             journalConfig.UseCloneConnection.Should().BeTrue(); // non-overridable
             journalConfig.ReadIsolationLevel.Should().Be(IsolationLevel.Snapshot);
             journalConfig.WriteIsolationLevel.Should().Be(IsolationLevel.Snapshot);
+            journalConfig.CommandTimeout.Should().BeNull();
 
             journalConfig.PluginConfig.TagSeparator.Should().Be(":");
             journalConfig.PluginConfig.TagMode.Should().Be(TagMode.Csv);
@@ -270,6 +271,62 @@ namespace Akka.Persistence.Sql.Hosting.Tests
             tagTable.ColumnNames.PersistenceId.Should().Be("c");
             tagTable.ColumnNames.SequenceNumber.Should().Be("d");
             #endregion
+        }
+
+        [Fact(DisplayName = "CommandTimeout option should propagate to journal and query config")]
+        public void CommandTimeoutOptionsTest()
+        {
+            var opt = new SqlJournalOptions(false, "custom")
+            {
+                ConnectionString = "a",
+                ProviderName = "b",
+                CommandTimeout = 60,
+            };
+
+            var fullConfig = opt.ToConfig();
+
+            // Journal config
+            var journalConfig = new JournalConfig(
+                fullConfig
+                    .GetConfig("akka.persistence.journal.custom")
+                    .WithFallback(SqlPersistence.DefaultJournalConfiguration));
+
+            journalConfig.CommandTimeout.Should().Be(60);
+
+            // Query config
+            var queryConfig = new ReadJournalConfig(
+                fullConfig
+                    .GetConfig("akka.persistence.query.journal.custom")
+                    .WithFallback(SqlPersistence.DefaultQueryConfiguration));
+
+            queryConfig.CommandTimeout.Should().Be(60);
+        }
+
+        [Fact(DisplayName = "Null CommandTimeout option should result in null config")]
+        public void NullCommandTimeoutOptionsTest()
+        {
+            var opt = new SqlJournalOptions(false, "custom")
+            {
+                ConnectionString = "a",
+                ProviderName = "b",
+                CommandTimeout = null,
+            };
+
+            var fullConfig = opt.ToConfig();
+
+            var journalConfig = new JournalConfig(
+                fullConfig
+                    .GetConfig("akka.persistence.journal.custom")
+                    .WithFallback(SqlPersistence.DefaultJournalConfiguration));
+
+            journalConfig.CommandTimeout.Should().BeNull();
+
+            var queryConfig = new ReadJournalConfig(
+                fullConfig
+                    .GetConfig("akka.persistence.query.journal.custom")
+                    .WithFallback(SqlPersistence.DefaultQueryConfiguration));
+
+            queryConfig.CommandTimeout.Should().BeNull();
         }
     }
 }

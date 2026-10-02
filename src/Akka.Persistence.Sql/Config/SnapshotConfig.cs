@@ -4,6 +4,7 @@
 //  </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Data;
 using Akka.Persistence.Sql.Extensions;
 using LinqToDB;
@@ -41,6 +42,12 @@ namespace Akka.Persistence.Sql.Config
             WarnOnAutoInitializeFail = config.GetBoolean("warn-on-auto-init-fail");
             ReadIsolationLevel = config.GetIsolationLevel("read-isolation-level");
             WriteIsolationLevel = config.GetIsolationLevel("write-isolation-level");
+
+            var commandTimeoutStr = config.GetString("command-timeout");
+            CommandTimeout = !string.IsNullOrWhiteSpace(commandTimeoutStr) && !commandTimeoutStr.Equals("null", StringComparison.OrdinalIgnoreCase)
+                ? config.GetInt("command-timeout")
+                : null;
+
             DataOptions = null;
         }
 
@@ -57,6 +64,7 @@ namespace Akka.Persistence.Sql.Config
             bool warnOnAutoInitializeFail,
             IsolationLevel writeIsolationLevel,
             IsolationLevel readIsolationLevel,
+            int? commandTimeout,
             DataOptions? dataOptions)
         {
             TableConfig = tableConfig;
@@ -71,6 +79,7 @@ namespace Akka.Persistence.Sql.Config
             WarnOnAutoInitializeFail = warnOnAutoInitializeFail;
             WriteIsolationLevel = writeIsolationLevel;
             ReadIsolationLevel = readIsolationLevel;
+            CommandTimeout = commandTimeout;
             DataOptions = dataOptions;
         }
         
@@ -105,6 +114,8 @@ namespace Akka.Persistence.Sql.Config
 
         public IsolationLevel ReadIsolationLevel { get; }
 
+        public int? CommandTimeout { get; }
+
         public SnapshotConfig WithDataOptions(DataOptions dataOptions)
             => Copy(dataOptions: dataOptions);
 
@@ -121,6 +132,7 @@ namespace Akka.Persistence.Sql.Config
             bool? warnOnAutoInitializeFail = null,
             IsolationLevel? writeIsolationLevel = null,
             IsolationLevel? readIsolationLevel = null,
+            int? commandTimeout = null,
             DataOptions? dataOptions = null)
             => new(
                 tableConfig ?? TableConfig,
@@ -135,6 +147,7 @@ namespace Akka.Persistence.Sql.Config
                 warnOnAutoInitializeFail ?? WarnOnAutoInitializeFail,
                 writeIsolationLevel ?? WriteIsolationLevel,
                 readIsolationLevel ?? ReadIsolationLevel,
+                commandTimeout ?? CommandTimeout,
                 dataOptions ?? DataOptions);
     }
 }

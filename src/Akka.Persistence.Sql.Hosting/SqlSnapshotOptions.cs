@@ -104,6 +104,15 @@ namespace Akka.Persistence.Sql.Hosting
         /// </summary>
         public DataOptions? DataOptions { get; set; }
 
+        /// <summary>
+        ///     <para>
+        ///         The ADO.NET command timeout for all snapshot database operations, in seconds.
+        ///         This controls how long each SQL command is allowed to execute before timing out.
+        ///     </para>
+        ///     <b>Default</b>: <c>null</c> (uses the ADO.NET provider default, typically 30s for SQL Server)
+        /// </summary>
+        public int? CommandTimeout { get; set; }
+
         protected override Configuration.Config InternalDefaultConfig => Default;
 
         protected override StringBuilder Build(StringBuilder sb)
@@ -133,6 +142,9 @@ namespace Akka.Persistence.Sql.Hosting
 
             if (WriteIsolationLevel is not null)
                 sb.AppendLine($"write-isolation-level = {WriteIsolationLevel.ToHocon()}");
+
+            if (CommandTimeout is not null)
+                sb.AppendLine($"command-timeout = {CommandTimeout.Value}");
 
             DatabaseOptions?.Build(sb);
 
