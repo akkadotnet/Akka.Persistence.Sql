@@ -1,3 +1,20 @@
+#### 1.6.0-beta2 October 6th 2026 ####
+
+Akka.Persistence.Sql moves to the Akka.NET 1.6 line. Built against Akka.NET 1.6.0-beta2.
+
+**Breaking changes**
+
+* **net10.0 only.** Akka.NET 1.6 targets net10.0 only, so `Akka.Persistence.Sql` and `Akka.Persistence.Sql.Hosting` no longer ship `netstandard2.0` or `net6.0` assemblies. Stay on the `1.5.x` releases (`v1.5` branch) if you need Akka.NET 1.5 or an older runtime.
+* Requires Akka.NET 1.6.0-beta2 or later and Akka.Hosting / Akka.Persistence.Hosting 1.6.0-beta2 or later.
+* `JournalOptions.Adapters` no longer exists in Akka.Persistence.Hosting 1.6. Pass event adapters through the `journalBuilder` callback of `WithSqlPersistence(...)` instead.
+
+**Other changes**
+
+* Bump Akka.NET to 1.6.0-beta2
+* Bump Akka.Hosting, Akka.Persistence.Hosting and Akka.Cluster.Hosting to 1.6.0-beta2
+* Test projects move to net10.0 and Microsoft.Extensions 10.x.
+* The legacy `Akka.Persistence.Sql.Common` data-compatibility tests (which depend on the archived `Akka.Persistence.Sqlite`, `SqlServer`, `PostgreSql` and `MySql` plugins) and the Redis benchmark reference are removed from this branch. They stay on `v1.5`. The compatibility *features* (`delete-compatibility-mode`, legacy table and column name mapping, the migration scripts) are unchanged.
+
 #### 1.5.70 July 23rd 2026 ####
 
 **New Feature — FromEnd Query Offset**
