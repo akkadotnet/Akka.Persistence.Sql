@@ -1,12 +1,12 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <AkkaVersion>1.5.70-beta1</AkkaVersion>
-    <AkkaHostingVersion>1.5.67</AkkaHostingVersion>
+    <AkkaVersion>1.6.0-beta2</AkkaVersion>
+    <AkkaHostingVersion>1.6.0-beta2</AkkaHostingVersion>
     <FluentMigratorVersion>5.2.0</FluentMigratorVersion>
     <SqliteVersion>1.0.118</SqliteVersion>
     <MicrosoftSqliteVersion>8.0.7</MicrosoftSqliteVersion>
-    <MicrosoftExtensionsVersion>[6.0.0, )</MicrosoftExtensionsVersion>
+    <MicrosoftExtensionsVersion>10.0.0</MicrosoftExtensionsVersion>
     <Xunit3Version>3.2.2</Xunit3Version>
   </PropertyGroup>
   <!-- Akka dependencies -->
@@ -17,7 +17,6 @@
     <PackageVersion Include="Akka.Hosting" Version="$(AkkaHostingVersion)" />
     <PackageVersion Include="Akka.Persistence" Version="$(AkkaVersion)" />
     <PackageVersion Include="Akka.Persistence.Hosting" Version="$(AkkaHostingVersion)" />
-    <PackageVersion Include="Akka.Persistence.Sql.Compat.Common" Version="0.1.0" />
     <PackageVersion Include="Akka.Persistence.TCK" Version="$(AkkaVersion)" />
     <PackageVersion Include="Akka.Persistence.TestKit" Version="$(AkkaVersion)" />
     <PackageVersion Include="Akka.Persistence.Query" Version="$(AkkaVersion)" />
@@ -40,13 +39,11 @@
   </ItemGroup>
   <!-- SQL Server dependencies -->
   <ItemGroup>
-    <PackageVersion Include="Akka.Persistence.SqlServer" Version="1.5.30" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="5.2.2" />
     <PackageVersion Include="Microsoft.SqlServer.SqlManagementObjects" Version="171.30.0" />
   </ItemGroup>
   <!-- Sqlite dependencies -->
   <ItemGroup>
-    <PackageVersion Include="Akka.Persistence.Sqlite" Version="1.5.39" />
     <PackageVersion Include="System.Data.SQLite" Version="$(SqliteVersion)" />
     <PackageVersion Include="System.Data.SQLite.Core" Version="$(SqliteVersion)" />
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="$(MicrosoftSqliteVersion)" />
@@ -54,17 +51,10 @@
   </ItemGroup>
   <!-- PostgreSql dependencies -->
   <ItemGroup>
-    <PackageVersion Include="Akka.Persistence.PostgreSql" Version="1.5.20" />
     <PackageVersion Include="Npgsql" Version="8.0.4" />
-  </ItemGroup>
-  <!-- Redis dependencies -->
-  <ItemGroup>
-    <PackageVersion Include="Akka.Persistence.Redis" Version="1.5.29" />
-    <PackageVersion Include="redis-inside" Version="3.3.0" />
   </ItemGroup>
   <!-- MySql dependencies -->
   <ItemGroup>
-    <PackageVersion Include="Akka.Persistence.MySql" Version="1.5.13" />
     <PackageVersion Include="MySql.Data" Version="8.4.0" />
   </ItemGroup>
   <!-- Test dependencies -->

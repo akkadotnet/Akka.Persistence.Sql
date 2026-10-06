@@ -47,11 +47,9 @@ namespace Akka.Persistence.Sql.Hosting.Tests
                 ProviderName = _fixture.ProviderName,
                 ConnectionString = _fixture.ConnectionString,
                 TagStorageMode = TagMode.TagTable,
-                Adapters = new AkkaPersistenceJournalBuilder("custom", builder),
                 QueryRefreshInterval = 1.Seconds(),
                 AutoInitialize = true,
             };
-            journalOptions.Adapters.AddWriteEventAdapter<ColorFruitTagger>("color-tagger", [typeof(string)]);
 
             var snapshotOptions = new SqlSnapshotOptions(true, "custom")
             {
@@ -60,7 +58,10 @@ namespace Akka.Persistence.Sql.Hosting.Tests
                 AutoInitialize = true,
             };
 
-            builder.WithSqlPersistence(journalOptions, snapshotOptions);
+            builder.WithSqlPersistence(
+                journalOptions,
+                snapshotOptions,
+                journalBuilder: journal => journal.AddWriteEventAdapter<ColorFruitTagger>("color-tagger", [typeof(string)]));
         }
         
         [Fact]
