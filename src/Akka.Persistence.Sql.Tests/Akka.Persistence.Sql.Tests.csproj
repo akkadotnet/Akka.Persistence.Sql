@@ -10,10 +10,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Akka.Persistence.Sqlite" />
-    <PackageReference Include="Akka.Persistence.SqlServer" />
-    <PackageReference Include="Akka.Persistence.PostgreSql" />
-    <PackageReference Include="Akka.Persistence.MySql" />
     <PackageReference Include="Akka.Serialization.Hyperion" />
 
     <PackageReference Include="Microsoft.NET.Test.Sdk" />

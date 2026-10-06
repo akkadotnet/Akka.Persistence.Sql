@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Description>An Akka Persistence Module for SQL Databases using Linq2Db.</Description>
-    <TargetFrameworks>$(NetStandardLibVersion);$(NetLibVersion)</TargetFrameworks>
+    <TargetFramework>$(NetLibVersion)</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -9,7 +9,6 @@
     <PackageReference Include="Akka.Streams" />
     <PackageReference Include="LanguageExt.Core" />
     <PackageReference Include="linq2db" />
-    <PackageReference Include="Microsoft.Bcl.HashCode" />
     <PackageReference Include="System.Linq.Async" />
     <PackageReference Include="System.Reactive.Linq" />
   </ItemGroup>

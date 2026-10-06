@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>$(NetStandardLibVersion)</TargetFramework>
+    <TargetFramework>$(NetLibVersion)</TargetFramework>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 

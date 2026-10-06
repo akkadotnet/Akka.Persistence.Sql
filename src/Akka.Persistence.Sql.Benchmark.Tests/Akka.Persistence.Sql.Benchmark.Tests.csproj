@@ -14,11 +14,8 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="JetBrains.dotMemoryUnit" />
 
-    <PackageReference Include="Akka.Persistence.PostgreSql" />
 
-    <PackageReference Include="Akka.Persistence.Redis" />
 
-    <PackageReference Include="redis-inside" />
 
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio">
