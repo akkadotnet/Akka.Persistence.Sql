@@ -1,3 +1,17 @@
+#### 1.6.0-beta3 October 7th 2026 ####
+
+Built against Akka.NET 1.6.0-beta3.
+
+**Bug fix**
+
+* Fix ACKed writes that could not be recovered when events or snapshots use a source-generated (`Akka.Serialization.V2`) serializer. Under Akka.NET 1.6.0-beta2 the plugin stored a CLR type name as the manifest instead of the serializer's own manifest ([akkadotnet/akka.net#8784](https://github.com/akkadotnet/akka.net/issues/8784), fixed in Akka.NET 1.6.0-beta3). Rows already written by 1.6.0-beta2 with a CLR type name as manifest are not repaired.
+
+**Other changes**
+
+* Bump Akka.NET to 1.6.0-beta3
+* Bump Akka.Hosting, Akka.Persistence.Hosting and Akka.Cluster.Hosting to 1.6.0-beta3
+* Add a SQLite regression test for source-generated serializers
+
 #### 1.6.0-beta2 October 6th 2026 ####
 
 Akka.Persistence.Sql moves to the Akka.NET 1.6 line. Built against Akka.NET 1.6.0-beta2.
