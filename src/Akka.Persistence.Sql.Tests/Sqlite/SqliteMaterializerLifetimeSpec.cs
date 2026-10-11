@@ -56,7 +56,7 @@ public class SqliteMaterializerLifetimeSpec : Akka.TestKit.Xunit.TestKit
             class = "{{typeof(FailingSqlWriteJournal).AssemblyQualifiedName}}"
             auto-initialize = true
             provider-name = SQLite.MS
-            connection-string = "Data Source={{RecoveryDatabasePath}};Mode=ReadWriteCreate"
+            connection-string = "Data Source={{RecoveryDatabasePath}};Mode=ReadWriteCreate;Pooling=False"
         }
         akka.persistence.journal.sql-stop {
             class = "{{typeof(FailingSqlWriteJournal).AssemblyQualifiedName}}"
@@ -69,7 +69,7 @@ public class SqliteMaterializerLifetimeSpec : Akka.TestKit.Xunit.TestKit
             class = "{{typeof(FailingSqlSnapshotStore).AssemblyQualifiedName}}"
             auto-initialize = true
             provider-name = SQLite.MS
-            connection-string = "Data Source={{SnapshotRecoveryDatabasePath}};Mode=ReadWriteCreate"
+            connection-string = "Data Source={{SnapshotRecoveryDatabasePath}};Mode=ReadWriteCreate;Pooling=False"
         }
         """).WithFallback(SqlPersistence.DefaultConfiguration);
 
