@@ -11,7 +11,6 @@ using Akka.Actor;
 using Akka.Event;
 using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Query.InternalProtocol;
-using Akka.Persistence.Sql.Utility;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Util.Internal;
@@ -31,8 +30,8 @@ namespace Akka.Persistence.Sql.Query
             IReadJournalDao readJournalDao,
             JournalSequenceRetrievalConfig config)
         {
-            _mat = Materializer.CreateSystemMaterializer(
-                context: (ExtendedActorSystem)Context.System,
+            _mat = ActorMaterializer.Create(
+                context: Context,
                 settings: ActorMaterializerSettings.Create(Context.System),
                 namePrefix: "sql-query");
 
