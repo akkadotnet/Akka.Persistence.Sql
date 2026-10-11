@@ -28,6 +28,20 @@ namespace Akka.Persistence.Sql.Snapshot
         private readonly ByteArraySnapshotDao _dao;
         private readonly ILoggingAdapter _log;
         private readonly SnapshotConfig _settings;
+        private readonly CancellationTokenSource _initializationCts = new();
+        private readonly TimeSpan _initializationRetryDelay;
+
+        private sealed class InitializationResult
+        {
+            public InitializationResult(SqlSnapshotStore owner, Status status)
+            {
+                Owner = owner;
+                Status = status;
+            }
+
+            public SqlSnapshotStore Owner { get; }
+            public Status Status { get; }
+        }
 
         public SqlSnapshotStore(Configuration.Config snapshotConfig)
         {
@@ -35,6 +49,10 @@ namespace Akka.Persistence.Sql.Snapshot
 
             var config = snapshotConfig.WithFallback(SqlPersistence.DefaultSnapshotConfiguration);
             _settings = new SnapshotConfig(config);
+            _initializationRetryDelay = config.GetTimeSpan("initialization-retry-delay");
+            if (_initializationRetryDelay < TimeSpan.FromMilliseconds(1) ||
+                _initializationRetryDelay > TimeSpan.FromMilliseconds(int.MaxValue - 1))
+                throw new ArgumentOutOfRangeException("initialization-retry-delay", "Initialization retry delay must be between 1 ms and the maximum supported Task.Delay duration.");
 
             var setup = Context.System.Settings.Setup;
             var singleSetup = setup.Get<DataOptionsSetup>();
@@ -61,18 +79,27 @@ namespace Akka.Persistence.Sql.Snapshot
         protected override void PreStart()
         {
             base.PreStart();
-            Initialize().PipeTo(Self);
+            _ = InitializeAndNotify(Self);
             BecomeStacked(WaitingForInitialization);
         }
 
         protected override void PostStop()
         {
+            _initializationCts.Cancel();
+            _initializationCts.Dispose();
             _dao.Dispose();
             base.PostStop();
         }
 
         private bool WaitingForInitialization(object message)
         {
+            if (message is InitializationResult result)
+            {
+                if (!ReferenceEquals(result.Owner, this))
+                    return true;
+                message = result.Status;
+            }
+
             switch (message)
             {
                 case Status.Success:
@@ -81,7 +108,6 @@ namespace Akka.Persistence.Sql.Snapshot
                     return true;
 
                 case Status.Failure msg:
-                    _log.Error(msg.Cause, "Error during {0} initialization", Self);
                     // trigger a restart so we have some hope of succeeding in the future even if initialization failed
                     throw new ApplicationException("Failed to initialize SQL SnapshotStore.", msg.Cause);
 
@@ -93,6 +119,7 @@ namespace Akka.Persistence.Sql.Snapshot
 
         private async Task<Status> Initialize()
         {
+            var cancellationToken = _initializationCts.Token;
             if (!_settings.AutoInitialize)
                 return new Status.Success(NotUsed.Instance);
 
@@ -102,10 +129,32 @@ namespace Akka.Persistence.Sql.Snapshot
             }
             catch (Exception e)
             {
+                _log.Error(e, "Failure during SQL SnapshotStore initialization.");
+                await Task.Delay(_initializationRetryDelay, cancellationToken);
                 return new Status.Failure(e);
             }
 
             return Status.Success.Instance;
+        }
+
+        private async Task InitializeAndNotify(IActorRef self)
+        {
+            try
+            {
+                var status = await Initialize();
+                if (!_initializationCts.IsCancellationRequested)
+                    self.Tell(new InitializationResult(this, status));
+            }
+            catch (OperationCanceledException) when (_initializationCts.IsCancellationRequested)
+            {
+                // This incarnation was stopped while waiting to retry initialization.
+            }
+            catch (Exception e)
+            {
+                _log.Error(e, "Failure during SQL SnapshotStore initialization.");
+                if (!_initializationCts.IsCancellationRequested)
+                    self.Tell(new InitializationResult(this, new Status.Failure(e)));
+            }
         }
 
         protected override async Task<SelectedSnapshot?> LoadAsync(
