@@ -11,6 +11,7 @@ using Akka.Actor;
 using Akka.Event;
 using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Query.InternalProtocol;
+using Akka.Persistence.Sql.Utility;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Util.Internal;
