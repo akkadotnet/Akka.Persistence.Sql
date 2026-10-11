@@ -31,10 +31,7 @@ namespace Akka.Persistence.Sql.Query
             IReadJournalDao readJournalDao,
             JournalSequenceRetrievalConfig config)
         {
-            _mat = Materializer.CreateSystemMaterializer(
-                context: (ExtendedActorSystem)Context.System,
-                settings: ActorMaterializerSettings.Create(Context.System),
-                namePrefix: "sql-query");
+            _mat = Context.Materializer();
 
             _readJournalDao = readJournalDao;
             _config = config;
