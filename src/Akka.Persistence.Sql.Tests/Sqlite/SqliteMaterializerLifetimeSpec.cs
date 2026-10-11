@@ -18,6 +18,8 @@ namespace Akka.Persistence.Sql.Tests.Sqlite;
 
 public class SqliteMaterializerLifetimeSpec : Akka.TestKit.Xunit.TestKit
 {
+    private static readonly string MissingDatabase = $"missing-journal-{Guid.NewGuid():N}.db";
+
     private static readonly Configuration.Config TestConfig = ConfigurationFactory.ParseString($$"""
         akka.persistence.journal {
             plugin = akka.persistence.journal.sql
@@ -36,6 +38,12 @@ public class SqliteMaterializerLifetimeSpec : Akka.TestKit.Xunit.TestKit
                 provider-name = SQLite.MS
                 connection-string = "Data Source=:memory:"
             }
+        }
+        akka.persistence.journal.sql-failing {
+            class = "{{typeof(FailingSqlWriteJournal).AssemblyQualifiedName}}"
+            auto-initialize = true
+            provider-name = SQLite.MS
+            connection-string = "Data Source={{MissingDatabase}};Mode=ReadOnly"
         }
         """).WithFallback(SqlPersistence.DefaultConfiguration);
 
@@ -61,6 +69,38 @@ public class SqliteMaterializerLifetimeSpec : Akka.TestKit.Xunit.TestKit
         probe.Watch(replacementSupervisor);
         Sys.Stop(journal);
         probe.ExpectTerminated(replacementSupervisor, TimeSpan.FromSeconds(5));
+    }
+
+    [Fact]
+    public void Failed_journal_initialization_terminates_each_restarted_supervisor()
+    {
+        Sys.ActorOf(Props.Create(() => new SupervisorForwarder(TestActor)), "lifetime-observer");
+        var journal = Persistence.Instance.Apply(Sys).JournalFor("akka.persistence.journal.sql-failing");
+        var probe = CreateTestProbe();
+
+        try
+        {
+            var firstReport = ExpectMsg<FailedInitSupervisor>(TimeSpan.FromSeconds(5));
+            Assert.True(firstReport.IsInitializationFailure);
+            var first = firstReport.Supervisor;
+            Assert.Equal(journal.Path, first.Path.Parent);
+            Assert.StartsWith("StreamSupervisor-", first.Path.Name);
+            probe.Watch(first);
+            probe.ExpectTerminated(first, TimeSpan.FromSeconds(5));
+
+            var secondReport = ExpectMsg<FailedInitSupervisor>(TimeSpan.FromSeconds(5));
+            Assert.True(secondReport.IsInitializationFailure);
+            var second = secondReport.Supervisor;
+            Assert.Equal(journal.Path, second.Path.Parent);
+            Assert.StartsWith("StreamSupervisor-", second.Path.Name);
+            Assert.NotEqual(first, second);
+            probe.Watch(second);
+            probe.ExpectTerminated(second, TimeSpan.FromSeconds(5));
+        }
+        finally
+        {
+            Sys.Stop(journal);
+        }
     }
 
     [Fact]
@@ -133,5 +173,32 @@ public sealed class RestartableSqlWriteJournal(Configuration.Config config) : Sq
             throw new ApplicationException("Test-controlled journal restart");
 
         return base.ReceivePluginInternal(message);
+    }
+}
+
+internal sealed record FailedInitSupervisor(IActorRef Supervisor, bool IsInitializationFailure);
+
+public sealed class SupervisorForwarder : ReceiveActor
+{
+    public SupervisorForwarder(IActorRef target)
+    {
+        Receive<FailedInitSupervisor>(message => target.Tell(message));
+    }
+}
+
+public sealed class FailingSqlWriteJournal(Configuration.Config config) : SqlWriteJournal(config)
+{
+    public override void AroundPreRestart(Exception cause, object? message)
+    {
+        var isInitializationFailure = cause is ApplicationException { InnerException: not null }
+                                      && cause.Message == "Failed to initialize SQL Journal.";
+        foreach (var child in Context.GetChildren())
+        {
+            if (child.Path.Name.StartsWith("StreamSupervisor-", StringComparison.Ordinal))
+                Context.ActorSelection("/user/lifetime-observer")
+                    .Tell(new FailedInitSupervisor(child, isInitializationFailure));
+        }
+
+        base.AroundPreRestart(cause, message);
     }
 }
