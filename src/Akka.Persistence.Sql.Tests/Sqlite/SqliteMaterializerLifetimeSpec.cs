@@ -192,10 +192,13 @@ public class SqliteMaterializerLifetimeSpec : Akka.TestKit.Xunit.TestKit
             Assert.True(second.ObservedAt - first.ObservedAt >= TimeSpan.FromMilliseconds(800));
 
             var metadata = new SnapshotMetadata("snapshot-recovery", 1, DateTime.UtcNow);
-            await Assert.ThrowsAsync<AskTimeoutException>(() =>
-                store.Ask<SaveSnapshotSuccess>(new SaveSnapshot(metadata, "not yet"), TimeSpan.FromMilliseconds(200)));
+            var firstSave = CreateTestProbe();
+            firstSave.Send(store, new SaveSnapshot(metadata, "not yet"));
+            firstSave.ExpectNoMsg(TimeSpan.FromMilliseconds(200));
 
             Directory.CreateDirectory(SnapshotRecoveryDirectory);
+            var recovered = firstSave.ExpectMsg<SaveSnapshotSuccess>(TimeSpan.FromSeconds(10));
+            Assert.Equal(1, recovered.Metadata.SequenceNr);
             var saved = await store.Ask<SaveSnapshotSuccess>(
                 new SaveSnapshot(new SnapshotMetadata("snapshot-recovery", 2, DateTime.UtcNow), "saved"),
                 TimeSpan.FromSeconds(10));
