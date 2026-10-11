@@ -104,12 +104,10 @@ namespace Akka.Persistence.Sql.Journal
         {
             try
             {
-                _mat = ActorMaterializer.Create(
-                    context: Context,
+                _mat = Context.Materializer(
                     settings: ActorMaterializerSettings
                         .Create(Context.System)
-                        .WithDispatcher(_journalConfig.MaterializerDispatcher),
-                    namePrefix: "l2dbWriteJournal");
+                        .WithDispatcher(_journalConfig.MaterializerDispatcher));
 
                 _journal = new ByteArrayJournalDao(
                     scheduler: Context.System.Scheduler.Advanced,

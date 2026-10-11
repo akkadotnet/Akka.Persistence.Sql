@@ -14,6 +14,7 @@ using Akka.Persistence.Snapshot;
 using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Db;
 using Akka.Persistence.Sql.Utility;
+using Akka.Streams;
 
 namespace Akka.Persistence.Sql.Snapshot
 {
@@ -51,7 +52,7 @@ namespace Akka.Persistence.Sql.Snapshot
                 connectionFactory: new AkkaPersistenceDataConnectionFactory(_settings),
                 snapshotConfig: _settings,
                 serialization: Context.System.Serialization,
-                materializer: Akka.Streams.ActorMaterializer.Create(Context),
+                materializer: Context.Materializer(),
                 logger: Context.GetLogger());
         }
 
