@@ -23,6 +23,9 @@ public class SqliteMaterializerLifetimeSpec : Akka.TestKit.Xunit.TestKit
     private static readonly string MissingDatabase = $"missing-journal-{Guid.NewGuid():N}.db";
     private static readonly string RecoveryDirectory = Path.Combine(Path.GetTempPath(), $"sql-retry-{Guid.NewGuid():N}");
     private static readonly string SnapshotRecoveryDirectory = Path.Combine(Path.GetTempPath(), $"sql-snapshot-retry-{Guid.NewGuid():N}");
+    // Forward slashes keep absolute Windows paths valid inside quoted HOCON strings.
+    private static readonly string RecoveryDatabasePath = Path.Combine(RecoveryDirectory, "recovery.db").Replace('\\', '/');
+    private static readonly string SnapshotRecoveryDatabasePath = Path.Combine(SnapshotRecoveryDirectory, "recovery.db").Replace('\\', '/');
 
     private static readonly Configuration.Config TestConfig = ConfigurationFactory.ParseString($$"""
         akka.persistence.journal {
@@ -53,7 +56,7 @@ public class SqliteMaterializerLifetimeSpec : Akka.TestKit.Xunit.TestKit
             class = "{{typeof(FailingSqlWriteJournal).AssemblyQualifiedName}}"
             auto-initialize = true
             provider-name = SQLite.MS
-            connection-string = "Data Source={{Path.Combine(RecoveryDirectory, "recovery.db")}};Mode=ReadWriteCreate"
+            connection-string = "Data Source={{RecoveryDatabasePath}};Mode=ReadWriteCreate"
         }
         akka.persistence.journal.sql-stop {
             class = "{{typeof(FailingSqlWriteJournal).AssemblyQualifiedName}}"
@@ -66,7 +69,7 @@ public class SqliteMaterializerLifetimeSpec : Akka.TestKit.Xunit.TestKit
             class = "{{typeof(FailingSqlSnapshotStore).AssemblyQualifiedName}}"
             auto-initialize = true
             provider-name = SQLite.MS
-            connection-string = "Data Source={{Path.Combine(SnapshotRecoveryDirectory, "recovery.db")}};Mode=ReadWriteCreate"
+            connection-string = "Data Source={{SnapshotRecoveryDatabasePath}};Mode=ReadWriteCreate"
         }
         """).WithFallback(SqlPersistence.DefaultConfiguration);
 
