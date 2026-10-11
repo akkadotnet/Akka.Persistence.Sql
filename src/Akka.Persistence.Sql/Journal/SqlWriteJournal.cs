@@ -104,8 +104,8 @@ namespace Akka.Persistence.Sql.Journal
         {
             try
             {
-                _mat = Materializer.CreateSystemMaterializer(
-                    context: (ExtendedActorSystem)Context.System,
+                _mat = ActorMaterializer.Create(
+                    context: Context,
                     settings: ActorMaterializerSettings
                         .Create(Context.System)
                         .WithDispatcher(_journalConfig.MaterializerDispatcher),
