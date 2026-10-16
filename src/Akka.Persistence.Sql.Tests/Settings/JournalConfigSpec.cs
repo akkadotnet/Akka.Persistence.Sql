@@ -56,6 +56,7 @@ namespace Akka.Persistence.Sql.Tests.Settings
             journal.GetBoolean("warn-on-auto-init-fail").Should().BeTrue();
             journal.GetIsolationLevel("read-isolation-level").Should().Be(IsolationLevel.Unspecified);
             journal.GetIsolationLevel("write-isolation-level").Should().Be(IsolationLevel.Unspecified);
+            journal.GetString("command-timeout").Should().Be("null");
 
             var journalTables = journal.GetConfig("default");
             journalTables.Should().NotBeNull();
@@ -278,6 +279,30 @@ namespace Akka.Persistence.Sql.Tests.Settings
             metaColumns.SequenceNumber.Should().Be("sequence_nr");
         }
 
+        [Fact(DisplayName = "Journal config should parse command-timeout as integer seconds")]
+        public void JournalCommandTimeoutConfigTest()
+        {
+            var journalHocon = ConfigurationFactory
+                .ParseString("akka.persistence.journal.sql.command-timeout = 60")
+                .WithFallback(_defaultConfig)
+                .GetConfig("akka.persistence.journal.sql");
+
+            var journal = new JournalConfig(journalHocon);
+            journal.CommandTimeout.Should().Be(60);
+        }
+
+        [Fact(DisplayName = "Journal config should parse command-timeout = 0 as zero")]
+        public void JournalCommandTimeoutZeroConfigTest()
+        {
+            var journalHocon = ConfigurationFactory
+                .ParseString("akka.persistence.journal.sql.command-timeout = 0")
+                .WithFallback(_defaultConfig)
+                .GetConfig("akka.persistence.journal.sql");
+
+            var journal = new JournalConfig(journalHocon);
+            journal.CommandTimeout.Should().Be(0);
+        }
+
         private static void AssertDefaultJournalConfig(JournalConfig journal)
         {
             journal.ConnectionString.Should().BeNullOrEmpty();
@@ -290,6 +315,7 @@ namespace Akka.Persistence.Sql.Tests.Settings
             journal.WarnOnAutoInitializeFail.Should().BeTrue();
             journal.ReadIsolationLevel.Should().Be(IsolationLevel.Unspecified);
             journal.WriteIsolationLevel.Should().Be(IsolationLevel.Unspecified);
+            journal.CommandTimeout.Should().BeNull();
 
             var pluginConfig = journal.PluginConfig;
             pluginConfig.TagSeparator.Should().Be(";");

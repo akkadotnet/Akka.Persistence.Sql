@@ -31,6 +31,12 @@ namespace Akka.Persistence.Sql.Config
             ReadIsolationLevel = config.GetIsolationLevel("read-isolation-level");
             MaxConcurrentQueries = config.GetInt("max-concurrent-queries", 100);
             QueryThrottleTimeout = config.GetTimeSpan("query-throttle-timeout", TimeSpan.FromSeconds(3));
+
+            var commandTimeoutStr = config.GetString("command-timeout");
+            CommandTimeout = !string.IsNullOrWhiteSpace(commandTimeoutStr) && !commandTimeoutStr.Equals("null", StringComparison.OrdinalIgnoreCase)
+                ? config.GetInt("command-timeout")
+                : null;
+
             DataOptions = null;
 
             // We don't do any writes in a read journal
@@ -52,6 +58,7 @@ namespace Akka.Persistence.Sql.Config
             string defaultSerializer,
             IsolationLevel writeIsolationLevel,
             IsolationLevel readIsolationLevel,
+            int? commandTimeout,
             DataOptions? dataOptions,
             bool useCloneConnection,
             int maxConcurrentQueries,
@@ -71,6 +78,7 @@ namespace Akka.Persistence.Sql.Config
             DefaultSerializer = defaultSerializer;
             WriteIsolationLevel = writeIsolationLevel;
             ReadIsolationLevel = readIsolationLevel;
+            CommandTimeout = commandTimeout;
             DataOptions = dataOptions;
             UseCloneConnection = useCloneConnection;
             MaxConcurrentQueries = maxConcurrentQueries;
@@ -109,6 +117,8 @@ namespace Akka.Persistence.Sql.Config
 
         public IsolationLevel ReadIsolationLevel { get; }
 
+        public int? CommandTimeout { get; }
+
         public DataOptions? DataOptions { get; }
         
         public int MaxConcurrentQueries { get; }
@@ -136,6 +146,7 @@ namespace Akka.Persistence.Sql.Config
             string? defaultSerializer = null,
             IsolationLevel? writeIsolationLevel = null,
             IsolationLevel? readIsolationLevel = null,
+            int? commandTimeout = null,
             DataOptions? dataOptions = null,
             bool? useCloneConnection = null,
             int? maxConcurrentQueries = null,
@@ -155,6 +166,7 @@ namespace Akka.Persistence.Sql.Config
                 defaultSerializer ?? DefaultSerializer,
                 writeIsolationLevel ?? WriteIsolationLevel,
                 readIsolationLevel ?? ReadIsolationLevel,
+                commandTimeout ?? CommandTimeout,
                 dataOptions ?? DataOptions,
                 useCloneConnection ?? UseCloneConnection,
                 maxConcurrentQueries ?? MaxConcurrentQueries,
