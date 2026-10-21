@@ -46,6 +46,7 @@ namespace Akka.Persistence.Sql.Journal
         private readonly JournalConfig _journalConfig;
         private readonly ILoggingAdapter _log;
         private readonly CancellationTokenSource _pendingWriteCts;
+        private readonly TimeSpan _initializationRetryDelay;
         private readonly bool _useWriterUuid;
 
         private readonly Dictionary<string, Task> _writeInProgress = new();
@@ -54,6 +55,18 @@ namespace Akka.Persistence.Sql.Journal
 
         private ActorMaterializer? _mat;
 
+        private sealed class InitializationResult : INoSerializationVerificationNeeded
+        {
+            public InitializationResult(SqlWriteJournal owner, Status status)
+            {
+                Owner = owner;
+                Status = status;
+            }
+
+            public SqlWriteJournal Owner { get; }
+            public Status Status { get; }
+        }
+
         public SqlWriteJournal(Configuration.Config journalConfig)
         {
             _log = Context.GetLogger();
@@ -61,6 +74,10 @@ namespace Akka.Persistence.Sql.Journal
 
             var config = journalConfig.WithFallback(SqlPersistence.DefaultJournalConfiguration);
             _journalConfig = new JournalConfig(config);
+            _initializationRetryDelay = config.GetTimeSpan("initialization-retry-delay");
+            if (_initializationRetryDelay < TimeSpan.FromMilliseconds(1) ||
+                _initializationRetryDelay > TimeSpan.FromMilliseconds(int.MaxValue - 1))
+                throw new ArgumentOutOfRangeException("initialization-retry-delay", "Initialization retry delay must be between 1 ms and the maximum supported Task.Delay duration.");
 
             var setup = Context.System.Settings.Setup;
             var singleSetup = setup.Get<DataOptionsSetup>();
@@ -84,7 +101,7 @@ namespace Akka.Persistence.Sql.Journal
         protected override void PreStart()
         {
             base.PreStart();
-            Initialize().PipeTo(Self);
+            _ = InitializeAndNotify(Self);
 
             // We have to use BecomeStacked here because the default Receive method is sealed in the
             // base class and it uses a custom code to handle received messages.
@@ -95,13 +112,37 @@ namespace Akka.Persistence.Sql.Journal
 
         protected override void PostStop()
         {
-            base.PostStop();
-            _pendingWriteCts.Cancel();
-            _pendingWriteCts.Dispose();
+            try
+            {
+                try
+                {
+                    _pendingWriteCts.Cancel();
+                }
+                catch (Exception e)
+                {
+                    _log.Error(e, "Failure cancelling SQL Journal operations during shutdown.");
+                }
+            }
+            finally
+            {
+                try
+                {
+                    _pendingWriteCts.Dispose();
+                }
+                catch (Exception e)
+                {
+                    _log.Error(e, "Failure disposing SQL Journal cancellation source during shutdown.");
+                }
+                finally
+                {
+                    base.PostStop();
+                }
+            }
         }
 
         private async Task<Status> Initialize()
         {
+            var cancellationToken = _pendingWriteCts.Token;
             try
             {
                 _mat = Context.Materializer(
@@ -124,18 +165,47 @@ namespace Akka.Persistence.Sql.Journal
                 if (!_journalConfig.AutoInitialize)
                     return Status.Success.Instance;
 
-                await _journal.InitializeTables(_pendingWriteCts.Token);
+                await _journal.InitializeTables(cancellationToken);
             }
             catch (Exception e)
             {
+                _log.Error(e, "Failure during SQL Journal initialization.");
+                await Task.Delay(_initializationRetryDelay, cancellationToken);
                 return new Status.Failure(e);
             }
 
             return Status.Success.Instance;
         }
 
+        private async Task InitializeAndNotify(IActorRef self)
+        {
+            try
+            {
+                var status = await Initialize();
+                if (!_pendingWriteCts.IsCancellationRequested)
+                    self.Tell(new InitializationResult(this, status));
+            }
+            catch (OperationCanceledException) when (_pendingWriteCts.IsCancellationRequested)
+            {
+                // This incarnation was stopped while waiting to retry initialization.
+            }
+            catch (Exception e)
+            {
+                _log.Error(e, "Failure during SQL Journal initialization.");
+                if (!_pendingWriteCts.IsCancellationRequested)
+                    self.Tell(new InitializationResult(this, new Status.Failure(e)));
+            }
+        }
+
         private bool Initializing(object message)
         {
+            if (message is InitializationResult result)
+            {
+                if (!ReferenceEquals(result.Owner, this))
+                    return true;
+                message = result.Status;
+            }
+
             switch (message)
             {
                 case Status.Success:
@@ -144,7 +214,6 @@ namespace Akka.Persistence.Sql.Journal
                     return true;
 
                 case Status.Failure fail:
-                    _log.Error(fail.Cause, "Failure during {0} initialization.", Self);
                     // trigger a restart so we have some hope of succeeding in the future even if initialization failed
                     throw new ApplicationException("Failed to initialize SQL Journal.", fail.Cause);
                 default:
