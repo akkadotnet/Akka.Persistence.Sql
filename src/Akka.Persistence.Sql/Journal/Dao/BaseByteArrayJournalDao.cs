@@ -94,6 +94,8 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     Keep.Left).Run(Materializer);
         }
 
+        internal void CompleteWriteQueue() => WriteQueue.Complete();
+
         public async Task<IImmutableList<Exception>> AsyncWriteMessages(
             IEnumerable<AtomicWrite> messages,
             CancellationToken cancellationToken,
@@ -299,7 +301,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     break;
             }
 
-            await promise.Task;
+            await promise.Task.WaitAsync(ShutdownToken);
         }
 
         private async Task WriteJournalRows(Seq<JournalRow> xs, ImmutableList<CancellationToken> cancellationTokens)
