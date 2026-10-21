@@ -16,18 +16,13 @@ internal static class QueryDelay
     public static async Task WaitAsync(TimeSpan duration, IScheduler scheduler, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
-        var completion = new TaskCompletionSource<NotUsed>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         using var scheduled = new Cancelable(scheduler);
-        using var registration = token.Register(() =>
-        {
-            scheduled.Cancel();
-            completion.TrySetCanceled(token);
-        });
 
         try
         {
-            scheduler.Advanced.ScheduleOnce(duration, () => completion.TrySetResult(NotUsed.Instance), scheduled);
-            await completion.Task.ConfigureAwait(false);
+            scheduler.Advanced.ScheduleOnce(duration, () => completion.TrySetResult(), scheduled);
+            await completion.Task.WaitAsync(token).ConfigureAwait(false);
         }
         finally
         {
