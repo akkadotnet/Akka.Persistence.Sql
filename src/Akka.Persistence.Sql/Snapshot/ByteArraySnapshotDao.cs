@@ -446,8 +446,14 @@ namespace Akka.Persistence.Sql.Snapshot
 
         public void Dispose()
         {
-            _shutdownCts.Cancel();
-            _shutdownCts.Dispose();
+            try
+            {
+                _shutdownCts.Cancel();
+            }
+            finally
+            {
+                _shutdownCts.Dispose();
+            }
         }
     }
 }

@@ -55,7 +55,7 @@ namespace Akka.Persistence.Sql.Journal
 
         private ActorMaterializer? _mat;
 
-        private sealed class InitializationResult
+        private sealed class InitializationResult : INoSerializationVerificationNeeded
         {
             public InitializationResult(SqlWriteJournal owner, Status status)
             {
@@ -112,9 +112,32 @@ namespace Akka.Persistence.Sql.Journal
 
         protected override void PostStop()
         {
-            base.PostStop();
-            _pendingWriteCts.Cancel();
-            _pendingWriteCts.Dispose();
+            try
+            {
+                try
+                {
+                    _pendingWriteCts.Cancel();
+                }
+                catch (Exception e)
+                {
+                    _log.Error(e, "Failure cancelling SQL Journal operations during shutdown.");
+                }
+            }
+            finally
+            {
+                try
+                {
+                    _pendingWriteCts.Dispose();
+                }
+                catch (Exception e)
+                {
+                    _log.Error(e, "Failure disposing SQL Journal cancellation source during shutdown.");
+                }
+                finally
+                {
+                    base.PostStop();
+                }
+            }
         }
 
         private async Task<Status> Initialize()
