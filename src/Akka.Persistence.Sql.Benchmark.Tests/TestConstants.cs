@@ -10,5 +10,11 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
     {
         public const int NumMessages = 1000;
         public const int DockerNumMessages = 1000;
+
+        /// <summary>
+        ///     Default blob size (in bytes) for large-payload benchmark specs.
+        ///     1 KB is a reasonable "realistic event" size.
+        /// </summary>
+        public const int LargePayloadSizeBytes = 1024;
     }
 }

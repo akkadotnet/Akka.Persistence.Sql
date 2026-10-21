@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Configuration;
@@ -123,13 +124,13 @@ public class SqliteWriteQueueCompletionSpec : Akka.TestKit.Xunit.TestKit
             Materializer = ActorMaterializer.Create(system, ActorMaterializerSettings.Create(system));
             Dao = new ByteArrayJournalDao(system.Scheduler.Advanced, Materializer, _factory, journalConfig,
                 system.Serialization, Logging.GetLogger(system, nameof(QueueFixture)), "queue-test", Shutdown.Token);
-            var queueField = typeof(BaseByteArrayJournalDao).GetField("WriteQueue", BindingFlags.Instance | BindingFlags.NonPublic);
+            var queueField = typeof(BaseByteArrayJournalDao).GetField("_inputChannel", BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.NotNull(queueField);
-            Queue = Assert.IsAssignableFrom<ISourceQueueWithComplete<WriteQueueEntry>>(queueField.GetValue(Dao));
+            Queue = Assert.IsAssignableFrom<Channel<WriteQueueEntry>>(queueField.GetValue(Dao));
         }
 
         public ByteArrayJournalDao Dao { get; }
-        public ISourceQueueWithComplete<WriteQueueEntry> Queue { get; }
+        public Channel<WriteQueueEntry> Queue { get; }
         public ActorMaterializer Materializer { get; }
         public CancellationTokenSource Shutdown { get; } = new();
         public InsertGate Gate { get; } = new();
@@ -142,14 +143,15 @@ public class SqliteWriteQueueCompletionSpec : Akka.TestKit.Xunit.TestKit
             return task;
         }
 
-        public async Task AdmissionBarrier()
+        public Task AdmissionBarrier()
         {
-            // Offer callbacks are processed in order. Acceptance of this marker proves
-            // that the preceding application request has passed queue admission too.
+            // Channel writes are synchronous and ordered. This marker follows the
+            // preceding application request and lets cleanup await its database batch.
             var marker = new WriteQueueEntry(new TaskCompletionSource<NotUsed>(TaskCreationOptions.RunContinuationsAsynchronously),
                 LanguageExt.Seq<JournalRow>.Empty, CancellationToken.None);
-            Assert.IsType<QueueOfferResult.Enqueued>(await Queue.OfferAsync(marker).WaitAsync(Deadline));
+            Assert.True(Queue.Writer.TryWrite(marker));
             _drained = marker.Tcs.Task;
+            return Task.CompletedTask;
         }
 
         public async Task<int> RowCount()
