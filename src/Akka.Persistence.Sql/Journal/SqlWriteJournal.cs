@@ -122,6 +122,8 @@ namespace Akka.Persistence.Sql.Journal
                 {
                     _log.Error(e, "Failure cancelling SQL Journal operations during shutdown.");
                 }
+
+                _journal?.CompleteWriteQueue();
             }
             finally
             {
