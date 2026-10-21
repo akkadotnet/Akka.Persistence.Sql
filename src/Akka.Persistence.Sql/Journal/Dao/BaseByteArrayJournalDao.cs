@@ -32,6 +32,10 @@ namespace Akka.Persistence.Sql.Journal.Dao
     {
         private readonly Flow<JournalRow, Util.Try<ReplayCompletion>, NotUsed> _deserializeFlowMapped;
         private readonly TagMode _tagWriteMode;
+        private readonly object _writeQueueLock = new();
+        private readonly System.Collections.Generic.HashSet<TaskCompletionSource<NotUsed>> _queuedWrites = new();
+        private readonly CancellationTokenRegistration _shutdownRegistration;
+        private Exception? _writeQueueFailure;
         protected readonly JournalConfig JournalConfig;
 
         protected readonly ILoggingAdapter Logger;
@@ -59,7 +63,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
             // Due to C# rules we have to initialize WriteQueue here
             // Keeping it here vs init function prevents accidental moving of init
             // to where variables aren't set yet.
-            WriteQueue = Source
+            var writeStream = Source
                 .Queue<WriteQueueEntry>(JournalConfig.DaoConfig.BufferSize, OverflowStrategy.DropNew)
                 .BatchWeighted(
                     JournalConfig.DaoConfig.BatchSize,
@@ -74,6 +78,21 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     JournalConfig.DaoConfig.Parallelism,
                     async promisesAndRows =>
                     {
+                        // Claim the batch before touching the database. Shutdown owns
+                        // queued promises; an executing batch owns its transaction outcome.
+                        lock (_writeQueueLock)
+                        {
+                            if (_writeQueueFailure is not null)
+                            {
+                                foreach (var promise in promisesAndRows.Tcs)
+                                    promise.TrySetException(_writeQueueFailure);
+                                return NotUsed.Instance;
+                            }
+
+                            foreach (var promise in promisesAndRows.Tcs)
+                                _queuedWrites.Remove(promise);
+                        }
+
                         try
                         {
                             await WriteJournalRows(promisesAndRows.Rows, promisesAndRows.CancellationTokens);
@@ -91,7 +110,64 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 .AddAttributes(ActorAttributes.CreateSupervisionStrategy(Deciders.RestartingDecider))
                 .ToMaterialized(
                     Sink.Ignore<NotUsed>(),
-                    Keep.Left).Run(Materializer);
+                    Keep.Both).Run(Materializer);
+
+            WriteQueue = writeStream.Item1;
+            _shutdownRegistration = ShutdownToken.Register(StopWriteQueue);
+            // Source failure can precede completion of an active async database call.
+            // Normal source completion must still let downstream batches drain.
+            _ = ObserveWriteStream(WriteQueue.WatchCompletionAsync(), closeOnSuccess: false);
+            _ = ObserveWriteStream(writeStream.Item2, closeOnSuccess: true);
+        }
+
+        private void StopWriteQueue()
+        {
+            var failure = new OperationCanceledException("SQL journal write queue stopped during shutdown.", ShutdownToken);
+            FailQueuedWrites(failure);
+            try
+            {
+                WriteQueue.Fail(failure);
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Failure closing SQL journal write queue during shutdown.");
+            }
+        }
+
+        private async Task ObserveWriteStream(Task completion, bool closeOnSuccess)
+        {
+            Exception? failure = null;
+            try
+            {
+                await completion.ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                failure = e;
+            }
+
+            if (failure is null && !closeOnSuccess)
+                return;
+
+            FailQueuedWrites(failure ?? new InvalidOperationException("SQL journal write stream has completed."));
+            _shutdownRegistration.Dispose();
+        }
+
+        private void FailQueuedWrites(Exception failure)
+        {
+            TaskCompletionSource<NotUsed>[] pending;
+            lock (_writeQueueLock)
+            {
+                if (_writeQueueFailure is not null)
+                    return;
+
+                _writeQueueFailure = failure;
+                pending = _queuedWrites.ToArray();
+                _queuedWrites.Clear();
+            }
+
+            foreach (var promise in pending)
+                promise.TrySetException(failure);
         }
 
         public async Task<IImmutableList<Exception>> AsyncWriteMessages(
@@ -271,35 +347,61 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
         private async Task QueueWriteJournalRows(Seq<JournalRow> xs, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var promise = new TaskCompletionSource<NotUsed>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            // Send promise and rows into queue. If the Queue takes it,
-            // It will write the Promise state when finished writing (or failing)
-            var result = await WriteQueue.OfferAsync(new WriteQueueEntry(promise, xs, cancellationToken));
-
-            switch (result)
+            lock (_writeQueueLock)
             {
-                case QueueOfferResult.Enqueued:
-                    break;
-
-                case QueueOfferResult.Failure f:
-                    promise.TrySetException(new Exception("Failed to write journal row batch", f.Cause));
-                    break;
-
-                case QueueOfferResult.Dropped:
-                    promise.TrySetException(
-                        new Exception(
-                            $"Failed to enqueue journal row batch write, the queue buffer was full ({JournalConfig.DaoConfig.BufferSize} elements)"));
-                    break;
-
-                case QueueOfferResult.QueueClosed:
-                    promise.TrySetException(
-                        new Exception(
-                            "Failed to enqueue journal row batch write, the queue was closed."));
-                    break;
+                ShutdownToken.ThrowIfCancellationRequested();
+                if (_writeQueueFailure is not null)
+                    throw new InvalidOperationException("SQL journal write queue is closed.", _writeQueueFailure);
+                _queuedWrites.Add(promise);
             }
 
-            await promise.Task;
+            // Admission may still be awaiting the stream's callback when shutdown
+            // settles the promise. Do not make that callback a prerequisite to failing.
+            _ = OfferWriteJournalRows(new WriteQueueEntry(promise, xs, cancellationToken));
+            try
+            {
+                await promise.Task.ConfigureAwait(false);
+            }
+            finally
+            {
+                lock (_writeQueueLock)
+                    _queuedWrites.Remove(promise);
+            }
+        }
+
+        private async Task OfferWriteJournalRows(WriteQueueEntry entry)
+        {
+            var promise = entry.Tcs;
+            try
+            {
+                // Admission is separate from completion of the database write.
+                var result = await WriteQueue.OfferAsync(entry).ConfigureAwait(false);
+                switch (result)
+                {
+                    case QueueOfferResult.Enqueued:
+                        break;
+
+                    case QueueOfferResult.Failure f:
+                        promise.TrySetException(new Exception("Failed to write journal row batch", f.Cause));
+                        break;
+
+                    case QueueOfferResult.Dropped:
+                        promise.TrySetException(new Exception(
+                            $"Failed to enqueue journal row batch write, the queue buffer was full ({JournalConfig.DaoConfig.BufferSize} elements)"));
+                        break;
+
+                    case QueueOfferResult.QueueClosed:
+                        promise.TrySetException(new Exception("Failed to enqueue journal row batch write, the queue was closed."));
+                        break;
+                }
+            }
+            catch (Exception e)
+            {
+                promise.TrySetException(e);
+            }
         }
 
         private async Task WriteJournalRows(Seq<JournalRow> xs, ImmutableList<CancellationToken> cancellationTokens)
