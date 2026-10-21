@@ -1,3 +1,8 @@
+#### Unreleased ####
+
+* Cancel in-flight database queries when a read-journal or journal-replay stream stops, including `Offset.FromEnd` and current-query boundary lookups. Preserve the configured scheduler for refresh delays.
+* Concrete journal DAO `Messages` queries now start when their returned source is materialized. Database errors fail that source. Existing custom DAO overrides continue to dispatch; eager work performed before an override returns its source cannot receive stream cancellation through the existing signature.
+
 #### 1.6.0-beta3 October 7th 2026 ####
 
 Built against Akka.NET 1.6.0-beta3.
