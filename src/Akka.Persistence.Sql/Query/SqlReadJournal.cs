@@ -330,12 +330,8 @@ namespace Akka.Persistence.Sql.Query
             var askTimeout = _readJournalConfig.JournalSequenceRetrievalConfiguration.AskTimeout;
             var batchSize = _readJournalConfig.MaxBufferSize;
 
-            var flowControl = FlowControlEnum.Continue;
-            while (flowControl != FlowControlEnum.Stop)
+            while (true)
             {
-                if (flowControl == FlowControlEnum.ContinueDelayed)
-                    await QueryDelay.WaitAsync(_readJournalConfig.RefreshInterval, _system.Scheduler, token);
-
                 var queryUntil = await _journalSequenceActor.Ask<MaxOrderingId>(GetMaxOrderingId.Instance, askTimeout, token);
 
                 var xs = new List<T>();
@@ -348,22 +344,9 @@ namespace Akka.Persistence.Sql.Query
                 var hasMoreEvents = xs.Count == batchSize;
                 var envelopes = envelopesOf(xs).ToImmutableList();
 
-                var nextControl = FlowControlEnum.Unknown;
-                if (terminateAfterOffset.HasValue)
-                {
-                    if (!hasMoreEvents && terminateAfterOffset.Value <= queryUntil.Max)
-                        nextControl = FlowControlEnum.Stop;
-
-                    if (envelopes.Exists(r => r.Offset is Sequence s && s.Value >= terminateAfterOffset.Value))
-                        nextControl = FlowControlEnum.Stop;
-                }
-
-                if (nextControl == FlowControlEnum.Unknown)
-                {
-                    nextControl = hasMoreEvents
-                        ? FlowControlEnum.Continue
-                        : FlowControlEnum.ContinueDelayed;
-                }
+                var shouldStop = terminateAfterOffset is long end &&
+                    ((!hasMoreEvents && end <= queryUntil.Max) ||
+                     envelopes.Exists(r => r.Offset is Sequence s && s.Value >= end));
 
                 var nextStartingOffset = xs.Count == 0
                     ? Math.Max(offset, queryUntil.Max)
@@ -373,8 +356,12 @@ namespace Akka.Persistence.Sql.Query
                 foreach (var envelope in envelopes)
                     yield return envelope;
 
+                if (shouldStop)
+                    yield break;
+
                 offset = nextStartingOffset;
-                flowControl = nextControl;
+                if (!hasMoreEvents)
+                    await QueryDelay.WaitAsync(_readJournalConfig.RefreshInterval, _system.Scheduler, token);
             }
         }
     }
