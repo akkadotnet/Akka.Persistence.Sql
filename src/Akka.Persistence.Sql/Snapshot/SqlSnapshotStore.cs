@@ -31,7 +31,7 @@ namespace Akka.Persistence.Sql.Snapshot
         private readonly CancellationTokenSource _initializationCts = new();
         private readonly TimeSpan _initializationRetryDelay;
 
-        private sealed class InitializationResult
+        private sealed class InitializationResult : INoSerializationVerificationNeeded
         {
             public InitializationResult(SqlSnapshotStore owner, Status status)
             {
@@ -85,10 +85,43 @@ namespace Akka.Persistence.Sql.Snapshot
 
         protected override void PostStop()
         {
-            _initializationCts.Cancel();
-            _initializationCts.Dispose();
-            _dao.Dispose();
-            base.PostStop();
+            try
+            {
+                try
+                {
+                    _initializationCts.Cancel();
+                }
+                catch (Exception e)
+                {
+                    _log.Error(e, "Failure cancelling SQL SnapshotStore initialization during shutdown.");
+                }
+            }
+            finally
+            {
+                try
+                {
+                    _initializationCts.Dispose();
+                }
+                catch (Exception e)
+                {
+                    _log.Error(e, "Failure disposing SQL SnapshotStore cancellation source during shutdown.");
+                }
+                finally
+                {
+                    try
+                    {
+                        _dao.Dispose();
+                    }
+                    catch (Exception e)
+                    {
+                        _log.Error(e, "Failure disposing SQL SnapshotStore DAO during shutdown.");
+                    }
+                    finally
+                    {
+                        base.PostStop();
+                    }
+                }
+            }
         }
 
         private bool WaitingForInitialization(object message)
