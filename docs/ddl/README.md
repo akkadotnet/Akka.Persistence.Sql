@@ -171,5 +171,6 @@ This prevents Akka.Persistence.Sql from attempting to create tables at startup, 
 
 ## See Also
 
+- [Tag-table orphan cleanup and FK migration](../../scripts/TagTableForeignKey/README.md) - Explicit PostgreSQL and SQL Server maintenance scripts for existing databases
 - [Migration Guide](../articles/migration.md) - Migrating from legacy plugins
 - [Configuration](../articles/configuration.md) - Full configuration reference
