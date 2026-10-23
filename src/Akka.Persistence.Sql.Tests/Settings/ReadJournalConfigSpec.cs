@@ -50,6 +50,7 @@ namespace Akka.Persistence.Sql.Tests.Settings
             query.GetBoolean("use-clone-connection").Should().BeTrue();
             query.GetString("tag-separator", "invalid").Should().Be(";");
             query.GetIsolationLevel("read-isolation-level").Should().Be(IsolationLevel.Unspecified);
+            query.GetString("command-timeout").Should().Be("null");
             query.GetString("dao", "invalid").Should().Be("Akka.Persistence.Sql.Journal.Dao.ByteArrayJournalDao, Akka.Persistence.Sql");
 
             var retrieval = query.GetConfig("journal-sequence-retrieval");
@@ -270,6 +271,30 @@ namespace Akka.Persistence.Sql.Tests.Settings
             metaColumns.SequenceNumber.Should().Be("sequence_nr");
         }
 
+        [Fact(DisplayName = "Read journal config should parse command-timeout as integer seconds")]
+        public void ReadJournalCommandTimeoutConfigTest()
+        {
+            var journalHocon = ConfigurationFactory
+                .ParseString("akka.persistence.query.journal.sql.command-timeout = 60")
+                .WithFallback(_defaultConfig)
+                .GetConfig("akka.persistence.query.journal.sql");
+
+            var journal = new ReadJournalConfig(journalHocon);
+            journal.CommandTimeout.Should().Be(60);
+        }
+
+        [Fact(DisplayName = "Read journal config should parse command-timeout = 0 as zero")]
+        public void ReadJournalCommandTimeoutZeroConfigTest()
+        {
+            var journalHocon = ConfigurationFactory
+                .ParseString("akka.persistence.query.journal.sql.command-timeout = 0")
+                .WithFallback(_defaultConfig)
+                .GetConfig("akka.persistence.query.journal.sql");
+
+            var journal = new ReadJournalConfig(journalHocon);
+            journal.CommandTimeout.Should().Be(0);
+        }
+
         private static void AssertDefaultQueryConfig(ReadJournalConfig journal)
         {
             journal.ConnectionString.Should().BeNullOrEmpty();
@@ -280,6 +305,7 @@ namespace Akka.Persistence.Sql.Tests.Settings
             journal.AddShutdownHook.Should().BeTrue();
             journal.ReadIsolationLevel.Should().Be(IsolationLevel.Unspecified);
             journal.WriteIsolationLevel.Should().Be(IsolationLevel.Unspecified);
+            journal.CommandTimeout.Should().BeNull();
 
             var pluginConfig = journal.PluginConfig;
             pluginConfig.TagSeparator.Should().Be(";");
