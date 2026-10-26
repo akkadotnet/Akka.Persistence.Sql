@@ -68,6 +68,7 @@ namespace Akka.Persistence.Sql.Hosting.Tests
             actualConfig.AssertString(defaultConfig, "tagtable-asqueryable-insert-mode", "off");
             actualConfig.AssertInt(defaultConfig, "tagtable-asqueryable-insert-sql-length-limit", 5_000_000);
             actualConfig.AssertInt(defaultConfig, "tagtable-asqueryable-insert-max-parameters", 0);
+            actualConfig.AssertString(defaultConfig, "write-queue-mode", "source-queue");
             actualConfig.AssertInt(defaultConfig, "replay-batch-size", 1000);
             actualConfig.AssertInt(defaultConfig, "parallelism", 3);
             actualConfig.AssertInt(defaultConfig, "max-row-by-row-size", 100);
@@ -139,6 +140,7 @@ namespace Akka.Persistence.Sql.Hosting.Tests
                 TagTableQueryableInsertMode = TagTableQueryableInsertMode.Inline,
                 AsQueryableInsertSqlLengthLimit = 1_000_000,
                 AsQueryableInsertMaxParameters = 700,
+                WriteQueueMode = WriteQueueMode.Channel,
                 DatabaseOptions = new JournalDatabaseOptions(DatabaseMapping.SqlServer)
                 {
                     SchemaName = "schema",
@@ -198,6 +200,7 @@ namespace Akka.Persistence.Sql.Hosting.Tests
             journalConfig.DaoConfig.TagTableQueryableInsertMode.Should().Be(TagTableQueryableInsertMode.Inline);
             journalConfig.DaoConfig.AsQueryableInsertSqlLengthLimit.Should().Be(1_000_000);
             journalConfig.DaoConfig.AsQueryableInsertMaxParameters.Should().Be(700);
+            journalConfig.DaoConfig.WriteQueueMode.Should().Be(WriteQueueMode.Channel);
 
             journalConfig.TableConfig.SchemaName.Should().Be("schema");
 

@@ -23,6 +23,7 @@ namespace Akka.Persistence.Sql.Config
             SqlCommonCompatibilityMode = config.GetBoolean("delete-compatibility-mode");
             AsQueryableInsertSqlLengthLimit = config.GetInt("tagtable-asqueryable-insert-sql-length-limit", 5_000_000);
             AsQueryableInsertMaxParameters = config.GetInt("tagtable-asqueryable-insert-max-parameters", 0);
+            WriteQueueMode = WriteQueueModeExtensions.ParseWriteQueueMode(config.GetString("write-queue-mode", null));
 
             // Parse the enum-style key first, then fall back to the legacy bool key
             // for backward compatibility (true -> Inline, false -> Off).
@@ -84,5 +85,11 @@ namespace Akka.Persistence.Sql.Config
         /// fast-path insert. See <see cref="TagTableQueryableInsertMode"/> for options.
         /// </summary>
         public TagTableQueryableInsertMode TagTableQueryableInsertMode { get; }
+
+        /// <summary>
+        /// Selects the write queue implementation. See <see cref="Config.WriteQueueMode"/>.
+        /// Defaults to <see cref="Config.WriteQueueMode.SourceQueue"/>.
+        /// </summary>
+        public WriteQueueMode WriteQueueMode { get; }
     }
 }
