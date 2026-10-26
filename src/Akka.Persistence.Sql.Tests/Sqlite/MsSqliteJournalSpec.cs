@@ -18,14 +18,22 @@ namespace Akka.Persistence.Sql.Tests.Sqlite
     }
 
     [Collection(nameof(MsSqlitePersistenceSpec))]
+    public class MsSqliteChannelWriteQueueJournalSpec : MsSqliteJournalSpec
+    {
+        public MsSqliteChannelWriteQueueJournalSpec(ITestOutputHelper output, MsSqliteContainer fixture)
+            : base(output, fixture, nameof(MsSqliteChannelWriteQueueJournalSpec), writeQueueMode: "channel") { }
+    }
+
+    [Collection(nameof(MsSqlitePersistenceSpec))]
     public class MsSqliteJournalSpec : JournalSpec
     {
         public MsSqliteJournalSpec(
             ITestOutputHelper output,
             MsSqliteContainer fixture,
             string name = nameof(MsSqliteJournalSpec),
-            bool nativeMode = false)
-            : base(SqliteJournalSpecConfig.Create(fixture, nativeMode), name, output)
+            bool nativeMode = false,
+            string writeQueueMode = "source-queue")
+            : base(SqliteJournalSpecConfig.Create(fixture, nativeMode, writeQueueMode), name, output)
         {
             Initialize();
         }
