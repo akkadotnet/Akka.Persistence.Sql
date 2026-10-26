@@ -38,7 +38,8 @@ namespace Akka.Persistence.Sql.Tests.Sqlite
     {
         public static Configuration.Config Create(
             ITestContainer fixture,
-            bool nativeMode = false)
+            bool nativeMode = false,
+            string writeQueueMode = "source-queue")
         {
             if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
                 throw new Exception("Failed to clean up database in 10 seconds");
@@ -52,6 +53,7 @@ namespace Akka.Persistence.Sql.Tests.Sqlite
                         sql {{
                             connection-string = ""{fixture.ConnectionString}""
                             provider-name = ""{fixture.ProviderName}""
+                            write-queue-mode = {writeQueueMode}
                         }}
                     }}
                 }}")
