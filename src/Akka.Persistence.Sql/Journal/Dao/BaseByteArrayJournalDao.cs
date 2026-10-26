@@ -11,6 +11,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Event;
@@ -19,6 +20,7 @@ using Akka.Persistence.Sql.Db;
 using Akka.Persistence.Sql.Extensions;
 using Akka.Persistence.Sql.Journal.Types;
 using Akka.Persistence.Sql.Serialization;
+using Akka.Persistence.Sql.Utility;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Streams.Supervision;
@@ -43,7 +45,19 @@ namespace Akka.Persistence.Sql.Journal.Dao
         protected readonly ILoggingAdapter Logger;
         protected readonly FlowPersistentRepresentationSerializer<JournalRow> Serializer;
 
+        /// <summary>
+        /// The write queue used when <c>write-queue-mode = source-queue</c> (the default).
+        /// When <c>write-queue-mode = channel</c> this field is <c>null</c> and writes go through
+        /// a bounded channel instead.
+        /// </summary>
         protected readonly ISourceQueueWithComplete<WriteQueueEntry> WriteQueue;
+
+        /// <summary>
+        /// Input of the <c>channel</c> write queue mode; <c>null</c> in <c>source-queue</c> mode.
+        /// </summary>
+        private readonly Channel<WriteQueueEntry>? _writeChannel;
+
+        private volatile bool _writeChannelClosed;
 
         protected BaseByteArrayJournalDao(
             IAdvancedScheduler scheduler,
@@ -74,6 +88,39 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 _tagTableQueryableInsertMode,
                 JournalConfig.TableConfig.EventJournalTable.UseWriterUuidColumn);
 
+            if (JournalConfig.DaoConfig.WriteQueueMode == WriteQueueMode.Channel)
+            {
+                WriteQueue = null!;
+                _writeChannel = Channel.CreateBounded<WriteQueueEntry>(
+                    new BoundedChannelOptions(JournalConfig.DaoConfig.BufferSize)
+                    {
+                        FullMode = BoundedChannelFullMode.Wait,
+                        SingleReader = true,
+                        AllowSynchronousContinuations = false,
+                    });
+
+                // Same weighting as BatchWeighted below, but the batch is built in place.
+                var batcher = new ChannelQueueWithBatch<WriteQueueEntry, MutableWriteQueueBatch>(
+                    _writeChannel.Reader,
+                    JournalConfig.DaoConfig.BatchSize,
+                    static entry => entry.Rows.Count,
+                    static entry => new MutableWriteQueueBatch(entry),
+                    static (batch, entry) =>
+                    {
+                        batch.Add(entry);
+                        return batch;
+                    });
+
+                Source.ChannelReader(batcher)
+                    .SelectAsync(
+                        JournalConfig.DaoConfig.Parallelism,
+                        batch => WriteBatch(batch.Tcs, batch.Rows, batch.CancellationTokens))
+                    .AddAttributes(ActorAttributes.CreateSupervisionStrategy(Deciders.RestartingDecider))
+                    .To(Sink.Ignore<NotUsed>())
+                    .Run(Materializer);
+                return;
+            }
+
             // Due to C# rules we have to initialize WriteQueue here
             // Keeping it here vs init function prevents accidental moving of init
             // to where variables aren't set yet.
@@ -90,29 +137,43 @@ namespace Akka.Persistence.Sql.Journal.Dao
                             oldRows.CancellationTokens.Add(newRows.CancellationToken)))
                 .SelectAsync(
                     JournalConfig.DaoConfig.Parallelism,
-                    async promisesAndRows =>
-                    {
-                        try
-                        {
-                            await WriteJournalRows(promisesAndRows.Rows, promisesAndRows.CancellationTokens);
-                            foreach (var taskCompletionSource in promisesAndRows.Tcs)
-                                taskCompletionSource.TrySetResult(NotUsed.Instance);
-                        }
-                        catch (Exception e)
-                        {
-                            foreach (var taskCompletionSource in promisesAndRows.Tcs)
-                                taskCompletionSource.TrySetException(e);
-                        }
-
-                        return NotUsed.Instance;
-                    })
+                    promisesAndRows => WriteBatch(promisesAndRows.Tcs, promisesAndRows.Rows, promisesAndRows.CancellationTokens))
                 .AddAttributes(ActorAttributes.CreateSupervisionStrategy(Deciders.RestartingDecider))
                 .ToMaterialized(
                     Sink.Ignore<NotUsed>(),
                     Keep.Left).Run(Materializer);
         }
 
-        internal void CompleteWriteQueue() => WriteQueue.Complete();
+        private async Task<NotUsed> WriteBatch(
+            IReadOnlyList<TaskCompletionSource<NotUsed>> promises,
+            Seq<JournalRow> rows,
+            IReadOnlyList<CancellationToken> cancellationTokens)
+        {
+            try
+            {
+                await WriteJournalRows(rows, cancellationTokens);
+                foreach (var taskCompletionSource in promises)
+                    taskCompletionSource.TrySetResult(NotUsed.Instance);
+            }
+            catch (Exception e)
+            {
+                foreach (var taskCompletionSource in promises)
+                    taskCompletionSource.TrySetException(e);
+            }
+
+            return NotUsed.Instance;
+        }
+
+        internal void CompleteWriteQueue()
+        {
+            if (_writeChannel is not null)
+            {
+                _writeChannelClosed = true;
+                _writeChannel.Writer.TryComplete();
+            }
+            else
+                WriteQueue.Complete();
+        }
 
         public async Task<IImmutableList<Exception>> AsyncWriteMessages(
             IEnumerable<AtomicWrite> messages,
@@ -293,6 +354,13 @@ namespace Akka.Persistence.Sql.Journal.Dao
         {
             var promise = new TaskCompletionSource<NotUsed>(TaskCreationOptions.RunContinuationsAsynchronously);
 
+            if (_writeChannel is not null)
+            {
+                EnqueueToChannel(_writeChannel, new WriteQueueEntry(promise, xs, cancellationToken));
+                await promise.Task.WaitAsync(ShutdownToken);
+                return;
+            }
+
             // Send promise and rows into queue. If the Queue takes it,
             // It will write the Promise state when finished writing (or failing)
             var result = await WriteQueue.OfferAsync(new WriteQueueEntry(promise, xs, cancellationToken));
@@ -322,7 +390,21 @@ namespace Akka.Persistence.Sql.Journal.Dao
             await promise.Task.WaitAsync(ShutdownToken);
         }
 
-        private async Task WriteJournalRows(Seq<JournalRow> xs, ImmutableList<CancellationToken> cancellationTokens)
+        private void EnqueueToChannel(Channel<WriteQueueEntry> channel, WriteQueueEntry entry)
+        {
+            if (channel.Writer.TryWrite(entry))
+                return;
+
+            // TryWrite fails either because the writer was completed or because the buffer
+            // is full, which is rejected the same way as OverflowStrategy.DropNew.
+            entry.Tcs.TrySetException(
+                _writeChannelClosed
+                    ? new Exception("Failed to enqueue journal row batch write, the queue was closed.")
+                    : new Exception(
+                        $"Failed to enqueue journal row batch write, the queue buffer was full ({JournalConfig.DaoConfig.BufferSize} elements)"));
+        }
+
+        private async Task WriteJournalRows(Seq<JournalRow> xs, IReadOnlyList<CancellationToken> cancellationTokens)
         {
             switch (xs.Count)
             {
@@ -348,9 +430,9 @@ namespace Akka.Persistence.Sql.Journal.Dao
             }
         }
 
-        private async Task InsertMultiple(Seq<JournalRow> xs, ImmutableList<CancellationToken> cancellationTokens)
+        private async Task InsertMultiple(Seq<JournalRow> xs, IReadOnlyList<CancellationToken> cancellationTokens)
         {
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationTokens.Add(ShutdownToken).ToArray());
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationTokens.Append(ShutdownToken).ToArray());
             await ConnectionFactory.ExecuteWithTransactionAsync(
                 WriteIsolationLevel,
                 cts.Token,

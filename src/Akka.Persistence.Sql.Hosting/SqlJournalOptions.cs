@@ -166,6 +166,18 @@ namespace Akka.Persistence.Sql.Hosting
 
         /// <summary>
         ///     <para>
+        ///         Selects the queue that buffers and batches writes before they are sent to the database.
+        ///     </para>
+        ///     <list type="bullet">
+        ///         <item><see cref="Config.WriteQueueMode.SourceQueue"/> — Akka.Streams <c>Source.Queue</c> + <c>BatchWeighted</c> (default)</item>
+        ///         <item><see cref="Config.WriteQueueMode.Channel"/> — bounded channel batched on read; fewer allocations per write</item>
+        ///     </list>
+        ///     <b>Default</b>: <see cref="Config.WriteQueueMode.SourceQueue"/>
+        /// </summary>
+        public WriteQueueMode? WriteQueueMode { get; set; }
+
+        /// <summary>
+        ///     <para>
         ///         The isolation level of all database read query.
         ///     </para>
         ///     <para>
@@ -279,6 +291,16 @@ namespace Akka.Persistence.Sql.Hosting
 
             if (AsQueryableInsertMaxParameters is not null)
                 sb.AppendLine($"tagtable-asqueryable-insert-max-parameters = {AsQueryableInsertMaxParameters.ToHocon()}");
+
+            if (WriteQueueMode is not null)
+            {
+                var writeQueueMode = WriteQueueMode switch
+                {
+                    Config.WriteQueueMode.Channel => "channel",
+                    _ => "source-queue",
+                };
+                sb.AppendLine($"write-queue-mode = {writeQueueMode.ToHocon()}");
+            }
 
             DatabaseOptions?.Build(sb);
 
