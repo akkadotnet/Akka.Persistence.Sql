@@ -39,6 +39,13 @@ namespace Akka.Persistence.Sql.Utility
         private readonly Func<TBatch, TInput, TBatch> _aggregate;
 
         /// <summary>
+        /// Completes once the input reader has completed and no overflow item is left in
+        /// <see cref="_pending"/>, i.e. once this reader itself has nothing more to return.
+        /// </summary>
+        private readonly TaskCompletionSource<bool> _completion =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        /// <summary>
         /// Guards <see cref="_pending"/>. The critical sections are fully synchronous.
         /// </summary>
         private readonly object _gate = new();
@@ -74,12 +81,23 @@ namespace Akka.Persistence.Sql.Utility
             _costFunction = costFunction ?? throw new ArgumentNullException(nameof(costFunction));
             _seed = seed ?? throw new ArgumentNullException(nameof(seed));
             _aggregate = aggregate ?? throw new ArgumentNullException(nameof(aggregate));
+
+            // Not ExecuteSynchronously: the input can complete inside TryRead's drain loop, before the
+            // item just read has been parked in _pending, and _gate does not exclude the same thread.
+            _inputReader.Completion.ContinueWith(
+                static (_, state) => ((ChannelQueueWithBatch<TInput, TBatch>)state!).TryCompleteIfDrained(),
+                this,
+                CancellationToken.None,
+                TaskContinuationOptions.None,
+                TaskScheduler.Default);
         }
 
         /// <summary>
-        /// Forwards completion from the input channel reader.
+        /// Completes when the input channel has completed and every item has been returned in a batch,
+        /// including an overflow item held back by the last read. Faults or cancels the same way as the
+        /// input channel.
         /// </summary>
-        public override Task Completion => _inputReader.Completion;
+        public override Task Completion => _completion.Task;
 
         /// <summary>
         /// Returns <c>true</c> if a batch can be formed, either from an overflow item held back by the
@@ -105,10 +123,18 @@ namespace Akka.Persistence.Sql.Utility
         /// <returns><c>true</c> if a batch was produced; <c>false</c> if no items are available.</returns>
         public override bool TryRead(out TBatch item)
         {
+            bool read;
             lock (_gate)
             {
-                return TryReadBatch(out item);
+                read = TryReadBatch(out item);
             }
+
+            // The input may have completed while an overflow item was still held back;
+            // in that case completion is only signalled once that item has been returned.
+            if (_inputReader.Completion.IsCompleted)
+                TryCompleteIfDrained();
+
+            return read;
         }
 
         private bool TryReadBatch(out TBatch item)
@@ -143,6 +169,23 @@ namespace Akka.Persistence.Sql.Utility
 
             item = batch;
             return true;
+        }
+
+        private void TryCompleteIfDrained()
+        {
+            lock (_gate)
+            {
+                if (_pending.HasValue)
+                    return;
+            }
+
+            var inputCompletion = _inputReader.Completion;
+            if (inputCompletion.IsFaulted)
+                _completion.TrySetException(inputCompletion.Exception!.InnerExceptions);
+            else if (inputCompletion.IsCanceled)
+                _completion.TrySetCanceled();
+            else
+                _completion.TrySetResult(true);
         }
     }
 }
