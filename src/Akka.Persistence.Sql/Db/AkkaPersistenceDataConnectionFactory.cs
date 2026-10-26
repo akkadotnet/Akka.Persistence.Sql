@@ -396,9 +396,12 @@ namespace Akka.Persistence.Sql.Db
 
         public AkkaDataConnection GetConnection()
         {
-            return new AkkaDataConnection(
-                _opts.ConnectionOptions.ProviderName!,
-                new DataConnection(_opts));
+            if (!_useCloneDataConnection)
+                return new AkkaDataConnection(
+                    _opts.ConnectionOptions.ProviderName!,
+                    new DataConnection(_opts));
+
+            return _cloneConnection.Value.Clone();
         }
 
         internal bool HasRetryPolicy

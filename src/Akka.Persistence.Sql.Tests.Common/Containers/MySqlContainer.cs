@@ -39,7 +39,7 @@ namespace Akka.Persistence.Sql.Tests.Common.Containers
 
         public override string ConnectionString => _connectionStringBuilder.ToString();
         
-        // CopilotNotes: Must use the driver-specific MySql80MySqlData constant, not the generic MySql80.
+        // Note: Must use the driver-specific MySql80MySqlData constant, not the generic MySql80.
         // In LinqToDB 6.x, "MySql.8.0" (MySql80) is only a mapping-schema configuration name and is
         // NOT a registered DataProvider — LinqToDB needs to know which ADO.NET driver is in use to
         // look up the right provider. This project uses MySql.Data (Oracle connector), so we use

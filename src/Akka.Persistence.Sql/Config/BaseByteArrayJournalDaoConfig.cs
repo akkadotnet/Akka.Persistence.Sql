@@ -22,9 +22,10 @@ namespace Akka.Persistence.Sql.Config
             MaxRowByRowSize = config.GetInt("max-row-by-row-size", 100);
             SqlCommonCompatibilityMode = config.GetBoolean("delete-compatibility-mode");
             AsQueryableInsertSqlLengthLimit = config.GetInt("tagtable-asqueryable-insert-sql-length-limit", 5_000_000);
+            AsQueryableInsertMaxParameters = config.GetInt("tagtable-asqueryable-insert-max-parameters", 0);
 
-            // CopilotNote: Parse new enum-style key first, then fall back to the legacy bool key
-            // for backward compatibility (true → Inline, false → Off). UwU~
+            // Parse the enum-style key first, then fall back to the legacy bool key
+            // for backward compatibility (true -> Inline, false -> Off).
             var modeStr = config.GetString("tagtable-asqueryable-insert-mode", null);
             if (modeStr is not null && System.Enum.TryParse<TagTableQueryableInsertMode>(modeStr, true, out var parsedMode))
             {
@@ -64,6 +65,13 @@ namespace Akka.Persistence.Sql.Config
         public bool SqlCommonCompatibilityMode { get; }
         
         public int AsQueryableInsertSqlLengthLimit { get; }
+
+        /// <summary>
+        ///     Maximum number of parameters in a single AsQueryable journal insert command.
+        ///     <c>0</c> uses LinqToDB's BulkCopy parameter limit for the provider; a positive
+        ///     value is still capped at that provider limit.
+        /// </summary>
+        public int AsQueryableInsertMaxParameters { get; }
         
         /// <summary>
         /// Controls which LinqToDB <c>AsQueryable()</c> strategy is used for the tag-table

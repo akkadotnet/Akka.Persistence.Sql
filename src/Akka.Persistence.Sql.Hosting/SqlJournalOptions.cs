@@ -103,7 +103,7 @@ namespace Akka.Persistence.Sql.Hosting
         ///     </para>
         ///     <b>Default</b>: <c>false</c>
         /// </summary>
-        [Obsolete("Use TagTableQueryableInsertMode instead. true maps to Inline, false maps to Off. UwU~")]
+        [Obsolete("Use TagTableQueryableInsertMode instead. true maps to Inline, false maps to Off.")]
         public bool? UseTagTableAsQueryableLiteralInsert
         {
             get => TagTableQueryableInsertMode switch
@@ -144,6 +144,17 @@ namespace Akka.Persistence.Sql.Hosting
         /// You may want a smaller size depending on your database and your event payload size.
         /// </remarks>
         public int? AsQueryableInsertSqlLengthLimit { get; set; }
+
+        /// <summary>
+        ///     <para>
+        ///         Maximum number of parameters in a single AsQueryable journal insert command.
+        ///         Large atomic writes are split into several commands inside the same transaction.
+        ///         <c>0</c> uses LinqToDB's BulkCopy parameter limit for the provider; a positive value
+        ///         is capped at that limit.
+        ///     </para>
+        ///     <b>Default</b>: <c>0</c>
+        /// </summary>
+        public int? AsQueryableInsertMaxParameters { get; set; }
 
         /// <summary>
         ///     <para>
@@ -257,6 +268,9 @@ namespace Akka.Persistence.Sql.Hosting
 
             if (AsQueryableInsertSqlLengthLimit is not null)
                 sb.AppendLine($"tagtable-asqueryable-insert-sql-length-limit = {AsQueryableInsertSqlLengthLimit.ToHocon()}");
+
+            if (AsQueryableInsertMaxParameters is not null)
+                sb.AppendLine($"tagtable-asqueryable-insert-max-parameters = {AsQueryableInsertMaxParameters.ToHocon()}");
 
             DatabaseOptions?.Build(sb);
 
