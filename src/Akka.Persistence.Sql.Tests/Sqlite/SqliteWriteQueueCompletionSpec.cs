@@ -96,6 +96,24 @@ public class SqliteWriteQueueCompletionSpec : Akka.TestKit.Xunit.TestKit
         Assert.Equal(1, await fixture.RowCount());
     }
 
+    [Theory]
+    [InlineData(WriteQueueMode.SourceQueue)]
+    [InlineData(WriteQueueMode.Channel)]
+    public async Task Writes_fail_fast_after_the_write_stream_terminates(WriteQueueMode queueMode)
+    {
+        await using var fixture = await CreateFixture(TagMode.Csv, queueMode);
+        fixture.Gate.Release.TrySetResult(true);
+        await fixture.Write("before").WaitAsync(Deadline);
+
+        fixture.Materializer.Shutdown();
+        await fixture.Materializer.Supervisor.GracefulStop(Deadline);
+
+        var failure = await Assert.ThrowsAnyAsync<Exception>(() => fixture.Write("after").WaitAsync(Deadline));
+        _output.WriteLine($"Write after stream termination failed with {failure.GetType().Name}: {failure.Message}");
+        Assert.IsNotType<TimeoutException>(failure);
+        Assert.Equal(1, await fixture.RowCount());
+    }
+
     private async Task<QueueFixture> CreateFixture(TagMode mode, WriteQueueMode queueMode)
     {
         var fixture = new QueueFixture(Sys, mode, queueMode, _output);

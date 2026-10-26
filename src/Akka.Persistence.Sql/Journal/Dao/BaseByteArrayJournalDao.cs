@@ -57,7 +57,17 @@ namespace Akka.Persistence.Sql.Journal.Dao
         /// </summary>
         private readonly Channel<WriteQueueEntry>? _writeChannel;
 
+        /// <summary>
+        /// Set before the channel writer is completed, so a failed <c>TryWrite</c> can tell a
+        /// closed queue from a full one.
+        /// </summary>
         private volatile bool _writeChannelClosed;
+
+        /// <summary>
+        /// Set when the stream consuming <see cref="_writeChannel"/> failed, e.g. because its
+        /// materializer was shut down.
+        /// </summary>
+        private volatile Exception? _writeStreamFailure;
 
         protected BaseByteArrayJournalDao(
             IAdvancedScheduler scheduler,
@@ -111,13 +121,22 @@ namespace Akka.Persistence.Sql.Journal.Dao
                         return batch;
                     });
 
-                Source.ChannelReader(batcher)
+                var streamCompletion = Source.ChannelReader(batcher)
                     .SelectAsync(
                         JournalConfig.DaoConfig.Parallelism,
                         batch => WriteBatch(batch.Tcs, batch.Rows, batch.CancellationTokens))
                     .AddAttributes(ActorAttributes.CreateSupervisionStrategy(Deciders.RestartingDecider))
+                    .WatchTermination(Keep.Right)
                     .To(Sink.Ignore<NotUsed>())
                     .Run(Materializer);
+
+                // Unlike Source.Queue, a channel keeps accepting writes after its consumer is gone,
+                // so close it when the stream terminates and fail what it will never read.
+                streamCompletion.ContinueWith(
+                    t => OnWriteStreamTerminated(batcher, t),
+                    CancellationToken.None,
+                    TaskContinuationOptions.ExecuteSynchronously,
+                    TaskScheduler.Default);
                 return;
             }
 
@@ -162,6 +181,23 @@ namespace Akka.Persistence.Sql.Journal.Dao
             }
 
             return NotUsed.Instance;
+        }
+
+        private void OnWriteStreamTerminated(
+            ChannelQueueWithBatch<WriteQueueEntry, MutableWriteQueueBatch> batcher,
+            Task streamCompletion)
+        {
+            if (streamCompletion.IsFaulted)
+                _writeStreamFailure = streamCompletion.Exception!.GetBaseException();
+            _writeChannelClosed = true;
+            _writeChannel!.Writer.TryComplete();
+
+            // Writes that were accepted before the channel was closed but not read by the stream.
+            while (batcher.TryRead(out var batch))
+            {
+                foreach (var taskCompletionSource in batch.Tcs)
+                    taskCompletionSource.TrySetException(ChannelRejection());
+            }
         }
 
         internal void CompleteWriteQueue()
@@ -399,10 +435,15 @@ namespace Akka.Persistence.Sql.Journal.Dao
             // is full, which is rejected the same way as OverflowStrategy.DropNew.
             entry.Tcs.TrySetException(
                 _writeChannelClosed
-                    ? new Exception("Failed to enqueue journal row batch write, the queue was closed.")
+                    ? ChannelRejection()
                     : new Exception(
                         $"Failed to enqueue journal row batch write, the queue buffer was full ({JournalConfig.DaoConfig.BufferSize} elements)"));
         }
+
+        private Exception ChannelRejection()
+            => _writeStreamFailure is { } failure
+                ? new Exception("Failed to write journal row batch", failure)
+                : new Exception("Failed to enqueue journal row batch write, the queue was closed.");
 
         private async Task WriteJournalRows(Seq<JournalRow> xs, IReadOnlyList<CancellationToken> cancellationTokens)
         {
