@@ -12,6 +12,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
+using Akka.Configuration;
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Routing;
 using Akka.TestKit;
@@ -49,9 +50,10 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             int timeoutDurationSeconds = 30,
             int eventsCount = 10000,
             int payloadSizeBytes = 0)
-            : base(config ?? Configuration.Config.Empty, actorSystem, output)
+            : base(WithWriteQueueMode(config ?? Configuration.Config.Empty), actorSystem, output)
         {
             ThreadPool.SetMinThreads(12, 12);
+            Output.WriteLine($"write-queue-mode = {Sys.Settings.Config.GetString("akka.persistence.journal.sql.write-queue-mode", "source-queue")}");
             _eventsCount = eventsCount;
             _expectDuration = TimeSpan.FromSeconds(timeoutDurationSeconds);
             _testProbe = CreateTestProbe();
@@ -65,6 +67,24 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
         }
 
         private readonly IReadOnlyList<int> _commands; 
+
+        /// <summary>
+        ///     Environment variable that sets <c>write-queue-mode</c> (<c>source-queue</c> or <c>channel</c>)
+        ///     for every perf spec, so both write queues can be measured with otherwise identical settings.
+        ///     When unset, the spec's own configuration (normally the default, <c>source-queue</c>) is used.
+        /// </summary>
+        public const string WriteQueueModeEnvironmentVariable = "AKKA_PERSISTENCE_SQL_BENCH_WRITE_QUEUE_MODE";
+
+        private static Configuration.Config WithWriteQueueMode(Configuration.Config config)
+        {
+            var mode = Environment.GetEnvironmentVariable(WriteQueueModeEnvironmentVariable);
+            if (string.IsNullOrWhiteSpace(mode))
+                return config;
+
+            return ConfigurationFactory
+                .ParseString($"akka.persistence.journal.sql.write-queue-mode = {mode.Trim()}")
+                .WithFallback(config);
+        }
 
         internal IActorRef BenchActor(string pid, int replyAfter)
             => Sys.ActorOf(Props.Create(() => new BenchActor(pid, _testProbe, _eventsCount)));
