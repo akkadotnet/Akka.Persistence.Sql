@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Data;
 using System.Data.Common;
@@ -69,8 +70,8 @@ public abstract class TagTableFastInsertSpecBase : Akka.TestKit.Xunit.TestKit
         bool writerUuid,
         WriteSize size)
     {
-        // PersistenceId, SequenceNumber, Message, Manifest, Timestamp, Identifier (+ WriterUuid)
-        var rowsPerCommand = ProviderMaxParameters / (writerUuid ? 7 : 6);
+        var parametersPerRow = BaseByteArrayJournalDao.JournalInsertParametersPerRow(mode, writerUuid);
+        var rowsPerCommand = ProviderMaxParameters / parametersPerRow;
         var events = size switch
         {
             WriteSize.ExactlyOneCommand => rowsPerCommand,
@@ -83,6 +84,9 @@ public abstract class TagTableFastInsertSpecBase : Akka.TestKit.Xunit.TestKit
 
         Assert.Null(result);
         Assert.Equal((events + rowsPerCommand - 1) / rowsPerCommand, fixture.Counter.JournalInserts);
+        // The per-row estimate must match what LinqToDB actually sends, not just stay under it.
+        Assert.Equal(events * parametersPerRow, fixture.Counter.JournalParameters.Sum());
+        Assert.All(fixture.Counter.JournalParameters, p => Assert.InRange(p, 1, ProviderMaxParameters));
         await AssertRowsAndTagsCorrelate(fixture, events);
     }
 
@@ -91,13 +95,33 @@ public abstract class TagTableFastInsertSpecBase : Akka.TestKit.Xunit.TestKit
     [InlineData(TagTableQueryableInsertMode.Inline)]
     public async Task Configured_max_parameters_lowers_rows_per_command(TagTableQueryableInsertMode mode)
     {
-        // 70 parameters / 7 columns = 10 rows per command.
-        await using var fixture = await Fixture.Create(this, mode, writerUuid: true, maxParameters: 70);
+        const int maxParameters = 70;
+        var rowsPerCommand = maxParameters / BaseByteArrayJournalDao.JournalInsertParametersPerRow(mode, true);
+        await using var fixture = await Fixture.Create(this, mode, writerUuid: true, maxParameters: maxParameters);
 
         var result = await fixture.WriteAtomic("pid", 1, 95).WaitAsync(Deadline);
 
         Assert.Null(result);
-        Assert.Equal(10, fixture.Counter.JournalInserts);
+        Assert.Equal((95 + rowsPerCommand - 1) / rowsPerCommand, fixture.Counter.JournalInserts);
+        Assert.All(fixture.Counter.JournalParameters, p => Assert.InRange(p, 1, maxParameters));
+        await AssertRowsAndTagsCorrelate(fixture, 95);
+    }
+
+    [Theory]
+    [InlineData(TagTableQueryableInsertMode.Parameterized)]
+    [InlineData(TagTableQueryableInsertMode.Inline)]
+    public async Task Configured_max_parameters_also_limits_parameterized_tag_inserts(TagTableQueryableInsertMode mode)
+    {
+        // 4 parameters per tag row -> at most 17 tag rows per command with a limit of 70.
+        const int maxParameters = 70;
+        await using var fixture = await Fixture.Create(
+            this, mode, writerUuid: true, maxParameters: maxParameters, preferParametersOnMultiRowInsert: true);
+
+        var result = await fixture.WriteAtomic("pid", 1, 95).WaitAsync(Deadline);
+
+        Assert.Null(result);
+        Assert.NotEmpty(fixture.Counter.TagParameters);
+        Assert.All(fixture.Counter.TagParameters, p => Assert.InRange(p, 1, maxParameters));
         await AssertRowsAndTagsCorrelate(fixture, 95);
     }
 
@@ -106,13 +130,15 @@ public abstract class TagTableFastInsertSpecBase : Akka.TestKit.Xunit.TestKit
     [InlineData(TagTableQueryableInsertMode.Inline)]
     public async Task Failure_in_a_later_command_rolls_back_the_whole_atomic_write(TagTableQueryableInsertMode mode)
     {
-        const long conflictingSequenceNr = 500;
-        var rowsPerCommand = ProviderMaxParameters / 7;
+        // The conflicting row is the first row of the third command.
+        var rowsPerCommand = ProviderMaxParameters / BaseByteArrayJournalDao.JournalInsertParametersPerRow(mode, true);
+        var conflictingSequenceNr = rowsPerCommand * 2L + 1;
         await using var fixture = await Fixture.Create(this, mode, writerUuid: true);
         Assert.Null(await fixture.WriteAtomic("pid", conflictingSequenceNr, 1).WaitAsync(Deadline));
         fixture.Counter.Reset();
 
-        await Assert.ThrowsAnyAsync<DbException>(() => fixture.WriteAtomic("pid", 1, 1000).WaitAsync(Deadline));
+        await Assert.ThrowsAnyAsync<DbException>(
+            () => fixture.WriteAtomic("pid", 1, rowsPerCommand * 3).WaitAsync(Deadline));
 
         // Every command before the one holding the conflicting row ran; none of their rows may survive.
         // Some providers (SQL Server) open the failing command's OUTPUT reader before raising the error,
@@ -151,7 +177,12 @@ public abstract class TagTableFastInsertSpecBase : Akka.TestKit.Xunit.TestKit
         private readonly CancellationTokenSource _shutdown = new();
         private readonly ActorMaterializer _materializer;
 
-        private Fixture(TagTableFastInsertSpecBase spec, TagTableQueryableInsertMode mode, bool writerUuid, int maxParameters)
+        private Fixture(
+            TagTableFastInsertSpecBase spec,
+            TagTableQueryableInsertMode mode,
+            bool writerUuid,
+            int maxParameters,
+            bool preferParametersOnMultiRowInsert)
         {
             _spec = spec;
             var journalTable = $"fi_{_databaseId}";
@@ -163,6 +194,7 @@ public abstract class TagTableFastInsertSpecBase : Akka.TestKit.Xunit.TestKit
                 tag-write-mode = TagTable
                 tagtable-asqueryable-insert-mode = {{mode.ToString().ToLowerInvariant()}}
                 tagtable-asqueryable-insert-max-parameters = {{maxParameters}}
+                prefer-parameters-on-multirow-insert = {{(preferParametersOnMultiRowInsert ? "true" : "false")}}
                 use-clone-connection = false
                 default.journal {
                   table-name = "{{journalTable}}"
@@ -185,9 +217,10 @@ public abstract class TagTableFastInsertSpecBase : Akka.TestKit.Xunit.TestKit
             TagTableFastInsertSpecBase spec,
             TagTableQueryableInsertMode mode,
             bool writerUuid,
-            int maxParameters = 0)
+            int maxParameters = 0,
+            bool preferParametersOnMultiRowInsert = false)
         {
-            var fixture = new Fixture(spec, mode, writerUuid, maxParameters);
+            var fixture = new Fixture(spec, mode, writerUuid, maxParameters, preferParametersOnMultiRowInsert);
             await fixture.Dao.InitializeTables(CancellationToken.None);
             fixture.Counter.Reset();
             return fixture;
@@ -230,6 +263,8 @@ public abstract class TagTableFastInsertSpecBase : Akka.TestKit.Xunit.TestKit
     {
         private readonly string _journalTable;
         private readonly string _tagTable;
+        private readonly ConcurrentQueue<int> _journalParameters = new();
+        private readonly ConcurrentQueue<int> _tagParameters = new();
         private int _journalInserts;
 
         public JournalInsertCounter(string journalTable, string tagTable)
@@ -238,19 +273,41 @@ public abstract class TagTableFastInsertSpecBase : Akka.TestKit.Xunit.TestKit
             _tagTable = tagTable;
         }
 
+        /// <summary>Journal INSERT commands that executed (opened their OUTPUT/RETURNING reader).</summary>
         public int JournalInserts => Volatile.Read(ref _journalInserts);
 
-        public void Reset() => Interlocked.Exchange(ref _journalInserts, 0);
+        /// <summary>Parameter count of every journal INSERT command sent.</summary>
+        public int[] JournalParameters => _journalParameters.ToArray();
+
+        /// <summary>Parameter count of every tag-table INSERT command sent.</summary>
+        public int[] TagParameters => _tagParameters.ToArray();
+
+        public void Reset()
+        {
+            Interlocked.Exchange(ref _journalInserts, 0);
+            _journalParameters.Clear();
+            _tagParameters.Clear();
+        }
+
+        public override DbCommand CommandInitialized(CommandEventData eventData, DbCommand command)
+        {
+            if (IsInsertInto(command, _tagTable))
+                _tagParameters.Enqueue(command.Parameters.Count);
+            else if (IsInsertInto(command, _journalTable))
+                _journalParameters.Enqueue(command.Parameters.Count);
+            return command;
+        }
 
         // The AsQueryable path uses INSERT ... OUTPUT/RETURNING, which runs as a reader.
         public override void AfterExecuteReader(CommandEventData eventData, DbCommand command,
             CommandBehavior commandBehavior, DbDataReader dataReader)
         {
-            var text = command.CommandText;
-            if (text.Contains("INSERT INTO", StringComparison.OrdinalIgnoreCase) &&
-                text.Contains(_journalTable, StringComparison.OrdinalIgnoreCase) &&
-                !text.Contains(_tagTable, StringComparison.OrdinalIgnoreCase))
+            if (!IsInsertInto(command, _tagTable) && IsInsertInto(command, _journalTable))
                 Interlocked.Increment(ref _journalInserts);
         }
+
+        private static bool IsInsertInto(DbCommand command, string table)
+            => command.CommandText.Contains("INSERT INTO", StringComparison.OrdinalIgnoreCase) &&
+               command.CommandText.Contains(table, StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -36,7 +36,8 @@ namespace Akka.Persistence.Sql.Journal.Dao
         private readonly TagMode _tagWriteMode;
         private readonly TagTableQueryableInsertMode _tagTableQueryableInsertMode;
         private static readonly ArrayPool<JournalRow> JournalRowPool = ArrayPool<JournalRow>.Shared;
-        private int _asQueryableInsertRowLimit;
+        private readonly int _journalInsertParametersPerRow;
+        private int _asQueryableInsertMaxParameters;
         protected readonly JournalConfig JournalConfig;
 
         protected readonly ILoggingAdapter Logger;
@@ -69,6 +70,9 @@ namespace Akka.Persistence.Sql.Journal.Dao
                  JournalConfig.ProviderName.Contains("SQLite"))
                     ? JournalConfig.DaoConfig.TagTableQueryableInsertMode
                     : TagTableQueryableInsertMode.Off;
+            _journalInsertParametersPerRow = JournalInsertParametersPerRow(
+                _tagTableQueryableInsertMode,
+                JournalConfig.TableConfig.EventJournalTable.UseWriterUuidColumn);
 
             // Due to C# rules we have to initialize WriteQueue here
             // Keeping it here vs init function prevents accidental moving of init
@@ -400,8 +404,12 @@ namespace Akka.Persistence.Sql.Journal.Dao
         protected async Task RunFastInsertEventParams(AkkaDataConnection connection, Seq<JournalRow> xs, CancellationToken token)
         {
             var roundTripByteLimit = JournalConfig.DaoConfig.AsQueryableInsertSqlLengthLimit;
-            var rowLimit = Math.Min(xs.Length, GetAsQueryableInsertRowLimit(connection));
+            var maxParameters = GetAsQueryableInsertMaxParameters(connection);
+            var parametersPerRow = _journalInsertParametersPerRow;
+            // The parameter check below never lets a command hold more rows than this.
+            var rowLimit = Math.Min(xs.Length, Math.Max(1, maxParameters / parametersPerRow));
             var currRows = 0;
+            var currParameters = 0;
             var currBytes = 0;
             var tagDict = new Dictionary<(string PersistenceId, long SequenceNumber), string[]>();
             JournalRow[]? insertList = null;
@@ -412,17 +420,21 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 {
                     // Each flush is a separate command inside the caller's transaction, so splitting
                     // a large atomic write here still commits or rolls back as a whole.
+                    // A single row is always sent, even if it alone exceeds a (misconfigured) tiny limit.
                     if (currRows > 0 &&
-                        (journalRow.Message.Length * 2 + currBytes > roundTripByteLimit || currRows >= rowLimit))
+                        (currParameters + parametersPerRow > maxParameters ||
+                         journalRow.Message.Length * 2 + currBytes > roundTripByteLimit))
                     {
                         await FlushFastInsert(connection, insertList, currRows, tagDict, token);
                         tagDict.Clear();
                         currRows = 0;
+                        currParameters = 0;
                         currBytes = 0;
                     }
 
                     tagDict[(journalRow.PersistenceId, journalRow.SequenceNumber)] = journalRow.TagArray;
                     insertList[currRows++] = journalRow;
+                    currParameters += parametersPerRow;
                     currBytes += journalRow.Message.Length * 2 + journalRow.Manifest.Length;
                 }
 
@@ -467,26 +479,36 @@ namespace Akka.Persistence.Sql.Journal.Dao
         }
 
         /// <summary>
-        /// Maximum number of journal rows in one AsQueryable insert command, derived from the
-        /// provider's parameter limit (LinqToDB's BulkCopy limit unless configured lower).
-        /// Every inserted column is counted as a parameter even in Inline mode, which only
-        /// over-estimates; this keeps the limit independent of how LinqToDB inlines values.
+        /// Maximum number of parameters in one fast-path command: LinqToDB's BulkCopy limit for the
+        /// provider, unless <c>tagtable-asqueryable-insert-max-parameters</c> sets a lower one.
+        /// Applies to the journal insert and to the tag-table BulkCopy that follows it.
         /// </summary>
-        private int GetAsQueryableInsertRowLimit(AkkaDataConnection connection)
+        private int GetAsQueryableInsertMaxParameters(AkkaDataConnection connection)
         {
-            if (_asQueryableInsertRowLimit > 0)
-                return _asQueryableInsertRowLimit;
+            if (_asQueryableInsertMaxParameters > 0)
+                return _asQueryableInsertMaxParameters;
 
             var maxParameters = ProviderParameterLimits.MaxParameters(connection.DataProvider);
             var configured = JournalConfig.DaoConfig.AsQueryableInsertMaxParameters;
             if (configured > 0 && configured < maxParameters)
                 maxParameters = configured;
 
-            // PersistenceId, SequenceNumber, Message, Manifest, Timestamp, Identifier (+ WriterUuid)
-            var parametersPerRow = JournalConfig.TableConfig.EventJournalTable.UseWriterUuidColumn ? 7 : 6;
-
-            return _asQueryableInsertRowLimit = Math.Max(1, maxParameters / parametersPerRow);
+            return _asQueryableInsertMaxParameters = maxParameters;
         }
+
+        /// <summary>
+        /// Number of SQL parameters LinqToDB emits per journal row for the given mode
+        /// (see <see cref="BuildAsQueryable"/>). Parameterized sends every inserted column as a
+        /// parameter; Inline only the columns listed in its <c>Except()</c> (Message, Manifest,
+        /// PersistenceId, WriterUuid), with SequenceNumber, Timestamp and Identifier as literals.
+        /// <c>Deleted</c> is always a literal.
+        /// </summary>
+        internal static int JournalInsertParametersPerRow(TagTableQueryableInsertMode mode, bool useWriterUuid)
+            => mode switch
+            {
+                TagTableQueryableInsertMode.Inline => useWriterUuid ? 4 : 3,
+                _ => useWriterUuid ? 7 : 6,
+            };
 
         /// <summary>
         /// Builds an <see cref="IQueryable{T}"/> for tag-table fast-path inserts using the
@@ -581,6 +603,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     new BulkCopyOptions()
                         .WithBulkCopyType(BulkCopyType.MultipleRows)
                         .WithUseParameters(journalConfigDaoConfig.PreferParametersOnMultiRowInsert)
+                        .WithMaxParametersForBatch(_asQueryableInsertMaxParameters)
                         .WithMaxBatchSize(journalConfigDaoConfig.DbRoundTripTagBatchSize),
                     tagsToInsert,
                     token);
