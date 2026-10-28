@@ -39,6 +39,12 @@ public abstract class TagTableFastInsertSpecBase : Akka.TestKit.Xunit.TestKit
     /// <summary>LinqToDB's BulkCopy parameter limit for the provider under test.</summary>
     protected abstract int ProviderMaxParameters { get; }
 
+    /// <summary>
+    /// A parameter limit above <see cref="ProviderMaxParameters"/> that the database under test accepts,
+    /// or <c>null</c> when there is no headroom (e.g. SQL Server's hard limit of 2100).
+    /// </summary>
+    protected virtual int? RaisedMaxParameters => null;
+
     protected abstract string ConnectionString(string databaseId);
 
     protected abstract string ProviderName { get; }
@@ -105,6 +111,30 @@ public abstract class TagTableFastInsertSpecBase : Akka.TestKit.Xunit.TestKit
         Assert.Equal((95 + rowsPerCommand - 1) / rowsPerCommand, fixture.Counter.JournalInserts);
         Assert.All(fixture.Counter.JournalParameters, p => Assert.InRange(p, 1, maxParameters));
         await AssertRowsAndTagsCorrelate(fixture, 95);
+    }
+
+    [Theory]
+    [InlineData(TagTableQueryableInsertMode.Parameterized)]
+    [InlineData(TagTableQueryableInsertMode.Inline)]
+    public async Task Configured_max_parameters_can_raise_the_provider_limit(TagTableQueryableInsertMode mode)
+    {
+        Assert.SkipUnless(RaisedMaxParameters is not null, "The database has no headroom above the LinqToDB limit.");
+        var maxParameters = RaisedMaxParameters!.Value;
+        var parametersPerRow = BaseByteArrayJournalDao.JournalInsertParametersPerRow(mode, true);
+        // More rows than one command could hold under the LinqToDB limit, but fewer than the raised one.
+        var events = ProviderMaxParameters / parametersPerRow * 2;
+        Assert.True(events * parametersPerRow <= maxParameters);
+        await using var fixture = await Fixture.Create(
+            this, mode, writerUuid: true, maxParameters: maxParameters, preferParametersOnMultiRowInsert: true);
+
+        var result = await fixture.WriteAtomic("pid", 1, events).WaitAsync(Deadline);
+
+        Assert.Null(result);
+        Assert.Equal(1, fixture.Counter.JournalInserts);
+        Assert.Equal(events * parametersPerRow, fixture.Counter.JournalParameters.Single());
+        // LinqToDB 6.5.0+ lets MaxParametersForBatch raise its own limit for the tag-table BulkCopy too.
+        Assert.InRange(fixture.Counter.TagParameters.Max(), ProviderMaxParameters + 1, maxParameters);
+        await AssertRowsAndTagsCorrelate(fixture, events);
     }
 
     [Theory]

@@ -480,20 +480,19 @@ namespace Akka.Persistence.Sql.Journal.Dao
 
         /// <summary>
         /// Maximum number of parameters in one fast-path command: LinqToDB's BulkCopy limit for the
-        /// provider, unless <c>tagtable-asqueryable-insert-max-parameters</c> sets a lower one.
-        /// Applies to the journal insert and to the tag-table BulkCopy that follows it.
+        /// provider, or <c>tagtable-asqueryable-insert-max-parameters</c> when that is set. The configured
+        /// value replaces the LinqToDB limit in both directions and is not checked against what the
+        /// database accepts. Applies to the journal insert and to the tag-table BulkCopy that follows it.
         /// </summary>
         private int GetAsQueryableInsertMaxParameters(AkkaDataConnection connection)
         {
             if (_asQueryableInsertMaxParameters > 0)
                 return _asQueryableInsertMaxParameters;
 
-            var maxParameters = ProviderParameterLimits.MaxParameters(connection.DataProvider);
             var configured = JournalConfig.DaoConfig.AsQueryableInsertMaxParameters;
-            if (configured > 0 && configured < maxParameters)
-                maxParameters = configured;
-
-            return _asQueryableInsertMaxParameters = maxParameters;
+            return _asQueryableInsertMaxParameters = configured > 0
+                ? configured
+                : ProviderParameterLimits.MaxParameters(connection.DataProvider);
         }
 
         /// <summary>

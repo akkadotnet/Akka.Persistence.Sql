@@ -67,9 +67,15 @@ namespace Akka.Persistence.Sql.Config
         public int AsQueryableInsertSqlLengthLimit { get; }
 
         /// <summary>
-        ///     Maximum number of parameters in a single AsQueryable journal insert command.
-        ///     <c>0</c> uses LinqToDB's BulkCopy parameter limit for the provider; a positive
-        ///     value is still capped at that provider limit.
+        ///     Maximum number of parameters in a single AsQueryable journal insert command, and in
+        ///     the tag-table insert that follows it.
+        ///     <c>0</c> uses LinqToDB's BulkCopy parameter limit for the provider. A positive value
+        ///     replaces that limit, so it can also raise it.
+        ///     <para>
+        ///         <b>Warning:</b> a value is not checked against what the database or driver accepts.
+        ///         A value above that limit makes large writes fail at runtime. See
+        ///         <c>tagtable-asqueryable-insert-max-parameters</c> in <c>persistence.conf</c> for the limits.
+        ///     </para>
         /// </summary>
         public int AsQueryableInsertMaxParameters { get; }
         

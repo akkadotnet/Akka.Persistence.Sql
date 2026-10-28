@@ -147,10 +147,18 @@ namespace Akka.Persistence.Sql.Hosting
 
         /// <summary>
         ///     <para>
-        ///         Maximum number of parameters in a single AsQueryable journal insert command.
-        ///         Large atomic writes are split into several commands inside the same transaction.
-        ///         <c>0</c> uses LinqToDB's BulkCopy parameter limit for the provider; a positive value
-        ///         is capped at that limit.
+        ///         Maximum number of parameters in a single AsQueryable journal insert command, and in
+        ///         the tag-table insert that follows it. Large atomic writes are split into several commands
+        ///         inside the same transaction. <c>0</c> uses LinqToDB's BulkCopy parameter limit for the
+        ///         provider (SQL Server 2099, SQLite 998, PostgreSQL 32766). A positive value replaces that
+        ///         limit, so it can also raise it.
+        ///     </para>
+        ///     <para>
+        ///         <b>Warning:</b> the value is not checked against what the database or driver accepts.
+        ///         If it is set above that limit, large writes fail at runtime with a database error
+        ///         (and the write is rolled back). SQL Server allows at most 2100 parameters per command,
+        ///         PostgreSQL 65535, and SQLite 32766 since 3.32.0 (999 before, or whatever
+        ///         SQLITE_MAX_VARIABLE_NUMBER the native library was built with).
         ///     </para>
         ///     <b>Default</b>: <c>0</c>
         /// </summary>
