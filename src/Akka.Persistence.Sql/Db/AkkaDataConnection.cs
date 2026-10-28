@@ -67,7 +67,18 @@ namespace Akka.Persistence.Sql.Db
             => _connection.Dispose();
 
         public AkkaDataConnection Clone()
-            => new AkkaDataConnection(_providerName, new DataConnection(_connection.Options));
+        {
+            // LinqToDB 6 removed DataConnection.Clone. Building from the same options would run the
+            // retry-policy factory again; LinqToDB 5's Clone reused the current policy instance instead,
+            // so carry that instance over and clear the factory to keep the old behavior.
+            var options = _connection.Options.WithOptions<RetryPolicyOptions>(o => o with
+            {
+                RetryPolicy = _connection.RetryPolicy,
+                Factory = null,
+            });
+
+            return new AkkaDataConnection(_providerName, new DataConnection(options));
+        }
 
         internal IRetryPolicy? DetachRetryPolicy()
         {

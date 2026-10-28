@@ -11,7 +11,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using System.Threading.Channels;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Event;
@@ -20,7 +19,6 @@ using Akka.Persistence.Sql.Db;
 using Akka.Persistence.Sql.Extensions;
 using Akka.Persistence.Sql.Journal.Types;
 using Akka.Persistence.Sql.Serialization;
-using Akka.Persistence.Sql.Utility;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Streams.Supervision;
@@ -28,11 +26,6 @@ using LanguageExt;
 using LinqToDB;
 using LinqToDB.Async;
 using LinqToDB.Data;
-using LinqToDB.Internal.DataProvider.Oracle;
-using LinqToDB.Internal.DataProvider.PostgreSQL;
-using LinqToDB.Internal.DataProvider.SQLite;
-using LinqToDB.Internal.DataProvider.SqlServer;
-using LinqToDB.Linq;
 using static LanguageExt.Prelude;
 
 namespace Akka.Persistence.Sql.Journal.Dao
@@ -42,39 +35,15 @@ namespace Akka.Persistence.Sql.Journal.Dao
         private readonly Flow<JournalRow, Util.Try<ReplayCompletion>, NotUsed> _deserializeFlowMapped;
         private readonly TagMode _tagWriteMode;
         private readonly TagTableQueryableInsertMode _tagTableQueryableInsertMode;
-        private static readonly ArrayPool<JournalRow> JournalRowPool = 
-             ArrayPool<JournalRow>.Shared;
+        private static readonly ArrayPool<JournalRow> JournalRowPool = ArrayPool<JournalRow>.Shared;
+        private readonly int _journalInsertParametersPerRow;
+        private int _asQueryableInsertMaxParameters;
         protected readonly JournalConfig JournalConfig;
 
         protected readonly ILoggingAdapter Logger;
         protected readonly FlowPersistentRepresentationSerializer<JournalRow> Serializer;
 
-        /// <summary>
-        /// Bounded input channel replacing the old <c>Source.Queue</c>.
-        /// Uses <see cref="BoundedChannelFullMode.Wait"/> for natural backpressure
-        /// instead of <c>OverflowStrategy.DropNew</c> (which silently dropped writes).
-        ///
-        /// <para>
-        /// The writer side (<c>_inputChannel.Writer</c>) is used in
-        /// <see cref="QueueWriteJournalRows"/> to enqueue entries. The reader side is
-        /// consumed by <see cref="_batcher"/>.
-        /// </para>
-        /// </summary>
-        private readonly Channel<WriteQueueEntry> _inputChannel;
-
-        /// <summary>
-        /// Weighted batcher that wraps <see cref="_inputChannel"/>'s reader and eagerly
-        /// aggregates <see cref="WriteQueueEntry"/> items into <see cref="MutableWriteQueueBatch"/>
-        /// batches up to <c>BatchSize</c> total row cost. It feeds directly into
-        /// <c>Source.ChannelReader</c> for downstream Akka Streams processing.
-        ///
-        /// <para>
-        /// Uses <see cref="MutableWriteQueueBatch"/> instead of the immutable <c>WriteQueueSet</c>
-        /// so the aggregate function can mutate the accumulator in-place, eliminating per-item
-        /// <c>ImmutableList.Add()</c> copies and <c>Seq.Concat()</c> allocations.
-        /// </para>
-        /// </summary>
-        private readonly ChannelQueueWithBatch<WriteQueueEntry, MutableWriteQueueBatch> _batcher;
+        protected readonly ISourceQueueWithComplete<WriteQueueEntry> WriteQueue;
 
         protected BaseByteArrayJournalDao(
             IAdvancedScheduler scheduler,
@@ -92,62 +61,40 @@ namespace Akka.Persistence.Sql.Journal.Dao
             Serializer = new ByteArrayJournalSerializer(config, serializer, config.PluginConfig.TagSeparator, selfUuid);
             _deserializeFlowMapped = Serializer.DeserializeFlow().Select(MessageWithBatchMapper());
             _tagWriteMode = JournalConfig.PluginConfig.TagMode;
-            // Use the new tri-state mode; only applies when tag-write-mode is TagTable
-            // and the provider supports INSERT ... OUTPUT (SqlServer, PostgreSQL, SQLite). ✨
+            // The AsQueryable fast path only applies when tags are written exclusively to the tag table
+            // and the provider supports INSERT ... OUTPUT/RETURNING (SqlServer, PostgreSQL, SQLite).
             _tagTableQueryableInsertMode =
-                JournalConfig.ProviderName.Contains("SqlServer") ||
-                JournalConfig.ProviderName.Contains("PostgreSQL") ||
-                JournalConfig.ProviderName.Contains("SQLite")
+                _tagWriteMode == TagMode.TagTable &&
+                (JournalConfig.ProviderName.Contains("SqlServer") ||
+                 JournalConfig.ProviderName.Contains("PostgreSQL") ||
+                 JournalConfig.ProviderName.Contains("SQLite"))
                     ? JournalConfig.DaoConfig.TagTableQueryableInsertMode
                     : TagTableQueryableInsertMode.Off;
-            
-            // Channel + ChannelQueueWithBatch replaces
-            // Source.Queue + BatchWeighted. The input channel provides backpressure via
-            // BoundedChannelFullMode.Wait instead of dropping writes with DropNew.
-            _inputChannel = Channel.CreateBounded<WriteQueueEntry>(
-                new BoundedChannelOptions(JournalConfig.DaoConfig.BufferSize)
-                {
-                    FullMode = BoundedChannelFullMode.Wait,
-                    SingleReader = true,
-                    AllowSynchronousContinuations = false,
-                });
-            
-            //  MutableWriteQueueBatch replaces WriteQueueSet here:
-            //   - seed:      creates ONE MutableWriteQueueBatch object per batch (no change vs before)
-            //   - aggregate: calls batch.Add() in-place — zero extra allocations per item!
-            //                Previously each aggregate step did:
-            //                  new WriteQueueSet(...)        — 1 heap object
-            //                  ImmutableList.Add(tcs)        — O(N) copy
-            //                  Seq.Concat(rows)              — deferred chain node
-            //                  ImmutableList.Add(token)      — O(N) copy
-            //                Now it's just List<T>.Add / List<T>.AddRange on the same instance.
-            _batcher = new ChannelQueueWithBatch<WriteQueueEntry, MutableWriteQueueBatch>(
-                _inputChannel.Reader,
-                maxWeight:
-                // Sub 100 MaxWeight improves throughput for most cases...
-                JournalConfig.DaoConfig.BatchSize,
-                costFunction: static entry => entry.Rows.Count,
-                seed: static r => new MutableWriteQueueBatch(r),
-                aggregate: static (batch, entry) =>
-                {
-                    batch.Add(entry);
-                    return batch;
-                });
+            _journalInsertParametersPerRow = JournalInsertParametersPerRow(
+                _tagTableQueryableInsertMode,
+                JournalConfig.TableConfig.EventJournalTable.UseWriterUuidColumn);
 
-            Source.ChannelReader(_batcher)
+            // Due to C# rules we have to initialize WriteQueue here
+            // Keeping it here vs init function prevents accidental moving of init
+            // to where variables aren't set yet.
+            WriteQueue = Source
+                .Queue<WriteQueueEntry>(JournalConfig.DaoConfig.BufferSize, OverflowStrategy.DropNew)
+                .BatchWeighted(
+                    JournalConfig.DaoConfig.BatchSize,
+                    cf => cf.Rows.Count,
+                    r => new WriteQueueSet(ImmutableList.Create([r.Tcs]), r.Rows, ImmutableList.Create([r.CancellationToken])),
+                    (oldRows, newRows) =>
+                        new WriteQueueSet(
+                            oldRows.Tcs.Add(newRows.Tcs),
+                            oldRows.Rows.Concat(newRows.Rows),
+                            oldRows.CancellationTokens.Add(newRows.CancellationToken)))
                 .SelectAsync(
                     JournalConfig.DaoConfig.Parallelism,
                     async promisesAndRows =>
                     {
                         try
                         {
-                            // Convert IReadOnlyList → Seq / ImmutableList once per *batch*
-                            // (not per item), so downstream code is unaffected. The one-time
-                            // Seq(list) call copies the List<JournalRow> into a Seq array, but
-                            // that's strictly cheaper than the old per-item Seq.Concat chains.
-                            await WriteJournalRows(
-                                Seq(promisesAndRows.Rows),
-                                promisesAndRows.CancellationTokens);
+                            await WriteJournalRows(promisesAndRows.Rows, promisesAndRows.CancellationTokens);
                             foreach (var taskCompletionSource in promisesAndRows.Tcs)
                                 taskCompletionSource.TrySetResult(NotUsed.Instance);
                         }
@@ -160,11 +107,12 @@ namespace Akka.Persistence.Sql.Journal.Dao
                         return NotUsed.Instance;
                     })
                 .AddAttributes(ActorAttributes.CreateSupervisionStrategy(Deciders.RestartingDecider))
-                .To(Sink.Ignore<NotUsed>())
-                .Run(Materializer);
+                .ToMaterialized(
+                    Sink.Ignore<NotUsed>(),
+                    Keep.Left).Run(Materializer);
         }
 
-        internal void CompleteWriteQueue() => _inputChannel.Writer.TryComplete();
+        internal void CompleteWriteQueue() => WriteQueue.Complete();
 
         public async Task<IImmutableList<Exception>> AsyncWriteMessages(
             IEnumerable<AtomicWrite> messages,
@@ -341,47 +289,40 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 });
         }
 
-        /// <summary>
-        /// Enqueues a set of journal rows for batched writing via the channel pipeline.
-        /// Uses <c>TryWrite</c> on the bounded input channel — returns <c>false</c> when
-        /// the channel is full or completed, replacing the old <c>QueueOfferResult</c>
-        /// switch statement with simpler channel semantics.
-        ///
-        /// <para>
-        /// <b>CopilotNote:</b> With <see cref="BoundedChannelFullMode.Wait"/>,
-        /// <c>TryWrite</c> is non-blocking and returns <c>false</c> when:
-        /// <list type="bullet">
-        ///   <item>Channel is at capacity (equivalent to old <c>Dropped</c>)</item>
-        ///   <item>Channel was completed with error (equivalent to old <c>Failure</c>)</item>
-        ///   <item>Channel was completed normally (equivalent to old <c>QueueClosed</c>)</item>
-        /// </list>
-        /// We distinguish these cases via <c>_batcher.Completion</c>.
-        /// </para>
-        /// </summary>
         private async Task QueueWriteJournalRows(Seq<JournalRow> xs, CancellationToken cancellationToken)
         {
             var promise = new TaskCompletionSource<NotUsed>(TaskCreationOptions.RunContinuationsAsynchronously);
-            
-            if (!_inputChannel.Writer.TryWrite(new WriteQueueEntry(promise, xs, cancellationToken)))
+
+            // Send promise and rows into queue. If the Queue takes it,
+            // It will write the Promise state when finished writing (or failing)
+            var result = await WriteQueue.OfferAsync(new WriteQueueEntry(promise, xs, cancellationToken));
+
+            switch (result)
             {
-                // Distinguish full vs faulted vs closed
-                var completionException = _batcher.Completion.Exception;
-                if (completionException is not null)
-                    promise.TrySetException(new Exception("Failed to write journal row batch", completionException));
-                else if (_batcher.Completion.IsCompleted)
-                    promise.TrySetException(
-                        new Exception(
-                            "Failed to enqueue journal row batch write, the queue was closed."));
-                else
+                case QueueOfferResult.Enqueued:
+                    break;
+
+                case QueueOfferResult.Failure f:
+                    promise.TrySetException(new Exception("Failed to write journal row batch", f.Cause));
+                    break;
+
+                case QueueOfferResult.Dropped:
                     promise.TrySetException(
                         new Exception(
                             $"Failed to enqueue journal row batch write, the queue buffer was full ({JournalConfig.DaoConfig.BufferSize} elements)"));
+                    break;
+
+                case QueueOfferResult.QueueClosed:
+                    promise.TrySetException(
+                        new Exception(
+                            "Failed to enqueue journal row batch write, the queue was closed."));
+                    break;
             }
 
             await promise.Task.WaitAsync(ShutdownToken);
         }
 
-        private async Task WriteJournalRows(Seq<JournalRow> xs, IReadOnlyList<CancellationToken> cancellationTokens)
+        private async Task WriteJournalRows(Seq<JournalRow> xs, ImmutableList<CancellationToken> cancellationTokens)
         {
             switch (xs.Count)
             {
@@ -407,11 +348,9 @@ namespace Akka.Persistence.Sql.Journal.Dao
             }
         }
 
-        private async Task InsertMultiple(Seq<JournalRow> xs, IReadOnlyList<CancellationToken> cancellationTokens)
+        private async Task InsertMultiple(Seq<JournalRow> xs, ImmutableList<CancellationToken> cancellationTokens)
         {
-            // Append ShutdownToken without mutating the caller's list (MutableWriteQueueBatch owns it).
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(
-                cancellationTokens.Append(ShutdownToken).ToArray());
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationTokens.Add(ShutdownToken).ToArray());
             await ConnectionFactory.ExecuteWithTransactionAsync(
                 WriteIsolationLevel,
                 cts.Token,
@@ -426,9 +365,6 @@ namespace Akka.Persistence.Sql.Journal.Dao
                         switch (_tagTableQueryableInsertMode)
                         {
                             case TagTableQueryableInsertMode.Parameterized:
-                                await RunFastInsertEventParams(connection, xs, token);
-                                break;
-
                             case TagTableQueryableInsertMode.Inline:
                                 await RunFastInsertEventParams(connection, xs, token);
                                 break;
@@ -468,71 +404,42 @@ namespace Akka.Persistence.Sql.Journal.Dao
         protected async Task RunFastInsertEventParams(AkkaDataConnection connection, Seq<JournalRow> xs, CancellationToken token)
         {
             var roundTripByteLimit = JournalConfig.DaoConfig.AsQueryableInsertSqlLengthLimit;
-            var rowLimit =
-                xs.Length > JournalConfig.DaoConfig.BatchSize
-                    ? xs.Length
-                    : JournalConfig.DaoConfig.BatchSize;
+            var maxParameters = GetAsQueryableInsertMaxParameters(connection);
+            var parametersPerRow = _journalInsertParametersPerRow;
+            // The parameter check below never lets a command hold more rows than this.
+            var rowLimit = Math.Min(xs.Length, Math.Max(1, maxParameters / parametersPerRow));
             var currRows = 0;
+            var currParameters = 0;
             var currBytes = 0;
-            Dictionary<(string PersistenceId, long SequenceNumber), string[]> tagDict 
-                = new Dictionary<(string persistenceId, long sequenceNumber), string[]>();
+            var tagDict = new Dictionary<(string PersistenceId, long SequenceNumber), string[]>();
             JournalRow[]? insertList = null;
             try
             {
                 insertList = JournalRowPool.Rent(rowLimit);
                 foreach (var journalRow in xs)
                 {
-                    // We don't worry about adding other columns on this check cause we are overparanoid on row padding anyway.
-                    if ((journalRow.Message.Length *2) + currBytes > roundTripByteLimit || currRows >= rowLimit)
+                    // Each flush is a separate command inside the caller's transaction, so splitting
+                    // a large atomic write here still commits or rolls back as a whole.
+                    // A single row is always sent, even if it alone exceeds a (misconfigured) tiny limit.
+                    if (currRows > 0 &&
+                        (currParameters + parametersPerRow > maxParameters ||
+                         journalRow.Message.Length * 2 + currBytes > roundTripByteLimit))
                     {
-                        var query = BuildAsQueryable(
-                            connection,
-                            insertList.Take(currRows).Select(static jr => new JournalRowIns
-                            {
-                                PersistenceId = jr.PersistenceId,
-                                SequenceNumber = jr.SequenceNumber,
-                                Message = jr.Message,
-                                Manifest = jr.Manifest,
-                                Timestamp = jr.Timestamp,
-                                Identifier = jr.Identifier,
-                                WriterUuid = jr.WriterUuid
-                            }));
-                        
-                        await InsertJournalEntriesWithTags(connection, JournalConfig.DaoConfig, token, tagDict, query);
+                        await FlushFastInsert(connection, insertList, currRows, tagDict, token);
                         tagDict.Clear();
                         currRows = 0;
+                        currParameters = 0;
                         currBytes = 0;
                     }
 
-                    tagDict[(journalRow.PersistenceId, journalRow.SequenceNumber)]
-                        = journalRow.TagArray;
-                    currRows++;
-                    // ByteLength *2
-                    //  + 2048 for padding
-                    // (i.e. Serializer manifests, persistence IDs, sequence numbers etc.)
-                    currBytes +=
-                        (journalRow.Message.Length * 2 + journalRow.Manifest.Length);
-                    insertList[currRows - 1] = (journalRow);
-
+                    tagDict[(journalRow.PersistenceId, journalRow.SequenceNumber)] = journalRow.TagArray;
+                    insertList[currRows++] = journalRow;
+                    currParameters += parametersPerRow;
+                    currBytes += journalRow.Message.Length * 2 + journalRow.Manifest.Length;
                 }
 
-                if (currBytes > 0 || currRows > 0)
-                {
-                    var query = BuildAsQueryable(
-                        connection,
-                        insertList.Take(currRows).Select(static jr => new JournalRowIns
-                        {
-                            PersistenceId = jr.PersistenceId,
-                            SequenceNumber = jr.SequenceNumber,
-                            Message = jr.Message,
-                            // Deleted = jr.Deleted,
-                            Manifest = jr.Manifest,
-                            Timestamp = jr.Timestamp,
-                            Identifier = jr.Identifier,
-                            WriterUuid = jr.WriterUuid
-                        }));
-                    await InsertJournalEntriesWithTags(connection, JournalConfig.DaoConfig, token, tagDict, query);
-                }
+                if (currRows > 0)
+                    await FlushFastInsert(connection, insertList, currRows, tagDict, token);
             }
             finally
             {
@@ -548,10 +455,64 @@ namespace Akka.Persistence.Sql.Journal.Dao
             }
         }
 
+        private Task FlushFastInsert(
+            AkkaDataConnection connection,
+            JournalRow[] insertList,
+            int count,
+            Dictionary<(string PersistenceId, long SequenceNumber), string[]> tagDict,
+            CancellationToken token)
+        {
+            var query = BuildAsQueryable(
+                connection,
+                insertList.Take(count).Select(static jr => new JournalRowIns
+                {
+                    PersistenceId = jr.PersistenceId,
+                    SequenceNumber = jr.SequenceNumber,
+                    Message = jr.Message,
+                    Manifest = jr.Manifest,
+                    Timestamp = jr.Timestamp,
+                    Identifier = jr.Identifier,
+                    WriterUuid = jr.WriterUuid,
+                }));
+
+            return InsertJournalEntriesWithTags(connection, JournalConfig.DaoConfig, token, tagDict, query);
+        }
+
+        /// <summary>
+        /// Maximum number of parameters in one fast-path command: LinqToDB's BulkCopy limit for the
+        /// provider, or <c>tagtable-asqueryable-insert-max-parameters</c> when that is set. The configured
+        /// value replaces the LinqToDB limit in both directions and is not checked against what the
+        /// database accepts. Applies to the journal insert and to the tag-table BulkCopy that follows it.
+        /// </summary>
+        private int GetAsQueryableInsertMaxParameters(AkkaDataConnection connection)
+        {
+            if (_asQueryableInsertMaxParameters > 0)
+                return _asQueryableInsertMaxParameters;
+
+            var configured = JournalConfig.DaoConfig.AsQueryableInsertMaxParameters;
+            return _asQueryableInsertMaxParameters = configured > 0
+                ? configured
+                : ProviderParameterLimits.MaxParameters(connection.DataProvider);
+        }
+
+        /// <summary>
+        /// Number of SQL parameters LinqToDB emits per journal row for the given mode
+        /// (see <see cref="BuildAsQueryable"/>). Parameterized sends every inserted column as a
+        /// parameter; Inline only the columns listed in its <c>Except()</c> (Message, Manifest,
+        /// PersistenceId, WriterUuid), with SequenceNumber, Timestamp and Identifier as literals.
+        /// <c>Deleted</c> is always a literal.
+        /// </summary>
+        internal static int JournalInsertParametersPerRow(TagTableQueryableInsertMode mode, bool useWriterUuid)
+            => mode switch
+            {
+                TagTableQueryableInsertMode.Inline => useWriterUuid ? 4 : 3,
+                _ => useWriterUuid ? 7 : 6,
+            };
+
         /// <summary>
         /// Builds an <see cref="IQueryable{T}"/> for tag-table fast-path inserts using the
         /// correct LinqToDB <c>AsQueryable</c> overload for the configured
-        /// <see cref="TagTableQueryableInsertMode"/>. UwU~ ✨
+        /// <see cref="TagTableQueryableInsertMode"/>.
         /// <list type="bullet">
         ///   <item><see cref="TagTableQueryableInsertMode.Parameterized"/> — all values as SQL parameters (safest)</item>
         ///   <item><see cref="TagTableQueryableInsertMode.Inline"/> — scalar values as SQL literals,
@@ -568,7 +529,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     connection.AsQueryable(rows, static b => b.Parameterize()),
 
                 // Inline: exclude byte-heavy columns from SQL literal embedding to stay within
-                // the tagtable-asqueryable-insert-sql-length-limit budget. (≧◡≦)
+                // the tagtable-asqueryable-insert-sql-length-limit budget.
                 _ =>
                     connection.AsQueryable(
                         rows,
@@ -579,86 +540,6 @@ namespace Akka.Persistence.Sql.Journal.Dao
                             a => a.PersistenceId)),
             };
         
-        protected async Task RunFastInsertNoEventParams(AkkaDataConnection connection, Seq<JournalRow> xs, BaseByteArrayJournalDaoConfig journalConfigDaoConfig, CancellationToken token)
-        {
-            var roundTripByteLimit = JournalConfig.DaoConfig.AsQueryableInsertSqlLengthLimit;
-            var rowLimit =
-                xs.Length > JournalConfig.DaoConfig.BatchSize
-                    ? xs.Length
-                    : JournalConfig.DaoConfig.BatchSize;
-            var currRows = 0;
-            var currBytes = 0;
-            Dictionary<(string PersistenceId, long SequenceNumber), string[]> tagDict 
-                = new Dictionary<(string persistenceId, long sequenceNumber), string[]>();
-            JournalRow[]? insertList = null;
-            try
-            {
-                insertList = JournalRowPool.Rent(rowLimit);
-                foreach (var journalRow in xs)
-                {
-                    // We don't worry about adding other columns on this check cause we are overparanoid on row padding anyway.
-                    if ((journalRow.Message.Length *2) + currBytes > roundTripByteLimit || currRows >= rowLimit)
-                    {
-                        var query = connection.AsQueryable(
-                            insertList.Take(currRows).Select(jr => new JournalRowIns
-                            {
-                                PersistenceId = jr.PersistenceId,
-                                SequenceNumber = jr.SequenceNumber,
-                                Message = jr.Message,
-                                Manifest = jr.Manifest,
-                                Timestamp = jr.Timestamp,
-                                Identifier = jr.Identifier,
-                                WriterUuid = jr.WriterUuid
-                            }));
-                        await InsertJournalEntriesWithTags(connection, journalConfigDaoConfig, token, tagDict, query);
-                        tagDict.Clear();
-                        currRows = 0;
-                        currBytes = 0;
-                    }
-
-                    tagDict[(journalRow.PersistenceId, journalRow.SequenceNumber)]
-                        = journalRow.TagArray;
-                    currRows++;
-                    // ByteLength *2
-                    //  + 2048 for padding
-                    // (i.e. Serializer manifests, persistence IDs, sequence numbers etc.)
-                    currBytes +=
-                        (journalRow.Message.Length * 2 + 2048);
-                    insertList[currRows - 1] = (journalRow);
-
-                }
-
-                if (currBytes > 0 || currRows > 0)
-                {
-                    var query = connection.AsQueryable(
-                        insertList.Take(currRows).Select(jr => new JournalRowIns
-                        {
-                            PersistenceId = jr.PersistenceId,
-                            SequenceNumber = jr.SequenceNumber,
-                            Message = jr.Message,
-                            Manifest = jr.Manifest,
-                            Timestamp = jr.Timestamp,
-                            Identifier = jr.Identifier,
-                            WriterUuid = jr.WriterUuid
-                        }));
-                    await InsertJournalEntriesWithTags(connection, journalConfigDaoConfig, token, tagDict, query);
-                }
-            }
-            finally
-            {
-                if (insertList is not null)
-                {
-#if NET6_0_OR_GREATER
-                    System.Array.Clear(insertList);
-#else
-                    System.Array.Clear(insertList, 0, insertList.Length);
-#endif
-                    JournalRowPool.Return(insertList);
-                }
-            }
-        }
-
-
         private async Task InsertJournalEntriesWithTags(
             AkkaDataConnection connection,
             BaseByteArrayJournalDaoConfig journalConfigDaoConfig,
@@ -721,6 +602,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     new BulkCopyOptions()
                         .WithBulkCopyType(BulkCopyType.MultipleRows)
                         .WithUseParameters(journalConfigDaoConfig.PreferParametersOnMultiRowInsert)
+                        .WithMaxParametersForBatch(_asQueryableInsertMaxParameters)
                         .WithMaxBatchSize(journalConfigDaoConfig.DbRoundTripTagBatchSize),
                     tagsToInsert,
                     token);

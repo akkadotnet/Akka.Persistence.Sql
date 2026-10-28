@@ -223,7 +223,7 @@ akka.persistence {
     }
 
     // ── Large-payload specs ────────────────────────────────────────────
-    // CopilotNotes: These specs attach a 1 KB random byte[] blob to every
+    // Note: These specs attach a 1 KB random byte[] blob to every
     //               persisted Cmd so we can measure realistic serialisation
     //               + I/O overhead. 
 

@@ -103,7 +103,7 @@ namespace Akka.Persistence.Sql.Hosting
         ///     </para>
         ///     <b>Default</b>: <c>false</c>
         /// </summary>
-        [Obsolete("Use TagTableQueryableInsertMode instead. true maps to Inline, false maps to Off. UwU~")]
+        [Obsolete("Use TagTableQueryableInsertMode instead. true maps to Inline, false maps to Off.")]
         public bool? UseTagTableAsQueryableLiteralInsert
         {
             get => TagTableQueryableInsertMode switch
@@ -144,6 +144,25 @@ namespace Akka.Persistence.Sql.Hosting
         /// You may want a smaller size depending on your database and your event payload size.
         /// </remarks>
         public int? AsQueryableInsertSqlLengthLimit { get; set; }
+
+        /// <summary>
+        ///     <para>
+        ///         Maximum number of parameters in a single AsQueryable journal insert command, and in
+        ///         the tag-table insert that follows it. Large atomic writes are split into several commands
+        ///         inside the same transaction. <c>0</c> uses LinqToDB's BulkCopy parameter limit for the
+        ///         provider (SQL Server 2099, SQLite 998, PostgreSQL 32766). A positive value replaces that
+        ///         limit, so it can also raise it.
+        ///     </para>
+        ///     <para>
+        ///         <b>Warning:</b> the value is not checked against what the database or driver accepts.
+        ///         If it is set above that limit, large writes fail at runtime with a database error
+        ///         (and the write is rolled back). SQL Server allows at most 2100 parameters per command,
+        ///         PostgreSQL 65535, and SQLite 32766 since 3.32.0 (999 before, or whatever
+        ///         SQLITE_MAX_VARIABLE_NUMBER the native library was built with).
+        ///     </para>
+        ///     <b>Default</b>: <c>0</c>
+        /// </summary>
+        public int? AsQueryableInsertMaxParameters { get; set; }
 
         /// <summary>
         ///     <para>
@@ -257,6 +276,9 @@ namespace Akka.Persistence.Sql.Hosting
 
             if (AsQueryableInsertSqlLengthLimit is not null)
                 sb.AppendLine($"tagtable-asqueryable-insert-sql-length-limit = {AsQueryableInsertSqlLengthLimit.ToHocon()}");
+
+            if (AsQueryableInsertMaxParameters is not null)
+                sb.AppendLine($"tagtable-asqueryable-insert-max-parameters = {AsQueryableInsertMaxParameters.ToHocon()}");
 
             DatabaseOptions?.Build(sb);
 

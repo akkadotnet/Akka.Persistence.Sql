@@ -259,7 +259,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
         /// <summary>
         ///     Builds HOCON config for the SQLite journal with the given options.
         ///     <para>
-        ///         CopilotNote: each spec variant gets a fresh in-memory DB via
+        ///         Note: each spec variant gets a fresh in-memory DB via
         ///         <see cref="MsSqliteContainer.InitializeDbAsync"/> to avoid state bleed.
         ///     </para>
         /// </summary>
