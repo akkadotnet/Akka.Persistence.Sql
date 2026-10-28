@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Configuration;
@@ -34,11 +35,13 @@ public class SqliteWriteQueueCompletionSpec : Akka.TestKit.Xunit.TestKit
         : base(SqlPersistence.DefaultConfiguration.ToString(), output) => _output = output;
 
     [Theory]
-    [InlineData(TagMode.Csv)]
-    [InlineData(TagMode.TagTable)]
-    public async Task Shutdown_releases_a_write_waiting_behind_an_active_database_operation(TagMode mode)
+    [InlineData(TagMode.Csv, WriteQueueMode.SourceQueue)]
+    [InlineData(TagMode.TagTable, WriteQueueMode.SourceQueue)]
+    [InlineData(TagMode.Csv, WriteQueueMode.Channel)]
+    [InlineData(TagMode.TagTable, WriteQueueMode.Channel)]
+    public async Task Shutdown_releases_a_write_waiting_behind_an_active_database_operation(TagMode mode, WriteQueueMode queueMode)
     {
-        await using var fixture = await CreateFixture(mode);
+        await using var fixture = await CreateFixture(mode, queueMode);
         var active = fixture.Write("active");
         await fixture.Gate.Entered.Task.WaitAsync(Deadline);
         var queued = fixture.Write("queued");
@@ -54,11 +57,13 @@ public class SqliteWriteQueueCompletionSpec : Akka.TestKit.Xunit.TestKit
     }
 
     [Theory]
-    [InlineData(TagMode.Csv)]
-    [InlineData(TagMode.TagTable)]
-    public async Task Completing_the_queue_drains_accepted_writes_and_rejects_later_offers(TagMode mode)
+    [InlineData(TagMode.Csv, WriteQueueMode.SourceQueue)]
+    [InlineData(TagMode.TagTable, WriteQueueMode.SourceQueue)]
+    [InlineData(TagMode.Csv, WriteQueueMode.Channel)]
+    [InlineData(TagMode.TagTable, WriteQueueMode.Channel)]
+    public async Task Completing_the_queue_drains_accepted_writes_and_rejects_later_offers(TagMode mode, WriteQueueMode queueMode)
     {
-        await using var fixture = await CreateFixture(mode);
+        await using var fixture = await CreateFixture(mode, queueMode);
         var active = fixture.Write("active");
         await fixture.Gate.Entered.Task.WaitAsync(Deadline);
         var queued = fixture.Write("queued");
@@ -75,10 +80,12 @@ public class SqliteWriteQueueCompletionSpec : Akka.TestKit.Xunit.TestKit
         Assert.IsNotType<TimeoutException>(rejected);
     }
 
-    [Fact]
-    public async Task Database_failure_is_still_reported_when_shutdown_has_not_started()
+    [Theory]
+    [InlineData(WriteQueueMode.SourceQueue)]
+    [InlineData(WriteQueueMode.Channel)]
+    public async Task Database_failure_is_still_reported_when_shutdown_has_not_started(WriteQueueMode queueMode)
     {
-        await using var fixture = await CreateFixture(TagMode.Csv);
+        await using var fixture = await CreateFixture(TagMode.Csv, queueMode);
         fixture.Gate.Release.TrySetResult(true);
         await fixture.Write("duplicate").WaitAsync(Deadline);
 
@@ -89,9 +96,27 @@ public class SqliteWriteQueueCompletionSpec : Akka.TestKit.Xunit.TestKit
         Assert.Equal(1, await fixture.RowCount());
     }
 
-    private async Task<QueueFixture> CreateFixture(TagMode mode)
+    [Theory]
+    [InlineData(WriteQueueMode.SourceQueue)]
+    [InlineData(WriteQueueMode.Channel)]
+    public async Task Writes_fail_fast_after_the_write_stream_terminates(WriteQueueMode queueMode)
     {
-        var fixture = new QueueFixture(Sys, mode, _output);
+        await using var fixture = await CreateFixture(TagMode.Csv, queueMode);
+        fixture.Gate.Release.TrySetResult(true);
+        await fixture.Write("before").WaitAsync(Deadline);
+
+        fixture.Materializer.Shutdown();
+        await fixture.Materializer.Supervisor.GracefulStop(Deadline);
+
+        var failure = await Assert.ThrowsAnyAsync<Exception>(() => fixture.Write("after").WaitAsync(Deadline));
+        _output.WriteLine($"Write after stream termination failed with {failure.GetType().Name}: {failure.Message}");
+        Assert.IsNotType<TimeoutException>(failure);
+        Assert.Equal(1, await fixture.RowCount());
+    }
+
+    private async Task<QueueFixture> CreateFixture(TagMode mode, WriteQueueMode queueMode)
+    {
+        var fixture = new QueueFixture(Sys, mode, queueMode, _output);
         await fixture.Dao.InitializeTables(CancellationToken.None);
         return fixture;
     }
@@ -104,7 +129,7 @@ public class SqliteWriteQueueCompletionSpec : Akka.TestKit.Xunit.TestKit
         private Task _drained = Task.CompletedTask;
         private readonly ITestOutputHelper _output;
 
-        public QueueFixture(ActorSystem system, TagMode mode, ITestOutputHelper output)
+        public QueueFixture(ActorSystem system, TagMode mode, WriteQueueMode queueMode, ITestOutputHelper output)
         {
             _output = output;
             var config = ConfigurationFactory.ParseString($$"""
@@ -114,6 +139,7 @@ public class SqliteWriteQueueCompletionSpec : Akka.TestKit.Xunit.TestKit
                 use-clone-connection = false
                 parallelism = 1
                 batch-size = 1
+                write-queue-mode = {{(queueMode == WriteQueueMode.Channel ? "channel" : "source-queue")}}
                 """).WithFallback(SqlPersistence.DefaultJournalConfiguration);
             var journalConfig = new JournalConfig(config);
             var options = new DataOptions()
@@ -124,12 +150,24 @@ public class SqliteWriteQueueCompletionSpec : Akka.TestKit.Xunit.TestKit
             Dao = new ByteArrayJournalDao(system.Scheduler.Advanced, Materializer, _factory, journalConfig,
                 system.Serialization, Logging.GetLogger(system, nameof(QueueFixture)), "queue-test", Shutdown.Token);
             var queueField = typeof(BaseByteArrayJournalDao).GetField("WriteQueue", BindingFlags.Instance | BindingFlags.NonPublic);
+            var channelField = typeof(BaseByteArrayJournalDao).GetField("_writeChannel", BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.NotNull(queueField);
-            Queue = Assert.IsAssignableFrom<ISourceQueueWithComplete<WriteQueueEntry>>(queueField.GetValue(Dao));
+            Assert.NotNull(channelField);
+            if (queueMode == WriteQueueMode.Channel)
+            {
+                Assert.Null(queueField.GetValue(Dao));
+                Channel = Assert.IsAssignableFrom<Channel<WriteQueueEntry>>(channelField.GetValue(Dao));
+            }
+            else
+            {
+                Assert.Null(channelField.GetValue(Dao));
+                Queue = Assert.IsAssignableFrom<ISourceQueueWithComplete<WriteQueueEntry>>(queueField.GetValue(Dao));
+            }
         }
 
         public ByteArrayJournalDao Dao { get; }
-        public ISourceQueueWithComplete<WriteQueueEntry> Queue { get; }
+        public ISourceQueueWithComplete<WriteQueueEntry>? Queue { get; }
+        public Channel<WriteQueueEntry>? Channel { get; }
         public ActorMaterializer Materializer { get; }
         public CancellationTokenSource Shutdown { get; } = new();
         public InsertGate Gate { get; } = new();
@@ -146,9 +184,13 @@ public class SqliteWriteQueueCompletionSpec : Akka.TestKit.Xunit.TestKit
         {
             // Offer callbacks are processed in order. Acceptance of this marker proves
             // that the preceding application request has passed queue admission too.
+            // Channel writes are admitted synchronously, so there the marker only tracks draining.
             var marker = new WriteQueueEntry(new TaskCompletionSource<NotUsed>(TaskCreationOptions.RunContinuationsAsynchronously),
                 LanguageExt.Seq<JournalRow>.Empty, CancellationToken.None);
-            Assert.IsType<QueueOfferResult.Enqueued>(await Queue.OfferAsync(marker).WaitAsync(Deadline));
+            if (Channel is not null)
+                Assert.True(Channel.Writer.TryWrite(marker));
+            else
+                Assert.IsType<QueueOfferResult.Enqueued>(await Queue!.OfferAsync(marker).WaitAsync(Deadline));
             _drained = marker.Tcs.Task;
         }
 

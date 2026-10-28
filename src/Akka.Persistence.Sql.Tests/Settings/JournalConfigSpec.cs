@@ -44,6 +44,10 @@ namespace Akka.Persistence.Sql.Tests.Settings
             journal.GetInt("batch-size").Should().Be(100);
             journal.GetInt("db-round-trip-max-batch-size").Should().Be(1000);
             journal.GetBoolean("prefer-parameters-on-multirow-insert").Should().BeFalse();
+            journal.GetString("tagtable-asqueryable-insert-mode").Should().Be("off");
+            journal.GetInt("tagtable-asqueryable-insert-sql-length-limit").Should().Be(5_000_000);
+            journal.GetInt("tagtable-asqueryable-insert-max-parameters").Should().Be(0);
+            journal.GetString("write-queue-mode").Should().Be("source-queue");
             journal.GetInt("replay-batch-size").Should().Be(1000);
             journal.GetInt("parallelism").Should().Be(3);
             journal.GetInt("max-row-by-row-size").Should().Be(100);
@@ -278,6 +282,24 @@ namespace Akka.Persistence.Sql.Tests.Settings
             metaColumns.SequenceNumber.Should().Be("sequence_nr");
         }
 
+        [Theory(DisplayName = "write-queue-mode should parse both modes")]
+        [InlineData("source-queue", WriteQueueMode.SourceQueue)]
+        [InlineData("SOURCE-QUEUE", WriteQueueMode.SourceQueue)]
+        [InlineData("channel", WriteQueueMode.Channel)]
+        public void WriteQueueModeParseTest(string value, WriteQueueMode expected)
+        {
+            var config = ConfigurationFactory.ParseString($"write-queue-mode = {value}");
+            new BaseByteArrayJournalDaoConfig(config).WriteQueueMode.Should().Be(expected);
+        }
+
+        [Fact(DisplayName = "write-queue-mode should reject unknown values")]
+        public void WriteQueueModeInvalidTest()
+        {
+            var config = ConfigurationFactory.ParseString("write-queue-mode = sourcequeue");
+            var act = () => new BaseByteArrayJournalDaoConfig(config);
+            act.Should().Throw<ArgumentException>().WithMessage("*write-queue-mode*");
+        }
+
         private static void AssertDefaultJournalConfig(JournalConfig journal)
         {
             journal.ConnectionString.Should().BeNullOrEmpty();
@@ -305,6 +327,10 @@ namespace Akka.Persistence.Sql.Tests.Settings
             daoConfig.Parallelism.Should().Be(3);
             daoConfig.MaxRowByRowSize.Should().Be(100);
             daoConfig.SqlCommonCompatibilityMode.Should().BeFalse();
+            daoConfig.TagTableQueryableInsertMode.Should().Be(TagTableQueryableInsertMode.Off);
+            daoConfig.AsQueryableInsertSqlLengthLimit.Should().Be(5_000_000);
+            daoConfig.AsQueryableInsertMaxParameters.Should().Be(0);
+            daoConfig.WriteQueueMode.Should().Be(WriteQueueMode.SourceQueue);
         }
     }
 }

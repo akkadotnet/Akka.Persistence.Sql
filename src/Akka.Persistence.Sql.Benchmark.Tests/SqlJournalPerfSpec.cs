@@ -12,6 +12,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
+using Akka.Configuration;
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Routing;
 using Akka.TestKit;
@@ -36,22 +37,54 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
         private readonly TimeSpan _expectDuration;
         private readonly TestProbe _testProbe;
 
+        /// <summary>
+        ///     Optional data blob attached to every <see cref="Cmd"/> to simulate realistic payload sizes.
+        ///     Generated once and shared across all commands to avoid allocation noise in benchmarks.
+        /// </summary>
+        private readonly byte[]? _payload;
+
         protected SqlJournalPerfSpec(
             Configuration.Config? config,
             string actorSystem,
             ITestOutputHelper output,
             int timeoutDurationSeconds = 30,
-            int eventsCount = 10000)
-            : base(config ?? Configuration.Config.Empty, actorSystem, output)
+            int eventsCount = 10000,
+            int payloadSizeBytes = 0)
+            : base(WithWriteQueueMode(config ?? Configuration.Config.Empty), actorSystem, output)
         {
             ThreadPool.SetMinThreads(12, 12);
+            Output.WriteLine($"write-queue-mode = {Sys.Settings.Config.GetString("akka.persistence.journal.sql.write-queue-mode", "source-queue")}");
             _eventsCount = eventsCount;
             _expectDuration = TimeSpan.FromSeconds(timeoutDurationSeconds);
             _testProbe = CreateTestProbe();
             _commands = Enumerable.Range(1, _eventsCount).ToArray();
+
+            if (payloadSizeBytes > 0)
+            {
+                _payload = new byte[payloadSizeBytes];
+                Random.Shared.NextBytes(_payload);
+            }
         }
 
         private readonly IReadOnlyList<int> _commands; 
+
+        /// <summary>
+        ///     Environment variable that sets <c>write-queue-mode</c> (<c>source-queue</c> or <c>channel</c>)
+        ///     for every perf spec, so both write queues can be measured with otherwise identical settings.
+        ///     When unset, the spec's own configuration (normally the default, <c>source-queue</c>) is used.
+        /// </summary>
+        public const string WriteQueueModeEnvironmentVariable = "AKKA_PERSISTENCE_SQL_BENCH_WRITE_QUEUE_MODE";
+
+        private static Configuration.Config WithWriteQueueMode(Configuration.Config config)
+        {
+            var mode = Environment.GetEnvironmentVariable(WriteQueueModeEnvironmentVariable);
+            if (string.IsNullOrWhiteSpace(mode))
+                return config;
+
+            return ConfigurationFactory
+                .ParseString($"akka.persistence.journal.sql.write-queue-mode = {mode.Trim()}")
+                .WithFallback(config);
+        }
 
         internal IActorRef BenchActor(string pid, int replyAfter)
             => Sys.ActorOf(Props.Create(() => new BenchActor(pid, _testProbe, _eventsCount)));
@@ -77,7 +110,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             IReadOnlyList<int> commands,
             int numExpect)
         {
-            commands.ForEach(c => autSet.actor.Tell(new Broadcast(new Cmd(mode, c))));
+            commands.ForEach(c => autSet.actor.Tell(new Broadcast(new Cmd(mode, c, _payload))));
 
             for (var i = 0; i < numExpect; i++)
                 await autSet.probe.ExpectMsgAsync(commands[^1], _expectDuration);
@@ -85,7 +118,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
 
         internal async Task FeedAndExpectLastAsync(IActorRef actor, string mode, IReadOnlyList<int> commands)
         {
-            commands.ForEach(c => actor.Tell(new Cmd(mode, c)));
+            commands.ForEach(c => actor.Tell(new Cmd(mode, c, _payload)));
             await _testProbe.ExpectMsgAsync(commands[^1], _expectDuration);
         }
 
@@ -95,7 +128,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             IReadOnlyList<int> commands)
         {
             foreach (var (actor, _) in autSet)
-                commands.ForEach(c => actor.Tell(new Cmd(mode, c)));
+                commands.ForEach(c => actor.Tell(new Cmd(mode, c, _payload)));
 
             foreach (var (_, probe) in autSet)
                 await probe.ExpectMsgAsync(commands[^1], _expectDuration);
@@ -106,7 +139,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             string mode,
             IReadOnlyList<int> commands)
         {
-            commands.ForEach(c => aut.actor.Tell(new Cmd(mode, c)));
+            commands.ForEach(c => aut.actor.Tell(new Cmd(mode, c, _payload)));
 
             await aut.probe.ExpectMsgAsync(commands[^1], _expectDuration);
         }
@@ -708,15 +741,22 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
 
     public class Cmd
     {
-        public Cmd(string mode, int payload)
+        public Cmd(string mode, int payload, byte[]? data = null)
         {
             Mode = mode;
             Payload = payload;
+            Data = data;
         }
 
         public string Mode { get; }
 
         public int Payload { get; }
+
+        /// <summary>
+        ///     Optional data blob to simulate realistic message sizes.
+        ///     When <c>null</c>, the serialized event is tiny (just the int payload). 
+        /// </summary>
+        public byte[]? Data { get; }
     }
 
     internal class BenchActor : UntypedPersistentActor
