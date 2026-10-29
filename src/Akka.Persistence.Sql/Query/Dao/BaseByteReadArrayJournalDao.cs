@@ -24,6 +24,7 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Util;
 using LinqToDB;
+using LinqToDB.Async;
 
 namespace Akka.Persistence.Sql.Query.Dao
 {

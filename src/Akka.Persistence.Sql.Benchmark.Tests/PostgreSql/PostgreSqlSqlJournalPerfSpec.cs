@@ -22,7 +22,24 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
         {
         }
     }
-    
+
+    /// <summary>
+    ///     CSV perf spec with forced event tagging (2 tags per event).
+    /// </summary>
+    [Collection(nameof(PostgreSqlPersistenceBenchmark))]
+    public class PostgreSqlSqlCsvTaggedJournalPerfSpec : BasePostgreSqlSqlJournalPerfSpec
+    {
+        public PostgreSqlSqlCsvTaggedJournalPerfSpec(ITestOutputHelper output, PostgreSqlContainer fixture)
+            : base(
+                TagMode.Csv,
+                nameof(PostgreSqlSqlCsvTaggedJournalPerfSpec),
+                output,
+                fixture,
+                forceTagging: true)
+        {
+        }
+    }
+
     [Collection(nameof(PostgreSqlPersistenceBenchmark))]
     public class PostgreSqlSqlTagTableJournalPerfSpec : BasePostgreSqlSqlJournalPerfSpec
     {
@@ -32,24 +49,144 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.PostgreSql
         }
     }
     
+    /// <summary>
+    ///     TagTable perf spec with <c>tagtable-asqueryable-insert-mode = inline</c> enabled.
+    ///     Uses <c>AsQueryable()</c> + <c>InsertWithOutputAsync()</c> for tag inserts
+    /// </summary>
+    [Collection(nameof(PostgreSqlPersistenceBenchmark))]
+    public class PostgreSqlSqlTagTableAsQueryableJournalPerfSpec : BasePostgreSqlSqlJournalPerfSpec
+    {
+        public PostgreSqlSqlTagTableAsQueryableJournalPerfSpec(ITestOutputHelper output, PostgreSqlContainer fixture)
+            : base(
+                TagMode.TagTable,
+                nameof(PostgreSqlSqlTagTableAsQueryableJournalPerfSpec),
+                output,
+                fixture,
+                tagTableQueryableInsertMode: TagTableQueryableInsertMode.Inline)
+        {
+        }
+    }
+
+    /// <summary>
+    ///     TagTable perf spec with <c>tagtable-asqueryable-insert-mode = parameterized</c> enabled.
+    ///     Uses <c>AsQueryable().Parameterize()</c> for tag inserts — all values as SQL parameters.
+    /// </summary>
+    [Collection(nameof(PostgreSqlPersistenceBenchmark))]
+    public class PostgreSqlSqlTagTableAsQueryableParameterizedJournalPerfSpec : BasePostgreSqlSqlJournalPerfSpec
+    {
+        public PostgreSqlSqlTagTableAsQueryableParameterizedJournalPerfSpec(ITestOutputHelper output, PostgreSqlContainer fixture)
+            : base(
+                TagMode.TagTable,
+                nameof(PostgreSqlSqlTagTableAsQueryableParameterizedJournalPerfSpec),
+                output,
+                fixture,
+                tagTableQueryableInsertMode: TagTableQueryableInsertMode.Parameterized)
+        {
+        }
+    }
+
+    /// <summary>
+    ///     TagTable perf spec with forced event tagging (2 tags per event).
+    ///     AsQueryable optimization is disabled.
+    /// </summary>
+    [Collection(nameof(PostgreSqlPersistenceBenchmark))]
+    public class PostgreSqlSqlTagTableTaggedJournalPerfSpec : BasePostgreSqlSqlJournalPerfSpec
+    {
+        public PostgreSqlSqlTagTableTaggedJournalPerfSpec(ITestOutputHelper output, PostgreSqlContainer fixture)
+            : base(
+                TagMode.TagTable,
+                nameof(PostgreSqlSqlTagTableTaggedJournalPerfSpec),
+                output,
+                fixture,
+                forceTagging: true)
+        {
+        }
+    }
+
+    /// <summary>
+    ///     TagTable perf spec with forced event tagging (2 tags per event) AND
+    ///     <c>tagtable-asqueryable-insert-mode = inline</c> enabled.
+    /// </summary>
+    [Collection(nameof(PostgreSqlPersistenceBenchmark))]
+    public class PostgreSqlSqlTagTableAsQueryableTaggedJournalPerfSpec : BasePostgreSqlSqlJournalPerfSpec
+    {
+        public PostgreSqlSqlTagTableAsQueryableTaggedJournalPerfSpec(ITestOutputHelper output, PostgreSqlContainer fixture)
+            : base(
+                TagMode.TagTable,
+                nameof(PostgreSqlSqlTagTableAsQueryableTaggedJournalPerfSpec),
+                output,
+                fixture,
+                tagTableQueryableInsertMode: TagTableQueryableInsertMode.Inline,
+                forceTagging: true)
+        {
+        }
+    }
+
+    /// <summary>
+    ///     TagTable perf spec with forced event tagging (2 tags per event) AND
+    ///     <c>tagtable-asqueryable-insert-mode = parameterized</c> enabled.
+    /// </summary>
+    [Collection(nameof(PostgreSqlPersistenceBenchmark))]
+    public class PostgreSqlSqlTagTableAsQueryableParameterizedTaggedJournalPerfSpec : BasePostgreSqlSqlJournalPerfSpec
+    {
+        public PostgreSqlSqlTagTableAsQueryableParameterizedTaggedJournalPerfSpec(ITestOutputHelper output, PostgreSqlContainer fixture)
+            : base(
+                TagMode.TagTable,
+                nameof(PostgreSqlSqlTagTableAsQueryableParameterizedTaggedJournalPerfSpec),
+                output,
+                fixture,
+                tagTableQueryableInsertMode: TagTableQueryableInsertMode.Parameterized,
+                forceTagging: true)
+        {
+        }
+    }
+
     public abstract class BasePostgreSqlSqlJournalPerfSpec : SqlJournalPerfSpec<PostgreSqlContainer>
     {
+        /// <summary>
+        ///     Base constructor for PostgreSQL journal perf specs~
+        ///     <para>
+        ///         <paramref name="payloadSizeBytes"/> lets you attach a random <c>byte[]</c>
+        ///         blob to every persisted <see cref="Cmd"/> so we can measure realistic I/O.
+        ///     </para>
+        /// </summary>
         protected BasePostgreSqlSqlJournalPerfSpec(
             TagMode tagMode,
             string name,
             ITestOutputHelper output,
-            PostgreSqlContainer fixture)
+            PostgreSqlContainer fixture,
+            TagTableQueryableInsertMode tagTableQueryableInsertMode = TagTableQueryableInsertMode.Off,
+            bool forceTagging = false,
+            int payloadSizeBytes = 0)
             : base(
-                Configuration(fixture, tagMode),
+                Configuration(fixture, tagMode, tagTableQueryableInsertMode, forceTagging),
                 name,
                 output,
                 40,
-                eventsCount: TestConstants.DockerNumMessages) { }
+                eventsCount: TestConstants.DockerNumMessages,
+                payloadSizeBytes: payloadSizeBytes) { }
 
-        private static Configuration.Config Configuration(PostgreSqlContainer fixture, TagMode tagMode)
+        private static Configuration.Config Configuration(
+            PostgreSqlContainer fixture,
+            TagMode tagMode,
+            TagTableQueryableInsertMode tagTableQueryableInsertMode = TagTableQueryableInsertMode.Off,
+            bool forceTagging = false)
         {
             if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
                 throw new Exception("Failed to clean up database in 10 seconds");
+
+            var taggingConfig = forceTagging
+                ? """
+                  akka.persistence.journal.sql {
+                      event-adapter-bindings {
+                          "Akka.Persistence.Sql.Benchmark.Tests.Cmd, Akka.Persistence.Sql.Benchmark.Tests" = perf-tagger
+                      }
+                      event-adapters {
+                          perf-tagger = "Akka.Persistence.Sql.Benchmark.Tests.CmdEventTagger, Akka.Persistence.Sql.Benchmark.Tests"
+                      }
+                  }
+                  """
+                : "";
 
             return ConfigurationFactory.ParseString(
                     $$"""
@@ -63,15 +200,109 @@ akka.persistence {
             tag-write-mode = {{tagMode}}
             use-clone-connection = true
             auto-initialize = true
+            tagtable-asqueryable-insert-mode = "{{tagTableQueryableInsertMode.ToString().ToLowerInvariant()}}"
         }
     }
 }
 """)
+                .WithFallback(ConfigurationFactory.ParseString(taggingConfig))
                 .WithFallback(SqlPersistence.DefaultConfiguration);
         }
 
         [Fact]
         public async Task PersistenceActor_Must_measure_PersistGroup1000()
             => await RunGroupBenchmarkAsync(1000, 10);
+    }
+
+    /// <summary>
+    ///     CSV perf spec with a 1 KB <c>byte[]</c> payload on every event.
+    /// </summary>
+    [Collection(nameof(PostgreSqlPersistenceBenchmark))]
+    public class PostgreSqlSqlCsvLargePayloadJournalPerfSpec : BasePostgreSqlSqlJournalPerfSpec
+    {
+        public PostgreSqlSqlCsvLargePayloadJournalPerfSpec(ITestOutputHelper output, PostgreSqlContainer fixture)
+            : base(
+                TagMode.Csv,
+                nameof(PostgreSqlSqlCsvLargePayloadJournalPerfSpec),
+                output,
+                fixture,
+                payloadSizeBytes: TestConstants.LargePayloadSizeBytes)
+        {
+        }
+    }
+
+    /// <summary>
+    ///     TagTable perf spec with a 1 KB <c>byte[]</c> payload on every event.
+    /// </summary>
+    [Collection(nameof(PostgreSqlPersistenceBenchmark))]
+    public class PostgreSqlSqlTagTableLargePayloadJournalPerfSpec : BasePostgreSqlSqlJournalPerfSpec
+    {
+        public PostgreSqlSqlTagTableLargePayloadJournalPerfSpec(ITestOutputHelper output, PostgreSqlContainer fixture)
+            : base(
+                TagMode.TagTable,
+                nameof(PostgreSqlSqlTagTableLargePayloadJournalPerfSpec),
+                output,
+                fixture,
+                payloadSizeBytes: TestConstants.LargePayloadSizeBytes)
+        {
+        }
+    }
+
+    /// <summary>
+    ///     TagTable perf spec with a 1 KB <c>byte[]</c> payload AND forced tagging (2 tags per event).
+    /// </summary>
+    [Collection(nameof(PostgreSqlPersistenceBenchmark))]
+    public class PostgreSqlSqlTagTableLargePayloadTaggedJournalPerfSpec : BasePostgreSqlSqlJournalPerfSpec
+    {
+        public PostgreSqlSqlTagTableLargePayloadTaggedJournalPerfSpec(ITestOutputHelper output, PostgreSqlContainer fixture)
+            : base(
+                TagMode.TagTable,
+                nameof(PostgreSqlSqlTagTableLargePayloadTaggedJournalPerfSpec),
+                output,
+                fixture,
+                forceTagging: true,
+                payloadSizeBytes: TestConstants.LargePayloadSizeBytes)
+        {
+        }
+    }
+    
+    /// <summary>
+    ///     TagTable perf spec with a 1 KB <c>byte[]</c> payload AND forced tagging (2 tags per event),
+    ///     with <c>tagtable-asqueryable-insert-mode = inline</c> enabled.
+    /// </summary>
+    [Collection(nameof(PostgreSqlPersistenceBenchmark))]
+    public class PostgreSqlSqlTagTableAsQueryableLargePayloadTaggedJournalPerfSpec : BasePostgreSqlSqlJournalPerfSpec
+    {
+        public PostgreSqlSqlTagTableAsQueryableLargePayloadTaggedJournalPerfSpec(ITestOutputHelper output, PostgreSqlContainer fixture)
+            : base(
+                TagMode.TagTable,
+                nameof(PostgreSqlSqlTagTableLargePayloadTaggedJournalPerfSpec),
+                output,
+                fixture,
+                forceTagging: true,
+                payloadSizeBytes: TestConstants.LargePayloadSizeBytes,
+                tagTableQueryableInsertMode: TagTableQueryableInsertMode.Inline)
+        {
+        }
+    }
+
+    /// <summary>
+    ///     TagTable perf spec with a 1 KB <c>byte[]</c> payload AND forced tagging (2 tags per event),
+    ///     with <c>tagtable-asqueryable-insert-mode = parameterized</c> enabled.
+    /// </summary>
+    [Collection(nameof(PostgreSqlPersistenceBenchmark))]
+    public class PostgreSqlSqlTagTableAsQueryableParameterizedLargePayloadTaggedJournalPerfSpec : BasePostgreSqlSqlJournalPerfSpec
+    {
+        public PostgreSqlSqlTagTableAsQueryableParameterizedLargePayloadTaggedJournalPerfSpec(ITestOutputHelper output, PostgreSqlContainer fixture)
+            : base(
+                TagMode.TagTable,
+                nameof(PostgreSqlSqlTagTableAsQueryableParameterizedLargePayloadTaggedJournalPerfSpec),
+                output,
+                fixture,
+                forceTagging: true,
+                payloadSizeBytes: TestConstants.LargePayloadSizeBytes,
+                tagTableQueryableInsertMode: TagTableQueryableInsertMode.Parameterized)
+        {
+        }
     }
 }
