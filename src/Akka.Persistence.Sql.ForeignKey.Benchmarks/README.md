@@ -202,8 +202,10 @@ child-first deletion algorithm.
 For the customer remediation, keep orphan cleanup independent of FK adoption
 and keep the FK migration operator-applied. These results do not justify making
 FK enforcement a production default. Stable customers can measure the existing
-tag parameterization option; #580's parent modes are dev-only and require a
-separate compatibility/release decision before recommending them on v1.5.
+tag parameterization option. The stable baseline was measured before #580's
+parent modes were backported; those modes are now available in this source
+branch, but the archived stable results do not measure them. Validate the
+deployment's own workload before enabling batching or installing the FK.
 Native bulk loading and child-first deletion remain separate, unmeasured options.
 
 ## Historical results
