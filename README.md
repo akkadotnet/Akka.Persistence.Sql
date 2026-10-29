@@ -33,6 +33,7 @@ If you're migrating from legacy `Akka.Persistence.Sql.Common` based plugins, you
   * [Journal](./docs/articles/configuration.md#journal)
   * [Snapshot Store](./docs/articles/configuration.md#snapshot-store)
 - [DDL Scripts for Database Schema Management](#ddl-scripts-for-database-schema-management)
+  * [Optional Tag-Table Foreign Keys](#optional-tag-table-foreign-keys)
 - [Tuning Akka.Persistence.Query for Low-Latency Projections](#tuning-akkapersistencequery-for-low-latency-projections)
 - [Building this solution](#building-this-solution)
   + [Conventions](#conventions)
@@ -281,21 +282,88 @@ akka.persistence {
 Pre-generated DDL scripts are available in [`docs/ddl/`](./docs/ddl/) for creating Akka.Persistence.Sql tables through your own migrations instead of relying on automatic table creation at runtime.
 
 **Directory Structure:**
-- `docs/ddl/default/` - For new deployments using `table-mapping = default`
-- `docs/ddl/compat/` - For migration from legacy plugins (uses provider-specific table mappings)
+
+- [`docs/ddl/default/`](./docs/ddl/default/) - For new deployments using `table-mapping = default`
+- [`docs/ddl/compat/`](./docs/ddl/compat/) - For migration from legacy plugins (uses provider-specific table mappings)
+
+The initialization SQL files are checked into this repository:
+
+| Provider | Default mapping | Compatibility mapping |
+| --- | --- | --- |
+| PostgreSQL | [Scripts](./docs/ddl/default/postgresql/) | [Scripts](./docs/ddl/compat/postgresql/) |
+| SQL Server | [Scripts](./docs/ddl/default/sqlserver/) | [Scripts](./docs/ddl/compat/sqlserver/) |
+| MySQL | [Scripts](./docs/ddl/default/mysql/) | [Scripts](./docs/ddl/compat/mysql/) |
+| SQLite | [Scripts](./docs/ddl/default/sqlite/) | [Scripts](./docs/ddl/compat/sqlite/) |
 
 Each directory contains SQL scripts for each supported provider (sqlserver, postgresql, mysql, sqlite):
+
 - `journal.sql` - Event journal table
 - `journal-tags.sql` - Tag table for `TagMode.TagTable`
 - `snapshot.sql` - Snapshot store table
 - `metadata.sql` - Metadata table for `delete-compatibility-mode`
 
 **When to use DDL scripts:**
+
 - When using Entity Framework Core or FluentMigrator for schema management
 - When you need explicit control over database schema versioning
 - When auto-initialization is disabled (`auto-initialize = false`)
 
 See the [DDL documentation](./docs/ddl/README.md) for detailed usage instructions and examples.
+
+## Optional Tag-Table Foreign Keys
+
+The journal-to-tag foreign key is an **optional, operator-applied migration**. Runtime
+auto-initialization and the base DDL scripts create tables without this FK.
+For PostgreSQL and SQL Server, operators can explicitly install
+`tags.ordering_id -> journal.ordering ON DELETE CASCADE` after creating the
+tables. A physical journal-row deletion then removes its dependent tags.
+
+For a new database, run the provider's `journal.sql` before `journal-tags.sql`,
+plus `snapshot.sql` and `metadata.sql` where required. Use this base schema alone
+without an FK, or opt in by configuring and running `02_add_foreign_key.sql` below after the
+tables exist. For an existing database, audit and clean orphan tags with `01`
+before applying `02`. Cleanup can also be used independently without adding an
+FK. The application does not run these maintenance scripts at startup.
+
+| Provider | Audit / bounded orphan cleanup | Install and validate FK | Remove FK |
+| --- | --- | --- | --- |
+| PostgreSQL | [01](./scripts/TagTableForeignKey/PostgreSql/01_cleanup_orphan_tags.sql) | [02](./scripts/TagTableForeignKey/PostgreSql/02_add_foreign_key.sql) | [03](./scripts/TagTableForeignKey/PostgreSql/03_drop_foreign_key.sql) |
+| SQL Server | [01](./scripts/TagTableForeignKey/SqlServer/01_cleanup_orphan_tags.sql) | [02](./scripts/TagTableForeignKey/SqlServer/02_add_foreign_key.sql) | [03](./scripts/TagTableForeignKey/SqlServer/03_drop_foreign_key.sql) |
+
+See the [maintenance instructions](./scripts/TagTableForeignKey/README.md) for
+mapping headers, execution order, maintenance-window requirements, and rollback.
+Orphan cleanup preserves tags whose parent journal row is soft-deleted but still
+present. Removing the FK does not restore rows already deleted by cleanup or cascade.
+
+### Measured FK overhead
+
+The October 29, 2026 rerun covered 800 measurements, with five alternating
+FK/no-FK pairs per case. The table shows the change in median event throughput
+when adding the FK; negative values mean slower throughput. Inserts use batches
+of 50, and deletes use four tags/event with a boundary of 100 (99 physical event
+deletions per persistence ID).
+
+| Branch | Database | Insert: 2 tags/event | Insert: 4 tags/event | Delete |
+| --- | --- | ---: | ---: | ---: |
+| v1.5 | PostgreSQL 16.15 | -19.8% | -30.9% | -40.6% |
+| v1.5 | SQL Server 16.0.4185.3 | -1.9% | -10.7% | -24.4% |
+| dev | PostgreSQL 16.15 | -30.9% | -31.6% | -38.0% |
+| dev | SQL Server 16.0.4185.3 | +0.2% | +2.2% | -28.0% |
+
+All four rows use `prefer-parameters-on-multirow-insert = true`; the dev rows
+also enable `tagtable-asqueryable-insert-mode = parameterized` from #580. That
+parent-insert setting is unavailable on v1.5. With parameterized parents but
+literal tags, dev SQL Server's FK insert penalties were 44.5% and 56.4%, so
+parent batching alone does not eliminate the cost.
+
+The small positive SQL Server differences are within observed variation, not
+evidence of a speedup. These are shared-host, small-payload measurements with
+substantial contention. Stable and dev use different .NET/Akka versions, and
+configuration runs occurred at different times; compare FK/no-FK within each
+configuration rather than treating rows as a controlled branch comparison.
+For all configurations, absolute rates, raw repetitions, and provenance, see
+the [full benchmark report in PR #610](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/610).
+Measure the deployment's workload before opting into the FK.
 
 # Tuning Akka.Persistence.Query for Low-Latency Projections
 
