@@ -121,12 +121,17 @@ public abstract class TagTableFastInsertSpecBase : Akka.TestKit.Xunit.TestKit
         Assert.SkipUnless(RaisedMaxParameters is not null, "The database has no headroom above the LinqToDB limit.");
         var maxParameters = RaisedMaxParameters!.Value;
         var parametersPerRow = BaseByteArrayJournalDao.JournalInsertParametersPerRow(mode, true);
-        // More rows than one command could hold under the LinqToDB limit, but fewer than the raised one.
-        var events = ProviderMaxParameters / parametersPerRow * 2;
-        Assert.True(events * parametersPerRow <= maxParameters);
+        // Cross both default parameter budgets with the fewest events; doubling a full command
+        // needlessly turns this boundary check into a throughput test on PostgreSQL.
+        const int parametersPerTag = 4;
+        var events = ProviderMaxParameters / parametersPerRow + 1;
+        var tagParameters = Enumerable.Range(1, events).Sum(seq => ExpectedTags(seq).Length * parametersPerTag);
+        while (tagParameters <= ProviderMaxParameters)
+            tagParameters += ExpectedTags(++events).Length * parametersPerTag;
+        Assert.InRange(events * parametersPerRow, ProviderMaxParameters + 1, maxParameters);
         await using var fixture = await Fixture.Create(
             this, mode, writerUuid: true, maxParameters: maxParameters, preferParametersOnMultiRowInsert: true,
-            tagBatchSize: maxParameters / 4);
+            tagBatchSize: maxParameters / parametersPerTag);
 
         var result = await fixture.WriteAtomic("pid", 1, events).WaitAsync(Deadline);
 
