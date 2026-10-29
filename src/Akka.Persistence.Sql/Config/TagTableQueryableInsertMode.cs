@@ -35,4 +35,3 @@ namespace Akka.Persistence.Sql.Config
         Inline,
     }
 }
-

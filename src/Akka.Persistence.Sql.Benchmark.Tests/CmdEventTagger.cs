@@ -27,4 +27,3 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             => evt is Cmd ? new Tagged(evt, TagsSet) : evt;
     }
 }
-

@@ -225,7 +225,7 @@ akka.persistence {
     // ── Large-payload specs ────────────────────────────────────────────
     // Note: These specs attach a 1 KB random byte[] blob to every
     //               persisted Cmd so we can measure realistic serialisation
-    //               + I/O overhead. 
+    //               + I/O overhead.
 
     /// <summary>
     ///     CSV perf spec with a 1 KB <c>byte[]</c> payload on every event.

@@ -61,13 +61,9 @@ namespace Akka.Persistence.Sql.Journal.Dao
             Serializer = new ByteArrayJournalSerializer(config, serializer, config.PluginConfig.TagSeparator, selfUuid);
             _deserializeFlowMapped = Serializer.DeserializeFlow().Select(MessageWithBatchMapper());
             _tagWriteMode = JournalConfig.PluginConfig.TagMode;
-            // The AsQueryable fast path only applies when tags are written exclusively to the tag table
-            // and the provider supports INSERT ... OUTPUT/RETURNING (SqlServer, PostgreSQL, SQLite).
+            // Resolve provider support from the actual connection: DataOptions can override the HOCON name.
             _tagTableQueryableInsertMode =
-                _tagWriteMode == TagMode.TagTable &&
-                (JournalConfig.ProviderName.Contains("SqlServer") ||
-                 JournalConfig.ProviderName.Contains("PostgreSQL") ||
-                 JournalConfig.ProviderName.Contains("SQLite"))
+                _tagWriteMode == TagMode.TagTable
                     ? JournalConfig.DaoConfig.TagTableQueryableInsertMode
                     : TagTableQueryableInsertMode.Off;
             _journalInsertParametersPerRow = JournalInsertParametersPerRow(
@@ -363,7 +359,9 @@ namespace Akka.Persistence.Sql.Journal.Dao
                     }
                     else
                     {
-                        switch (_tagTableQueryableInsertMode)
+                        switch (connection.SupportsTagTableQueryableInsert
+                                    ? _tagTableQueryableInsertMode
+                                    : TagTableQueryableInsertMode.Off)
                         {
                             case TagTableQueryableInsertMode.Parameterized:
                             case TagTableQueryableInsertMode.Inline:
@@ -540,7 +538,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                             a => a.WriterUuid,
                             a => a.PersistenceId)),
             };
-        
+
         private async Task InsertJournalEntriesWithTags(
             AkkaDataConnection connection,
             BaseByteArrayJournalDaoConfig journalConfigDaoConfig,
@@ -549,7 +547,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
             IQueryable<JournalRowIns> query)
         {
             var inserted = await (this.JournalConfig.TableConfig.EventJournalTable.UseWriterUuidColumn
-                ? query.InsertWithOutputListAsync(    
+                ? query.InsertWithOutputListAsync(
                         connection.GetTable<JournalRow>(),
                         (input) =>
                             new JournalRow()
@@ -565,7 +563,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                             },
                         (inserted) => new { inserted.Ordering, inserted.PersistenceId, inserted.SequenceNumber },
                         token)
-                : 
+                :
                 query.InsertWithOutputListAsync(
                         connection.GetTable<JournalRow>(),
                         (input) =>
@@ -597,7 +595,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 else
                     return Enumerable.Empty<JournalTagRow>();
             });
-                    
+
             await connection.GetTable<JournalTagRow>()
                 .BulkCopyAsync(
                     new BulkCopyOptions()

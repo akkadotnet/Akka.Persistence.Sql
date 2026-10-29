@@ -21,7 +21,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
 {
     public class InstantHandleAttribute : Attribute
     {
-        
+
     }
     public static class Linq2DbExtensions
     {
@@ -29,7 +29,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
         {
             return (IQueryable<T>)(LinqExtensions.ProcessSourceQueryable?.Invoke(source) ?? source);
         }
-        
+
         #if NET6_0_OR_GREATER
         [DoesNotReturn]
 #endif
@@ -37,7 +37,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
         {
             throw new LinqToDBException($"LinqToDB method '{method}' called on non-LinqToDB IQueryable.");
         }
-        
+
         public static IQueryProviderAsync GetLinqToDBSource<T>(this IQueryable<T> source, [CallerMemberName] string? method = null)
         {
             if (source.ProcessIQueryable() is not IQueryProviderAsync query)
@@ -87,12 +87,12 @@ namespace Akka.Persistence.Sql.Journal.Dao
             ArgumentNullException.ThrowIfNull(source);
             ArgumentNullException.ThrowIfNull(target);
             ArgumentNullException.ThrowIfNull(setter);
-            ArgumentNullException.ThrowIfNull(outputExpression); 
+            ArgumentNullException.ThrowIfNull(outputExpression);
 #else
             ThrowIfNull(source, "source");
             ThrowIfNull(target, "target");
             ThrowIfNull(setter, "setter");
-            ThrowIfNull(outputExpression, "outputExpression"); 
+            ThrowIfNull(outputExpression, "outputExpression");
 
 #endif
             var currentSource = source.GetLinqToDBSource();
