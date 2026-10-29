@@ -12,7 +12,7 @@ The benchmark config sets `tag-write-mode = TagTable`; `db-round-trip-max-tag-ba
 
 PostgreSQL measurements used source base revision `9c133f339fe429df002e05f01e40f75e20dc09b3` and timed source hash `2d9f579060ec4eecf190a2a4b7419cd4c5966fbce80c3f23100a465b3e2b9b59`. SQL Server used timed source hash `30360a1c43ef65951762f2fdd7a16942676e480a14409e32f9b1cfc28a66132e` after metadata and failure-path cleanup updates; a later indentation-only edit did not affect the workload. Both runs used the same workload and timed intervals; the reported PostgreSQL image metadata was corrected after timing from the live disposable-container image inspection. See result files for exact provider names, engine versions, sanitized image labels, image digests, runtime, source hashes, and raw repetitions.
 
-## 2026-10-29 rerun on current v1.5
+## 2026-10-29 v1.5 baseline before the batching backport
 
 This is a fresh run of the unchanged workload after rebasing onto stable commit
 `c8413c6` (#608). The measured harness commit is `20d0c2c`; source and compiled
@@ -20,6 +20,10 @@ library hashes, image identities, timestamps, and shared-host observations are i
 the [manifest](results/rerun-2026-10-29/manifest.json). The library uses LinqToDB
 5.4.1.9. The benchmark ran on .NET 8.0.8 with PostgreSQL 16.15 and SQL Server
 16.0.4185.3. The disposable SQL Server container used a 2,048 MB memory limit.
+
+This pinned baseline uses LinqToDB 5 and predates the #580 stable backport. The
+recorded rates are historical; they are not measurements of the updated stable
+library or its opt-in parent modes.
 
 All four provider/configuration matrices completed: **200 individual measurements
 in 100 matched pairs across 20 cases**. Journal/tag counts, retained deletion

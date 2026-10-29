@@ -1,5 +1,23 @@
 #### 1.5.70 July 23rd 2026 ####
 
+**LinqToDB 6 and opt-in tag-table insert batching**
+
+* Backport [#580](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/580):
+  upgrade LinqToDB to 6.5.1 and add optional batched journal inserts for SQL
+  Server, PostgreSQL, and SQLite in `TagTable` mode. Batching remains off by
+  default; FK installation remains a separate operator-applied migration.
+* Retain Akka 1.5 and the existing .NET Standard 2.0/.NET 6 library targets.
+  Preserve legacy `MySql.Official` provider selection and select batching from
+  the actual provider supplied through `DataOptions`.
+* Preserve independent cloned connections, external-transaction separation,
+  configured retry/provider instances, mapping, command timeout, and query hints.
+  Use fluent LinqToDB options to avoid cross-target-framework init-setter failures.
+* Compatibility: LinqToDB upgrades even with batching off. Custom LinqToDB 5
+  provider implementations need adaptation/recompilation. Configure interceptors
+  through `DataOptions`; direct post-construction interceptor additions/removals
+  are not snapshotted by the replacement clone. See the
+  [batching and upgrade notes](README.md#tag-table-insert-batching).
+
 **New Feature — FromEnd Query Offset**
 
 Query the *last N events* by tag using a new `Offset.FromEnd(count)` offset type. Instead of streaming from a known forward offset, you specify how many recent events to return — useful for "get me the last 10 events tagged X" scenarios without knowing the current offset upfront.
