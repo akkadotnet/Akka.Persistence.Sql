@@ -1,0 +1,41 @@
+provider,parent_insert_mode,prefer_parameters,operation,tags_per_event,batch_boundary,baseline_mode_vs_off_pct,fk_mode_vs_off_pct
+PostgreSQL,parameterized,False,tagged-insert,2,1,-2.1527746455557217,3.5574312276040576
+PostgreSQL,parameterized,False,tagged-insert,2,50,155.82934688294395,123.67435208426754
+PostgreSQL,parameterized,False,tagged-insert,4,1,21.89154777686062,20.028191066871127
+PostgreSQL,parameterized,False,tagged-insert,4,50,191.17230767872934,120.70297458482311
+PostgreSQL,parameterized,False,delete-range,4,100,-5.499599863399873,1.387271813663915
+PostgreSQL,parameterized,True,tagged-insert,2,1,20.60090192357249,12.442717706083673
+PostgreSQL,parameterized,True,tagged-insert,2,50,138.20704477124258,93.25982801341479
+PostgreSQL,parameterized,True,tagged-insert,4,1,-25.952757836845386,-28.636002508938596
+PostgreSQL,parameterized,True,tagged-insert,4,50,98.59413928584407,75.29304646219914
+PostgreSQL,parameterized,True,delete-range,4,100,20.305210896231827,20.24623452864731
+PostgreSQL,inline,False,tagged-insert,2,1,-5.307594776255941,-0.6568698431186015
+PostgreSQL,inline,False,tagged-insert,2,50,216.38790297333688,186.80744362873693
+PostgreSQL,inline,False,tagged-insert,4,1,-7.735544366865987,-9.286071664270757
+PostgreSQL,inline,False,tagged-insert,4,50,175.6865467259574,136.49908730695293
+PostgreSQL,inline,False,delete-range,4,100,3.11672072975413,15.543524588035273
+PostgreSQL,inline,True,tagged-insert,2,1,30.31829781042894,17.407603358123545
+PostgreSQL,inline,True,tagged-insert,2,50,116.41787941388912,103.4719194550139
+PostgreSQL,inline,True,tagged-insert,4,1,-37.537069272554035,-32.758251698107024
+PostgreSQL,inline,True,tagged-insert,4,50,89.7331967498761,76.24167841511327
+PostgreSQL,inline,True,delete-range,4,100,-22.176282824196893,11.731613186865975
+SQL Server,parameterized,False,tagged-insert,2,1,19.199673647022664,1.1038237455704758
+SQL Server,parameterized,False,tagged-insert,2,50,87.60327765313403,34.15143832275114
+SQL Server,parameterized,False,tagged-insert,4,1,9.861290512102915,11.672577946017704
+SQL Server,parameterized,False,tagged-insert,4,50,520.5671649354815,197.25913826765566
+SQL Server,parameterized,False,delete-range,4,100,42.81931352330077,7.024902074507033
+SQL Server,parameterized,True,tagged-insert,2,1,23.830033882094483,16.65291160630853
+SQL Server,parameterized,True,tagged-insert,2,50,113.95155623867814,123.81474143706308
+SQL Server,parameterized,True,tagged-insert,4,1,-1.187721179498924,15.831660759693156
+SQL Server,parameterized,True,tagged-insert,4,50,49.97255353368353,56.9648297822241
+SQL Server,parameterized,True,delete-range,4,100,-9.517716858026903,-19.019674785789643
+SQL Server,inline,False,tagged-insert,2,1,-7.24768284503543,-16.06729970851022
+SQL Server,inline,False,tagged-insert,2,50,16.173133327204425,-1.577098393213161
+SQL Server,inline,False,tagged-insert,4,1,-5.41288567855549,-3.802869508543494
+SQL Server,inline,False,tagged-insert,4,50,313.18130848575015,131.49026603445276
+SQL Server,inline,False,delete-range,4,100,27.95598739005529,-46.83041203120709
+SQL Server,inline,True,tagged-insert,2,1,-21.349177200940318,-15.11290053516906
+SQL Server,inline,True,tagged-insert,2,50,84.31023261889999,89.12087419333253
+SQL Server,inline,True,tagged-insert,4,1,-2.717958754787264,-28.58262732379743
+SQL Server,inline,True,tagged-insert,4,50,4.887335141582749,0.3095937463478471
+SQL Server,inline,True,delete-range,4,100,-15.21382228715441,-19.67269944333512

@@ -1,0 +1,792 @@
+{
+  "SchemaVersion": 2,
+  "Engine": "SQL Server",
+  "EngineVersion": "16.0.4185.3",
+  "Runtime": "10.0.12",
+  "OperatingSystem": "Unix 6.8.0.137",
+  "ProviderName": "SqlServer.2022",
+  "Image": "sqlserver:2022-CU18-ubuntu-22.04",
+  "ImageDigest": "sha256:ea73825f3d88a23c355ac2f9fdc6bd960fec90171c12c572109b36a558f77bb8",
+  "BenchmarkSourceSha256": "dc72b5d925951cd51e1bde55fff084b516f7c865bb2019b2ef8e97b18dd881dc",
+  "PreferParametersOnMultiRowInsert": true,
+  "ParentInsertMode": "off",
+  "Repetitions": 5,
+  "EventsPerWriteCase": 2000,
+  "BatchSizes": [
+    1,
+    50
+  ],
+  "TagCardinalities": [
+    2,
+    4
+  ],
+  "DeleteActors": 50,
+  "DeleteEventsPerActor": 100,
+  "Scenarios": [
+    {
+      "Name": "tagged-insert",
+      "TagCardinality": 2,
+      "BatchSize": 1,
+      "Summary": {
+        "BaselineMedianEventsPerSecond": 98.16587516912202,
+        "ForeignKeyMedianEventsPerSecond": 106.89691121107813,
+        "ThroughputChangePercent": 8.894166151846683,
+        "BaselineP95OperationLatencyMilliseconds": 16.6639,
+        "ForeignKeyP95OperationLatencyMilliseconds": 15.3826,
+        "BaselineP95PerEventNormalizedLatencyMilliseconds": 16.6639,
+        "ForeignKeyP95PerEventNormalizedLatencyMilliseconds": 15.3826,
+        "BaselineThroughputCoefficientOfVariationPercent": 9.288542813707565,
+        "ForeignKeyThroughputCoefficientOfVariationPercent": 12.969814222339934
+      },
+      "Runs": [
+        {
+          "Repetition": 1,
+          "Baseline": {
+            "ElapsedMilliseconds": 21833.9773,
+            "Events": 2000,
+            "EventsPerSecond": 91.60035171420647,
+            "P95OperationLatencyMilliseconds": 18.7192,
+            "P95PerEventNormalizedLatencyMilliseconds": 18.7192,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 4400
+          },
+          "ForeignKey": {
+            "ElapsedMilliseconds": 18125.6558,
+            "Events": 2000,
+            "EventsPerSecond": 110.34083522649702,
+            "P95OperationLatencyMilliseconds": 14.5707,
+            "P95PerEventNormalizedLatencyMilliseconds": 14.5707,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 4400
+          }
+        },
+        {
+          "Repetition": 2,
+          "Baseline": {
+            "ElapsedMilliseconds": 21490.4587,
+            "Events": 2000,
+            "EventsPerSecond": 93.06455613253151,
+            "P95OperationLatencyMilliseconds": 17.8227,
+            "P95PerEventNormalizedLatencyMilliseconds": 17.8227,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 4400
+          },
+          "ForeignKey": {
+            "ElapsedMilliseconds": 18709.6145,
+            "Events": 2000,
+            "EventsPerSecond": 106.89691121107813,
+            "P95OperationLatencyMilliseconds": 15.3826,
+            "P95PerEventNormalizedLatencyMilliseconds": 15.3826,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 4400
+          }
+        },
+        {
+          "Repetition": 3,
+          "Baseline": {
+            "ElapsedMilliseconds": 17001.5241,
+            "Events": 2000,
+            "EventsPerSecond": 117.63651236420624,
+            "P95OperationLatencyMilliseconds": 13.9014,
+            "P95PerEventNormalizedLatencyMilliseconds": 13.9014,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 4400
+          },
+          "ForeignKey": {
+            "ElapsedMilliseconds": 15777.5987,
+            "Events": 2000,
+            "EventsPerSecond": 126.76200212900585,
+            "P95OperationLatencyMilliseconds": 12.7126,
+            "P95PerEventNormalizedLatencyMilliseconds": 12.7126,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 4400
+          }
+        },
+        {
+          "Repetition": 4,
+          "Baseline": {
+            "ElapsedMilliseconds": 19640.6006,
+            "Events": 2000,
+            "EventsPerSecond": 101.829879886667,
+            "P95OperationLatencyMilliseconds": 16.0339,
+            "P95PerEventNormalizedLatencyMilliseconds": 16.0339,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 4400
+          },
+          "ForeignKey": {
+            "ElapsedMilliseconds": 22951.583,
+            "Events": 2000,
+            "EventsPerSecond": 87.13995893006596,
+            "P95OperationLatencyMilliseconds": 18.4724,
+            "P95PerEventNormalizedLatencyMilliseconds": 18.4724,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 4400
+          }
+        },
+        {
+          "Repetition": 5,
+          "Baseline": {
+            "ElapsedMilliseconds": 20373.6787,
+            "Events": 2000,
+            "EventsPerSecond": 98.16587516912202,
+            "P95OperationLatencyMilliseconds": 16.6639,
+            "P95PerEventNormalizedLatencyMilliseconds": 16.6639,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 4400
+          },
+          "ForeignKey": {
+            "ElapsedMilliseconds": 21115.8808,
+            "Events": 2000,
+            "EventsPerSecond": 94.7154427960211,
+            "P95OperationLatencyMilliseconds": 17.343,
+            "P95PerEventNormalizedLatencyMilliseconds": 17.343,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 4400
+          }
+        }
+      ]
+    },
+    {
+      "Name": "tagged-insert",
+      "TagCardinality": 2,
+      "BatchSize": 50,
+      "Summary": {
+        "BaselineMedianEventsPerSecond": 1282.8553692179623,
+        "ForeignKeyMedianEventsPerSecond": 1228.5005493547333,
+        "ThroughputChangePercent": -4.237018542188753,
+        "BaselineP95OperationLatencyMilliseconds": 49.0761,
+        "ForeignKeyP95OperationLatencyMilliseconds": 52.3458,
+        "BaselineP95PerEventNormalizedLatencyMilliseconds": 0.9815219999999999,
+        "ForeignKeyP95PerEventNormalizedLatencyMilliseconds": 1.046916,
+        "BaselineThroughputCoefficientOfVariationPercent": 6.661760040418703,
+        "ForeignKeyThroughputCoefficientOfVariationPercent": 12.15111785524385
+      },
+      "Runs": [
+        {
+          "Repetition": 1,
+          "Baseline": {
+            "ElapsedMilliseconds": 1360.296,
+            "Events": 2000,
+            "EventsPerSecond": 1470.2682357369279,
+            "P95OperationLatencyMilliseconds": 45.0992,
+            "P95PerEventNormalizedLatencyMilliseconds": 0.9019840000000001,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 4400
+          },
+          "ForeignKey": {
+            "ElapsedMilliseconds": 1340.4824,
+            "Events": 2000,
+            "EventsPerSecond": 1492.0001933632248,
+            "P95OperationLatencyMilliseconds": 48.9648,
+            "P95PerEventNormalizedLatencyMilliseconds": 0.9792959999999999,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 4400
+          }
+        },
+        {
+          "Repetition": 2,
+          "Baseline": {
+            "ElapsedMilliseconds": 1457.7005,
+            "Events": 2000,
+            "EventsPerSecond": 1372.02395142212,
+            "P95OperationLatencyMilliseconds": 47.737,
+            "P95PerEventNormalizedLatencyMilliseconds": 0.95474,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 4400
+          },
+          "ForeignKey": {
+            "ElapsedMilliseconds": 1813.2965,
+            "Events": 2000,
+            "EventsPerSecond": 1102.9635804183156,
+            "P95OperationLatencyMilliseconds": 63.5397,
+            "P95PerEventNormalizedLatencyMilliseconds": 1.270794,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 4400
+          }
+        },
+        {
+          "Repetition": 3,
+          "Baseline": {
+            "ElapsedMilliseconds": 1559.0222,
+            "Events": 2000,
+            "EventsPerSecond": 1282.8553692179623,
+            "P95OperationLatencyMilliseconds": 55.6083,
+            "P95PerEventNormalizedLatencyMilliseconds": 1.112166,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 4400
+          },
+          "ForeignKey": {
+            "ElapsedMilliseconds": 1765.2936,
+            "Events": 2000,
+            "EventsPerSecond": 1132.9560136625432,
+            "P95OperationLatencyMilliseconds": 72.0698,
+            "P95PerEventNormalizedLatencyMilliseconds": 1.4413960000000001,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 4400
+          }
+        },
+        {
+          "Repetition": 4,
+          "Baseline": {
+            "ElapsedMilliseconds": 1635.6656,
+            "Events": 2000,
+            "EventsPerSecond": 1222.7438175627096,
+            "P95OperationLatencyMilliseconds": 53.0587,
+            "P95PerEventNormalizedLatencyMilliseconds": 1.061174,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 4400
+          },
+          "ForeignKey": {
+            "ElapsedMilliseconds": 1408.3874,
+            "Events": 2000,
+            "EventsPerSecond": 1420.0638261887318,
+            "P95OperationLatencyMilliseconds": 43.5559,
+            "P95PerEventNormalizedLatencyMilliseconds": 0.8711180000000001,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 4400
+          }
+        },
+        {
+          "Repetition": 5,
+          "Baseline": {
+            "ElapsedMilliseconds": 1578.0021,
+            "Events": 2000,
+            "EventsPerSecond": 1267.425436252588,
+            "P95OperationLatencyMilliseconds": 49.0761,
+            "P95PerEventNormalizedLatencyMilliseconds": 0.9815219999999999,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 4400
+          },
+          "ForeignKey": {
+            "ElapsedMilliseconds": 1628.0009,
+            "Events": 2000,
+            "EventsPerSecond": 1228.5005493547333,
+            "P95OperationLatencyMilliseconds": 52.3458,
+            "P95PerEventNormalizedLatencyMilliseconds": 1.046916,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 4400
+          }
+        }
+      ]
+    },
+    {
+      "Name": "tagged-insert",
+      "TagCardinality": 4,
+      "BatchSize": 1,
+      "Summary": {
+        "BaselineMedianEventsPerSecond": 102.52325940059859,
+        "ForeignKeyMedianEventsPerSecond": 88.92965384696943,
+        "ThroughputChangePercent": -13.259045443057571,
+        "BaselineP95OperationLatencyMilliseconds": 16.0171,
+        "ForeignKeyP95OperationLatencyMilliseconds": 18.5565,
+        "BaselineP95PerEventNormalizedLatencyMilliseconds": 16.0171,
+        "ForeignKeyP95PerEventNormalizedLatencyMilliseconds": 18.5565,
+        "BaselineThroughputCoefficientOfVariationPercent": 6.226813716888982,
+        "ForeignKeyThroughputCoefficientOfVariationPercent": 13.83448810498901
+      },
+      "Runs": [
+        {
+          "Repetition": 1,
+          "Baseline": {
+            "ElapsedMilliseconds": 20319.2849,
+            "Events": 2000,
+            "EventsPerSecond": 98.42866074484738,
+            "P95OperationLatencyMilliseconds": 16.0171,
+            "P95PerEventNormalizedLatencyMilliseconds": 16.0171,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 8800
+          },
+          "ForeignKey": {
+            "ElapsedMilliseconds": 23040.8186,
+            "Events": 2000,
+            "EventsPerSecond": 86.8024715059386,
+            "P95OperationLatencyMilliseconds": 20.2594,
+            "P95PerEventNormalizedLatencyMilliseconds": 20.2594,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 8800
+          }
+        },
+        {
+          "Repetition": 2,
+          "Baseline": {
+            "ElapsedMilliseconds": 22263.0788,
+            "Events": 2000,
+            "EventsPerSecond": 89.83483452432465,
+            "P95OperationLatencyMilliseconds": 19.572,
+            "P95PerEventNormalizedLatencyMilliseconds": 19.572,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 8800
+          },
+          "ForeignKey": {
+            "ElapsedMilliseconds": 23532.3799,
+            "Events": 2000,
+            "EventsPerSecond": 84.98927896366317,
+            "P95OperationLatencyMilliseconds": 19.3476,
+            "P95PerEventNormalizedLatencyMilliseconds": 19.3476,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 8800
+          }
+        },
+        {
+          "Repetition": 3,
+          "Baseline": {
+            "ElapsedMilliseconds": 19411.5239,
+            "Events": 2000,
+            "EventsPerSecond": 103.03158115267809,
+            "P95OperationLatencyMilliseconds": 16.1729,
+            "P95PerEventNormalizedLatencyMilliseconds": 16.1729,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 8800
+          },
+          "ForeignKey": {
+            "ElapsedMilliseconds": 21219.8732,
+            "Events": 2000,
+            "EventsPerSecond": 94.25127007827737,
+            "P95OperationLatencyMilliseconds": 18.1815,
+            "P95PerEventNormalizedLatencyMilliseconds": 18.1815,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 8800
+          }
+        },
+        {
+          "Repetition": 4,
+          "Baseline": {
+            "ElapsedMilliseconds": 19507.7684,
+            "Events": 2000,
+            "EventsPerSecond": 102.52325940059859,
+            "P95OperationLatencyMilliseconds": 15.0328,
+            "P95PerEventNormalizedLatencyMilliseconds": 15.0328,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 8800
+          },
+          "ForeignKey": {
+            "ElapsedMilliseconds": 22489.6861,
+            "Events": 2000,
+            "EventsPerSecond": 88.92965384696943,
+            "P95OperationLatencyMilliseconds": 18.5565,
+            "P95PerEventNormalizedLatencyMilliseconds": 18.5565,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 8800
+          }
+        },
+        {
+          "Repetition": 5,
+          "Baseline": {
+            "ElapsedMilliseconds": 18398.7738,
+            "Events": 2000,
+            "EventsPerSecond": 108.7028962767073,
+            "P95OperationLatencyMilliseconds": 14.8003,
+            "P95PerEventNormalizedLatencyMilliseconds": 14.8003,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 8800
+          },
+          "ForeignKey": {
+            "ElapsedMilliseconds": 16567.4486,
+            "Events": 2000,
+            "EventsPerSecond": 120.71864825341906,
+            "P95OperationLatencyMilliseconds": 12.6272,
+            "P95PerEventNormalizedLatencyMilliseconds": 12.6272,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 8800
+          }
+        }
+      ]
+    },
+    {
+      "Name": "tagged-insert",
+      "TagCardinality": 4,
+      "BatchSize": 50,
+      "Summary": {
+        "BaselineMedianEventsPerSecond": 1245.3891025215516,
+        "ForeignKeyMedianEventsPerSecond": 1216.164479921854,
+        "ThroughputChangePercent": -2.3466258489436065,
+        "BaselineP95OperationLatencyMilliseconds": 49.1517,
+        "ForeignKeyP95OperationLatencyMilliseconds": 48.1213,
+        "BaselineP95PerEventNormalizedLatencyMilliseconds": 0.983034,
+        "ForeignKeyP95PerEventNormalizedLatencyMilliseconds": 0.962426,
+        "BaselineThroughputCoefficientOfVariationPercent": 6.01505167356994,
+        "ForeignKeyThroughputCoefficientOfVariationPercent": 7.307682740095315
+      },
+      "Runs": [
+        {
+          "Repetition": 1,
+          "Baseline": {
+            "ElapsedMilliseconds": 1695.0512,
+            "Events": 2000,
+            "EventsPerSecond": 1179.9053621507126,
+            "P95OperationLatencyMilliseconds": 50.7458,
+            "P95PerEventNormalizedLatencyMilliseconds": 1.0149160000000002,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 8800
+          },
+          "ForeignKey": {
+            "ElapsedMilliseconds": 1667.9455,
+            "Events": 2000,
+            "EventsPerSecond": 1199.0799459574669,
+            "P95OperationLatencyMilliseconds": 53.191,
+            "P95PerEventNormalizedLatencyMilliseconds": 1.06382,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 8800
+          }
+        },
+        {
+          "Repetition": 2,
+          "Baseline": {
+            "ElapsedMilliseconds": 1605.9238,
+            "Events": 2000,
+            "EventsPerSecond": 1245.3891025215516,
+            "P95OperationLatencyMilliseconds": 52.0138,
+            "P95PerEventNormalizedLatencyMilliseconds": 1.040276,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 8800
+          },
+          "ForeignKey": {
+            "ElapsedMilliseconds": 1560.7007,
+            "Events": 2000,
+            "EventsPerSecond": 1281.4756858890369,
+            "P95OperationLatencyMilliseconds": 47.831,
+            "P95PerEventNormalizedLatencyMilliseconds": 0.95662,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 8800
+          }
+        },
+        {
+          "Repetition": 3,
+          "Baseline": {
+            "ElapsedMilliseconds": 1669.5435,
+            "Events": 2000,
+            "EventsPerSecond": 1197.9322491447513,
+            "P95OperationLatencyMilliseconds": 49.1517,
+            "P95PerEventNormalizedLatencyMilliseconds": 0.983034,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 8800
+          },
+          "ForeignKey": {
+            "ElapsedMilliseconds": 1644.5144,
+            "Events": 2000,
+            "EventsPerSecond": 1216.164479921854,
+            "P95OperationLatencyMilliseconds": 47.8854,
+            "P95PerEventNormalizedLatencyMilliseconds": 0.9577079999999999,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 8800
+          }
+        },
+        {
+          "Repetition": 4,
+          "Baseline": {
+            "ElapsedMilliseconds": 1442.6161,
+            "Events": 2000,
+            "EventsPerSecond": 1386.370220046761,
+            "P95OperationLatencyMilliseconds": 41.5484,
+            "P95PerEventNormalizedLatencyMilliseconds": 0.830968,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 8800
+          },
+          "ForeignKey": {
+            "ElapsedMilliseconds": 1878.7852,
+            "Events": 2000,
+            "EventsPerSecond": 1064.5176468283867,
+            "P95OperationLatencyMilliseconds": 54.6739,
+            "P95PerEventNormalizedLatencyMilliseconds": 1.0934780000000002,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 8800
+          }
+        },
+        {
+          "Repetition": 5,
+          "Baseline": {
+            "ElapsedMilliseconds": 1526.3586,
+            "Events": 2000,
+            "EventsPerSecond": 1310.3080757038354,
+            "P95OperationLatencyMilliseconds": 45.7282,
+            "P95PerEventNormalizedLatencyMilliseconds": 0.914564,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 8800
+          },
+          "ForeignKey": {
+            "ElapsedMilliseconds": 1508.4852,
+            "Events": 2000,
+            "EventsPerSecond": 1325.833359187084,
+            "P95OperationLatencyMilliseconds": 48.1213,
+            "P95PerEventNormalizedLatencyMilliseconds": 0.962426,
+            "ExpectedDeletedEvents": 0,
+            "ObservedDeletedEvents": 0,
+            "ExpectedInsertedEvents": 2200,
+            "ObservedJournalRows": 2200,
+            "ObservedTagRows": 8800
+          }
+        }
+      ]
+    },
+    {
+      "Name": "delete-range",
+      "TagCardinality": 4,
+      "BatchSize": 100,
+      "Summary": {
+        "BaselineMedianEventsPerSecond": 5108.393399955727,
+        "ForeignKeyMedianEventsPerSecond": 4111.280997916701,
+        "ThroughputChangePercent": -19.519099724145505,
+        "BaselineP95OperationLatencyMilliseconds": 23.5165,
+        "ForeignKeyP95OperationLatencyMilliseconds": 67.3048,
+        "BaselineP95PerEventNormalizedLatencyMilliseconds": 0.23754040404040405,
+        "ForeignKeyP95PerEventNormalizedLatencyMilliseconds": 0.6798464646464647,
+        "BaselineThroughputCoefficientOfVariationPercent": 13.03932915721606,
+        "ForeignKeyThroughputCoefficientOfVariationPercent": 16.718089773031352
+      },
+      "Runs": [
+        {
+          "Repetition": 1,
+          "Baseline": {
+            "ElapsedMilliseconds": 1255.5902,
+            "Events": 4950,
+            "EventsPerSecond": 3942.36909462976,
+            "P95OperationLatencyMilliseconds": 26.0822,
+            "P95PerEventNormalizedLatencyMilliseconds": 0.26345656565656567,
+            "ExpectedDeletedEvents": 4950,
+            "ObservedDeletedEvents": 4950,
+            "ExpectedInsertedEvents": 0,
+            "ObservedJournalRows": 0,
+            "ObservedTagRows": 0
+          },
+          "ForeignKey": {
+            "ElapsedMilliseconds": 1880.0268,
+            "Events": 4950,
+            "EventsPerSecond": 2632.9411899872916,
+            "P95OperationLatencyMilliseconds": 67.3048,
+            "P95PerEventNormalizedLatencyMilliseconds": 0.6798464646464647,
+            "ExpectedDeletedEvents": 4950,
+            "ObservedDeletedEvents": 4950,
+            "ExpectedInsertedEvents": 0,
+            "ObservedJournalRows": 0,
+            "ObservedTagRows": 0
+          }
+        },
+        {
+          "Repetition": 2,
+          "Baseline": {
+            "ElapsedMilliseconds": 1161.1495,
+            "Events": 4950,
+            "EventsPerSecond": 4263.016950013758,
+            "P95OperationLatencyMilliseconds": 58.5609,
+            "P95PerEventNormalizedLatencyMilliseconds": 0.5915242424242424,
+            "ExpectedDeletedEvents": 4950,
+            "ObservedDeletedEvents": 4950,
+            "ExpectedInsertedEvents": 0,
+            "ObservedJournalRows": 0,
+            "ObservedTagRows": 0
+          },
+          "ForeignKey": {
+            "ElapsedMilliseconds": 1375.5176,
+            "Events": 4950,
+            "EventsPerSecond": 3598.645339034557,
+            "P95OperationLatencyMilliseconds": 89.6299,
+            "P95PerEventNormalizedLatencyMilliseconds": 0.9053525252525253,
+            "ExpectedDeletedEvents": 4950,
+            "ObservedDeletedEvents": 4950,
+            "ExpectedInsertedEvents": 0,
+            "ObservedJournalRows": 0,
+            "ObservedTagRows": 0
+          }
+        },
+        {
+          "Repetition": 3,
+          "Baseline": {
+            "ElapsedMilliseconds": 919.1502,
+            "Events": 4950,
+            "EventsPerSecond": 5385.409261728932,
+            "P95OperationLatencyMilliseconds": 22.0307,
+            "P95PerEventNormalizedLatencyMilliseconds": 0.22253232323232322,
+            "ExpectedDeletedEvents": 4950,
+            "ObservedDeletedEvents": 4950,
+            "ExpectedInsertedEvents": 0,
+            "ObservedJournalRows": 0,
+            "ObservedTagRows": 0
+          },
+          "ForeignKey": {
+            "ElapsedMilliseconds": 1144.8954,
+            "Events": 4950,
+            "EventsPerSecond": 4323.53907614617,
+            "P95OperationLatencyMilliseconds": 21.0712,
+            "P95PerEventNormalizedLatencyMilliseconds": 0.21284040404040405,
+            "ExpectedDeletedEvents": 4950,
+            "ObservedDeletedEvents": 4950,
+            "ExpectedInsertedEvents": 0,
+            "ObservedJournalRows": 0,
+            "ObservedTagRows": 0
+          }
+        },
+        {
+          "Repetition": 4,
+          "Baseline": {
+            "ElapsedMilliseconds": 893.4934,
+            "Events": 4950,
+            "EventsPerSecond": 5540.05211454276,
+            "P95OperationLatencyMilliseconds": 21.3546,
+            "P95PerEventNormalizedLatencyMilliseconds": 0.2157030303030303,
+            "ExpectedDeletedEvents": 4950,
+            "ObservedDeletedEvents": 4950,
+            "ExpectedInsertedEvents": 0,
+            "ObservedJournalRows": 0,
+            "ObservedTagRows": 0
+          },
+          "ForeignKey": {
+            "ElapsedMilliseconds": 1204.0043,
+            "Events": 4950,
+            "EventsPerSecond": 4111.280997916701,
+            "P95OperationLatencyMilliseconds": 136.8201,
+            "P95PerEventNormalizedLatencyMilliseconds": 1.382021212121212,
+            "ExpectedDeletedEvents": 4950,
+            "ObservedDeletedEvents": 4950,
+            "ExpectedInsertedEvents": 0,
+            "ObservedJournalRows": 0,
+            "ObservedTagRows": 0
+          }
+        },
+        {
+          "Repetition": 5,
+          "Baseline": {
+            "ElapsedMilliseconds": 968.9935,
+            "Events": 4950,
+            "EventsPerSecond": 5108.393399955727,
+            "P95OperationLatencyMilliseconds": 23.5165,
+            "P95PerEventNormalizedLatencyMilliseconds": 0.23754040404040405,
+            "ExpectedDeletedEvents": 4950,
+            "ObservedDeletedEvents": 4950,
+            "ExpectedInsertedEvents": 0,
+            "ObservedJournalRows": 0,
+            "ObservedTagRows": 0
+          },
+          "ForeignKey": {
+            "ElapsedMilliseconds": 1155.4251,
+            "Events": 4950,
+            "EventsPerSecond": 4284.137500561482,
+            "P95OperationLatencyMilliseconds": 45.6345,
+            "P95PerEventNormalizedLatencyMilliseconds": 0.4609545454545455,
+            "ExpectedDeletedEvents": 4950,
+            "ObservedDeletedEvents": 4950,
+            "ExpectedInsertedEvents": 0,
+            "ObservedJournalRows": 0,
+            "ObservedTagRows": 0
+          }
+        }
+      ]
+    }
+  ]
+}
