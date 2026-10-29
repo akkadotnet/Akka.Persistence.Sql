@@ -10,6 +10,7 @@ using Akka.Persistence.Sql.Journal.Types;
 using Akka.Persistence.Sql.Snapshot;
 using LinqToDB;
 using LinqToDB.Data;
+using LinqToDB.DataProvider.MySql;
 using LinqToDB.Data.RetryPolicy;
 using LinqToDB.Mapping;
 
@@ -391,6 +392,12 @@ namespace Akka.Persistence.Sql.Db
             // just override the connection string or the provider name. If data options are set, we assume that a valid
             // connection can be created.
             var options = config.DataOptions ?? new DataOptions().UseConnectionString(config.ProviderName, config.ConnectionString);
+            if (config.DataOptions is null && config.ProviderName is ProviderName.MySql57 or ProviderName.MySql80)
+            {
+                // LinqToDB 6 requires a driver-specific name; preserve the versioned aliases accepted by 5.x.
+                var version = config.ProviderName == ProviderName.MySql57 ? MySqlVersion.MySql57 : MySqlVersion.MySql80;
+                options = options.UseConnectionString(MySqlTools.GetDataProvider(version).Name, config.ConnectionString);
+            }
             return options.UseMappingSchema(mappingSchema);
         }
 

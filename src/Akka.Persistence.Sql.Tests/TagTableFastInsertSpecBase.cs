@@ -125,7 +125,8 @@ public abstract class TagTableFastInsertSpecBase : Akka.TestKit.Xunit.TestKit
         var events = ProviderMaxParameters / parametersPerRow * 2;
         Assert.True(events * parametersPerRow <= maxParameters);
         await using var fixture = await Fixture.Create(
-            this, mode, writerUuid: true, maxParameters: maxParameters, preferParametersOnMultiRowInsert: true);
+            this, mode, writerUuid: true, maxParameters: maxParameters, preferParametersOnMultiRowInsert: true,
+            tagBatchSize: maxParameters / 4);
 
         var result = await fixture.WriteAtomic("pid", 1, events).WaitAsync(Deadline);
 
@@ -212,7 +213,8 @@ public abstract class TagTableFastInsertSpecBase : Akka.TestKit.Xunit.TestKit
             TagTableQueryableInsertMode mode,
             bool writerUuid,
             int maxParameters,
-            bool preferParametersOnMultiRowInsert)
+            bool preferParametersOnMultiRowInsert,
+            int tagBatchSize)
         {
             _spec = spec;
             var journalTable = $"fi_{_databaseId}";
@@ -225,6 +227,7 @@ public abstract class TagTableFastInsertSpecBase : Akka.TestKit.Xunit.TestKit
                 tagtable-asqueryable-insert-mode = {{mode.ToString().ToLowerInvariant()}}
                 tagtable-asqueryable-insert-max-parameters = {{maxParameters}}
                 prefer-parameters-on-multirow-insert = {{(preferParametersOnMultiRowInsert ? "true" : "false")}}
+                db-round-trip-max-tag-batch-size = {{tagBatchSize}}
                 use-clone-connection = false
                 default.journal {
                   table-name = "{{journalTable}}"
@@ -248,9 +251,10 @@ public abstract class TagTableFastInsertSpecBase : Akka.TestKit.Xunit.TestKit
             TagTableQueryableInsertMode mode,
             bool writerUuid,
             int maxParameters = 0,
-            bool preferParametersOnMultiRowInsert = false)
+            bool preferParametersOnMultiRowInsert = false,
+            int tagBatchSize = 1000)
         {
-            var fixture = new Fixture(spec, mode, writerUuid, maxParameters, preferParametersOnMultiRowInsert);
+            var fixture = new Fixture(spec, mode, writerUuid, maxParameters, preferParametersOnMultiRowInsert, tagBatchSize);
             await fixture.Dao.InitializeTables(CancellationToken.None);
             fixture.Counter.Reset();
             return fixture;
