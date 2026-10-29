@@ -23,6 +23,7 @@ internal static class Program
     private const int DeleteActors = 50;
     private const int DeleteEventsPerActor = 100;
     private static bool _preferParametersOnMultiRowInsert;
+    private static string _parentInsertMode = "off";
 
     public static async Task<int> Main(string[] args)
     {
@@ -34,6 +35,11 @@ internal static class Program
         }
 
         _preferParametersOnMultiRowInsert = options.PreferParametersOnMultiRowInsert;
+        _parentInsertMode = options.ParentInsertMode;
+        if (_parentInsertMode != "off" &&
+            typeof(Akka.Persistence.Sql.Config.BaseByteArrayJournalDaoConfig)
+                .GetProperty("TagTableQueryableInsertMode") is null)
+            throw new ArgumentException("Parent insert modes require the dev library containing #580.");
 
         var engine = Engine.Create(options.Provider, options.AdminConnectionString, options.Image, options.ImageDigest);
         var databaseNames = DatabaseNames.Create();
@@ -60,7 +66,7 @@ internal static class Program
 
         var version = await engine.ServerVersion();
         var results = new BenchmarkResults(
-            SchemaVersion: 1,
+            SchemaVersion: 2,
             Engine: engine.Name,
             EngineVersion: version,
             Runtime: Environment.Version.ToString(),
@@ -70,6 +76,7 @@ internal static class Program
             ImageDigest: engine.ImageDigest,
             BenchmarkSourceSha256: options.BenchmarkSourceSha256,
             PreferParametersOnMultiRowInsert: options.PreferParametersOnMultiRowInsert,
+            ParentInsertMode: options.ParentInsertMode,
             Repetitions: Repetitions,
             EventsPerWriteCase: EventsPerWriteCase,
             BatchSizes: BatchSizes,
@@ -182,6 +189,7 @@ akka.persistence.journal {
         provider-name = "{{providerName}}"
         tag-write-mode = TagTable
         prefer-parameters-on-multirow-insert = {{_preferParametersOnMultiRowInsert.ToString().ToLowerInvariant()}}
+        tagtable-asqueryable-insert-mode = {{_parentInsertMode}}
         auto-initialize = on
         event-adapters {
             benchmark-tags = "{{adapterType.AssemblyQualifiedName}}"
@@ -677,6 +685,7 @@ internal sealed record BenchmarkResults(
     string ImageDigest,
     string BenchmarkSourceSha256,
     bool PreferParametersOnMultiRowInsert,
+    string ParentInsertMode,
     int Repetitions,
     int EventsPerWriteCase,
     IReadOnlyList<int> BatchSizes,
@@ -778,9 +787,10 @@ internal sealed class Options
     public required string ImageDigest { get; init; }
     public required string BenchmarkSourceSha256 { get; init; }
     public bool PreferParametersOnMultiRowInsert { get; init; }
+    public string ParentInsertMode { get; init; } = "off";
     public bool Help { get; init; }
 
-    public const string Usage = "Usage: dotnet run -c Release -- --provider postgresql|sqlserver --admin-connection-string <value> --image <sanitized-label> --image-digest sha256:<digest> --source-sha256 <sha256> [--prefer-parameters true|false] --output <path>";
+    public const string Usage = "Usage: dotnet run -c Release -- --provider postgresql|sqlserver --admin-connection-string <value> --image <sanitized-label> --image-digest sha256:<digest> --source-sha256 <sha256> [--prefer-parameters true|false] [--parent-insert-mode off|parameterized|inline] --output <path>";
 
     public static Options Parse(string[] args)
     {
@@ -794,6 +804,10 @@ internal sealed class Options
             values[args[i][2..]] = args[++i];
         }
 
+        var parentInsertMode = values.GetValueOrDefault("parent-insert-mode") ?? "off";
+        if (parentInsertMode is not ("off" or "parameterized" or "inline"))
+            throw new ArgumentException("Parent insert mode must be off, parameterized, or inline.");
+
         return new Options
         {
             Provider = values.GetValueOrDefault("provider") ?? throw new ArgumentException(Usage),
@@ -803,6 +817,7 @@ internal sealed class Options
             ImageDigest = values.GetValueOrDefault("image-digest") ?? throw new ArgumentException(Usage),
             BenchmarkSourceSha256 = values.GetValueOrDefault("source-sha256") ?? throw new ArgumentException(Usage),
             PreferParametersOnMultiRowInsert = bool.Parse(values.GetValueOrDefault("prefer-parameters") ?? "false"),
+            ParentInsertMode = parentInsertMode,
         };
     }
 }

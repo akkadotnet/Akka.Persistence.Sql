@@ -10,7 +10,69 @@ The benchmark config sets `tag-write-mode = TagTable`; `db-round-trip-max-tag-ba
 
 PostgreSQL measurements used source base revision `9c133f339fe429df002e05f01e40f75e20dc09b3` and timed source hash `2d9f579060ec4eecf190a2a4b7419cd4c5966fbce80c3f23100a465b3e2b9b59`. SQL Server used timed source hash `30360a1c43ef65951762f2fdd7a16942676e480a14409e32f9b1cfc28a66132e` after metadata and failure-path cleanup updates; a later indentation-only edit did not affect the workload. Both runs used the same workload and timed intervals; the reported PostgreSQL image metadata was corrected after timing from the live disposable-container image inspection. See result files for exact provider names, engine versions, sanitized image labels, image digests, runtime, source hashes, and raw repetitions.
 
-## Results
+## 2026-10-29 rerun on current v1.5
+
+This is a fresh run of the unchanged workload after rebasing onto stable commit
+`c8413c6` (#608). The measured harness commit is `20d0c2c`; source and compiled
+library hashes, image identities, timestamps, and shared-host observations are in
+the [manifest](results/rerun-2026-10-29/manifest.json). The library uses LinqToDB
+5.4.1.9. The benchmark ran on .NET 8.0.8 with PostgreSQL 16.15 and SQL Server
+16.0.4185.3. The disposable SQL Server container used a 2,048 MB memory limit.
+
+All four provider/configuration matrices completed: **200 individual measurements
+in 100 matched pairs across 20 cases**. Journal/tag counts, retained deletion
+boundaries, and FK violation probes passed. Every observation is retained. Rates,
+medians, p95 summaries, and coefficients of variation were recomputed from the raw
+records. Setup, warmup, verification, and database cleanup remain outside timing.
+
+Median events/second; change is the ratio of the FK and no-FK medians, as in the
+historical tables. `literal` and `parameterized` select the existing
+`prefer-parameters-on-multirow-insert` option.
+
+| Engine | Insert SQL | Operation | Tags/event | Batch/boundary | No FK/s | FK/s | Change |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: |
+| PostgreSQL | literal | Insert | 2 | 1 | 195 | 194 | -0.6% |
+| PostgreSQL | literal | Insert | 2 | 50 | 3,003 | 2,387 | -20.5% |
+| PostgreSQL | literal | Insert | 4 | 1 | 264 | 231 | -12.5% |
+| PostgreSQL | literal | Insert | 4 | 50 | 2,892 | 2,179 | -24.7% |
+| PostgreSQL | literal | Delete | 4 | 100 | 16,450 | 10,175 | -38.1% |
+| PostgreSQL | parameterized | Insert | 2 | 1 | 275 | 249 | -9.3% |
+| PostgreSQL | parameterized | Insert | 2 | 50 | 3,123 | 2,504 | -19.8% |
+| PostgreSQL | parameterized | Insert | 4 | 1 | 250 | 213 | -14.6% |
+| PostgreSQL | parameterized | Insert | 4 | 50 | 2,659 | 1,836 | -30.9% |
+| PostgreSQL | parameterized | Delete | 4 | 100 | 18,275 | 10,847 | -40.6% |
+| SQL Server | literal | Insert | 2 | 1 | 122 | 95 | -21.8% |
+| SQL Server | literal | Insert | 2 | 50 | 1,810 | 1,129 | -37.6% |
+| SQL Server | literal | Insert | 4 | 1 | 116 | 93 | -20.1% |
+| SQL Server | literal | Insert | 4 | 50 | 1,052 | 1,003 | -4.6% |
+| SQL Server | literal | Delete | 4 | 100 | 5,257 | 3,970 | -24.5% |
+| SQL Server | parameterized | Insert | 2 | 1 | 127 | 128 | +0.6% |
+| SQL Server | parameterized | Insert | 2 | 50 | 2,078 | 2,039 | -1.9% |
+| SQL Server | parameterized | Insert | 4 | 1 | 120 | 118 | -1.8% |
+| SQL Server | parameterized | Insert | 4 | 50 | 1,068 | 954 | -10.7% |
+| SQL Server | parameterized | Delete | 4 | 100 | 3,452 | 2,611 | -24.4% |
+
+Raw records: [PostgreSQL literal](results/rerun-2026-10-29/postgresql-literal.json),
+[PostgreSQL parameterized](results/rerun-2026-10-29/postgresql-parameterized.json),
+[SQL Server literal](results/rerun-2026-10-29/sqlserver-literal.json), and
+[SQL Server parameterized](results/rerun-2026-10-29/sqlserver-parameterized.json).
+The [20-case summary CSV](results/rerun-2026-10-29/summary.csv) also includes
+within-pair change ranges, variation, operation p95, and normalized batch latency.
+Normalized per-event latency remains batch elapsed time divided by event count.
+
+Absolute rates differ substantially from the historical home-PC measurements.
+The historical runs used .NET 8.0.26; this run used 8.0.8, a shared development
+host, and the container configuration above. These are fresh within-run FK/no-FK
+comparisons, not a controlled before/after measurement of #608 or an explanation
+of the absolute-rate difference. Configuration-mode runs were sequential, so
+cross-mode comparisons also include possible host/time effects. Small gaps need
+to be interpreted alongside the retained run-to-run variation.
+
+This run is on **v1.5**. It does not include #580's LinqToDB 6 upgrade or enable
+its opt-in parent-insert optimization on dev. It cannot establish whether that
+optimization offsets FK costs. The earlier measurements below remain unchanged.
+
+## Historical results
 
 Median event throughput from the included five-run provider results. Change is
 `100 * (FK median / baseline median - 1)`; a negative value means lower throughput.
@@ -30,7 +92,7 @@ Median event throughput from the included five-run provider results. Change is
 
 Each delete case seeds 50 actors with 100 events each, then deletes 99 journal events per actor (4,950 physical deletions total); the sequence-100 boundary event remains. Throughput coefficient of variation and p95 latency are in the [PostgreSQL](results/postgresql.json) and [SQL Server](results/sqlserver.json) raw JSON. The database engine and Akka runtime ran on a shared development host, so these figures are directional and should be confirmed on representative deployment hardware before release decisions.
 
-## Parameterized insert tuning
+## Historical parameterized insert tuning
 
 The initial results above use the library default
 `prefer-parameters-on-multirow-insert = false`. They measure that insert strategy
