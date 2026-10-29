@@ -62,10 +62,11 @@ namespace Akka.Persistence.Sql.Query.Dao
 
             return AsyncSource<string>.FromEnumerable(
                 new { _dbStateHolder, maxTake},
-                static async input =>
+                static async (input, cancellationToken) =>
                 {
                     return await input._dbStateHolder.ExecuteQueryWithTransactionAsync(
                         input.maxTake,
+                        cancellationToken,
                         async (connection, token,take) =>
                         {
                             return await connection
@@ -94,11 +95,12 @@ namespace Akka.Persistence.Sql.Query.Dao
                     .FromEnumerable(
                         new { args= new QueryArgs(offset,maxOffset,maxTake,
                             $"{separator}{tag}{separator}"), _dbStateHolder },
-                        static async input =>
+                        static async (input, cancellationToken) =>
                         {
                             //var tagValue = input.tag;
                             return await input._dbStateHolder.ExecuteQueryWithTransactionAsync(
                                 input.args,
+                                cancellationToken,
                                 static async (connection, token, inVals) =>
                                 {
                                     return await connection
@@ -119,10 +121,11 @@ namespace Akka.Persistence.Sql.Query.Dao
                 TagMode.TagTable => AsyncSource<JournalRow>
                     .FromEnumerable(
                         new { _dbStateHolder, args= new QueryArgs(offset,maxOffset,maxTake,tag)},
-                        static async input =>
+                        static async (input, cancellationToken) =>
                         {
                             return await input._dbStateHolder.ExecuteQueryWithTransactionAsync(
                                 input.args,
+                                cancellationToken,
                                 static async (connection, token,txInput) =>
                                 {
                                     var query =
@@ -153,10 +156,11 @@ namespace Akka.Persistence.Sql.Query.Dao
                 AsyncSource<JournalRow>
                     .FromEnumerable(
                         new {  persistenceId, fromSequenceNr, toSequenceNr, toTake = MaxTake(max), _dbStateHolder },
-                        static async state =>
+                        static async (state, cancellationToken) =>
                         {
                             return await state._dbStateHolder.ExecuteQueryWithTransactionAsync(
                                 state,
+                                cancellationToken,
                                 async (connection, token, txState) =>
                                 {
                                     var query = connection
@@ -192,10 +196,11 @@ namespace Akka.Persistence.Sql.Query.Dao
         {
             return AsyncSource<long>.FromEnumerable(
                 new { maxTake = MaxTake(limit), offset, _dbStateHolder },
-                async input =>
+                async (input, cancellationToken) =>
                 {
                     return await input._dbStateHolder.ExecuteQueryWithTransactionAsync(
                         new QueryArgs(input.offset, default, input.maxTake),
+                        cancellationToken,
                         static async (connection, token, args) =>
                         {
                             // persistence-jdbc does not filter deleted here.
@@ -211,10 +216,14 @@ namespace Akka.Persistence.Sql.Query.Dao
                 });
         }
 
-        public async Task<long> MaxJournalSequenceAsync()
+        public Task<long> MaxJournalSequenceAsync()
+            => MaxJournalSequenceAsync(CancellationToken.None);
+
+        internal async Task<long> MaxJournalSequenceAsync(CancellationToken cancellationToken)
         {
             return await ConnectionFactory.ExecuteQueryWithTransactionAsync(
                 _dbStateHolder,
+                cancellationToken,
                 async (connection, token) =>
                 {
                     // persistence-jdbc does not filter deleted here.
@@ -226,7 +235,10 @@ namespace Akka.Persistence.Sql.Query.Dao
                 });
         }
 
-        public async Task<long> FromEndStartOffsetAsync(string tag, int count)
+        public Task<long> FromEndStartOffsetAsync(string tag, int count)
+            => FromEndStartOffsetAsync(tag, count, CancellationToken.None);
+
+        internal async Task<long> FromEndStartOffsetAsync(string tag, int count, CancellationToken cancellationToken)
         {
             if (count <= 0)
                 return 0;
@@ -239,6 +251,7 @@ namespace Akka.Persistence.Sql.Query.Dao
             // exclusive start offset is that Ordering minus one.
             var nthFromEnd = await ConnectionFactory.ExecuteQueryWithTransactionAsync(
                 _dbStateHolder,
+                cancellationToken,
                 async (connection, token) =>
                 {
                     IQueryable<long> orderings;
@@ -294,23 +307,24 @@ namespace Akka.Persistence.Sql.Query.Dao
 
             return AsyncSource<JournalRow>.FromEnumerable(
                 new {_dbStateHolder , args=new QueryArgs(offset,maxOffset,maxTake) },
-                static async input => 
-                    await ExecuteEventQuery(input._dbStateHolder, input._dbStateHolder.Mode, input.args))
+                static async (input, cancellationToken) =>
+                    await ExecuteEventQuery(input._dbStateHolder, input._dbStateHolder.Mode, input.args, cancellationToken))
                 .Via(_deserializeFlow);
         }
         
         
-        internal static async Task<List<JournalRow>> ExecuteEventQuery(DbStateHolder stateHolder, TagMode tagMode, QueryArgs queryArgs)
+        internal static async Task<List<JournalRow>> ExecuteEventQuery(DbStateHolder stateHolder, TagMode tagMode, QueryArgs queryArgs, CancellationToken cancellationToken)
         {
             return tagMode != TagMode.TagTable
-                ? await ExecuteEventQueryNonTagTable(stateHolder, queryArgs)
-                : await ExecuteEventQueryTagTable(stateHolder, queryArgs);
+                ? await ExecuteEventQueryNonTagTable(stateHolder, queryArgs, cancellationToken)
+                : await ExecuteEventQueryTagTable(stateHolder, queryArgs, cancellationToken);
         }
 
-        private static async Task<List<JournalRow>> ExecuteEventQueryTagTable(DbStateHolder stateHolder, QueryArgs queryArgs)
+        private static async Task<List<JournalRow>> ExecuteEventQueryTagTable(DbStateHolder stateHolder, QueryArgs queryArgs, CancellationToken cancellationToken)
         {
             return await stateHolder.ExecuteQueryWithTransactionAsync(
                 queryArgs,
+                cancellationToken,
                 static async (connection, token, a) =>
                 {
                     var query = connection
@@ -326,10 +340,11 @@ namespace Akka.Persistence.Sql.Query.Dao
                 });
         }
 
-        private static async Task<List<JournalRow>> ExecuteEventQueryNonTagTable(DbStateHolder stateHolder, QueryArgs queryArgs)
+        private static async Task<List<JournalRow>> ExecuteEventQueryNonTagTable(DbStateHolder stateHolder, QueryArgs queryArgs, CancellationToken cancellationToken)
         {
             return await stateHolder.ExecuteQueryWithTransactionAsync(
                 queryArgs,
+                cancellationToken,
                 static async (connection, token, a) =>
                 {
                     return await connection
