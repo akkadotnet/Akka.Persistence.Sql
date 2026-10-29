@@ -8,10 +8,11 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Event;
-using Akka.Pattern;
 using Akka.Persistence.Journal;
 using Akka.Persistence.Query;
 using Akka.Persistence.Sql.Config;
@@ -134,7 +135,7 @@ namespace Akka.Persistence.Sql.Query
             => AsyncSource<long>
                 .FromEnumerable(
                     state: _readJournalDao,
-                    func: async input => new[] { await input.MaxJournalSequenceAsync() })
+                    func: async (input, token) => new[] { await input.MaxJournalSequenceAsync(token) })
                 .ConcatMany(maxInDb => Events(offset, maxInDb));
 
         public Source<EventEnvelope, NotUsed> CurrentEventsByPersistenceId(
@@ -185,7 +186,7 @@ namespace Akka.Persistence.Sql.Query
             => AsyncSource<long>
                 .FromEnumerable(
                     state: new { dao = _readJournalDao, tag, count },
-                    func: async input => new[] { await input.dao.FromEndStartOffsetAsync(input.tag, input.count) })
+                    func: async (input, token) => new[] { await input.dao.FromEndStartOffsetAsync(input.tag, input.count, token) })
                 .ConcatMany(continuation);
 
         public Source<string, NotUsed> PersistenceIds()
@@ -295,148 +296,73 @@ namespace Akka.Persistence.Sql.Query
         }
 
         private Source<EventEnvelope, NotUsed> EventsByTag(string tag, long offset, long? terminateAfterOffset)
-        {
-            var askTimeout = _readJournalConfig.JournalSequenceRetrievalConfiguration.AskTimeout;
-            var batchSize = _readJournalConfig.MaxBufferSize;
-
-            return Source
-                .UnfoldAsync<(long offset, FlowControlEnum flowControl), IImmutableList<EventEnvelope>>(
-                    (offset, FlowControlEnum.Continue),
-                    uf =>
-                    {
-                        async Task<Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>> RetrieveNextBatch()
-                        {
-                            var queryUntil = await _journalSequenceActor
-                                .Ask<MaxOrderingId>(
-                                    GetMaxOrderingId.Instance,
-                                    askTimeout);
-
-                            var xs = await CurrentJournalEventsByTag(tag, uf.offset, batchSize, queryUntil)
-                                .RunWith(Sink.Seq<EventEnvelope>(), _mat);
-
-                            var hasMoreEvents = xs.Count == batchSize;
-
-                            var nextControl = FlowControlEnum.Unknown;
-                            if (terminateAfterOffset.HasValue)
-                            {
-                                if (!hasMoreEvents && terminateAfterOffset.Value <= queryUntil.Max)
-                                    nextControl = FlowControlEnum.Stop;
-
-                                if (xs.Exists(r => r.Offset is Sequence s && s.Value >= terminateAfterOffset.Value))
-                                    nextControl = FlowControlEnum.Stop;
-                            }
-
-                            if (nextControl == FlowControlEnum.Unknown)
-                            {
-                                nextControl = hasMoreEvents
-                                    ? FlowControlEnum.Continue
-                                    : FlowControlEnum.ContinueDelayed;
-                            }
-
-                            var nextStartingOffset = xs.Count == 0
-                                ? Math.Max(uf.offset, queryUntil.Max)
-                                : xs.Select(r => r.Offset as Sequence)
-                                    .Max(t => t?.Value ?? long.MinValue);
-
-                            return Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>.Create(
-                                ((nextStartingOffset, nextControl), xs));
-                        }
-
-                        return uf.flowControl switch
-                        {
-                            FlowControlEnum.Stop =>
-                                Task.FromResult(
-                                    Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>.None),
-
-                            FlowControlEnum.Continue =>
-                                RetrieveNextBatch(),
-
-                            FlowControlEnum.ContinueDelayed =>
-                                FutureTimeoutSupport.After(
-                                    duration: _readJournalConfig.RefreshInterval,
-                                    scheduler: _system.Scheduler,
-                                    value: RetrieveNextBatch),
-
-                            _ => Task.FromResult(
-                                Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>.None),
-                        };
-                    }).SelectMany(r => r);
-        }
+            => Source.From(
+                () => PollEventsAsync(
+                    offset,
+                    terminateAfterOffset,
+                    (from, queryUntil) => CurrentJournalEventsByTag(tag, from, _readJournalConfig.MaxBufferSize, queryUntil),
+                    xs => xs));
 
         private Source<EventEnvelope, NotUsed> CurrentEventsByTag(string tag, long offset)
             => AsyncSource<long>
                 .FromEnumerable(
                     state: new { readJournalDao = _readJournalDao },
-                    func: async input => new[] { await input.readJournalDao.MaxJournalSequenceAsync() })
+                    func: async (input, token) => new[] { await input.readJournalDao.MaxJournalSequenceAsync(token) })
                 .ConcatMany(maxInDb => EventsByTag(tag, offset, maxInDb));
 
         private Source<EventEnvelope, NotUsed> Events(long offset, long? terminateAfterOffset)
+            => Source.From(
+                () => PollEventsAsync(
+                    offset,
+                    terminateAfterOffset,
+                    (from, queryUntil) => CurrentJournalEvents(from, _readJournalConfig.MaxBufferSize, queryUntil),
+                    xs => xs.SelectMany(x => x)));
+
+        // Polls the journal in batches. The token is cancelled when the stream stops, which cancels the
+        // in-flight batch query and any pending refresh delay.
+        private async IAsyncEnumerable<EventEnvelope> PollEventsAsync<T>(
+            long offset,
+            long? terminateAfterOffset,
+            Func<long, MaxOrderingId, Source<T, NotUsed>> batchSource,
+            Func<IReadOnlyList<T>, IEnumerable<EventEnvelope>> envelopesOf,
+            [EnumeratorCancellation] CancellationToken token = default)
         {
             var askTimeout = _readJournalConfig.JournalSequenceRetrievalConfiguration.AskTimeout;
             var batchSize = _readJournalConfig.MaxBufferSize;
 
-            return Source
-                .UnfoldAsync<(long offset, FlowControlEnum flowControl), IImmutableList<EventEnvelope>>(
-                    (offset, FlowControlEnum.Continue),
-                    uf =>
-                    {
-                        async Task<Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>> RetrieveNextBatch()
-                        {
-                            var queryUntil = await _journalSequenceActor
-                                .Ask<MaxOrderingId>(
-                                    GetMaxOrderingId.Instance,
-                                    askTimeout);
+            while (true)
+            {
+                var queryUntil = await _journalSequenceActor.Ask<MaxOrderingId>(GetMaxOrderingId.Instance, askTimeout, token);
 
-                            var xs = await CurrentJournalEvents(uf.offset, batchSize, queryUntil)
-                                .RunWith(Sink.Seq<EventEnvelope[]>(), _mat);
+                var xs = new List<T>();
+                await foreach (var x in batchSource(offset, queryUntil).RunAsAsyncEnumerable(_mat).WithCancellation(token))
+                    xs.Add(x);
 
-                            var hasMoreEvents = xs.Count == batchSize;
-                            var envelopes = xs.SelectMany(x => x).ToImmutableList();
+                // Cancellation completes the batch stream early: never mistake that for a short batch.
+                token.ThrowIfCancellationRequested();
 
-                            var nextControl = FlowControlEnum.Unknown;
-                            if (terminateAfterOffset.HasValue)
-                            {
-                                if (!hasMoreEvents && terminateAfterOffset.Value <= queryUntil.Max)
-                                    nextControl = FlowControlEnum.Stop;
+                var hasMoreEvents = xs.Count == batchSize;
+                var envelopes = envelopesOf(xs).ToImmutableList();
 
-                                if (envelopes.Exists(r => r.Offset is Sequence s && s.Value >= terminateAfterOffset.Value))
-                                    nextControl = FlowControlEnum.Stop;
-                            }
+                var shouldStop = terminateAfterOffset is long end &&
+                    ((!hasMoreEvents && end <= queryUntil.Max) ||
+                     envelopes.Exists(r => r.Offset is Sequence s && s.Value >= end));
 
-                            if (nextControl == FlowControlEnum.Unknown)
-                            {
-                                nextControl = hasMoreEvents
-                                    ? FlowControlEnum.Continue
-                                    : FlowControlEnum.ContinueDelayed;
-                            }
+                var nextStartingOffset = xs.Count == 0
+                    ? Math.Max(offset, queryUntil.Max)
+                    : envelopes.Select(r => r.Offset as Sequence)
+                        .Max(t => t?.Value ?? long.MinValue);
 
-                            var nextStartingOffset = xs.Count == 0
-                                ? Math.Max(uf.offset, queryUntil.Max)
-                                : envelopes.Select(r => r.Offset as Sequence)
-                                    .Max(t => t?.Value ?? long.MinValue);
+                foreach (var envelope in envelopes)
+                    yield return envelope;
 
-                            return Option<((long nextStartingOffset, FlowControlEnum nextControl), IImmutableList<EventEnvelope>xs)>.Create(
-                                ((nextStartingOffset, nextControl), envelopes));
-                        }
+                if (shouldStop)
+                    yield break;
 
-                        return uf.flowControl switch
-                        {
-                            FlowControlEnum.Stop =>
-                                Task.FromResult(Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>.None),
-
-                            FlowControlEnum.Continue =>
-                                RetrieveNextBatch(),
-
-                            FlowControlEnum.ContinueDelayed =>
-                                FutureTimeoutSupport.After(
-                                    _readJournalConfig.RefreshInterval,
-                                    _system.Scheduler,
-                                    RetrieveNextBatch),
-
-                            _ => Task.FromResult(
-                                Option<((long, FlowControlEnum), IImmutableList<EventEnvelope>)>.None),
-                        };
-                    }).SelectMany(r => r);
+                offset = nextStartingOffset;
+                if (!hasMoreEvents)
+                    await QueryDelay.WaitAsync(_readJournalConfig.RefreshInterval, _system.Scheduler, token);
+            }
         }
     }
 }

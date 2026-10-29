@@ -60,12 +60,17 @@ namespace Akka.Persistence.Sql.Extensions
         internal static async Task<T> ExecuteQueryWithTransactionAsync<T>(
             this AkkaPersistenceDataConnectionFactory factory,
             DbStateHolder state,
+            CancellationToken token,
             Func<AkkaDataConnection, CancellationToken, Task<T>> handler)
         {
+            // Checked before asking for a permit, because the finally block always returns one.
+            token.ThrowIfCancellationRequested();
+
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(token, state.ShutdownToken);
             try
             {
                 await state.QueryPermitter.Ask<QueryStartGranted>(new RequestQueryStart(state.QueryThrottleTimeout), state.QueryThrottleTimeout);
-                return await factory.ExecuteWithTransactionAsync(state.IsolationLevel, state.ShutdownToken, handler);
+                return await factory.ExecuteWithTransactionAsync(state.IsolationLevel, cts.Token, handler);
             }
             finally
             {
@@ -106,12 +111,17 @@ namespace Akka.Persistence.Sql.Extensions
         internal static async Task<T> ExecuteQueryWithTransactionAsync<TState,T>(
             this DbStateHolder factory,
             TState state,
+            CancellationToken token,
             Func<AkkaDataConnection, CancellationToken, TState, Task<T>> handler)
         {
+            // Checked before asking for a permit, because the finally block always returns one.
+            token.ThrowIfCancellationRequested();
+
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(token, factory.ShutdownToken);
             try
             {
                 await factory.QueryPermitter.Ask<QueryStartGranted>(new RequestQueryStart(factory.QueryThrottleTimeout), factory.QueryThrottleTimeout);
-                return await factory.ConnectionFactory.ExecuteWithTransactionAsync(state, factory.IsolationLevel, factory.ShutdownToken, handler);
+                return await factory.ConnectionFactory.ExecuteWithTransactionAsync(state, factory.IsolationLevel, cts.Token, handler);
             }
             finally
             {

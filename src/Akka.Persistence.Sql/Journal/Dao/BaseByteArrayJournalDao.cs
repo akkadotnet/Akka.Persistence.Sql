@@ -19,6 +19,7 @@ using Akka.Persistence.Sql.Db;
 using Akka.Persistence.Sql.Extensions;
 using Akka.Persistence.Sql.Journal.Types;
 using Akka.Persistence.Sql.Serialization;
+using Akka.Persistence.Sql.Utility;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Streams.Supervision;
@@ -249,45 +250,48 @@ namespace Akka.Persistence.Sql.Journal.Dao
         }
 
         /// <summary>
-        ///     This override is greedy since it is always called
-        ///     from within <see cref="BaseJournalDaoWithReadMessages.MessagesWithBatch" />
+        ///     The query runs when the returned source is materialized, and is cancelled if the materialized
+        ///     stream stops before it completes.
         /// </summary>
         /// <param name="persistenceId"></param>
         /// <param name="fromSequenceNr"></param>
         /// <param name="toSequenceNr"></param>
         /// <param name="max"></param>
         /// <returns></returns>
-        public override async Task<Source<Util.Try<ReplayCompletion>, NotUsed>> Messages(
+        public override Task<Source<Util.Try<ReplayCompletion>, NotUsed>> Messages(
             string persistenceId,
             long fromSequenceNr,
             long toSequenceNr,
             long max)
-        {
-            return await ConnectionFactory.ExecuteWithTransactionAsync(
-                ReadIsolationLevel,
-                ShutdownToken,
-                async (connection, token) =>
-                {
-                    IQueryable<JournalRow> query = connection
-                        .GetTable<JournalRow>()
-                        .Where(
-                            r =>
-                                r.PersistenceId == persistenceId &&
-                                r.SequenceNumber >= fromSequenceNr &&
-                                r.SequenceNumber <= toSequenceNr &&
-                                r.Deleted == false)
-                        .OrderBy(r => r.SequenceNumber);
+            => Task.FromResult(
+                AsyncSource<JournalRow>
+                    .FromEnumerable(
+                        this,
+                        async (dao, cancellationToken) =>
+                        {
+                            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, dao.ShutdownToken);
+                            return await dao.ConnectionFactory.ExecuteWithTransactionAsync(
+                                dao.ReadIsolationLevel,
+                                cts.Token,
+                                async (connection, token) =>
+                                {
+                                    IQueryable<JournalRow> query = connection
+                                        .GetTable<JournalRow>()
+                                        .Where(
+                                            r =>
+                                                r.PersistenceId == persistenceId &&
+                                                r.SequenceNumber >= fromSequenceNr &&
+                                                r.SequenceNumber <= toSequenceNr &&
+                                                r.Deleted == false)
+                                        .OrderBy(r => r.SequenceNumber);
 
-                    if (max <= int.MaxValue)
-                        query = query.Take((int)max);
+                                    if (max <= int.MaxValue)
+                                        query = query.Take((int)max);
 
-                    var source = await query.ToListAsync(token);
-
-                    return Source
-                        .From(source)
-                        .Via(_deserializeFlowMapped);
-                });
-        }
+                                    return await query.ToListAsync(token);
+                                });
+                        })
+                    .Via(_deserializeFlowMapped));
 
         private async Task QueueWriteJournalRows(Seq<JournalRow> xs, CancellationToken cancellationToken)
         {

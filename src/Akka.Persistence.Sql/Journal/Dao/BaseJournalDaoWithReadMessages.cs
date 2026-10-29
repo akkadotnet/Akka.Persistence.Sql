@@ -5,15 +5,16 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Data;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
-using Akka.Pattern;
 using Akka.Persistence.Sql.Config;
 using Akka.Persistence.Sql.Db;
 using Akka.Persistence.Sql.Journal.Types;
-using Akka.Persistence.Sql.Streams;
+using Akka.Persistence.Sql.Utility;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Util;
@@ -61,77 +62,53 @@ namespace Akka.Persistence.Sql.Journal.Dao
             long toSequenceNr,
             int batchSize,
             Option<(TimeSpan duration, IScheduler scheduler)> refreshInterval)
-            => Source
-                .UnfoldAsync<(long seqNr, FlowControlEnum flowControl), LanguageExt.Seq<Try<ReplayCompletion>>>(
-                    (Math.Max(1, fromSequenceNr), FlowControlEnum.Continue),
-                    async opt =>
-                    {
-                        async Task<LanguageExt.Seq<Try<ReplayCompletion>>> BatchFromDb(
-                            string s,
-                            long l,
-                            int i,
-                            long fromSeqNo)
-                            => await (await Messages(s, fromSeqNo, l, i))
-                                .RunWith(ExtSeq.Seq<Try<ReplayCompletion>>(), Materializer);
+            => Source.From(
+                () => MessagesWithBatchAsync(persistenceId, fromSequenceNr, toSequenceNr, batchSize, refreshInterval));
 
-                        async Task<Option<((long, FlowControlEnum), LanguageExt.Seq<Try<ReplayCompletion>>)>>
-                            RetrieveNextBatch(long fromSeq)
-                        {
-                            var msg = await BatchFromDb(persistenceId, toSequenceNr, batchSize, fromSeq);
+        // The token is cancelled when the stream stops, which cancels the in-flight batch query.
+        private async IAsyncEnumerable<Try<ReplayCompletion>> MessagesWithBatchAsync(
+            string persistenceId,
+            long fromSequenceNr,
+            long toSequenceNr,
+            int batchSize,
+            Option<(TimeSpan duration, IScheduler scheduler)> refreshInterval,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, ShutdownToken);
+            var token = cts.Token;
 
-                            var hasMoreEvents = msg.Count == batchSize;
+            var seqNr = Math.Max(1, fromSequenceNr);
+            while (true)
+            {
+                var batch = new List<Try<ReplayCompletion>>();
+                var source = await Messages(persistenceId, seqNr, toSequenceNr, batchSize);
+                await foreach (var message in source.RunAsAsyncEnumerable(Materializer).WithCancellation(token))
+                    batch.Add(message);
 
-                            var lastSeq = Option<long>.None;
-                            if (msg.IsEmpty == false)
-                                lastSeq = msg.Last.Get().Representation.SequenceNr;
+                // Cancellation completes the batch stream early: never mistake that for a short batch.
+                token.ThrowIfCancellationRequested();
 
-                            FlowControlEnum nextControl;
-                            if ((lastSeq.HasValue && lastSeq.Value >= toSequenceNr) || opt.seqNr > toSequenceNr)
-                            {
-                                nextControl = FlowControlEnum.Stop;
-                            }
-                            else if (hasMoreEvents)
-                            {
-                                nextControl = FlowControlEnum.Continue;
-                            }
-                            else if (refreshInterval.HasValue == false)
-                            {
-                                nextControl = FlowControlEnum.Stop;
-                            }
-                            else
-                            {
-                                nextControl = FlowControlEnum.ContinueDelayed;
-                            }
+                var lastSeq = Option<long>.None;
+                if (batch.Count > 0)
+                    lastSeq = batch[batch.Count - 1].Get().Representation.SequenceNr;
 
-                            var nextFrom = opt.seqNr;
-                            if (lastSeq.HasValue)
-                                nextFrom = lastSeq.Value + 1;
+                foreach (var message in batch)
+                    yield return message;
 
-                            return Option<((long, FlowControlEnum), LanguageExt.Seq<Try<ReplayCompletion>>)>.Create(
-                                ((nextFrom, nextControl), msg));
-                        }
+                if ((lastSeq.HasValue && lastSeq.Value >= toSequenceNr) || seqNr > toSequenceNr)
+                    yield break;
 
-                        return opt.flowControl switch
-                        {
-                            FlowControlEnum.Stop =>
-                                Option<((long, FlowControlEnum), LanguageExt.Seq<Try<ReplayCompletion>>)>.None,
+                if (lastSeq.HasValue)
+                    seqNr = lastSeq.Value + 1;
 
-                            FlowControlEnum.Continue =>
-                                await RetrieveNextBatch(opt.seqNr),
+                if (batch.Count == batchSize)
+                    continue;
 
-                            FlowControlEnum.ContinueDelayed when refreshInterval.HasValue =>
-                                await FutureTimeoutSupport.After(
-                                    refreshInterval.Value.duration,
-                                    refreshInterval.Value.scheduler,
-                                    () => RetrieveNextBatch(opt.seqNr)),
+                if (!refreshInterval.HasValue)
+                    yield break;
 
-                            _ => InvalidFlowThrowHelper(opt),
-                        };
-                    })
-                .SelectMany(r => r);
-
-        private static Option<((long, FlowControlEnum), LanguageExt.Seq<Try<ReplayCompletion>>)> InvalidFlowThrowHelper(
-            (long, FlowControlEnum) opt)
-            => throw new Exception($"Got invalid FlowControl from Queue! Type : {opt.Item2}");
+                await QueryDelay.WaitAsync(refreshInterval.Value.duration, refreshInterval.Value.scheduler, token);
+            }
+        }
     }
 }
