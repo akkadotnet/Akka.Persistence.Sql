@@ -39,7 +39,7 @@ internal static class Program
         if (_parentInsertMode != "off" &&
             typeof(Akka.Persistence.Sql.Config.BaseByteArrayJournalDaoConfig)
                 .GetProperty("TagTableQueryableInsertMode") is null)
-            throw new ArgumentException("Parent insert modes require the dev library containing #580.");
+            throw new ArgumentException("Parent insert modes require a library containing the #580 batching implementation.");
 
         var engine = Engine.Create(options.Provider, options.AdminConnectionString, options.Image, options.ImageDigest);
         var databaseNames = DatabaseNames.Create();

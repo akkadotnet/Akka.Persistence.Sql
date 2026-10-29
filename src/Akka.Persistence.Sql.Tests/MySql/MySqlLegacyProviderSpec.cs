@@ -30,6 +30,8 @@ public class MySqlLegacyProviderSpec
     [InlineData("MySql.5.7", true)]
     [InlineData("MySql.8.0", false)]
     [InlineData("MySql.8.0", true)]
+    [InlineData("MySql.Official", false)]
+    [InlineData("MySql.Official", true)]
     public async Task Legacy_provider_names_support_journal_and_snapshot_writes(string providerName, bool useClone)
     {
         await _fixture.InitializeDbAsync();
@@ -45,8 +47,14 @@ public class MySqlLegacyProviderSpec
 
         await using var journal = journalFactory.GetConnection();
         await using var snapshot = snapshotFactory.GetConnection();
-        Assert.StartsWith(providerName + ".", journal.DataProvider.Name);
-        Assert.StartsWith(providerName + ".", snapshot.DataProvider.Name);
+        var expectedPrefix = providerName == "MySql.Official" ? "MySql." : providerName + ".";
+        Assert.StartsWith(expectedPrefix, journal.DataProvider.Name);
+        Assert.StartsWith(expectedPrefix, snapshot.DataProvider.Name);
+        if (providerName == "MySql.Official")
+        {
+            Assert.EndsWith(".MySql.Data", journal.DataProvider.Name);
+            Assert.EndsWith(".MySql.Data", snapshot.DataProvider.Name);
+        }
         await journal.CreateTableAsync<JournalRow>(TableOptions.CheckExistence);
         await snapshot.CreateTableAsync<LongSnapshotRow>(TableOptions.CheckExistence);
 

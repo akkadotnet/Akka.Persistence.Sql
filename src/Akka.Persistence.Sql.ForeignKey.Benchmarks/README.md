@@ -197,9 +197,10 @@ child-first deletion algorithm.
 
 For the customer remediation, keep orphan cleanup independent of FK adoption
 and keep the FK migration operator-applied. These results do not justify making
-FK enforcement a production default. Stable customers can measure the existing
-tag parameterization option; #580's parent modes are dev-only and require a
-separate compatibility/release decision before recommending them on v1.5.
+FK enforcement a production default. The recorded stable measurements use
+commit `c8413c6`, before #580's batching implementation. The stable backport is
+tracked in [PR #616](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/616);
+the archived figures here do not measure that adapted backport.
 Native bulk loading and child-first deletion remain separate, unmeasured options.
 
 ## Historical results

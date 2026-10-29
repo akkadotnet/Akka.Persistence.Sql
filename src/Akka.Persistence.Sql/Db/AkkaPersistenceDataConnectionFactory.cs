@@ -392,7 +392,11 @@ namespace Akka.Persistence.Sql.Db
             // just override the connection string or the provider name. If data options are set, we assume that a valid
             // connection can be created.
             var options = config.DataOptions ?? new DataOptions().UseConnectionString(config.ProviderName, config.ConnectionString);
-            if (config.DataOptions is null && config.ProviderName is ProviderName.MySql57 or ProviderName.MySql80)
+            if (config.DataOptions is null && config.ProviderName == "MySql.Official")
+            {
+                options = options.UseConnectionString("MySql.Data.MySqlClient", config.ConnectionString);
+            }
+            else if (config.DataOptions is null && config.ProviderName is ProviderName.MySql57 or ProviderName.MySql80)
             {
                 // LinqToDB 6 requires a driver-specific name; preserve the versioned aliases accepted by 5.x.
                 var version = config.ProviderName == ProviderName.MySql57 ? MySqlVersion.MySql57 : MySqlVersion.MySql80;
