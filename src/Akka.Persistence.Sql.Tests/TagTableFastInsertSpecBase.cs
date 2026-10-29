@@ -61,6 +61,23 @@ public abstract class TagTableFastInsertSpecBase : Akka.TestKit.Xunit.TestKit
     }
 
     [Theory]
+    [InlineData(TagTableQueryableInsertMode.Parameterized, "")]
+    [InlineData(TagTableQueryableInsertMode.Inline, "")]
+    [InlineData(TagTableQueryableInsertMode.Parameterized, "custom-provider")]
+    [InlineData(TagTableQueryableInsertMode.Inline, "custom-provider")]
+    public async Task Fast_insert_uses_the_provider_resolved_from_data_options(
+        TagTableQueryableInsertMode mode, string configuredProvider)
+    {
+        await using var fixture = await Fixture.Create(
+            this, mode, writerUuid: true, configuredProvider: configuredProvider);
+
+        Assert.Null(await fixture.WriteAtomic("pid", 1, 12).WaitAsync(Deadline));
+
+        Assert.Equal(1, fixture.Counter.JournalInserts);
+        await AssertRowsAndTagsCorrelate(fixture, 12);
+    }
+
+    [Theory]
     [InlineData(TagTableQueryableInsertMode.Parameterized, true, WriteSize.ExactlyOneCommand)]
     [InlineData(TagTableQueryableInsertMode.Parameterized, true, WriteSize.OneRowOverOneCommand)]
     [InlineData(TagTableQueryableInsertMode.Parameterized, true, WriteSize.Thousand)]
@@ -219,14 +236,15 @@ public abstract class TagTableFastInsertSpecBase : Akka.TestKit.Xunit.TestKit
             bool writerUuid,
             int maxParameters,
             bool preferParametersOnMultiRowInsert,
-            int tagBatchSize)
+            int tagBatchSize,
+            string? configuredProvider)
         {
             _spec = spec;
             var journalTable = $"fi_{_databaseId}";
             var tagTable = $"fi_{_databaseId}_tags";
             Counter = new JournalInsertCounter(journalTable, tagTable);
             var config = ConfigurationFactory.ParseString($$"""
-                provider-name = "{{spec.ProviderName}}"
+                provider-name = "{{configuredProvider ?? spec.ProviderName}}"
                 connection-string = "{{spec.ConnectionString(_databaseId)}}"
                 tag-write-mode = TagTable
                 tagtable-asqueryable-insert-mode = {{mode.ToString().ToLowerInvariant()}}
@@ -243,7 +261,7 @@ public abstract class TagTableFastInsertSpecBase : Akka.TestKit.Xunit.TestKit
                 """).WithFallback(SqlPersistence.DefaultJournalConfiguration);
             var journalConfig = new JournalConfig(config);
             var options = new DataOptions()
-                .UseConnectionString(journalConfig.ProviderName, journalConfig.ConnectionString)
+                .UseConnectionString(spec.ProviderName, journalConfig.ConnectionString)
                 .UseInterceptor(Counter);
             Factory = new AkkaPersistenceDataConnectionFactory(journalConfig.WithDataOptions(options));
             _materializer = ActorMaterializer.Create(spec.Sys, ActorMaterializerSettings.Create(spec.Sys));
@@ -257,9 +275,10 @@ public abstract class TagTableFastInsertSpecBase : Akka.TestKit.Xunit.TestKit
             bool writerUuid,
             int maxParameters = 0,
             bool preferParametersOnMultiRowInsert = false,
-            int tagBatchSize = 1000)
+            int tagBatchSize = 1000,
+            string? configuredProvider = null)
         {
-            var fixture = new Fixture(spec, mode, writerUuid, maxParameters, preferParametersOnMultiRowInsert, tagBatchSize);
+            var fixture = new Fixture(spec, mode, writerUuid, maxParameters, preferParametersOnMultiRowInsert, tagBatchSize, configuredProvider);
             await fixture.Dao.InitializeTables(CancellationToken.None);
             fixture.Counter.Reset();
             return fixture;

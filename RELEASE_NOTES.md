@@ -1,5 +1,8 @@
 #### Unreleased ####
 
+* Preserve tag-table fast-insert provider detection when supplied `DataOptions` override the HOCON provider name, and restore the `MySql.Official` alias using the MySql.Data driver.
+* Restore independent cloned connections, detached external transactions, and current query settings after the LinqToDB 6 upgrade. Reuse resolved providers and retry policies without repeating their factories; use fluent options to avoid cross-target-framework record-setter incompatibilities.
+* LinqToDB 6 is a major dependency upgrade: custom providers and integrations using changed LinqToDB 5 provider APIs must be migrated and rebuilt. Register interceptors with `DataOptions.UseInterceptor` / `UseInterceptors`; mutations made directly with `DataConnection.AddInterceptor` / `RemoveInterceptor` after construction are not copied by `AkkaDataConnection.Clone()`.
 * Cancel in-flight database queries when a read-journal or journal-replay stream stops, including `Offset.FromEnd` and current-query boundary lookups. Preserve the configured scheduler for refresh delays.
 * Concrete journal DAO `Messages` queries now start when their returned source is materialized. Database errors fail that source. Existing custom DAO overrides continue to dispatch; eager work performed before an override returns its source cannot receive stream cancellation through the existing signature.
 

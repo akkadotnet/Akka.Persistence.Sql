@@ -27,7 +27,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
     }
 
     /// <summary>
-    ///     CSV perf spec with forced event tagging (2 tags per event). 
+    ///     CSV perf spec with forced event tagging (2 tags per event).
     /// </summary>
     [Collection(nameof(MsSqlitePersistenceBenchmark))]
     public class MsSqliteLinq2DbCsvTaggedJournalPerfSpec : BaseMsSqliteLinq2DbJournalPerfSpec
@@ -55,7 +55,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
 
     /// <summary>
     ///     TagTable perf spec with <c>tagtable-asqueryable-insert-mode = inline</c> enabled.
-    ///     Uses <c>AsQueryable()</c> + <c>InsertWithOutputAsync()</c> for tag inserts~ 
+    ///     Uses <c>AsQueryable()</c> + <c>InsertWithOutputAsync()</c> for tag inserts~
     /// </summary>
     [Collection(nameof(MsSqlitePersistenceBenchmark))]
     public class MsSqliteLinq2DbTagTableAsQueryableJournalPerfSpec : BaseMsSqliteLinq2DbJournalPerfSpec
@@ -225,7 +225,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests.Sqlite
     ///     Base class for all MsSqlite Linq2Db journal perf specs.
     ///     Builds the HOCON config dynamically based on the chosen tag mode,
     ///     <c>tagTableQueryableInsertMode</c>, <c>forceTagging</c>,
-    ///     and an optional payload blob size. 
+    ///     and an optional payload blob size.
     /// </summary>
     public abstract class BaseMsSqliteLinq2DbJournalPerfSpec : SqlJournalPerfSpec<MsSqliteContainer>
     {

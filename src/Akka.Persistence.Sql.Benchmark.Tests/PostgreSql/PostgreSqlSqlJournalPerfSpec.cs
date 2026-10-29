@@ -265,7 +265,7 @@ akka.persistence {
         {
         }
     }
-    
+
     /// <summary>
     ///     TagTable perf spec with a 1 KB <c>byte[]</c> payload AND forced tagging (2 tags per event),
     ///     with <c>tagtable-asqueryable-insert-mode = inline</c> enabled.
