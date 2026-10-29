@@ -20,10 +20,29 @@ docs/ddl/
 ```
 
 Each provider directory contains four DDL files:
+
 - `journal.sql` - Event journal table
 - `journal-tags.sql` - Tag table for `TagMode.TagTable`
 - `snapshot.sql` - Snapshot store table
 - `metadata.sql` - Metadata table for `delete-compatibility-mode`
+
+## Optional Journal-to-Tag Foreign Key
+
+The generated initialization scripts and runtime auto-initialization create
+tables without the journal-to-tag FK. For a new database, create `journal.sql` before
+`journal-tags.sql`, then create the snapshot and metadata tables where required.
+These checked-in files initialize the base tables; an FK is a separate,
+optional migration.
+
+PostgreSQL and SQL Server deployments can opt into an enforced
+`tags.ordering_id -> journal.ordering ON DELETE CASCADE` using the checked-in
+[FK installation scripts](../../scripts/TagTableForeignKey/README.md#new-databases).
+Existing databases must first audit and clean orphan tag rows. Cleanup is useful
+independently of FK adoption, and both operations run outside application startup.
+See the [FK decision and benchmark summary](../../README.md#measured-fk-overhead)
+before enabling the relationship. MySQL and SQLite base initialization scripts
+are included here; optional FK maintenance scripts are currently supplied only
+for PostgreSQL and SQL Server.
 
 ## Which DDL Should I Use?
 

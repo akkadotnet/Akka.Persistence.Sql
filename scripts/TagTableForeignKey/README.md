@@ -1,5 +1,11 @@
 # Tag-table orphan cleanup and foreign-key migration
 
+The journal-to-tag FK is an **optional, operator-applied migration**. The checked-in
+[base initialization DDL](../../docs/ddl/README.md) and runtime auto-initialization
+create tables without this constraint. Orphan cleanup can be used on its own;
+installing the FK is a separate operator decision based on the workload's
+[measured performance tradeoffs](../../README.md#measured-fk-overhead).
+
 These operator-applied scripts support **PostgreSQL and SQL Server ordinary,
 non-partitioned tables**. They add
 `tags.ordering_id -> journal.ordering ON DELETE CASCADE` to an existing schema.
@@ -16,6 +22,30 @@ An orphan is a tag row whose journal ordering ID is **physically absent**.
 Cleanup retains tags whose parent is soft-deleted but still present. It does
 not delete tags based on age, projection offsets, or persistence ID alone.
 Removing tags whose journal events still exist can change `EventsByTag` results.
+
+## New databases
+
+Choose the [default](../../docs/ddl/default/) or
+[compatibility](../../docs/ddl/compat/) mapping for the provider. Configure the
+schema/table names in the deployment copies, run `journal.sql` before
+`journal-tags.sql`, and create the snapshot and metadata tables where required.
+The initialization SQL is already checked into this repository for every
+supported provider; it does not need to be generated to deploy the base schema.
+
+For a schema without the FK, use that base schema alone. To opt in on an empty
+PostgreSQL or SQL Server schema, configure and run the provider's
+`02_add_foreign_key.sql` after both tables exist and before starting writers.
+The script validates existing rows, so an existing/populated deployment must
+follow the audit/cleanup workflow below first. Disable journal and snapshot
+`auto-initialize` when the deployment manages schema creation externally.
+
+| Provider | Base journal | Base tags | Optional FK installation |
+| --- | --- | --- | --- |
+| PostgreSQL | [journal.sql](../../docs/ddl/default/postgresql/journal.sql) | [journal-tags.sql](../../docs/ddl/default/postgresql/journal-tags.sql) | [02_add_foreign_key.sql](PostgreSql/02_add_foreign_key.sql) |
+| SQL Server | [journal.sql](../../docs/ddl/default/sqlserver/journal.sql) | [journal-tags.sql](../../docs/ddl/default/sqlserver/journal-tags.sql) | [02_add_foreign_key.sql](SqlServer/02_add_foreign_key.sql) |
+
+For compatibility/custom mappings, use the corresponding base DDL and edit the
+maintenance script headers to match; the links above use default mappings.
 
 ## Configure and apply
 
@@ -83,7 +113,10 @@ intact rather than splitting its statements into separately committed commands.
 
 FK performance depends on the insert strategy. The existing journal setting
 `prefer-parameters-on-multirow-insert = true` substantially improved SQL Server
-FK insert throughput in the [parameterized benchmark experiment](../../src/Akka.Persistence.Sql.ForeignKey.Benchmarks/README.md#parameterized-insert-tuning).
+FK insert throughput in the [benchmark rerun](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/610).
+See the [summary in the main README](../../README.md#measured-fk-overhead) for
+both v1.5 and dev. The dev parent-insert optimization from #580 does not remove
+PostgreSQL's or the delete path's FK cost, and that setting is unavailable on v1.5.
 Benchmark the deployment's absolute before/after throughput: the setting can
 also slow some no-FK workloads, and PostgreSQL showed much smaller gains. It
 does not disable FK enforcement or change transaction boundaries.
@@ -127,4 +160,4 @@ state, conflicting definitions, and DDL rollback. Expected failures must include
 the relevant diagnostic, so an unrelated SQL failure cannot satisfy a check.
 
 For actual-plugin container insert/delete measurements, see the
-[foreign-key benchmark harness](../../src/Akka.Persistence.Sql.ForeignKey.Benchmarks/README.md).
+[foreign-key benchmark harness and raw results in PR #610](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/610).
