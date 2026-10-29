@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <BenchmarkTargetFramework Condition="'$(BenchmarkTargetFramework)' == ''">$(NetCoreTestVersion)</BenchmarkTargetFramework>
+    <TargetFramework>$(BenchmarkTargetFramework)</TargetFramework>
+    <BenchmarkSqlProject Condition="'$(BenchmarkSqlProject)' == ''">..\Akka.Persistence.Sql\Akka.Persistence.Sql.csproj</BenchmarkSqlProject>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(BenchmarkSqlProject)" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.SqlClient" />
+    <PackageReference Include="Npgsql" />
+  </ItemGroup>
+</Project>
