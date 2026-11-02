@@ -332,25 +332,15 @@ See the [DDL documentation](./docs/ddl/README.md) for detailed usage instruction
 
 # Database-Side Journal Retention
 
-Akka.Persistence's `DeleteMessages`/`DeleteMessagesTo` removes an entity's events
-and their tag rows together. Deployments that instead purge old events with a
-scheduled database job must delete the matching tag rows too; otherwise orphaned
-tag rows accumulate and the tags table grows without bound.
+Akka.Persistence's `DeleteMessagesTo` deletes an entity's events and their tag
+rows together. If you purge old events with your own SQL instead, delete their
+tag rows too, or the tags table grows forever.
 
-Operator-run scripts for PostgreSQL and SQL Server are checked into
-[`scripts/`](./scripts/). None of them run at application startup.
-
-| Task | PostgreSQL | SQL Server | Guide |
-| --- | --- | --- | --- |
-| Delete expired events and their tags | [script](./scripts/JournalRetention/PostgreSql/delete_expired_events.sql) | [script](./scripts/JournalRetention/SqlServer/delete_expired_events.sql) | [Journal retention](./scripts/JournalRetention/README.md) |
-| Audit and clean up orphaned tags | [01](./scripts/TagTableForeignKey/PostgreSql/01_cleanup_orphan_tags.sql) | [01](./scripts/TagTableForeignKey/SqlServer/01_cleanup_orphan_tags.sql) | [Tag-table FK maintenance](./scripts/TagTableForeignKey/README.md) |
-| Install the optional FK | [02](./scripts/TagTableForeignKey/PostgreSql/02_add_foreign_key.sql) | [02](./scripts/TagTableForeignKey/SqlServer/02_add_foreign_key.sql) | [Tag-table FK maintenance](./scripts/TagTableForeignKey/README.md) |
-| Remove the optional FK | [03](./scripts/TagTableForeignKey/PostgreSql/03_drop_foreign_key.sql) | [03](./scripts/TagTableForeignKey/SqlServer/03_drop_foreign_key.sql) | [Tag-table FK maintenance](./scripts/TagTableForeignKey/README.md) |
-
-Read the [journal retention guide](./scripts/JournalRetention/README.md) before
-scheduling a job. It explains which events are safe to delete (the highest
-sequence number of every persistence ID is always kept) and how retention
-interacts with snapshots and `EventsByTag` projections.
+See the [journal retention guide](./scripts/JournalRetention/README.md) for the
+rules and example scripts for [PostgreSQL](./scripts/JournalRetention/postgresql.sql),
+[SQL Server](./scripts/JournalRetention/sqlserver.sql),
+[MySQL](./scripts/JournalRetention/mysql.sql), and
+[SQLite](./scripts/JournalRetention/sqlite.sql).
 
 ## Optional Tag-Table Foreign Keys
 

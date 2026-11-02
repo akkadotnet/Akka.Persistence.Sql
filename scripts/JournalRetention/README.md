@@ -1,140 +1,36 @@
 # Database-side journal retention
 
-These operator-run scripts delete old journal events **and their tag rows**
-from inside the database, for deployments that purge history with a scheduled
-SQL job (SQL Server Agent, `pg_cron`, or similar) instead of Akka.Persistence's
-`DeleteMessages`/`DeleteMessagesTo` API. The plugin's own delete API already
-removes an entity's tag rows in the same transaction; these scripts are for
-jobs that delete rows outside the plugin.
+If you purge old events with your own SQL instead of Akka.Persistence's
+`DeleteMessagesTo`, you also have to delete their rows in the tags table. Tag
+rows are an index over journal rows; leaving them behind makes the tags table
+grow forever.
 
-With `tag-write-mode = TagTable`, the tags table is a secondary index over the
-journal: each tag row points to its event through
-`tags.ordering_id -> journal.ordering`, and tag rows have no age of their own.
-Retention therefore selects what to delete from the **journal** and removes the
-matching tag rows together with those events. A job that deletes journal rows
-without their tags leaves orphaned tag rows behind, and the tags table keeps
-growing.
+Example scripts, using the default table mapping:
+[PostgreSQL](postgresql.sql) · [SQL Server](sqlserver.sql) ·
+[MySQL](mysql.sql) · [SQLite](sqlite.sql)
 
-| Provider | Script |
-| --- | --- |
-| PostgreSQL | [delete_expired_events.sql](PostgreSql/delete_expired_events.sql) |
-| SQL Server | [delete_expired_events.sql](SqlServer/delete_expired_events.sql) |
+Each one deletes up to 10,000 events older than 90 days, plus their tags. Change
+the cutoff, the batch size, and the table names to fit your deployment, and
+schedule it however you like.
 
-## What the script deletes
+## Rules
 
-An event is deleted when both are true:
+Whatever you delete, keep to these:
 
-- its `created` value is older than `retention_days`. The column holds .NET
-  `DateTime` ticks (100-nanosecond intervals since `0001-01-01` UTC), written by
-  the plugin at persist time, and is indexed by the default DDL;
-- it is **not** the highest sequence number of its persistence ID. The plugin
-  reads that row to decide where an entity resumes writing; when the plugin
-  deletes events itself, it marks that row `deleted` instead of removing it.
-  Removing it would let the entity reuse sequence numbers, so the script always
-  keeps it.
+1. **Delete tags with their events.** Delete the tag rows first, then the
+   journal rows, in one transaction. With the
+   [optional FK](../TagTableForeignKey/README.md) installed, the database does
+   this for you and the tags `DELETE` can be dropped.
+2. **Keep each persistence ID's highest sequence number.** The plugin reads it
+   to decide which sequence number an entity writes next.
+3. **Don't delete events that are still needed.** That means events an entity
+   replays on recovery (keep them unless a newer snapshot covers them), and
+   events your `EventsByTag` consumers haven't read yet.
+4. **Never delete tag rows whose event still exists.** The event silently drops
+   out of `EventsByTag`.
 
-Each run selects at most `batch_size` eligible events in `ordering` order, then
-deletes their tag rows and the events in one transaction, tags first. The tag
-delete works whether or not the
-[optional tag-table FK](../TagTableForeignKey/README.md) is installed; with the
-FK, the cascade has nothing left to remove.
+`created` holds .NET `DateTime` ticks (100 ns since 0001-01-01 UTC), which is
+why the examples convert the cutoff.
 
-## Before scheduling it
-
-The script cannot see application state. Choose `retention_days` so that:
-
-1. **Recovery no longer needs the deleted history.** An entity replays its
-   events on recovery. Only delete events that a newer snapshot covers, or
-   whose history the entity no longer needs.
-2. **Every projection has already read the deleted events.** An `EventsByTag`
-   consumer that has not reached an event will never see it once it is
-   deleted. Keep the cutoff behind the slowest consumer's offset.
-
-Never delete tag rows whose journal event still exists. The event silently
-disappears from `EventsByTag`, consumer offsets move past it, and in `TagTable`
-mode the journal keeps no copy of the tags, so the tag cannot be rebuilt.
-
-## Configure and run
-
-1. Copy the provider's script into the deployment's maintenance assets and edit
-   its configuration header.
-2. Run it unchanged first. The default is a read-only report that counts the
-   eligible events. The count can scan large tables, so check query plans first.
-3. Set `execute_delete` to `true` (PostgreSQL) or `@execute_delete` to `1`
-   (SQL Server). Each run deletes one bounded batch, commits it, and reports
-   whether more eligible events remain, without counting them all. Schedule the
-   script during low-traffic periods, or re-run it until it reports that none
-   remain. A failed run can be retried; completed batches stay committed.
-
-With `tag-write-mode = Csv` there is no tag table: set `delete_tags` to `false`
-(PostgreSQL) or `@delete_tags` to `0` (SQL Server). Otherwise leave it on. With
-it on, a missing tag table stops the script with an error instead of silently
-leaving orphaned tag rows behind a misconfigured name.
-
-| Setting | Default PostgreSQL | Default SQL Server | Compatibility mapping |
-| --- | --- | --- | --- |
-| `schema_name` | `public` | `dbo` | Use the deployment's configured schema. |
-| `journal_table` | `journal` | `journal` | PostgreSQL: `event_journal`; SQL Server: `EventJournal`. |
-| `journal_ordering_column` | `ordering` | `ordering` | SQL Server: `Ordering`. |
-| `journal_persistence_id_column` | `persistence_id` | `persistence_id` | SQL Server: `PersistenceId`. |
-| `journal_sequence_number_column` | `sequence_number` | `sequence_number` | PostgreSQL: `sequence_nr`; SQL Server: `SequenceNr`. |
-| `journal_created_column` | `created` | `created` | PostgreSQL: `created_at`; SQL Server: `Timestamp`. |
-| `tag_table` | `tags` | `tags` | Use the configured tag-table name. |
-| `tag_ordering_id_column` | `ordering_id` | `ordering_id` | Use the configured tag ordering column. |
-| `delete_tags` | `true` | `1` | `false`/`0` only for `tag-write-mode = Csv`. |
-| `retention_days` | `90` | `90` | |
-| `execute_delete` | `false` | `0` | |
-| `batch_size` | `1000` | `1000` | 1 through 100000. |
-
-PostgreSQL headers use `psql` `\set` commands and must run through `psql` with
-autocommit; SQL Server headers are T-SQL declarations and run through `sqlcmd`,
-an Agent job step, or any client that executes the complete batch. Do not wrap
-either script in an outer transaction. Identifiers are quoted by the scripts;
-do not replace that with raw string concatenation. Supply credentials through
-the client's normal mechanism, outside the scripts:
-
-```bash
-psql "service=maintenance" -X -v ON_ERROR_STOP=1 -f PostgreSql/delete_expired_events.sql
-sqlcmd -S "$SQLSERVER_HOST" -d "$DATABASE" -U "$SQLSERVER_USER" -b -i SqlServer/delete_expired_events.sql
-```
-
-## Tags left behind by earlier purges
-
-If a job has already deleted journal rows without their tags, the tags table
-contains orphans: tag rows whose journal row no longer exists. Audit and remove
-them with [`01_cleanup_orphan_tags.sql`](../TagTableForeignKey/README.md), which
-can be used without installing the FK.
-
-## Repeatable integration checks
-
-Run against disposable local PostgreSQL and SQL Server containers that include
-`psql` and `/opt/mssql-tools18/bin/sqlcmd`. The runner creates and removes its
-own uniquely named databases, uses the containers' existing credential
-environment, and inserts only synthetic data.
-
-```bash
-python3 scripts/JournalRetention/verify.py \
-  --postgres-container <postgres-container> \
-  --sqlserver-container <sqlserver-container>
-```
-
-The checks run against the shipped default and compatibility DDL, plus a
-custom mapping with quoted identifiers. They cover:
-
-- report-only preservation and the eligible count;
-- rejection of invalid settings and missing tables;
-- bounded deletes that resume across runs, with the remaining-work report;
-- tag rows removed together with their events;
-- the highest sequence number of every persistence ID kept;
-- unrelated orphan tags left untouched;
-- deletes with the optional FK installed;
-- `delete_tags` off when no tag table exists.
-
-Expected failures must include the relevant diagnostic, so an unrelated SQL
-failure cannot satisfy a check.
-
-## Other providers
-
-MySQL and SQLite are outside this script set. The same approach applies: select
-a bounded batch of eligible `ordering` values with the rules above, then delete
-the matching `tags.ordering_id` rows before the journal rows in one transaction.
+If earlier purges already left orphaned tag rows, clean them up with
+[`01_cleanup_orphan_tags.sql`](../TagTableForeignKey/README.md).
