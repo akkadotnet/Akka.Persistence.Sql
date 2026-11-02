@@ -114,6 +114,67 @@ public abstract class TagTableFastInsertSpecBase : Akka.TestKit.Xunit.TestKit
     }
 
     [Theory]
+    [InlineData(TagTableQueryableInsertMode.Parameterized, 1)]
+    [InlineData(TagTableQueryableInsertMode.Parameterized, 250)]
+    [InlineData(TagTableQueryableInsertMode.Inline, 1)]
+    [InlineData(TagTableQueryableInsertMode.Inline, 250)]
+    public async Task Write_without_tags_uses_bulk_copy_instead_of_the_fast_path(TagTableQueryableInsertMode mode, int events)
+    {
+        await using var fixture = await Fixture.Create(this, mode, writerUuid: true);
+
+        var result = await fixture.WriteAtomic("pid", 1, events, tagSelector: static _ => Array.Empty<string>()).WaitAsync(Deadline);
+
+        Assert.Null(result);
+        // The fast path reads generated orderings back with INSERT ... OUTPUT/RETURNING.
+        Assert.Equal(0, fixture.Counter.JournalInserts);
+        await using var connection = fixture.Factory.GetConnection();
+        var sequenceNumbers = await connection.GetTable<JournalRow>().Select(r => r.SequenceNumber).ToListAsync();
+        Assert.Equal(Enumerable.Range(1, events).Select(i => (long)i), sequenceNumbers.OrderBy(n => n));
+        Assert.Equal(0, await connection.GetTable<JournalTagRow>().CountAsync());
+    }
+
+    [Theory]
+    [InlineData(TagTableQueryableInsertMode.Parameterized)]
+    [InlineData(TagTableQueryableInsertMode.Inline)]
+    public async Task Single_tagged_event_uses_the_row_insert_path_instead_of_the_fast_path(TagTableQueryableInsertMode mode)
+    {
+        await using var fixture = await Fixture.Create(this, mode, writerUuid: true);
+
+        var result = await fixture.WriteAtomic(
+                "pid", 7, 1, tagSelector: static _ => new[] { "all", "only" })
+            .WaitAsync(Deadline);
+
+        Assert.Null(result);
+        Assert.Equal(0, fixture.Counter.JournalInserts);
+        await using var connection = fixture.Factory.GetConnection();
+        var row = await connection.GetTable<JournalRow>().SingleAsync();
+        var tags = await connection.GetTable<JournalTagRow>().ToListAsync();
+        Assert.Equal(7, row.SequenceNumber);
+        Assert.Equal(new[] { "all", "only" }, tags.Select(t => t.TagValue).OrderBy(t => t));
+        Assert.All(tags, t => Assert.Equal(row.Ordering, t.OrderingId));
+    }
+
+    [Theory]
+    [InlineData(TagTableQueryableInsertMode.Parameterized)]
+    [InlineData(TagTableQueryableInsertMode.Inline)]
+    public async Task Batch_with_one_tagged_event_among_untagged_ones_still_uses_the_fast_path(TagTableQueryableInsertMode mode)
+    {
+        await using var fixture = await Fixture.Create(this, mode, writerUuid: true);
+
+        var result = await fixture.WriteAtomic(
+                "pid", 1, 10, tagSelector: static seq => seq == 10 ? new[] { "all", "last" } : Array.Empty<string>())
+            .WaitAsync(Deadline);
+
+        Assert.Null(result);
+        Assert.Equal(1, fixture.Counter.JournalInserts);
+        await using var connection = fixture.Factory.GetConnection();
+        var row = await connection.GetTable<JournalRow>().SingleAsync(r => r.SequenceNumber == 10);
+        var tags = await connection.GetTable<JournalTagRow>().ToListAsync();
+        Assert.Equal(new[] { "all", "last" }, tags.Select(t => t.TagValue).OrderBy(t => t));
+        Assert.All(tags, t => Assert.Equal(row.Ordering, t.OrderingId));
+    }
+
+    [Theory]
     [InlineData(TagTableQueryableInsertMode.Parameterized)]
     [InlineData(TagTableQueryableInsertMode.Inline)]
     public async Task Configured_max_parameters_lowers_rows_per_command(TagTableQueryableInsertMode mode)
@@ -288,13 +349,18 @@ public abstract class TagTableFastInsertSpecBase : Akka.TestKit.Xunit.TestKit
         public ByteArrayJournalDao Dao { get; }
         public JournalInsertCounter Counter { get; }
 
-        public async Task<Exception?> WriteAtomic(string persistenceId, long fromSequenceNr, int count)
+        public async Task<Exception?> WriteAtomic(
+            string persistenceId,
+            long fromSequenceNr,
+            int count,
+            Func<long, string[]>? tagSelector = null)
         {
+            var tagsFor = tagSelector ?? ExpectedTags;
             var events = Enumerable.Range(0, count)
                 .Select(i => fromSequenceNr + i)
                 .Select(seq =>
                 {
-                    var tags = ExpectedTags(seq);
+                    var tags = tagsFor(seq);
                     object payload = tags.Length == 0
                         ? new byte[] { 1, 2, 3 }
                         : new Tagged(new byte[] { 1, 2, 3 }, tags.ToImmutableHashSet());
