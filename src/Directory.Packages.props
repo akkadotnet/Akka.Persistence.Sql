@@ -5,7 +5,7 @@
     <AkkaHostingVersion>1.6.0-beta4</AkkaHostingVersion>
     <FluentMigratorVersion>5.2.0</FluentMigratorVersion>
     <SqliteVersion>1.0.118</SqliteVersion>
-    <MicrosoftSqliteVersion>8.0.7</MicrosoftSqliteVersion>
+    <MicrosoftSqliteVersion>8.0.33</MicrosoftSqliteVersion>
     <MicrosoftExtensionsVersion>10.0.0</MicrosoftExtensionsVersion>
     <Xunit3Version>3.2.2</Xunit3Version>
   </PropertyGroup>
@@ -70,7 +70,6 @@
     <PackageVersion Include="xunit.v3" Version="$(Xunit3Version)" />
     <PackageVersion Include="xunit.v3.extensibility.core" Version="$(Xunit3Version)" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
-    <PackageVersion Include="FluentAssertions" Version="5.10.3" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="$(MicrosoftExtensionsVersion)" />
   </ItemGroup>
