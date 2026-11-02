@@ -6,6 +6,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Akka.Streams.Dsl;
 
@@ -60,6 +62,25 @@ namespace Akka.Persistence.Sql.Utility
             TState state,
             Func<TState, Task<IEnumerable<TElem>>> func)
             => AsyncSource.FromEnumerable(state, func);
+
+        /// <summary>
+        ///     Like <see cref="FromEnumerable{TState}(TState, Func{TState, Task{IEnumerable{TElem}}})"/>, but the
+        ///     function gets a token that is cancelled when the materialized stream stops, so that the work it
+        ///     started (e.g. a database query) is cancelled together with the stream.
+        /// </summary>
+        internal static Source<TElem, NotUsed> FromEnumerable<TState>(
+            TState state,
+            Func<TState, CancellationToken, Task<IEnumerable<TElem>>> func)
+            => Source.From(() => Enumerate(state, func));
+
+        private static async IAsyncEnumerable<TElem> Enumerate<TState>(
+            TState state,
+            Func<TState, CancellationToken, Task<IEnumerable<TElem>>> func,
+            [EnumeratorCancellation] CancellationToken token = default)
+        {
+            foreach (var element in await func(state, token))
+                yield return element;
+        }
     }
 
     public static class AsyncSource
