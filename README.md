@@ -34,6 +34,7 @@ If you're migrating from legacy `Akka.Persistence.Sql.Common` based plugins, you
   * [Snapshot Store](./docs/articles/configuration.md#snapshot-store)
 - [DDL Scripts for Database Schema Management](#ddl-scripts-for-database-schema-management)
   * [Optional Tag-Table Foreign Keys](#optional-tag-table-foreign-keys)
+- [Tag-Table Insert Batching](#tag-table-insert-batching)
 - [Tuning Akka.Persistence.Query for Low-Latency Projections](#tuning-akkapersistencequery-for-low-latency-projections)
 - [Building this solution](#building-this-solution)
   + [Conventions](#conventions)
@@ -351,8 +352,10 @@ deletions per persistence ID).
 | dev | SQL Server 16.0.4185.3 | +0.2% | +2.2% | -28.0% |
 
 All four rows use `prefer-parameters-on-multirow-insert = true`; the dev rows
-also enable `tagtable-asqueryable-insert-mode = parameterized` from #580. That
-parent-insert setting is unavailable on v1.5. With parameterized parents but
+also enable `tagtable-asqueryable-insert-mode = parameterized` from #580. The
+measured v1.5 baseline (`c8413c6`, LinqToDB 5) predates the batching backport;
+these records do not measure the newly backported stable implementation. With
+parameterized parents but
 literal tags, dev SQL Server's FK insert penalties were 44.5% and 56.4%, so
 parent batching alone does not eliminate the cost.
 
@@ -364,6 +367,38 @@ configuration rather than treating rows as a controlled branch comparison.
 For all configurations, absolute rates, raw repetitions, and provenance, see
 the [full benchmark report in PR #610](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/610).
 Measure the deployment's workload before opting into the FK.
+
+# Tag-Table Insert Batching
+
+SQL Server, PostgreSQL, and SQLite can batch journal inserts using
+`INSERT ... OUTPUT/RETURNING` when `tag-write-mode = TagTable`. Parent batching
+is off by default. To enable parameterized parent inserts and parameterized tag
+SQL:
+
+```hocon
+akka.persistence.journal.sql {
+    tag-write-mode = TagTable
+    tagtable-asqueryable-insert-mode = parameterized
+    prefer-parameters-on-multirow-insert = true
+}
+```
+
+The parent mode accepts `off`, `parameterized`, or `inline`. Inline mode embeds
+scalar values in SQL while keeping persistence IDs, messages, manifests, and
+writer UUIDs parameterized. Other providers and tag modes retain the standard
+insert path. Batching does not install an FK or change transaction boundaries.
+
+This backport upgrades LinqToDB to **6.5.1 for all users**, including those with
+batching off. The plugin retains its .NET Standard 2.0/.NET 6 targets and Akka 1.5
+dependencies, but advanced LinqToDB integrations need an upgrade review:
+
+- Custom LinqToDB 5 `IDataProvider` implementations must be adapted as needed and
+  recompiled against LinqToDB 6; this is not a transparent binary upgrade for
+  those extensions.
+- Register interceptors through `DataOptions.UseInterceptor`/`UseInterceptors`.
+  The replacement connection clone preserves those registrations, but does not
+  snapshot `AddInterceptor`/`RemoveInterceptor` mutations made directly on a
+  `DataConnection` after construction.
 
 # Tuning Akka.Persistence.Query for Low-Latency Projections
 

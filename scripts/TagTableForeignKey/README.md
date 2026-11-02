@@ -116,7 +116,9 @@ FK performance depends on the insert strategy. The existing journal setting
 FK insert throughput in the [benchmark rerun](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/610).
 See the [summary in the main README](../../README.md#measured-fk-overhead) for
 both v1.5 and dev. The dev parent-insert optimization from #580 does not remove
-PostgreSQL's or the delete path's FK cost, and that setting is unavailable on v1.5.
+PostgreSQL's or the delete path's FK cost. The measured v1.5 baseline `c8413c6`
+predates the batching backport; the recorded stable figures do not measure this
+new implementation. See the [current batching configuration](../../README.md#tag-table-insert-batching).
 Benchmark the deployment's absolute before/after throughput: the setting can
 also slow some no-FK workloads, and PostgreSQL showed much smaller gains. It
 does not disable FK enforcement or change transaction boundaries.

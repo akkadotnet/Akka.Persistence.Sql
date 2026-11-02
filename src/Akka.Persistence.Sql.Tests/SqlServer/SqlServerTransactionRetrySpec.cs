@@ -23,6 +23,7 @@ using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Streams;
 using FluentAssertions;
 using LinqToDB;
+using LinqToDB.Async;
 using LinqToDB.Data.RetryPolicy;
 using LinqToDB.Interceptors;
 using LinqToDB.Mapping;
