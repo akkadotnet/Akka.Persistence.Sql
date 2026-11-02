@@ -1,27 +1,31 @@
-#### Unreleased ####
+#### 1.5.73 November 2nd 2026 ####
 
-* Upgrade to [Akka.NET 1.5.73](https://github.com/akkadotnet/akka.net/releases/tag/1.5.73) and Akka.Hosting 1.5.73 (previously Akka.NET 1.5.70-beta1 and Akka.Hosting 1.5.67). Akka.Hosting 1.5.73 requires Microsoft.Extensions 9.0 or later (previously 8.0), which applies to `Akka.Persistence.Sql.Hosting` consumers.
-* Cancel in-flight database queries when a read-journal or journal-replay stream stops, including `Offset.FromEnd` and current-query boundary lookups. Preserve the configured scheduler for refresh delays.
+**Akka.NET 1.5.73 and Microsoft.Extensions 9.0**
 
-#### 1.5.70 July 23rd 2026 ####
+* [Bump Akka.NET to 1.5.73](https://github.com/akkadotnet/akka.net/releases/tag/1.5.73)
+* [Bump Akka.Hosting to 1.5.73](https://github.com/akkadotnet/Akka.Hosting/releases/tag/1.5.73) - Akka.Hosting 1.5.73 requires Microsoft.Extensions 9.0 or later (previously 8.0), which applies to `Akka.Persistence.Sql.Hosting` consumers.
 
 **LinqToDB 6 and opt-in tag-table insert batching**
 
-* Backport [#580](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/580):
-  upgrade LinqToDB to 6.5.1 and add optional batched journal inserts for SQL
-  Server, PostgreSQL, and SQLite in `TagTable` mode. Batching remains off by
-  default; FK installation remains a separate operator-applied migration.
-* Retain Akka 1.5 and the existing .NET Standard 2.0/.NET 6 library targets.
-  Preserve legacy `MySql.Official` provider selection and select batching from
-  the actual provider supplied through `DataOptions`.
-* Preserve independent cloned connections, external-transaction separation,
-  configured retry/provider instances, mapping, command timeout, and query hints.
-  Use fluent LinqToDB options to avoid cross-target-framework init-setter failures.
-* Compatibility: LinqToDB upgrades even with batching off. Custom LinqToDB 5
-  provider implementations need adaptation/recompilation. Configure interceptors
-  through `DataOptions`; direct post-construction interceptor additions/removals
-  are not snapshotted by the replacement clone. See the
-  [batching and upgrade notes](README.md#tag-table-insert-batching).
+* [Upgrade LinqToDB to 6.5.1 and add opt-in batched journal inserts](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/616) - Backport of [#580](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/580). Upgrades LinqToDB from 5.4 to 6.5.1 and adds optional batched journal inserts for SQL Server, PostgreSQL, and SQLite in `TagTable` mode. Batching remains off by default; FK installation remains a separate operator-applied migration.
+* Retain Akka 1.5 and the existing .NET Standard 2.0/.NET 6 library targets. Preserve legacy `MySql.Official` provider selection and select batching from the actual provider supplied through `DataOptions`.
+* Preserve independent cloned connections, external-transaction separation, configured retry/provider instances, mapping, command timeout, and query hints.
+* **Compatibility:** the LinqToDB upgrade applies to all users, even with batching off. Custom LinqToDB 5 `IDataProvider` implementations must be adapted and recompiled. Configure interceptors through `DataOptions.UseInterceptor(s)`; direct post-construction interceptor additions/removals are not carried over to cloned connections. See the [batching and upgrade notes](https://github.com/akkadotnet/Akka.Persistence.Sql/blob/v1.5/README.md#tag-table-insert-batching).
+* [Skip the tag-table fast insert for untagged batches and single tagged rows](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/620) - When batched inserts are enabled, untagged batches use `BulkCopy` and single tagged rows use the regular row insert; batches containing tagged events keep the fast path.
+
+**Bug Fixes**
+
+* [Cancel SQL queries when journal streams stop](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/621) - Cancel in-flight database queries when a read-journal or journal-replay stream stops, including `Offset.FromEnd` and current-query boundary lookups. Preserve the configured scheduler for refresh delays.
+* [Complete the journal write queue on actor shutdown](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/608) - Stopping the journal actor now explicitly completes its write queue and cancels pending write-receipt waits instead of leaving buffered writes awaiting promises that never complete.
+* [Rate-limit SQL initialization retries](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/602) - Failed journal and snapshot store initialization now waits asynchronously before restarting, controlled by the new `initialization-retry-delay` setting (default `1s`). An unreachable database no longer causes a tight initialization/restart loop.
+* [Fix SQL materializer lifetime](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/600) - Journal, snapshot store, and sequence actor materializers are now owned by their actors, so stream supervisors and journal queues no longer accumulate across actor restarts (for example, during repeated initialization failures).
+
+**Operations and Documentation**
+
+* [Add operator-run tag cleanup and opt-in FK migrations](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/611) - PostgreSQL and SQL Server scripts for auditing and cleaning up orphaned tag rows, and for installing or rolling back an optional `ON DELETE CASCADE` foreign key from the tag table to the journal. Schema auto-initialization is unchanged; FK adoption remains optional. Includes [reproducible FK insert/delete benchmarks](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/610).
+* [Document database-side journal retention](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/619) - Guidance and example SQL for PostgreSQL, SQL Server, MySQL, and SQLite to purge old journal events with your own SQL without leaving orphaned tag rows behind.
+
+#### 1.5.70 July 23rd 2026 ####
 
 **New Feature — FromEnd Query Offset**
 
