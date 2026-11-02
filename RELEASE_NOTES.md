@@ -1,11 +1,32 @@
-#### Unreleased ####
+#### 1.6.0-beta4 November 2nd 2026 ####
 
-* Upgrade to Akka.NET 1.6.0-beta4 and Akka.Hosting 1.6.0-beta4 (previously 1.6.0-beta3).
-* Preserve tag-table fast-insert provider detection when supplied `DataOptions` override the HOCON provider name, and restore the `MySql.Official` alias using the MySql.Data driver.
-* Restore independent cloned connections, detached external transactions, and current query settings after the LinqToDB 6 upgrade. Reuse resolved providers and retry policies without repeating their factories; use fluent options to avoid cross-target-framework record-setter incompatibilities.
-* LinqToDB 6 is a major dependency upgrade: custom providers and integrations using changed LinqToDB 5 provider APIs must be migrated and rebuilt. Register interceptors with `DataOptions.UseInterceptor` / `UseInterceptors`; mutations made directly with `DataConnection.AddInterceptor` / `RemoveInterceptor` after construction are not copied by `AkkaDataConnection.Clone()`.
-* Cancel in-flight database queries when a read-journal or journal-replay stream stops, including `Offset.FromEnd` and current-query boundary lookups. Preserve the configured scheduler for refresh delays.
+Built against Akka.NET 1.6.0-beta4.
+
+**Breaking changes**
+
+* [Upgrade to LinqToDB 6](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/580) - LinqToDB 6 is a major dependency upgrade: custom providers and integrations using changed LinqToDB 5 provider APIs must be migrated and rebuilt. Register interceptors with `DataOptions.UseInterceptor` / `UseInterceptors`; mutations made directly with `DataConnection.AddInterceptor` / `RemoveInterceptor` after construction are not copied by `AkkaDataConnection.Clone()`.
+
+**New features**
+
+* [Batched tag-table journal inserts](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/580) - New opt-in `tagtable-asqueryable-insert-mode` journal setting (`off` by default, `parameterized` or `inline`; `TagTableQueryableInsertMode` in Akka.Persistence.Sql.Hosting). When tags are stored in the tag table on SQL Server, PostgreSQL or SQLite, it writes journal rows and their tag rows in batched commands instead of one round-trip per event. Tune it with `tagtable-asqueryable-insert-sql-length-limit` and `tagtable-asqueryable-insert-max-parameters`. The older `use-tagtable-asqueryable-literal-insert` flag still works (`true` maps to `inline`).
+* [Skip the batched tag-table insert when it cannot help](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/617) - Batches with no tagged events, and writes of a single tagged event, use the standard BulkCopy path even when `tagtable-asqueryable-insert-mode` is enabled, so untagged workloads get the same throughput as `off`.
+* [Optional tag-table foreign key scripts](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/614) - New scripts under `scripts/TagTableForeignKey` for PostgreSQL and SQL Server to clean up orphaned tag rows and add or drop an optional foreign key from the tag table to the journal, with setup and maintenance docs.
+* [Document database-side journal retention](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/618) - Guidance and example SQL for PostgreSQL, SQL Server, MySQL, and SQLite to purge old journal events with your own SQL without leaving orphaned tag rows behind.
+
+**Bug fixes**
+
+* [Fix SQL plugin materializer lifetime](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/601) - Journal and snapshot store stream materializers are now owned by their plugin actors, so their streams are cleaned up when the actor stops or fails initialization.
+* [Rate-limit SQL initialization retries](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/603) - New `initialization-retry-delay` setting (default `1s`) for the journal and snapshot store paces restarts when the database is unavailable, instead of looping immediately and allocating heavily. Pending retry waits are cancelled when the plugin stops.
+* [Complete the journal write queue on shutdown](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/607) - Pending writes no longer wait forever when the journal actor stops with writes still buffered.
+* [Cancel SQL queries when journal streams stop](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/609) - Cancel in-flight database queries when a read-journal or journal-replay stream stops, including `Offset.FromEnd` and current-query boundary lookups. Preserve the configured scheduler for refresh delays.
 * Concrete journal DAO `Messages` queries now start when their returned source is materialized. Database errors fail that source. Existing custom DAO overrides continue to dispatch; eager work performed before an override returns its source cannot receive stream cancellation through the existing signature.
+* [Fix LinqToDB 6 provider overrides and connection cloning](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/615) - Preserve tag-table fast-insert provider detection when supplied `DataOptions` override the HOCON provider name, and restore the `MySql.Official` alias using the MySql.Data driver.
+* Restore independent cloned connections, detached external transactions, and current query settings after the LinqToDB 6 upgrade. Reuse resolved providers and retry policies without repeating their factories; use fluent options to avoid cross-target-framework record-setter incompatibilities.
+
+**Other changes**
+
+* Bump Akka.NET to 1.6.0-beta4
+* Bump Akka.Hosting, Akka.Persistence.Hosting and Akka.Cluster.Hosting to 1.6.0-beta4
 
 #### 1.6.0-beta3 October 7th 2026 ####
 
