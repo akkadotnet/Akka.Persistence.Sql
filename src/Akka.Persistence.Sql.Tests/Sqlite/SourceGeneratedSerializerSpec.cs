@@ -33,7 +33,7 @@ namespace Akka.Persistence.Sql.Tests.Sqlite
     [AkkaSerializer<ISourceGeneratedMarker>("source-generated-test", 7_654_321)]
     public sealed partial class SourceGeneratedTestSerializer : AkkaSerializer
     {
-        public static partial SerializerRegistration CreateRegistration();
+        public static partial Akka.Serialization.SerializerDetails CreateSerializerDetails(ExtendedActorSystem system);
     }
 
     /// <summary>
