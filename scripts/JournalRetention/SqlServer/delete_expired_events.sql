@@ -1,11 +1,12 @@
 -- Delete journal events older than a retention period, together with their tag rows.
 --
--- Default behavior is a read-only report. Set @execute_delete to 1 to delete
--- at most @batch_size events (and their tag rows) per invocation, in one
--- transaction, tags first. Schedule the script (for example as a SQL Server
--- Agent job step) or re-run it until it reports zero eligible events. Run
--- without an explicit surrounding transaction so each invocation commits its
--- one bounded batch.
+-- Default behavior is a read-only report that counts eligible events. Set
+-- @execute_delete to 1 to delete at most @batch_size events (and their tag
+-- rows) per invocation, in one transaction, tags first. Execute mode does not
+-- count all eligible events; it reports only whether more remain. Schedule the
+-- script (for example as a SQL Server Agent job step) or re-run it until no
+-- eligible events remain. Run without an explicit surrounding transaction so
+-- each invocation commits its one bounded batch.
 --
 -- An event is eligible when:
 --   * its created value is older than @retention_days, and
@@ -18,6 +19,9 @@
 -- need; see ../README.md before scheduling it.
 --
 -- The tag delete runs whether or not the optional tag-table FK is installed.
+-- Set @delete_tags to 0 only for tag-write-mode = Csv, where no tag table
+-- exists. With @delete_tags = 1, a missing tag table is an error, so a
+-- misconfigured name cannot silently leave orphaned tag rows.
 --
 -- Defaults are the modern table mapping. For compat mapping, change
 -- @journal_table to N'EventJournal', @journal_ordering_column to N'Ordering',
@@ -37,6 +41,7 @@ DECLARE @journal_sequence_number_column nvarchar(4000) = N'sequence_number';
 DECLARE @journal_created_column nvarchar(4000) = N'created';
 DECLARE @tag_table nvarchar(4000) = N'tags';
 DECLARE @tag_ordering_id_column nvarchar(4000) = N'ordering_id';
+DECLARE @delete_tags bit = 1;
 DECLARE @retention_days int = 90;
 DECLARE @execute_delete bit = 0;
 DECLARE @batch_size int = 1000;
@@ -47,6 +52,8 @@ IF @batch_size IS NULL OR @batch_size < 1 OR @batch_size > 100000
     THROW 50102, 'batch_size must be from 1 through 100000.', 1;
 IF @execute_delete IS NULL
     THROW 50103, 'execute_delete must be 0 or 1.', 1;
+IF @delete_tags IS NULL
+    THROW 50107, 'delete_tags must be 0 or 1.', 1;
 IF @schema_name IS NULL OR DATALENGTH(@schema_name) = 0 OR DATALENGTH(@schema_name) > 256
     OR @journal_table IS NULL OR DATALENGTH(@journal_table) = 0 OR DATALENGTH(@journal_table) > 256
     OR @journal_ordering_column IS NULL OR DATALENGTH(@journal_ordering_column) = 0 OR DATALENGTH(@journal_ordering_column) > 256
@@ -67,8 +74,8 @@ DECLARE @tag_ordering_id sysname = QUOTENAME(@tag_ordering_id_column);
 
 IF OBJECT_ID(@journal_object, N'U') IS NULL
     THROW 50105, 'The configured journal table does not exist.', 1;
-IF OBJECT_ID(@tag_object, N'U') IS NULL
-    THROW 50106, 'The configured tag table does not exist.', 1;
+IF @delete_tags = 1 AND OBJECT_ID(@tag_object, N'U') IS NULL
+    THROW 50106, 'The configured tag table does not exist. Set @delete_tags to 0 only for tag-write-mode = Csv.', 1;
 
 -- created holds .NET DateTime ticks (100 ns intervals since 0001-01-01 UTC).
 DECLARE @cutoff_ticks bigint =
@@ -80,23 +87,29 @@ DECLARE @eligible_predicate nvarchar(max) =
     + N' < (SELECT MAX(m.' + @sequence_number + N') FROM ' + @journal_object
     + N' m WHERE m.' + @persistence_id + N' = j.' + @persistence_id + N')';
 
-DECLARE @eligible_count bigint;
-DECLARE @sql nvarchar(max) =
-    N'SELECT @eligible_count = COUNT_BIG(*) FROM ' + @journal_object + N' j WHERE ' + @eligible_predicate + N';';
-EXEC sys.sp_executesql @sql,
-    N'@cutoff_ticks bigint, @eligible_count bigint OUTPUT',
-    @cutoff_ticks = @cutoff_ticks, @eligible_count = @eligible_count OUTPUT;
-
-PRINT CONCAT(N'Events older than ', @retention_days, N' days eligible for deletion: ', @eligible_count);
+DECLARE @sql nvarchar(max);
 
 IF @execute_delete = 0
 BEGIN
+    DECLARE @eligible_count bigint;
+    SET @sql =
+        N'SELECT @eligible_count = COUNT_BIG(*) FROM ' + @journal_object + N' j WHERE ' + @eligible_predicate + N';';
+    EXEC sys.sp_executesql @sql,
+        N'@cutoff_ticks bigint, @eligible_count bigint OUTPUT',
+        @cutoff_ticks = @cutoff_ticks, @eligible_count = @eligible_count OUTPUT;
+    PRINT CONCAT(N'Events older than ', @retention_days, N' days eligible for deletion: ', @eligible_count);
     PRINT CONCAT(N'Report only. Set @execute_delete to 1 to delete at most ', @batch_size, N' events per run.');
     RETURN;
 END;
 
-DECLARE @deleted_tags bigint;
+DECLARE @deleted_tags bigint = 0;
 DECLARE @deleted_events bigint;
+DECLARE @more_remain bit;
+
+DECLARE @tag_delete nvarchar(max) = CASE WHEN @delete_tags = 1 THEN
+    N'DELETE t FROM ' + @tag_object + N' t JOIN @batch b ON t.' + @tag_ordering_id + N' = b.ordering;
+    SET @deleted_tags = @@ROWCOUNT;'
+    ELSE N'' END;
 
 SET @sql =
     N'DECLARE @batch TABLE (ordering bigint PRIMARY KEY);
@@ -105,16 +118,19 @@ SET @sql =
     ORDER BY j.' + @ordering + N';
 
     BEGIN TRANSACTION;
-    DELETE t FROM ' + @tag_object + N' t JOIN @batch b ON t.' + @tag_ordering_id + N' = b.ordering;
-    SET @deleted_tags = @@ROWCOUNT;
+    ' + @tag_delete + N'
     DELETE j FROM ' + @journal_object + N' j JOIN @batch b ON j.' + @ordering + N' = b.ordering;
     SET @deleted_events = @@ROWCOUNT;
-    COMMIT TRANSACTION;';
+    COMMIT TRANSACTION;
+
+    SET @more_remain = CASE WHEN EXISTS (SELECT 1 FROM ' + @journal_object + N' j WHERE ' + @eligible_predicate + N')
+        THEN 1 ELSE 0 END;';
 
 EXEC sys.sp_executesql @sql,
-    N'@cutoff_ticks bigint, @batch_size int, @deleted_tags bigint OUTPUT, @deleted_events bigint OUTPUT',
+    N'@cutoff_ticks bigint, @batch_size int, @deleted_tags bigint OUTPUT, @deleted_events bigint OUTPUT, @more_remain bit OUTPUT',
     @cutoff_ticks = @cutoff_ticks, @batch_size = @batch_size,
-    @deleted_tags = @deleted_tags OUTPUT, @deleted_events = @deleted_events OUTPUT;
+    @deleted_tags = @deleted_tags OUTPUT, @deleted_events = @deleted_events OUTPUT,
+    @more_remain = @more_remain OUTPUT;
 
 PRINT CONCAT(N'Deleted ', @deleted_events, N' events and ', @deleted_tags,
-    N' tag rows. Remaining eligible events: ', @eligible_count - @deleted_events);
+    N' tag rows. More eligible events remain: ', CASE WHEN @more_remain = 1 THEN N'yes' ELSE N'no' END);

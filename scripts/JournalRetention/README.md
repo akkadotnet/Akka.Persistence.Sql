@@ -58,12 +58,18 @@ mode the journal keeps no copy of the tags, so the tag cannot be rebuilt.
 
 1. Copy the provider's script into the deployment's maintenance assets and edit
    its configuration header.
-2. Run it unchanged first. The default is a read-only report of how many events
-   are eligible; it may scan large tables, so check query plans first.
+2. Run it unchanged first. The default is a read-only report that counts the
+   eligible events. The count can scan large tables, so check query plans first.
 3. Set `execute_delete` to `true` (PostgreSQL) or `@execute_delete` to `1`
-   (SQL Server). Each run deletes one bounded batch and commits it. Schedule the
-   script during low-traffic periods, or re-run it until the remaining count
-   is zero. A failed run can be retried; completed batches stay committed.
+   (SQL Server). Each run deletes one bounded batch, commits it, and reports
+   whether more eligible events remain, without counting them all. Schedule the
+   script during low-traffic periods, or re-run it until it reports that none
+   remain. A failed run can be retried; completed batches stay committed.
+
+With `tag-write-mode = Csv` there is no tag table: set `delete_tags` to `false`
+(PostgreSQL) or `@delete_tags` to `0` (SQL Server). Otherwise leave it on. With
+it on, a missing tag table stops the script with an error instead of silently
+leaving orphaned tag rows behind a misconfigured name.
 
 | Setting | Default PostgreSQL | Default SQL Server | Compatibility mapping |
 | --- | --- | --- | --- |
@@ -75,6 +81,7 @@ mode the journal keeps no copy of the tags, so the tag cannot be rebuilt.
 | `journal_created_column` | `created` | `created` | PostgreSQL: `created_at`; SQL Server: `Timestamp`. |
 | `tag_table` | `tags` | `tags` | Use the configured tag-table name. |
 | `tag_ordering_id_column` | `ordering_id` | `ordering_id` | Use the configured tag ordering column. |
+| `delete_tags` | `true` | `1` | `false`/`0` only for `tag-write-mode = Csv`. |
 | `retention_days` | `90` | `90` | |
 | `execute_delete` | `false` | `0` | |
 | `batch_size` | `1000` | `1000` | 1 through 100000. |
@@ -97,6 +104,34 @@ If a job has already deleted journal rows without their tags, the tags table
 contains orphans: tag rows whose journal row no longer exists. Audit and remove
 them with [`01_cleanup_orphan_tags.sql`](../TagTableForeignKey/README.md), which
 can be used without installing the FK.
+
+## Repeatable integration checks
+
+Run against disposable local PostgreSQL and SQL Server containers that include
+`psql` and `/opt/mssql-tools18/bin/sqlcmd`. The runner creates and removes its
+own uniquely named databases, uses the containers' existing credential
+environment, and inserts only synthetic data.
+
+```bash
+python3 scripts/JournalRetention/verify.py \
+  --postgres-container <postgres-container> \
+  --sqlserver-container <sqlserver-container>
+```
+
+The checks run against the shipped default and compatibility DDL, plus a
+custom mapping with quoted identifiers. They cover:
+
+- report-only preservation and the eligible count;
+- rejection of invalid settings and missing tables;
+- bounded deletes that resume across runs, with the remaining-work report;
+- tag rows removed together with their events;
+- the highest sequence number of every persistence ID kept;
+- unrelated orphan tags left untouched;
+- deletes with the optional FK installed;
+- `delete_tags` off when no tag table exists.
+
+Expected failures must include the relevant diagnostic, so an unrelated SQL
+failure cannot satisfy a check.
 
 ## Other providers
 
