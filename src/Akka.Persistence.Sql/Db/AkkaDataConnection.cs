@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
@@ -43,6 +44,11 @@ namespace Akka.Persistence.Sql.Db
 
         public IDataProvider DataProvider => _connection.DataProvider;
 
+        internal bool SupportsTagTableQueryableInsert
+            => DataProvider.Name.StartsWith(LinqToDB.ProviderName.SqlServer, StringComparison.OrdinalIgnoreCase)
+               || DataProvider.Name.StartsWith(LinqToDB.ProviderName.PostgreSQL, StringComparison.OrdinalIgnoreCase)
+               || DataProvider.Name.StartsWith(LinqToDB.ProviderName.SQLite, StringComparison.OrdinalIgnoreCase);
+
         /// <summary>
         /// Checks whether the resolved data provider supports SQL-level string aggregation
         /// (STRING_AGG for SQL Server 2017+, GROUP_CONCAT for MySQL/SQLite).
@@ -68,16 +74,51 @@ namespace Akka.Persistence.Sql.Db
 
         public AkkaDataConnection Clone()
         {
-            // LinqToDB 6 removed DataConnection.Clone. Building from the same options would run the
-            // retry-policy factory again; LinqToDB 5's Clone reused the current policy instance instead,
-            // so carry that instance over and clear the factory to keep the old behavior.
-            var options = _connection.Options.WithOptions<RetryPolicyOptions>(o => o with
-            {
-                RetryPolicy = _connection.RetryPolicy,
-                Factory = null,
-            });
+            // Preserve LinqToDB 5's connection isolation, mapping and retry-policy instance.
+            // Fluent methods avoid cross-TFM init-only setter signatures in LinqToDB's option records.
+            var sourceConnection = _connection.TryGetDbConnection();
+            var connectionOptions = _connection.Options.ConnectionOptions;
+            var connectionFactory = connectionOptions.DbConnection is null && connectionOptions.DbTransaction is null
+                ? connectionOptions.ConnectionFactory
+                : null;
+            var clonedConnection = TryCloneConnection(sourceConnection)
+                                   ?? connectionFactory?.Invoke(_connection.Options)
+                                   ?? _connection.DataProvider.CreateConnection(_connection.ConnectionString ?? sourceConnection?.ConnectionString!);
+            var options = _connection.Options
+                .UseConnection(_connection.DataProvider, clonedConnection, disposeConnection: true)
+                .UseConnectionFactory(null!)
+                .UseDataProviderFactory(null!)
+                .UseMappingSchema(_connection.MappingSchema)
+                .UseCommandTimeout(_connection.CommandTimeout < 0 ? null : _connection.CommandTimeout)
+                .UseFactory(null)
+                .UseRetryPolicy(_connection.RetryPolicy);
 
-            return new AkkaDataConnection(_providerName, new DataConnection(options));
+            var clone = new DataConnection(options)
+            {
+                InlineParameters = _connection.InlineParameters,
+                ThrowOnDisposed = _connection.ThrowOnDisposed,
+                OnTraceConnection = _connection.OnTraceConnection,
+            };
+            if (_connection.QueryHints.Count > 0)
+                clone.QueryHints.AddRange(_connection.QueryHints);
+
+            return new AkkaDataConnection(_providerName, clone);
+        }
+
+        private static DbConnection? TryCloneConnection(DbConnection? connection)
+        {
+            if (connection is not ICloneable cloneable)
+                return null;
+
+            try
+            {
+                return (DbConnection?)cloneable.Clone();
+            }
+            catch (Exception)
+            {
+                // LinqToDB 5 fell back to the connection factory/string when a driver could not clone.
+                return null;
+            }
         }
 
         internal IRetryPolicy? DetachRetryPolicy()
@@ -104,13 +145,13 @@ namespace Akka.Persistence.Sql.Db
 
         public ITable<T> GetTable<T>() where T : class
             => _connection.GetTable<T>();
-        
+
         public IQueryable<T> AsQueryable<T>(IEnumerable<T> set) where T : class
             => set.AsQueryable(_connection);
 
         public IQueryable<T> AsQueryable<T>(
             IEnumerable<T> set,
-            Expression<Func<IAsQueryableBuilder<T>, IAsQueryableExceptBuilder<T>>> inlineOpts) 
+            Expression<Func<IAsQueryableBuilder<T>, IAsQueryableExceptBuilder<T>>> inlineOpts)
             where T : class
             => set.AsQueryable(_connection, inlineOpts);
 

@@ -63,7 +63,7 @@ namespace Akka.Persistence.Sql.Config
         public int Parallelism { get; }
 
         public bool SqlCommonCompatibilityMode { get; }
-        
+
         public int AsQueryableInsertSqlLengthLimit { get; }
 
         /// <summary>
@@ -78,7 +78,7 @@ namespace Akka.Persistence.Sql.Config
         ///     </para>
         /// </summary>
         public int AsQueryableInsertMaxParameters { get; }
-        
+
         /// <summary>
         /// Controls which LinqToDB <c>AsQueryable()</c> strategy is used for the tag-table
         /// fast-path insert. See <see cref="TagTableQueryableInsertMode"/> for options.

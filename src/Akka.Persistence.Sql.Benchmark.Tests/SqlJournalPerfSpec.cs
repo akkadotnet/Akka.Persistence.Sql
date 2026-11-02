@@ -734,7 +734,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
 
         /// <summary>
         ///     Optional data blob to simulate realistic message sizes.
-        ///     When <c>null</c>, the serialized event is tiny (just the int payload). 
+        ///     When <c>null</c>, the serialized event is tiny (just the int payload).
         /// </summary>
         public byte[]? Data { get; }
     }
