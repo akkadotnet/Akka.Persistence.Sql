@@ -39,7 +39,7 @@ PostgreSQL and SQL Server deployments can opt into an enforced
 [FK installation scripts](../../scripts/TagTableForeignKey/README.md#new-databases).
 Existing databases must first audit and clean orphan tag rows. Cleanup is useful
 independently of FK adoption, and both operations run outside application startup.
-See the [FK decision and benchmark summary](../../README.md#measured-fk-overhead)
+See the [FK decision and benchmark summary](../../scripts/TagTableForeignKey/README.md#measured-fk-overhead)
 before enabling the relationship. MySQL and SQLite base initialization scripts
 are included here; optional FK maintenance scripts are currently supplied only
 for PostgreSQL and SQL Server.
