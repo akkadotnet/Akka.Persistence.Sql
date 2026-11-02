@@ -79,6 +79,25 @@ This includes setting the connection string and provider name again, if necessar
 Please consult the Linq2Db documentation for more details on configuring a valid DataOptions object.
 Note that `MappingSchema` and `RetryPolicy` will always be overridden by Akka.Persistence.Sql.
 
+### LinqToDB 6 compatibility
+
+The dev branch uses LinqToDB 6. The custom `IDataProvider` interface has new
+required members, and several provider types moved namespaces. Custom providers
+and integrations using those LinqToDB 5 APIs must be migrated and rebuilt.
+The optional parent-insert optimization remains off by default; that setting
+does not opt out of the dependency upgrade.
+
+Register interceptors through `DataOptions.UseInterceptor` or `UseInterceptors`
+before passing the options to the plugin. Connection clones reconstruct those
+registrations independently. Interceptors added or removed directly on an
+already constructed `DataConnection` are not snapshotted by
+`AkkaDataConnection.Clone()`; register them in the options instead.
+
+The [FK benchmark report](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/610)
+retains its measured source revisions: its v1.5 baseline `c8413c6` predates #580.
+Those historical results do not describe parent-insert availability in later
+v1.5 releases; check the installed plugin version when selecting settings.
+
 ### Health Checks
 
 Starting with Akka.Persistence.Sql v1.5.51 or later, you can add health checks for your persistence plugins. Akka.Persistence.Sql supports two types of health checks that integrate with `Microsoft.Extensions.Diagnostics.HealthChecks` and can be used with ASP.NET Core health check endpoints.
