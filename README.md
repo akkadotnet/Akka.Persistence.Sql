@@ -33,6 +33,7 @@ If you're migrating from legacy `Akka.Persistence.Sql.Common` based plugins, you
   * [Journal](./docs/articles/configuration.md#journal)
   * [Snapshot Store](./docs/articles/configuration.md#snapshot-store)
 - [DDL Scripts for Database Schema Management](#ddl-scripts-for-database-schema-management)
+- [Database-Side Journal Retention](#database-side-journal-retention)
   * [Optional Tag-Table Foreign Keys](#optional-tag-table-foreign-keys)
 - [Tag-Table Insert Batching](#tag-table-insert-batching)
 - [Tuning Akka.Persistence.Query for Low-Latency Projections](#tuning-akkapersistencequery-for-low-latency-projections)
@@ -310,6 +311,120 @@ Each directory contains SQL scripts for each supported provider (sqlserver, post
 - When auto-initialization is disabled (`auto-initialize = false`)
 
 See the [DDL documentation](./docs/ddl/README.md) for detailed usage instructions and examples.
+
+# Database-Side Journal Retention
+
+This section covers retention jobs that run **inside the database**, such as a
+SQL Server Agent job or a `pg_cron` task that periodically deletes old journal
+events. Akka.Persistence's own deletion API (`DeleteMessages`/`DeleteMessagesTo`)
+already removes an entity's tag rows in the same transaction; this section is
+for jobs that delete rows directly with SQL, outside the plugin.
+
+With `tag-write-mode = TagTable`, the tags table is a secondary index over the
+journal: each tag row points to its journal event through
+`tags.ordering_id -> journal.ordering`. Tag rows have no age of their own. A
+retention job decides what to delete from the **journal**, and removes the
+matching tag rows together with those events. A job that deletes journal rows
+but not their tags leaves orphaned tag rows behind, and the tags table keeps
+growing.
+
+## Rules for a retention job
+
+1. **Select events by age from the journal.** The `created` column holds the
+   write time as .NET `DateTime` ticks (100-nanosecond intervals since
+   `0001-01-01` UTC) and is indexed by the default DDL.
+2. **Keep the highest sequence number of every persistence ID.** The plugin
+   reads that row to determine where an entity resumes writing. When the plugin
+   deletes events itself, it marks that row `deleted` instead of removing it. A
+   database job must also leave it in place; removing it lets the entity reuse
+   sequence numbers.
+3. **Only delete history that recovery no longer needs.** An entity replays its
+   events on recovery. Delete events only when they are covered by a newer
+   snapshot, or when the entity's history is no longer needed.
+4. **Stay behind your projections.** `EventsByTag` consumers that have not yet
+   read an event will never see it once it is deleted. Keep the retention cutoff
+   behind the slowest consumer's offset.
+5. **Never delete tag rows whose journal event still exists.** The event
+   silently disappears from `EventsByTag` and consumer offsets move past it. In
+   `TagTable` mode, the journal does not keep a copy of the tags, so the tag
+   cannot be rebuilt.
+6. **Delete in bounded batches** during low-traffic periods, and repeat until no
+   rows match.
+
+## Removing tags together with their events
+
+Choose one approach.
+
+**Database-enforced cascade (PostgreSQL and SQL Server).** Install the
+[optional tag-table foreign key](#optional-tag-table-foreign-keys) once. After
+that, the job only deletes journal rows and the database removes their tag rows.
+The FK adds overhead to every write and delete; review the
+[measured FK overhead](#measured-fk-overhead) before choosing it.
+
+**Explicit deletes in the job (any provider, no FK).** Select a batch of journal
+events, then delete their tag rows and the events in one transaction, tags
+first. The examples below use the default table mapping and a 90-day cutoff;
+adjust table names, column names and batch size to match your schema.
+
+PostgreSQL:
+
+```sql
+WITH doomed AS (
+    SELECT j.ordering
+    FROM public.journal j
+    WHERE j.created < (EXTRACT(EPOCH FROM now() - INTERVAL '90 days') * 10000000)::bigint
+                      + 621355968000000000
+      AND j.sequence_number < (SELECT max(m.sequence_number)
+                               FROM public.journal m
+                               WHERE m.persistence_id = j.persistence_id)
+    ORDER BY j.ordering
+    LIMIT 10000
+),
+deleted_tags AS (
+    DELETE FROM public.tags t
+    USING doomed d
+    WHERE t.ordering_id = d.ordering
+)
+DELETE FROM public.journal j
+USING doomed d
+WHERE j.ordering = d.ordering;
+```
+
+SQL Server:
+
+```sql
+DECLARE @cutoff bigint =
+    DATEDIFF_BIG(MILLISECOND, '1970-01-01', DATEADD(DAY, -90, SYSUTCDATETIME())) * 10000
+    + 621355968000000000;
+DECLARE @doomed TABLE (ordering bigint PRIMARY KEY);
+
+INSERT INTO @doomed (ordering)
+SELECT TOP (10000) j.ordering
+FROM dbo.journal j
+WHERE j.created < @cutoff
+  AND j.sequence_number < (SELECT MAX(m.sequence_number)
+                           FROM dbo.journal m
+                           WHERE m.persistence_id = j.persistence_id)
+ORDER BY j.ordering;
+
+BEGIN TRANSACTION;
+DELETE t FROM dbo.tags t JOIN @doomed d ON t.ordering_id = d.ordering;
+DELETE j FROM dbo.journal j JOIN @doomed d ON j.ordering = d.ordering;
+COMMIT TRANSACTION;
+```
+
+MySQL and SQLite follow the same pattern: select a batch of `ordering` values,
+then delete matching `tags.ordering_id` rows before the journal rows in one
+transaction.
+
+## Cleaning up tags left by earlier purges
+
+If a job has already deleted journal rows without their tags, the tags table
+contains orphans: tag rows whose journal row no longer exists. On PostgreSQL and
+SQL Server, audit and remove them with the `01_cleanup_orphan_tags.sql` script
+described below; it is also required before installing the FK. On other
+providers, delete tag rows with no matching journal row in batches, for example
+`DELETE FROM tags WHERE NOT EXISTS (SELECT 1 FROM journal WHERE journal.ordering = tags.ordering_id)`.
 
 ## Optional Tag-Table Foreign Keys
 
