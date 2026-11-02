@@ -5,4 +5,4 @@ These `.yaml` files are used by Windows Azure DevOps Pipelines to help execute t
 - Pull request validation on Windows (.NET Framework / .NET Core)
 - NuGet releases with automatic release notes posted to a Github Release repository.
 
-**NOTE**: you will need to change some of the pipeline variables inside the `windows-release.yaml` for your specific project and you will also want to create variable groups with your NuGet push information.
+**NOTE**: releases are published by the GitHub Actions workflow [`.github/workflows/publish_nuget.yml`](../.github/workflows/publish_nuget.yml) when a tag is pushed. It uses NuGet trusted publishing (no stored API key): the nuget.org trusted publishing policy must name this repository, the `publish_nuget.yml` workflow, and the `publish` environment, and the repository needs a `NUGET_USER` secret with the policy owner's nuget.org username. To publish an existing tag, run the workflow manually and enter the tag.
