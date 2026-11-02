@@ -4,7 +4,7 @@ The journal-to-tag FK is an **optional, operator-applied migration**. The checke
 [base initialization DDL](../../docs/ddl/README.md) and runtime auto-initialization
 create tables without this constraint. Orphan cleanup can be used on its own;
 installing the FK is a separate operator decision based on the workload's
-[measured performance tradeoffs](../../README.md#measured-fk-overhead).
+[measured performance tradeoffs](#measured-fk-overhead).
 
 These operator-applied scripts support **PostgreSQL and SQL Server ordinary,
 non-partitioned tables**. They add
@@ -109,12 +109,44 @@ an ORM's raw-SQL executor. SQL Server scripts can run through `sqlcmd` or a SQL
 client that executes the complete batch. Keep the script's transaction handling
 intact rather than splitting its statements into separately committed commands.
 
+## Measured FK overhead
+
+The October 29, 2026 rerun covered 800 measurements against stable baseline
+`c8413c6` and dev baseline `1f23b84`, with five alternating FK/no-FK pairs per
+case. The table shows the change in median event throughput
+when adding the FK; negative values mean slower throughput. Inserts use batches
+of 50, and deletes use four tags/event with a boundary of 100 (99 physical event
+deletions per persistence ID).
+
+| Branch | Database | Insert: 2 tags/event | Insert: 4 tags/event | Delete |
+| --- | --- | ---: | ---: | ---: |
+| v1.5 | PostgreSQL 16.15 | -19.8% | -30.9% | -40.6% |
+| v1.5 | SQL Server 16.0.4185.3 | -1.9% | -10.7% | -24.4% |
+| dev | PostgreSQL 16.15 | -30.9% | -31.6% | -38.0% |
+| dev | SQL Server 16.0.4185.3 | +0.2% | +2.2% | -28.0% |
+
+All four rows use `prefer-parameters-on-multirow-insert = true`; the dev rows
+also enable `tagtable-asqueryable-insert-mode = parameterized` from #580. That
+parent-insert setting was absent from the measured v1.5 baseline `c8413c6`.
+With parameterized parents but
+literal tags, dev SQL Server's FK insert penalties were 44.5% and 56.4%, so
+parent batching alone does not eliminate the cost.
+
+The small positive SQL Server differences are within observed variation, not
+evidence of a speedup. These are shared-host, small-payload measurements with
+substantial contention. Stable and dev use different .NET/Akka versions, and
+configuration runs occurred at different times; compare FK/no-FK within each
+configuration rather than treating rows as a controlled branch comparison.
+For all configurations, absolute rates, raw repetitions, and provenance, see
+the [full benchmark report in PR #610](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/610).
+Measure the deployment's workload before opting into the FK.
+
 ## Validation and rollback
 
 FK performance depends on the insert strategy. The existing journal setting
 `prefer-parameters-on-multirow-insert = true` substantially improved SQL Server
 FK insert throughput in the [benchmark rerun](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/610).
-See the [summary in the main README](../../README.md#measured-fk-overhead) for
+See the [measured FK overhead](#measured-fk-overhead) for
 both v1.5 and dev. The measured parent-insert optimization from #580 does not
 remove PostgreSQL's or the delete path's FK cost. The v1.5 measurements use
 baseline `c8413c6`, which predates #580; check the installed version before

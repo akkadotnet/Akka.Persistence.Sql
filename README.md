@@ -33,6 +33,7 @@ If you're migrating from legacy `Akka.Persistence.Sql.Common` based plugins, you
   * [Journal](./docs/articles/configuration.md#journal)
   * [Snapshot Store](./docs/articles/configuration.md#snapshot-store)
 - [DDL Scripts for Database Schema Management](#ddl-scripts-for-database-schema-management)
+- [Database-Side Journal Retention](#database-side-journal-retention)
   * [Optional Tag-Table Foreign Keys](#optional-tag-table-foreign-keys)
 - [Tuning Akka.Persistence.Query for Low-Latency Projections](#tuning-akkapersistencequery-for-low-latency-projections)
 - [Building this solution](#building-this-solution)
@@ -329,62 +330,31 @@ Each directory contains SQL scripts for each supported provider (sqlserver, post
 
 See the [DDL documentation](./docs/ddl/README.md) for detailed usage instructions and examples.
 
+# Database-Side Journal Retention
+
+Akka.Persistence's `DeleteMessagesTo` deletes an entity's events and their tag
+rows together. If you purge old events with your own SQL instead, delete their
+tag rows too, or the tags table grows forever.
+
+See the [journal retention guide](./scripts/JournalRetention/README.md) for the
+rules and example scripts for [PostgreSQL](./scripts/JournalRetention/postgresql.sql),
+[SQL Server](./scripts/JournalRetention/sqlserver.sql),
+[MySQL](./scripts/JournalRetention/mysql.sql), and
+[SQLite](./scripts/JournalRetention/sqlite.sql).
+
 ## Optional Tag-Table Foreign Keys
 
-The journal-to-tag foreign key is an **optional, operator-applied migration**. Runtime
-auto-initialization and the base DDL scripts create tables without this FK.
-For PostgreSQL and SQL Server, operators can explicitly install
-`tags.ordering_id -> journal.ordering ON DELETE CASCADE` after creating the
-tables. A physical journal-row deletion then removes its dependent tags.
+The journal-to-tag foreign key (`tags.ordering_id -> journal.ordering ON DELETE
+CASCADE`) is an **optional, operator-applied migration** for PostgreSQL and SQL
+Server. Runtime auto-initialization and the base DDL scripts create tables
+without it. With the FK installed, deleting a journal row also removes its tag
+rows. Existing databases must clean up orphaned tags with `01` before installing
+it.
 
-For a new database, run the provider's `journal.sql` before `journal-tags.sql`,
-plus `snapshot.sql` and `metadata.sql` where required. Use this base schema alone
-without an FK, or opt in by configuring and running `02_add_foreign_key.sql` below after the
-tables exist. For an existing database, audit and clean orphan tags with `01`
-before applying `02`. Cleanup can also be used independently without adding an
-FK. The application does not run these maintenance scripts at startup.
-
-| Provider | Audit / bounded orphan cleanup | Install and validate FK | Remove FK |
-| --- | --- | --- | --- |
-| PostgreSQL | [01](./scripts/TagTableForeignKey/PostgreSql/01_cleanup_orphan_tags.sql) | [02](./scripts/TagTableForeignKey/PostgreSql/02_add_foreign_key.sql) | [03](./scripts/TagTableForeignKey/PostgreSql/03_drop_foreign_key.sql) |
-| SQL Server | [01](./scripts/TagTableForeignKey/SqlServer/01_cleanup_orphan_tags.sql) | [02](./scripts/TagTableForeignKey/SqlServer/02_add_foreign_key.sql) | [03](./scripts/TagTableForeignKey/SqlServer/03_drop_foreign_key.sql) |
-
-See the [maintenance instructions](./scripts/TagTableForeignKey/README.md) for
-mapping headers, execution order, maintenance-window requirements, and rollback.
-Orphan cleanup preserves tags whose parent journal row is soft-deleted but still
-present. Removing the FK does not restore rows already deleted by cleanup or cascade.
-
-### Measured FK overhead
-
-The October 29, 2026 rerun covered 800 measurements against stable baseline
-`c8413c6` and dev baseline `1f23b84`, with five alternating FK/no-FK pairs per
-case. The table shows the change in median event throughput
-when adding the FK; negative values mean slower throughput. Inserts use batches
-of 50, and deletes use four tags/event with a boundary of 100 (99 physical event
-deletions per persistence ID).
-
-| Branch | Database | Insert: 2 tags/event | Insert: 4 tags/event | Delete |
-| --- | --- | ---: | ---: | ---: |
-| v1.5 | PostgreSQL 16.15 | -19.8% | -30.9% | -40.6% |
-| v1.5 | SQL Server 16.0.4185.3 | -1.9% | -10.7% | -24.4% |
-| dev | PostgreSQL 16.15 | -30.9% | -31.6% | -38.0% |
-| dev | SQL Server 16.0.4185.3 | +0.2% | +2.2% | -28.0% |
-
-All four rows use `prefer-parameters-on-multirow-insert = true`; the dev rows
-also enable `tagtable-asqueryable-insert-mode = parameterized` from #580. That
-parent-insert setting was absent from the measured v1.5 baseline `c8413c6`.
-With parameterized parents but
-literal tags, dev SQL Server's FK insert penalties were 44.5% and 56.4%, so
-parent batching alone does not eliminate the cost.
-
-The small positive SQL Server differences are within observed variation, not
-evidence of a speedup. These are shared-host, small-payload measurements with
-substantial contention. Stable and dev use different .NET/Akka versions, and
-configuration runs occurred at different times; compare FK/no-FK within each
-configuration rather than treating rows as a controlled branch comparison.
-For all configurations, absolute rates, raw repetitions, and provenance, see
-the [full benchmark report in PR #610](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/610).
-Measure the deployment's workload before opting into the FK.
+The FK adds overhead to tagged writes and especially to deletes. Review the
+[measured FK overhead](./scripts/TagTableForeignKey/README.md#measured-fk-overhead)
+and the [maintenance guide](./scripts/TagTableForeignKey/README.md) before
+opting in.
 
 # Tuning Akka.Persistence.Query for Low-Latency Projections
 
