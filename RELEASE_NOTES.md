@@ -1,3 +1,7 @@
+#### Unreleased ####
+
+* Cancel in-flight database queries when a read-journal or journal-replay stream stops, including `Offset.FromEnd` and current-query boundary lookups. Preserve the configured scheduler for refresh delays.
+
 #### 1.5.70 July 23rd 2026 ####
 
 **LinqToDB 6 and opt-in tag-table insert batching**
