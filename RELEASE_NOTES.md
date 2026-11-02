@@ -1,5 +1,6 @@
 #### Unreleased ####
 
+* Upgrade to Akka.NET 1.6.0-beta4 and Akka.Hosting 1.6.0-beta4 (previously 1.6.0-beta3).
 * Preserve tag-table fast-insert provider detection when supplied `DataOptions` override the HOCON provider name, and restore the `MySql.Official` alias using the MySql.Data driver.
 * Restore independent cloned connections, detached external transactions, and current query settings after the LinqToDB 6 upgrade. Reuse resolved providers and retry policies without repeating their factories; use fluent options to avoid cross-target-framework record-setter incompatibilities.
 * LinqToDB 6 is a major dependency upgrade: custom providers and integrations using changed LinqToDB 5 provider APIs must be migrated and rebuilt. Register interceptors with `DataOptions.UseInterceptor` / `UseInterceptors`; mutations made directly with `DataConnection.AddInterceptor` / `RemoveInterceptor` after construction are not copied by `AkkaDataConnection.Clone()`.
