@@ -76,8 +76,6 @@ public abstract class QueryThrottleSpecsBase<T> : PluginSpec where T : ITestCont
 
     protected override bool SupportsSerialization => true;
 
-    public ValueTask DisposeAsync() => default;
-
     private static Configuration.Config Config(TagMode tagMode, T fixture)
     {
         if (!fixture.InitializeDbAsync().Wait(10.Seconds()))
