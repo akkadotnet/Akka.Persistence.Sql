@@ -1,5 +1,6 @@
 #### Unreleased ####
 
+* Upgrade to [Akka.NET 1.5.73](https://github.com/akkadotnet/akka.net/releases/tag/1.5.73) and Akka.Hosting 1.5.73 (previously Akka.NET 1.5.70-beta1 and Akka.Hosting 1.5.67). Akka.Hosting 1.5.73 requires Microsoft.Extensions 9.0 or later (previously 8.0), which applies to `Akka.Persistence.Sql.Hosting` consumers.
 * Cancel in-flight database queries when a read-journal or journal-replay stream stops, including `Offset.FromEnd` and current-query boundary lookups. Preserve the configured scheduler for refresh delays.
 
 #### 1.5.70 July 23rd 2026 ####
