@@ -35,6 +35,7 @@ If you're migrating from legacy `Akka.Persistence.Sql.Common` based plugins, you
 - [DDL Scripts for Database Schema Management](#ddl-scripts-for-database-schema-management)
 - [Database-Side Journal Retention](#database-side-journal-retention)
   * [Optional Tag-Table Foreign Keys](#optional-tag-table-foreign-keys)
+- [Improving Tagged Write Throughput](#improving-tagged-write-throughput)
 - [Tuning Akka.Persistence.Query for Low-Latency Projections](#tuning-akkapersistencequery-for-low-latency-projections)
 - [Building this solution](#building-this-solution)
   + [Conventions](#conventions)
@@ -82,11 +83,11 @@ Note that `MappingSchema` and `RetryPolicy` will always be overridden by Akka.Pe
 
 ### LinqToDB 6 compatibility
 
-The dev branch uses LinqToDB 6. The custom `IDataProvider` interface has new
+Since 1.6.0-beta4 this plugin uses LinqToDB 6. The custom `IDataProvider` interface has new
 required members, and several provider types moved namespaces. Custom providers
 and integrations using those LinqToDB 5 APIs must be migrated and rebuilt.
-The optional parent-insert optimization remains off by default; that setting
-does not opt out of the dependency upgrade.
+The optional [parent-insert optimization](#improving-tagged-write-throughput)
+remains off by default; that setting does not opt out of the dependency upgrade.
 
 Register interceptors through `DataOptions.UseInterceptor` or `UseInterceptors`
 before passing the options to the plugin. Connection clones reconstruct those
@@ -355,6 +356,44 @@ The FK adds overhead to tagged writes and especially to deletes. Review the
 [measured FK overhead](./scripts/TagTableForeignKey/README.md#measured-fk-overhead)
 and the [maintenance guide](./scripts/TagTableForeignKey/README.md) before
 opting in.
+
+# Improving Tagged Write Throughput
+
+With `tag-write-mode = TagTable`, each tagged event normally needs its own journal
+insert to get its generated ordering before its tags can be written. Batches with
+many tagged events therefore make many round trips.
+
+The opt-in `tagtable-asqueryable-insert-mode` setting inserts those journal rows as
+a batch, reads back their orderings, and then writes the tags in bulk, all in the
+same transaction.
+
+```hocon
+akka.persistence.journal.sql {
+    tag-write-mode = TagTable
+    tagtable-asqueryable-insert-mode = parameterized # off (default) | parameterized | inline
+}
+```
+
+With Akka.Hosting, set `TagTableQueryableInsertMode` on `SqlJournalOptions`.
+
+| Mode | Behavior |
+|------|----------|
+| `off` | Standard insert path (default) |
+| `parameterized` | All journal column values are sent as SQL parameters |
+| `inline` | Sequence number, timestamp and serializer ID are written as SQL literals; other columns stay parameterized |
+
+Things to know:
+
+- It applies to SQL Server, PostgreSQL and SQLite. Other providers use the standard
+  path, as does any tag mode other than `TagTable`.
+- Batches with no tagged events, and writes of a single tagged event, use the
+  standard path even when this is enabled.
+- Large atomic writes are split into several commands inside one transaction, so
+  they still commit or roll back as a whole. See
+  [`tagtable-asqueryable-insert-max-parameters`](./docs/articles/configuration.md#tagtable-asqueryable-insert-max-parameters)
+  and
+  [`tagtable-asqueryable-insert-sql-length-limit`](./docs/articles/configuration.md#tagtable-asqueryable-insert-sql-length-limit).
+- Test it against your own workload before enabling it in production.
 
 # Tuning Akka.Persistence.Query for Low-Latency Projections
 

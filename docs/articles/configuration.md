@@ -55,6 +55,32 @@ Controls whether Linq2Db will try to use parameters instead of building raw stri
 
 Linq2Db is incredibly fast and memory efficient at building binary strings. In most cases, this will be faster than the cost of parsing/marshalling parameters by ADO and the DB.
 
+## `tagtable-asqueryable-insert-mode`
+
+Controls how journal rows are inserted for batches containing tagged events when `tag-write-mode` is `TagTable`. Only applies to SQL Server, PostgreSQL and SQLite; other providers use the standard path.
+
+  - `off` (default): standard insert path.
+  - `parameterized`: journal rows are inserted as a batch, with all column values sent as SQL parameters.
+  - `inline`: journal rows are inserted as a batch, with sequence number, timestamp and serializer ID written as SQL literals and other columns parameterized.
+
+Batches with no tagged events, and writes of a single tagged event, use the standard path even when this is enabled. With Akka.Hosting, use `TagTableQueryableInsertMode` on `SqlJournalOptions`.
+
+## `tagtable-asqueryable-insert-max-parameters`
+
+Maximum number of parameters in a single batched journal insert command, and in the tag-table insert that follows it. Large atomic writes are split into several commands inside the same transaction, so they still commit or roll back as a whole.
+
+The default of `0` uses LinqToDB's BulkCopy parameter limit for the provider. A positive value replaces that limit, so it can lower or raise it.
+
+The value is not checked against what the database or driver accepts. If it is set above that limit, large writes fail at runtime with a database error and are rolled back. SQL Server allows at most 2100 parameters per command, PostgreSQL 65535, and SQLite 32766 (or the `SQLITE_MAX_VARIABLE_NUMBER` the native library was built with).
+
+With Akka.Hosting, use `AsQueryableInsertMaxParameters` on `SqlJournalOptions`.
+
+## `tagtable-asqueryable-insert-sql-length-limit`
+
+Limit (default `5000000`) on the estimated size of a single batched journal insert command, in characters. A command is sent early when adding the next row would go over it. It is an estimate based on message and manifest size, not the final SQL length.
+
+With Akka.Hosting, use `AsQueryableInsertSqlLengthLimit` on `SqlJournalOptions`.
+
 ## Table Configuration
 
 Note that Tables/Columns will be created with the casing provided, and selected in the same way (i.e. if using a DB with case sensitive columns, be careful!)
