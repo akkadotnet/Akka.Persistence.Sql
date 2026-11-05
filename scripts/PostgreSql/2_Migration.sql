@@ -1,1 +1,1 @@
-CALL "public"."Normalize"();
+CALL "public"."AkkaMigration_Normalize"();

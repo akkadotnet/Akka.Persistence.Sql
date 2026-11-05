@@ -1,1 +1,1 @@
-DROP FUNCTION IF EXISTS [dbo].[Split];
+DROP FUNCTION IF EXISTS [dbo].[AkkaMigration_Split];
