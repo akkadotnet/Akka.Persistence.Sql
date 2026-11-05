@@ -8,10 +8,13 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
+using Akka.Configuration;
 using Akka.Persistence.Sql.Tests.Common.Containers;
 using Akka.Routing;
 using Akka.TestKit;
@@ -42,6 +45,12 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
         /// </summary>
         private readonly byte[]? _payload;
 
+        /// <summary>
+        ///     Time from handing each event to the journal until its persist callback runs,
+        ///     collected during the measured iterations only.
+        /// </summary>
+        private readonly LatencyRecorder _latency = new();
+
         protected SqlJournalPerfSpec(
             Configuration.Config? config,
             string actorSystem,
@@ -49,9 +58,10 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             int timeoutDurationSeconds = 30,
             int eventsCount = 10000,
             int payloadSizeBytes = 0)
-            : base(config ?? Configuration.Config.Empty, actorSystem, output)
+            : base(WithWriteQueueMode(config ?? Configuration.Config.Empty), actorSystem, output)
         {
             ThreadPool.SetMinThreads(12, 12);
+            Output.WriteLine($"write-queue-mode = {Sys.Settings.Config.GetString("akka.persistence.journal.sql.write-queue-mode", "source-queue")}");
             _eventsCount = eventsCount;
             _expectDuration = TimeSpan.FromSeconds(timeoutDurationSeconds);
             _testProbe = CreateTestProbe();
@@ -66,13 +76,47 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
 
         private readonly IReadOnlyList<int> _commands; 
 
+        /// <summary>
+        ///     Environment variable that sets <c>write-queue-mode</c> (<c>source-queue</c> or <c>channel</c>)
+        ///     for every perf spec, so both write queues can be measured with otherwise identical settings.
+        ///     When unset, the spec's own configuration (normally the default, <c>source-queue</c>) is used.
+        /// </summary>
+        public const string WriteQueueModeEnvironmentVariable = "AKKA_PERSISTENCE_SQL_BENCH_WRITE_QUEUE_MODE";
+
+        /// <summary>
+        ///     Environment variable naming a directory that receives the raw samples of every measurement
+        ///     as CSV files (iteration times and per-event latencies). When unset, no files are written.
+        /// </summary>
+        public const string OutputDirectoryEnvironmentVariable = "AKKA_PERSISTENCE_SQL_BENCH_OUTPUT_DIR";
+
+        /// <summary>
+        ///     Environment variable that sets the total send rate (events per second) of the fixed-rate latency test.
+        /// </summary>
+        public const string LatencyRateEnvironmentVariable = "AKKA_PERSISTENCE_SQL_BENCH_LATENCY_RATE";
+
+        /// <summary>
+        ///     Environment variable that sets how many seconds the fixed-rate latency test measures for.
+        /// </summary>
+        public const string LatencySecondsEnvironmentVariable = "AKKA_PERSISTENCE_SQL_BENCH_LATENCY_SECONDS";
+
+        private static Configuration.Config WithWriteQueueMode(Configuration.Config config)
+        {
+            var mode = Environment.GetEnvironmentVariable(WriteQueueModeEnvironmentVariable);
+            if (string.IsNullOrWhiteSpace(mode))
+                return config;
+
+            return ConfigurationFactory
+                .ParseString($"akka.persistence.journal.sql.write-queue-mode = {mode.Trim()}")
+                .WithFallback(config);
+        }
+
         internal IActorRef BenchActor(string pid, int replyAfter)
-            => Sys.ActorOf(Props.Create(() => new BenchActor(pid, _testProbe, _eventsCount)));
+            => Sys.ActorOf(Props.Create(() => new BenchActor(pid, _testProbe, _eventsCount, _latency)));
 
         internal (IActorRef aut, TestProbe probe) BenchActorNewProbe(string pid, int replyAfter)
         {
             var tp = CreateTestProbe();
-            return (Sys.ActorOf(Props.Create(() => new BenchActor(pid, tp, _eventsCount))), tp);
+            return (Sys.ActorOf(Props.Create(() => new BenchActor(pid, tp, _eventsCount, _latency))), tp);
         }
 
         internal (IActorRef aut, TestProbe probe) BenchActorNewProbeGroup(string pid, int numActors, int numMessages)
@@ -80,7 +124,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             var tp = CreateTestProbe();
             return (Sys.ActorOf(
                 Props
-                    .Create(() => new BenchActor(pid, tp, numMessages, false))
+                    .Create(() => new BenchActor(pid, tp, numMessages, _latency, false))
                     .WithRouter(new RoundRobinPool(numActors))), tp);
         }
 
@@ -130,6 +174,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
 
             await block(); // warm-up
 
+            _latency.Start(_eventsCount * MeasurementIterations);
             var i = 0;
             while (i < MeasurementIterations)
             {
@@ -140,6 +185,8 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
                 Output.WriteLine(msg(sw.Elapsed));
                 i++;
             }
+
+            var latencies = _latency.Stop();
 
             var (rejected, times) = RejectOutliers(measurements.Select(c => c.TotalMilliseconds).ToArray(), OutlierRejectionSigma);
 
@@ -160,6 +207,9 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             Output.WriteLine($"Median throughput: {medianMsgPerSec:F2} msg/s");
             
             Output.WriteLine($"Rejected outlier (sigma: {OutlierRejectionSigma}): {string.Join(", ", rejected)}");
+
+            ReportLatency(latencies);
+            WriteRawSamples(measurements, latencies);
         }
 
         internal async Task MeasureGroupAsync(Func<TimeSpan, string> msg, Func<Task> block, int numMsg, int numGroup)
@@ -169,6 +219,7 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             await block();
             await block(); // warm-up
 
+            _latency.Start(numMsg * numGroup * MeasurementIterations);
             var i = 0;
             while (i < MeasurementIterations)
             {
@@ -179,6 +230,8 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
                 Output.WriteLine(msg(sw.Elapsed));
                 i++;
             }
+
+            var latencies = _latency.Stop();
 
             var (rejected, times) = RejectOutliers(measurements.Select(c => c.TotalMilliseconds).ToArray(), OutlierRejectionSigma);
 
@@ -202,6 +255,60 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             Output.WriteLine($"Median throughput: {medianMsgPerSec:F2} msg/s/actor, Median total throughput: {medianMsgPerSecTotal:F2} msg/s");
             
             Output.WriteLine($"Rejected outlier (sigma: {OutlierRejectionSigma}): {string.Join(", ", rejected)}");
+
+            ReportLatency(latencies);
+            WriteRawSamples(measurements, latencies);
+        }
+
+        private void ReportLatency(long[] latencies)
+        {
+            if (latencies.Length == 0)
+                return;
+
+            var sorted = (long[])latencies.Clone();
+            Array.Sort(sorted);
+
+            Output.WriteLine(
+                $"Latency ({sorted.Length} events): p50: {ToMilliseconds(Percentile(sorted, 0.5)):F3} ms, " +
+                $"p90: {ToMilliseconds(Percentile(sorted, 0.9)):F3} ms, p99: {ToMilliseconds(Percentile(sorted, 0.99)):F3} ms, " +
+                $"p99.9: {ToMilliseconds(Percentile(sorted, 0.999)):F3} ms, Max: {ToMilliseconds(sorted[^1]):F3} ms");
+        }
+
+        private static long Percentile(long[] sorted, double percentile)
+            => sorted[Math.Clamp((int)Math.Ceiling(percentile * sorted.Length) - 1, 0, sorted.Length - 1)];
+
+        private static double ToMilliseconds(long stopwatchTicks)
+            => stopwatchTicks * 1000.0 / Stopwatch.Frequency;
+
+        private void WriteRawSamples(IReadOnlyList<TimeSpan>? iterations, long[] latencies)
+        {
+            var directory = Environment.GetEnvironmentVariable(OutputDirectoryEnvironmentVariable);
+            if (string.IsNullOrWhiteSpace(directory))
+                return;
+
+            Directory.CreateDirectory(directory);
+            var mode = Sys.Settings.Config.GetString("akka.persistence.journal.sql.write-queue-mode", "source-queue");
+            var test = TestContext.Current.TestMethod?.MethodName ?? "unknown";
+            var prefix = Path.Combine(
+                directory,
+                $"{Sys.Name}.{test}.{mode}.{DateTime.UtcNow.ToString("yyyyMMddTHHmmss", CultureInfo.InvariantCulture)}");
+
+            if (iterations is not null)
+            {
+                File.WriteAllLines(
+                    prefix + ".iterations.csv",
+                    iterations
+                        .Select(t => t.TotalMilliseconds.ToString("F3", CultureInfo.InvariantCulture))
+                        .Prepend("iteration_ms"));
+            }
+
+            File.WriteAllLines(
+                prefix + ".latency.csv",
+                latencies
+                    .Select(t => ToMilliseconds(t).ToString("F3", CultureInfo.InvariantCulture))
+                    .Prepend("latency_ms"));
+
+            Output.WriteLine($"Raw samples written to {prefix}.*.csv");
         }
 
         private static (IReadOnlyList<double> Rejected, IReadOnlyList<double> Measurements) RejectOutliers(IReadOnlyList<double> measurements, double sigma)
@@ -539,6 +646,71 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
                 });
         }
 
+        /// <summary>
+        ///     Sends single <c>Persist()</c> commands to a group of actors at a fixed total rate that should stay
+        ///     below the journal's saturation point, and measures each event's latency from the time it was
+        ///     scheduled to be sent until its persist callback ran. Latency is measured from the scheduled time
+        ///     rather than the actual send, so a late sender does not hide queueing delay.
+        /// </summary>
+        [Fact]
+        public async Task PersistenceActor_performance_must_measure_PersistLatencyAtFixedRate()
+        {
+            const int numActors = 100;
+            var rate = ReadPositiveEnvironmentVariable(LatencyRateEnvironmentVariable, 2000);
+            var seconds = ReadPositiveEnvironmentVariable(LatencySecondsEnvironmentVariable, 30);
+            var warmUpSeconds = Math.Min(5, seconds);
+            var warmUpEvents = rate * warmUpSeconds;
+            var totalEvents = rate * (warmUpSeconds + seconds);
+
+            var actors = Enumerable.Range(0, numActors)
+                .Select(i => Sys.ActorOf(Props.Create(() => new BenchActor($"FixedRatePid{i}", _testProbe, int.MaxValue, _latency))))
+                .ToArray();
+
+            _latency.Start(totalEvents - warmUpEvents);
+
+            var ticksPerEvent = (double)Stopwatch.Frequency / rate;
+            var sendStart = Stopwatch.GetTimestamp();
+            var measureStart = sendStart + (long)(warmUpEvents * ticksPerEvent);
+
+            // A dedicated spinning thread, because Thread.Sleep and timers are too coarse on Windows.
+            var lastSent = await Task.Factory.StartNew(
+                () =>
+                {
+                    for (var n = 0; n < totalEvents; n++)
+                    {
+                        var due = sendStart + (long)(n * ticksPerEvent);
+                        while (Stopwatch.GetTimestamp() < due)
+                            Thread.SpinWait(20);
+
+                        actors[n % numActors].Tell(new TimedCmd(n / numActors + 1, due, due >= measureStart, _payload));
+                    }
+
+                    return Stopwatch.GetTimestamp();
+                },
+                CancellationToken.None,
+                TaskCreationOptions.LongRunning,
+                TaskScheduler.Default);
+
+            await AwaitConditionAsync(
+                () => Task.FromResult(_latency.Count >= totalEvents - warmUpEvents),
+                TimeSpan.FromSeconds(seconds + 60),
+                TimeSpan.FromMilliseconds(50));
+
+            var latencies = _latency.Stop();
+            var sendSeconds = (double)(lastSent - sendStart) / Stopwatch.Frequency;
+
+            Output.WriteLine(
+                $"Fixed rate: {numActors} actors, requested {rate} msg/s, achieved send rate {totalEvents / sendSeconds:F2} msg/s, " +
+                $"warm-up {warmUpSeconds} s, measured {seconds} s");
+            ReportLatency(latencies);
+            WriteRawSamples(null, latencies);
+        }
+
+        private static int ReadPositiveEnvironmentVariable(string name, int defaultValue)
+            => int.TryParse(Environment.GetEnvironmentVariable(name), NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) && value > 0
+                ? value
+                : defaultValue;
+
         [Fact]
         public async Task PersistenceActor_performance_must_measure_Recovering()
         {
@@ -719,6 +891,64 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
         public static ResetCounter Instance { get; } = new();
     }
 
+    /// <summary>
+    ///     A <c>Persist()</c> command for the fixed-rate latency test, carrying the time it was scheduled to be sent.
+    /// </summary>
+    internal sealed class TimedCmd
+    {
+        public TimedCmd(int payload, long scheduledTimestamp, bool measured, byte[]? data)
+        {
+            Payload = payload;
+            ScheduledTimestamp = scheduledTimestamp;
+            Measured = measured;
+            Data = data;
+        }
+
+        public int Payload { get; }
+
+        public long ScheduledTimestamp { get; }
+
+        public bool Measured { get; }
+
+        public byte[]? Data { get; }
+    }
+
+    /// <summary>
+    ///     Collects per-event latencies, in <see cref="Stopwatch"/> ticks, from any number of actors.
+    /// </summary>
+    internal sealed class LatencyRecorder
+    {
+        private long[] _samples = Array.Empty<long>();
+        private int _count;
+        private volatile bool _recording;
+
+        public int Count => Math.Min(Volatile.Read(ref _count), _samples.Length);
+
+        public void Start(int capacity)
+        {
+            _samples = new long[capacity];
+            _count = 0;
+            _recording = true;
+        }
+
+        public long[] Stop()
+        {
+            _recording = false;
+            return _samples.AsSpan(0, Count).ToArray();
+        }
+
+        public void Record(long startTimestamp)
+        {
+            if (!_recording)
+                return;
+
+            var elapsed = Stopwatch.GetTimestamp() - startTimestamp;
+            var index = Interlocked.Increment(ref _count) - 1;
+            if (index < _samples.Length)
+                _samples[index] = elapsed;
+        }
+    }
+
     public class Cmd
     {
         public Cmd(string mode, int payload, byte[]? data = null)
@@ -744,19 +974,22 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
         private const int BatchSize = 50;
         private List<Cmd> _batch = new(BatchSize);
         private int _counter;
+        private readonly LatencyRecorder _latency;
 
-        public BenchActor(string persistenceId, IActorRef replyTo, int replyAfter, bool groupName)
+        public BenchActor(string persistenceId, IActorRef replyTo, int replyAfter, LatencyRecorder latency, bool groupName)
         {
             PersistenceId = persistenceId + MurmurHash.StringHash(Context.Parent.Path.Name + Context.Self.Path.Name);
             ReplyTo = replyTo;
             ReplyAfter = replyAfter;
+            _latency = latency;
         }
 
-        public BenchActor(string persistenceId, IActorRef replyTo, int replyAfter)
+        public BenchActor(string persistenceId, IActorRef replyTo, int replyAfter, LatencyRecorder latency)
         {
             PersistenceId = persistenceId;
             ReplyTo = replyTo;
             ReplyAfter = replyAfter;
+            _latency = latency;
         }
 
         public override string PersistenceId { get; }
@@ -787,15 +1020,33 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
             switch (message)
             {
                 case Cmd { Mode: "p" } c:
+                {
+                    var start = Stopwatch.GetTimestamp();
                     Persist(
                         c,
                         d =>
                         {
+                            _latency.Record(start);
                             _counter += 1;
                             if (d.Payload != _counter)
                                 throw new ArgumentException($"Expected to receive [{_counter}] yet got: [{d.Payload}]");
                             if (_counter == ReplyAfter)
                                 ReplyTo.Tell(d.Payload);
+                        });
+
+                    break;
+                }
+
+                case TimedCmd t:
+                    Persist(
+                        new Cmd("p", t.Payload, t.Data),
+                        d =>
+                        {
+                            if (t.Measured)
+                                _latency.Record(t.ScheduledTimestamp);
+                            _counter += 1;
+                            if (d.Payload != _counter)
+                                throw new ArgumentException($"Expected to receive [{_counter}] yet got: [{d.Payload}]");
                         });
 
                     break;
@@ -805,10 +1056,12 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
 
                     if (_batch.Count % BatchSize == 0)
                     {
+                        var start = Stopwatch.GetTimestamp();
                         PersistAll(
                             _batch,
                             d =>
                             {
+                                _latency.Record(start);
                                 _counter += 1;
                                 if (d.Payload != _counter)
                                     throw new ArgumentException(
@@ -822,10 +1075,13 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
                     break;
 
                 case Cmd { Mode: "pa" } c:
+                {
+                    var start = Stopwatch.GetTimestamp();
                     PersistAsync(
                         c,
                         d =>
                         {
+                            _latency.Record(start);
                             _counter += 1;
                             if (d.Payload != _counter)
                                 throw new ArgumentException($"Expected to receive [{_counter}] yet got: [{d.Payload}]");
@@ -834,16 +1090,19 @@ namespace Akka.Persistence.Sql.Benchmark.Tests
                         });
 
                     break;
+                }
 
                 case Cmd { Mode: "pba" } c:
                     _batch.Add(c);
 
                     if (_batch.Count % BatchSize == 0)
                     {
+                        var start = Stopwatch.GetTimestamp();
                         PersistAllAsync(
                             _batch,
                             d =>
                             {
+                                _latency.Record(start);
                                 _counter += 1;
                                 if (d.Payload != _counter)
                                     throw new ArgumentException(
