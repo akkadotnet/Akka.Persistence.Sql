@@ -1,3 +1,11 @@
+#### 1.6.0-beta5 November 4th 2026 ####
+
+Built against Akka.NET 1.6.0-beta5 and Akka.Hosting 1.6.0-beta5.
+
+* NuGet publishing moves to GitHub Actions with NuGet trusted publishing (OIDC), replacing the Azure DevOps tag-triggered release pipeline. ([#626](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/626))
+* Fixed NU1506 and NU1903 restore warnings: removed a duplicate `FluentAssertions` `PackageVersion` entry (no project's resolved version changes) and bumped `Microsoft.Data.Sqlite` / `Microsoft.Data.Sqlite.Core` from 8.0.7 to 8.0.33 so `SQLitePCLRaw` resolves to 2.1.13 instead of 2.1.6, which is affected by GHSA-2m69-gcr7-jv3q. Only test, tooling and example projects reference these; the shipped packages are unaffected. ([#628](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/628))
+* Bumped to Akka.NET and Akka.Hosting 1.6.0-beta5. ([#631](https://github.com/akkadotnet/Akka.Persistence.Sql/pull/631))
+
 #### 1.6.0-beta4 November 2nd 2026 ####
 
 Built against Akka.NET 1.6.0-beta4.
