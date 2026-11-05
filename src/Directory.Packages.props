@@ -1,8 +1,8 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <AkkaVersion>1.6.0-beta4</AkkaVersion>
-    <AkkaHostingVersion>1.6.0-beta4</AkkaHostingVersion>
+    <AkkaVersion>1.6.0-beta5</AkkaVersion>
+    <AkkaHostingVersion>1.6.0-beta5</AkkaHostingVersion>
     <FluentMigratorVersion>5.2.0</FluentMigratorVersion>
     <SqliteVersion>1.0.118</SqliteVersion>
     <MicrosoftSqliteVersion>8.0.33</MicrosoftSqliteVersion>
