@@ -97,6 +97,20 @@ namespace Akka.Persistence.Sql.Journal.Dao
                 _ => throw new Exception($"Invalid Tag Write Mode! Was: {tagWriteMode}"),
             };
 
+        /// <summary>
+        ///     The writer UUID to store for an event. Akka's ReplayFilter treats the writer UUID as one
+        ///     persistent actor incarnation, so the event's own <see cref="IPersistentRepresentation.WriterGuid"/>
+        ///     is stored. The journal's UUID is only a fallback for events that carry none.
+        ///     Returns null when the writer UUID column is disabled.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private string? WriterUuidFor(IPersistentRepresentation representation)
+            => _writerUuid is null
+                ? null
+                : string.IsNullOrEmpty(representation.WriterGuid)
+                    ? _writerUuid
+                    : representation.WriterGuid;
+
         protected override Try<JournalRow> Serialize(
             IPersistentRepresentation persistentRepresentation,
             IImmutableSet<string> tTags,
@@ -111,7 +125,7 @@ namespace Akka.Persistence.Sql.Journal.Dao
                         state: (
                             persistentRepresentation,
                             _serializer.FindSerializerForType(persistentRepresentation.Payload.GetType(), _journalConfig.DefaultSerializer),
-                            CreateJournalRow(tTags, persistentRepresentation, timeStamp, _tagWriteMode, _separator, _writerUuid)),
+                            CreateJournalRow(tTags, persistentRepresentation, timeStamp, _tagWriteMode, _separator, WriterUuidFor(persistentRepresentation))),
                         action: state =>
                         {
                             var (representation, serializer, row) = state;
