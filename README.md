@@ -358,6 +358,8 @@ opting in.
 
 # Tuning Akka.Persistence.Query for Low-Latency Projections
 
+For the queries `SqlReadJournal` supports, offset semantics and how gaps in `ordering` are handled, see [Persistence Query Support](docs/articles/queries.md).
+
 Default polling intervals cause 500-1200ms projection latency. For low-latency CQRS, tune **BOTH** settings together:
 
 ```hocon
