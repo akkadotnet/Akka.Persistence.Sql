@@ -4,6 +4,8 @@
   href: features.md
 - name: Configuration
   href: configuration.md
+- name: Persistence Query Support
+  href: queries.md
 - name: Performance Benchmarks
   href: benchmarks.md
 - name: Migration Documentation
