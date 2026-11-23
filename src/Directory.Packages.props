@@ -56,7 +56,7 @@
   </ItemGroup>
   <!-- MySql dependencies -->
   <ItemGroup>
-    <PackageVersion Include="MySql.Data" Version="8.4.0" />
+    <PackageVersion Include="MySql.Data" Version="26.10.0" />
   </ItemGroup>
   <!-- Test dependencies -->
   <ItemGroup>
